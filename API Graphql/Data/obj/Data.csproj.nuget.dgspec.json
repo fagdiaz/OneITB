@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Data\\Data.csproj": {}
+    "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Data\\Data.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Data\\Data.csproj": {
+    "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Data\\Data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Data\\Data.csproj",
+        "projectUniqueName": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Data\\Data.csproj",
         "projectName": "Data",
-        "projectPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Data\\Data.csproj",
+        "projectPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Data\\Data.csproj",
         "packagesPath": "C:\\Users\\Electro-Hard\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Data\\obj\\",
+        "outputPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Data\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -32,8 +32,8 @@
           "net6.0": {
             "targetAlias": "net6.0",
             "projectReferences": {
-              "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\Entities.csproj": {
-                "projectPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\Entities.csproj"
+              "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\Entities.csproj": {
+                "projectPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\Entities.csproj"
               }
             }
           }
@@ -80,14 +80,14 @@
         }
       }
     },
-    "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\Entities.csproj": {
+    "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\Entities.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\Entities.csproj",
+        "projectUniqueName": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\Entities.csproj",
         "projectName": "Entities",
-        "projectPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\Entities.csproj",
+        "projectPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\Entities.csproj",
         "packagesPath": "C:\\Users\\Electro-Hard\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\obj\\",
+        "outputPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

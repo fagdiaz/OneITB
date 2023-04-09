@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import { Header } from './Components/layout/public/Header';
 
 
 
@@ -6,7 +7,14 @@ import { useState } from 'react'
 function App() {  
 
   return (
-   <h1>ONE ITB REACT FRONTEND</h1>
+    <div className='layout'>
+      <Header></Header>
+      
+      <section class="layout__content">
+
+
+      </section>
+    </div>   
   )
 }
 

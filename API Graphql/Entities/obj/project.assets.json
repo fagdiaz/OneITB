@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\Entities.csproj",
+      "projectUniqueName": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\Entities.csproj",
       "projectName": "Entities",
-      "projectPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\Entities.csproj",
+      "projectPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\Entities.csproj",
       "packagesPath": "C:\\Users\\Electro-Hard\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Entities\\obj\\",
+      "outputPath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Entities\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
