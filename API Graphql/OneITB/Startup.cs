@@ -22,15 +22,23 @@ namespace OneItb.GraphQL
         }
 
         public IConfiguration Configuration { get; }
+        readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            
+            services.AddCors(options =>
+            {
+                options.AddPolicy(MyAllowSpecificOrigins,
+                builder =>
+                {
+                    builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
+                });
+            });
 
             //services.AddScoped<OneItbContext>();
-             
+
             services.AddPooledDbContextFactory<OneItbContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), b => b.MigrationsAssembly("Data")));
 
             services.AddGraphQLServer()
@@ -56,7 +64,8 @@ namespace OneItb.GraphQL
             app.UseRouting();
 
             app.UseAuthorization();
-            
+            app.UseCors(MyAllowSpecificOrigins);
+
 
             app.UseEndpoints(endpoints =>
             {

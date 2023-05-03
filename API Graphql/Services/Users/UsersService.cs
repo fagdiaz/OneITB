@@ -29,5 +29,10 @@ namespace Services.Users
             return user;
         }
 
+        public IQueryable<User> GetAllAsync()
+        {
+            return context.Users.AsQueryable();
+        }
+
     }
 }

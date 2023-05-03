@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
 using OneItb.Entities.Models;
+using Services.Users;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,9 +10,9 @@ namespace GraphQL.GraphQL
 {
     public class Query
     {
-        public async Task<List<User>> GetUsers([Service]OneItbContext context)
+        public  Task<List<User>> GetUsers([Service] UsersService usersService)
         {
-            return await context.Users.ToListAsync();
+            return  usersService.GetAllAsync().ToListAsync();
         }
     }
 }

@@ -1,7 +1,12 @@
 import React from 'react'
 import avatar from '../../assets/img/user.png'
+import { useQuery } from '@apollo/client'
+import { GET_USERS } from '../../data/graphql/queries/getUsers';
 
 export const Feed = () => {
+
+    
+
     return (
         <>
             <header className="content__header">
@@ -24,7 +29,7 @@ export const Feed = () => {
                         <div className="post__body">
 
                             <div className="post__user-info">
-                                <a href="#" className="user-info__name">Victor Robles</a>
+                                <a href="#" className="user-info__name">Leandro Diaz</a>
                                 <span className="user-info__divider"> | </span>
                                 <a href="#" className="user-info__create-date">Hace 1 hora</a>
                             </div>
@@ -59,7 +64,7 @@ export const Feed = () => {
                         <div className="post__body">
 
                             <div className="post__user-info">
-                                <a href="#" className="user-info__name">Victor Robles</a>
+                                <a href="#" className="user-info__name">Leandro Diaz</a>
                                 <span className="user-info__divider"> | </span>
                                 <a href="#" className="user-info__create-date">Hace 1 hora</a>
                             </div>
@@ -93,7 +98,7 @@ export const Feed = () => {
                         <div className="post__body">
 
                             <div className="post__user-info">
-                                <a href="#" className="user-info__name">Victor Robles</a>
+                                <a href="#" className="user-info__name">Leandro Diaz</a>
                                 <span className="user-info__divider"> | </span>
                                 <a href="#" className="user-info__create-date">Hace 1 hora</a>
                             </div>
@@ -129,7 +134,7 @@ export const Feed = () => {
                         <div className="post__body">
 
                             <div className="post__user-info">
-                                <a href="#" className="user-info__name">Victor Robles</a>
+                                <a href="#" className="user-info__name">Leandro Diaz</a>
                                 <span className="user-info__divider"> | </span>
                                 <a href="#" className="user-info__create-date">Hace 1 hora</a>
                             </div>
@@ -149,6 +154,11 @@ export const Feed = () => {
 
                 </div>
 
+
+            </div>
+
+            <div>
+                <p>USUARIOS PRUEBA</p>
 
             </div>
 

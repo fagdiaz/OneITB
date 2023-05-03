@@ -10,5 +10,6 @@ namespace Services.Users
     public interface IUsersService
     {
         Task<User> CreateAsync(User user);
+        IQueryable<User> GetAllAsync();
     }
 }
