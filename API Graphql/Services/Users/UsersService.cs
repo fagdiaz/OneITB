@@ -24,15 +24,21 @@ namespace Services.Users
 
         public async Task<User> CreateAsync(User user)
         {
-            await context.Users.AddAsync(user);
-            await context.SaveChangesAsync();
-            return user;
+            try
+            {
+                await context.Users.AddAsync(user);
+                await context.SaveChangesAsync();
+                return user;
+            } catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         public IQueryable<User> GetAllAsync()
         {
             return context.Users.AsQueryable();
-        }
+        }        
 
     }
 }

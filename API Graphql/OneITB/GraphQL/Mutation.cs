@@ -13,18 +13,21 @@ namespace GraphQL.GraphQL
     {
         public async Task<User> AddUser([Service] UsersService usersService, UserInput input)
         {
+            //TODO validate email
+
             var user = new User
             {
                 FullName = input.FullName,
                 Email = input.Email,
                 Disabled = false,
                 Password = input.Password,
-                Phone = input.Phone,
-                UserName = input.UserName,
+                Phone = input.Alias,
+                UserName = "repro",
                 CreationDate = DateTime.Now,
                 ModificationDate = DateTime.Now,
                 CreationUser = "Admin",
-                ModificationUser = "Admin"
+                ModificationUser = "Admin",
+                AccountId = 1
             };
            
             return await usersService.CreateAsync(user);

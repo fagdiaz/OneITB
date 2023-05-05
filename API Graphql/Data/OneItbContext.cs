@@ -1,5 +1,6 @@
 ﻿using OneItb.Entities.Models;
 using Microsoft.EntityFrameworkCore;
+using Entities.Models;
 
 namespace OneItb.Data
 {
@@ -11,5 +12,6 @@ namespace OneItb.Data
         }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<Account> Accounts { get; set; }
     }
 }
