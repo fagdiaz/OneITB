@@ -1,4 +1,5 @@
-﻿using Entities.Models;
+﻿using Entities.Enums;
+using Entities.Models;
 using OneItb.Entities.Abstracts;
 using System;
 using System.Collections.Generic;
@@ -17,5 +18,6 @@ namespace OneItb.Entities.Models
         public string Password { get; set; }
         public Account Account { get; set; }
         public int? AccountId { get; set; }
-    }
+        public States State { get; set; }
+    } 
 }

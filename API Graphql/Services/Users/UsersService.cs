@@ -40,5 +40,9 @@ namespace Services.Users
             return context.Users.AsQueryable();
         }        
 
+        public User GetByEmail(string email)
+        {
+            return context.Users.Where(u => u.Email == email).FirstOrDefault();
+        }
     }
 }

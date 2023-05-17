@@ -14,7 +14,11 @@ namespace GraphQL.GraphQL
         public async Task<User> AddUser([Service] UsersService usersService, UserInput input)
         {
             //TODO validate email
-
+            if(usersService.GetByEmail(input.Email) != null)
+            {
+                throw new Exception($"El email ya está en uso. Prueba con otro.");
+            }
+            
             var user = new User
             {
                 FullName = input.FullName,

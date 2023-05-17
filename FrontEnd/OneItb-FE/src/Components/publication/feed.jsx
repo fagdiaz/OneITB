@@ -2,11 +2,15 @@ import React from 'react'
 import avatar from '../../assets/img/user.png'
 import { useQuery } from '@apollo/client'
 import { GET_USERS } from '../../data/graphql/queries/getUsers';
+import useAuth from '../../hooks/useAuth';
+
 
 export const Feed = () => {
 
-    
+    const {compartido} = useAuth();
 
+    console.log(compartido);
+    
     return (
         <>
             <header className="content__header">

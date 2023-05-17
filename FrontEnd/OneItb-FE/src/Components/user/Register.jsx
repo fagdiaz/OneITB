@@ -1,19 +1,31 @@
 import React from 'react'
 import { useMutation, useQuery } from '@apollo/client'
+import { useState } from 'react'
 import { GET_USERS } from '../../data/graphql/queries/getUsers'
 import { useForm } from '../../hooks/useForm';
 import { ADD_USER } from '../../data/graphql/mutations/addUser'
 
 export const Register = () => {
+ 
 
-  const {loading, error, data} = useQuery(GET_USERS);
+  const {loading, error} = useQuery(GET_USERS);
   const {form, changed} = useForm({});
+  const [saved, setSaved ] = useState("not_sended");
 
-  const saveUser = (e) => {
+  const saveUser = async (e) => {
     e.preventDefault();
-    let newUser = form;
-    addUser();
-    console.log(newUser)
+    try{     
+      const { data } = await addUser();
+      setSaved("saved");
+      console.log(data);
+    }
+    catch(error){
+      console.log(error)
+      setSaved("error");
+      alert(error.message);
+    }
+
+    
   }
 
   const [addUser, {loading : addUserLoading}] = useMutation(ADD_USER, {
@@ -32,6 +44,14 @@ export const Register = () => {
 
         </header>
         
+        {saved == "saved" ?
+        <strong className='alert alert-succes'> Usuario registrado correctamente</strong>
+        : <></>}
+
+      {saved == "error" ?
+        <strong className='alert alert-danger'> El usuario no se ha registrado</strong>
+        : <></>}
+
         <div className='content__posts'>
             <form className='register-form' onSubmit={saveUser}>
 
@@ -66,6 +86,8 @@ export const Register = () => {
         </div>
 
         {loading ? <p> cargando.....</p> : <p>datos</p>}
+
+        
     </>
   )
 }

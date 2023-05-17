@@ -5,10 +5,12 @@ import { Login } from '../Components/user/Login'
 import { Register } from '../Components/user/Register'
 import { PrivateLayout } from '../Components/layout/private/PrivateLayout'
 import { Feed } from '../Components/publication/feed'
+import { AuthProvider } from '../context/AuthProvider'
 
 export const Routing = () => {
   return (
     <BrowserRouter>
+    <AuthProvider>
       <Routes>
         <Route path='/' element={<PublicLayout />}>
           <Route index element={<Login />} />
@@ -31,6 +33,7 @@ export const Routing = () => {
         } />
 
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

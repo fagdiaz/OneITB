@@ -11,5 +11,6 @@ namespace Services.Users
     {
         Task<User> CreateAsync(User user);
         IQueryable<User> GetAllAsync();
+        User GetByEmail(string email);
     }
 }
