@@ -9,6 +9,7 @@ namespace Entities.Models
         public string TimeZone { get; set; }
         public string Domain { get; set; }        
         public Countries Country { get; set; }
+        public string EmailDomain { get; set; }
                  
     }
 }

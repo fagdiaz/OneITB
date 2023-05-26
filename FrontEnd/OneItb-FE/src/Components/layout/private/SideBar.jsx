@@ -5,13 +5,13 @@ import useAuth from '../../../hooks/useAuth'
 export const SideBar = () => {
 
     const { auth } = useAuth();
-    
-
+    console.log( auth );
+        
   return (
     <aside className="layout__aside">
 
             <header className="aside__header">
-                <h1 className="aside__title">Hola, Leandro</h1>
+                <h1 className="aside__title">Hola, {auth.fullName} </h1>
             </header>
 
             <div className="aside__container">

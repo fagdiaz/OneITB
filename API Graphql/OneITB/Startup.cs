@@ -11,6 +11,10 @@ using Services.Users;
 using HotChocolate.Types;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Entities.Models;
 
 namespace OneItb.GraphQL
 {
@@ -44,11 +48,27 @@ namespace OneItb.GraphQL
             services.AddGraphQLServer()
                 .RegisterDbContext<OneItbContext>(DbContextKind.Pooled)
                 .RegisterService<User>()
+                .RegisterService<Account>()
                 .AddQueryType<Query>()
                 .AddMutationType<Mutation>();
 
             services.AddTransient<UsersService>();
-           
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration["Jwt:Issuer"],
+                    ValidAudience = Configuration["Jwt:Issuer"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                };
+            });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

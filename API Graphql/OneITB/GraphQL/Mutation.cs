@@ -1,8 +1,10 @@
 ﻿
 using GraphQL.GraphQL.Mutations;
 using HotChocolate;
+using Microsoft.Extensions.Configuration;
 using OneItb.Data;
 using OneItb.Entities.Models;
+using Services.Accounts;
 using Services.Users;
 using System;
 using System.Threading.Tasks;
@@ -11,9 +13,11 @@ namespace GraphQL.GraphQL
 {
     public class Mutation
     {
-        public async Task<User> AddUser([Service] UsersService usersService, UserInput input)
+        public async Task<User> AddUser([Service] UsersService usersService, [Service] AccountsService accountService, UserInput input)
         {
-            //TODO validate email
+            //VALIDATE MAIL DOM
+            //ADD MIGRATION
+
             if(usersService.GetByEmail(input.Email) != null)
             {
                 throw new Exception($"El email ya está en uso. Prueba con otro.");
@@ -36,5 +40,19 @@ namespace GraphQL.GraphQL
            
             return await usersService.CreateAsync(user);
         }
+
+        public UserPayload AuthenticateUser([Service] UsersService usersService, [Service] IConfiguration configuration, string email, string password)
+        {
+            var user = usersService.GetByEmailAndPassword(email, password);
+
+            if(user == null)
+            {
+                throw new Exception($"Contraseña o Email incorrecto. Vuelve a intentarlo.");
+            }
+
+            return new UserPayload(user, usersService.GenerateToken(user, configuration));
+        }
+
+
     }
 }

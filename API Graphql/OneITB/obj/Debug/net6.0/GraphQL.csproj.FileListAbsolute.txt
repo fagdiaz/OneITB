@@ -438,3 +438,4 @@ C:\Users\Electro-Hard\Desktop\ONEITB - copia\API Graphql\OneITB\obj\Debug\net6.0
 C:\Users\Electro-Hard\Desktop\ONEITB - copia\API Graphql\OneITB\obj\Debug\net6.0\ref\GraphQL.dll
 C:\Users\Electro-Hard\Desktop\ONEITB - copia\API Graphql\OneITB\obj\Debug\net6.0\GraphQL.pdb
 C:\Users\Electro-Hard\Desktop\ONEITB - copia\API Graphql\OneITB\obj\Debug\net6.0\GraphQL.genruntimeconfig.cache
+C:\Users\Electro-Hard\Desktop\ONEITB - copia\API Graphql\OneITB\bin\Debug\net6.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

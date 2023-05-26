@@ -5,11 +5,7 @@ import { GET_USERS } from '../../data/graphql/queries/getUsers';
 import useAuth from '../../hooks/useAuth';
 
 
-export const Feed = () => {
-
-    const {compartido} = useAuth();
-
-    console.log(compartido);
+export const Feed = () => { 
     
     return (
         <>

@@ -1,20 +1,42 @@
 import React, { useState } from 'react'
 import { useForm } from '../../hooks/useForm'
+import { useMutation } from '@apollo/client'
+import { AUTHENTICATE_USER } from '../../data/graphql/mutations/authenticateUser'
+import { GraphQLProvider } from '../../data/graphql/GraphqlProvider'
 
 export const Login = () => {
 
-  const {form , changed } = useForm({})
+  
+
+  const {form , changed } = useForm({});
   const [saved, setSaved] = useState("not_sended");
 
   const loginUser = async(e) =>{
+   
       e.preventDefault();
-      console.log(form)
-      //todo add jwt auth
+      try{
+      const { data } = await authenticateUser();
+      const { user, token } = data.authenticateUser;
+      GraphQLProvider.setToken(token);
+      GraphQLProvider.setUser(user);
 
-      localStorage.setItem("token","ASFSFASDASDASDASFASFASDASDASDFASD");
-      localStorage.setItem("user", form.email);
-      setSaved("login")//error
+      //localStorage.setItem("token","token");
+      //localStorage.setItem("user", user.email);
+      setSaved("login");//error
+      }
+      catch(err){
+        console.log(err);
+        setSaved("error");
+      }
   }
+
+  const [authenticateUser, {loading}] = useMutation(AUTHENTICATE_USER,{
+    variables:{
+      email : form.email,
+      password : form.password
+    },
+    fetchPolicy: 'network-only',
+  });
 
   return (
     <>
