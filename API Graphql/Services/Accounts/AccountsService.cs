@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Entities.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using OneItb.Data;
 using System;
@@ -23,5 +24,10 @@ namespace Services.Accounts
             context = oneItbContextFactory.CreateDbContext();
         }
         public IConfiguration Configuration { get; }
+
+        public Account GetById(int id)
+        {
+            return context.Accounts.Where(a => a.Id == id).FirstOrDefault();
+        }
     }
 }

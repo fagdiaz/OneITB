@@ -15,8 +15,12 @@ namespace GraphQL.GraphQL
     {
         public async Task<User> AddUser([Service] UsersService usersService, [Service] AccountsService accountService, UserInput input)
         {
-            //VALIDATE MAIL DOM
-            //ADD MIGRATION
+            var account = accountService.GetById(input.AccountId);
+
+            if(input.Email.Split('@')[1] != account.EmailDomain)
+            {
+                throw new Exception($"El email no corresponde a esta institución");
+            }
 
             if(usersService.GetByEmail(input.Email) != null)
             {
@@ -35,7 +39,7 @@ namespace GraphQL.GraphQL
                 ModificationDate = DateTime.Now,
                 CreationUser = "Admin",
                 ModificationUser = "Admin",
-                AccountId = 1
+                AccountId = input.AccountId
             };
            
             return await usersService.CreateAsync(user);
