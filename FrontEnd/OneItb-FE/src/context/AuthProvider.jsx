@@ -13,7 +13,7 @@ export const AuthProvider = ({children}) => {
     authUser();
    }, []);
 
-   const [authUserLocal, setauthUserLocal] = useState({});
+   //const [authUserLocal, setauthUserLocal] = useState({});
 
   //  const {getUser} = useQuery(GET_USER, {
   //   fetchPolicy : 'network-only',
@@ -24,20 +24,12 @@ export const AuthProvider = ({children}) => {
    
    const authUser = async() => {
     const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
+    const user = JSON.parse(localStorage.getItem("user"));
     
     if(!token || !user){
       return false;
     }
-
-    //const userObj = JSON.parse(user.id);
-    //setauthUserLocal(user);
-    //const userObj = getUser;
-    //console.log(userObj);
-    setAuth(user);
-  
-    //TODO comprobar user.id JWT
-     
+      setAuth(user);    
    }
 
   

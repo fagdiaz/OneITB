@@ -1,5 +1,4 @@
-﻿
-using GraphQL.GraphQL.Mutations;
+﻿using GraphQL.GraphQL.Mutations;
 using HotChocolate;
 using Microsoft.Extensions.Configuration;
 using OneItb.Data;
@@ -34,7 +33,7 @@ namespace GraphQL.GraphQL
                 Disabled = false,
                 Password = input.Password,
                 Phone = input.Alias,
-                UserName = "repro",
+                UserName = input.Alias,
                 CreationDate = DateTime.Now,
                 ModificationDate = DateTime.Now,
                 CreationUser = "Admin",

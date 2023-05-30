@@ -1,9 +1,13 @@
 import React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
 import { Header } from './Header'
 import { SideBar } from './SideBar'
+import useAuth from '../../../hooks/useAuth'
 
 export const PrivateLayout = () => {
+
+  const {auth} = useAuth();
+  console.log(auth);
   return (
     <>
         {/*LAYOUT */}
@@ -11,7 +15,11 @@ export const PrivateLayout = () => {
 
         {/* Contenido principal */}
         <section className='layout__content'>
+          { auth.id ?
             <Outlet/>
+            :
+            <Navigate to="/login"></Navigate>
+            }
         </section>
         
         {/* Barra Lateral */}

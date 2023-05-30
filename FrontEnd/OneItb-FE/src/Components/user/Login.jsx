@@ -3,6 +3,8 @@ import { useForm } from '../../hooks/useForm'
 import { useMutation } from '@apollo/client'
 import { AUTHENTICATE_USER } from '../../data/graphql/mutations/authenticateUser'
 import { GraphQLProvider } from '../../data/graphql/GraphqlProvider'
+import useAuth from '../../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
 
 export const Login = () => {
 
@@ -10,7 +12,9 @@ export const Login = () => {
 
   const {form , changed } = useForm({});
   const [saved, setSaved] = useState("not_sended");
-
+  const {setAuth} = useAuth();
+  const navigate = useNavigate();
+ 
   const loginUser = async(e) =>{
    
       e.preventDefault();
@@ -20,9 +24,13 @@ export const Login = () => {
       GraphQLProvider.setToken(token);
       GraphQLProvider.setUser(user);
 
-      //localStorage.setItem("token","token");
-      //localStorage.setItem("user", user.email);
+      localStorage.setItem("token","token");
+      localStorage.setItem("user", JSON.stringify(user));
       setSaved("login");//error
+      setAuth(data.user);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000)
       }
       catch(err){
         console.log(err);
