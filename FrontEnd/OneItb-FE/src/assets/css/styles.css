@@ -441,3 +441,22 @@ button{
     font-size: 1.4rem;
 }
 
+.alert{
+    width: 50%;
+    display: block;    
+    padding: 1rem;   
+    margin-bottom: 1rem;
+    border-radius: 3px;    
+}
+
+.alert-succes{
+    background: #5cb85c;
+    border: 1px solid #0c830c;
+    color: white;
+}
+
+.alert-danger{
+    background: #b83a3a;
+    border: 1px solid #b81e0a;
+    color: white;
+}
