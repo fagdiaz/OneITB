@@ -33,7 +33,9 @@ export const Register = () => {
       fullName: form.name + form.surname,
       email: form.email,
       password: form.password,
-      alias: form.alias
+      alias: form.alias,
+      accountId: 1,
+      userName: form.name
     }
   });
   

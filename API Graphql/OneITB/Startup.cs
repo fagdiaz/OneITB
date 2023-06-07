@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Entities.Models;
+using Services.Accounts;
 
 namespace OneItb.GraphQL
 {
@@ -53,6 +54,7 @@ namespace OneItb.GraphQL
                 .AddMutationType<Mutation>();
 
             services.AddTransient<UsersService>();
+            services.AddTransient<AccountsService>();
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
