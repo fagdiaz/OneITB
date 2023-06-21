@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "3fUnpR9V7cfrls5rpB8kXqYdlEoW+8tLmY+PyDajnPhN0Cppgqlk6/7LQokLNetSzsFo4yxQf9FcWCtZb0RJog==",
+  "dgSpecHash": "BJZRYBp5Nc77rOSPNIy2EYNut3QFMHWgS0jjZmATlRTCxNKosXT7vyloQlZ23Ze4B+og61LKjXd2jWJndNJpew==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\Services\\Services.csproj",
+  "projectFilePath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\Services\\Services.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\azure.core\\1.24.0\\azure.core.1.24.0.nupkg.sha512",
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\azure.identity\\1.6.0\\azure.identity.1.6.0.nupkg.sha512",

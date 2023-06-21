@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "eMUkqJPIwl7nRY9tPjA2T85WTBAMfpCQq3RXfcAfFUweAlc2+8AHL6AW114h/VRlxmAGoOrWl+2iAnedy5vMhw==",
+  "dgSpecHash": "e1fyaCSPMwZznuPEbFEEHUj9sB7DIweVCoPswYDI1K6AnSIN/125NB+lH7fiZVo2cQGaci7Fu5zwQNWqVh+1hw==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB\\API Graphql\\OneITB\\GraphQL.csproj",
+  "projectFilePath": "C:\\Users\\Electro-Hard\\Desktop\\ONEITB - copia\\API Graphql\\OneITB\\GraphQL.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\azure.core\\1.24.0\\azure.core.1.24.0.nupkg.sha512",
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\azure.identity\\1.6.0\\azure.identity.1.6.0.nupkg.sha512",
@@ -34,6 +34,7 @@
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\hotchocolate.utilities.introspection\\13.0.5\\hotchocolate.utilities.introspection.13.0.5.nupkg.sha512",
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\hotchocolate.validation\\13.0.5\\hotchocolate.validation.13.0.5.nupkg.sha512",
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "C:\\Users\\Electro-Hard\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\6.0.16\\microsoft.aspnetcore.authentication.jwtbearer.6.0.16.nupkg.sha512",
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\microsoft.aspnetcore.authorization\\3.1.4\\microsoft.aspnetcore.authorization.3.1.4.nupkg.sha512",
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\microsoft.aspnetcore.metadata\\3.1.4\\microsoft.aspnetcore.metadata.3.1.4.nupkg.sha512",
     "C:\\Users\\Electro-Hard\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",

@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import { Header } from './Components/layout/public/Header';
+import { Routing } from './router/Routing';
 
 
 
@@ -6,7 +8,9 @@ import { useState } from 'react'
 function App() {  
 
   return (
-   <h1>ONE ITB REACT FRONTEND</h1>
+    <div className='layout'>
+      <Routing></Routing>
+    </div>   
   )
 }
 
