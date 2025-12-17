@@ -1,0 +1,67 @@
+# Visual Studio / Rider
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.idea/
+
+# Build outputs
+**/bin/
+**/obj/
+**/Debug/
+**/Release/
+**/x64/
+**/x86/
+**/bld/
+
+# .NET tooling
+*.nuget.props
+*.nuget.targets
+*.snupkg
+*.nupkg
+.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Logs and caches
+*.log
+*.tlog
+*.cache
+*.dat
+*.db
+*.db-shm
+*.db-wal
+*.pid
+*.svclog
+.DS_Store
+Thumbs.db
+
+# Web/Node
+node_modules/
+dist/
+build/
+.next/
+.cache/
+coverage/
+.nyc_output/
+
+# Env/config secrets
+.env
+.env.*.local
+.env.local
+.env.production.local
+.env.development.local
+.env.test.local
+
+# Others
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.resharper
+*.DotSettings.user
+*.sln.iml
