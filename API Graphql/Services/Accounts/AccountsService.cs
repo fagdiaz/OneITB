@@ -1,33 +1,32 @@
-﻿using Entities.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using OneItb.Data;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using BCrypt.Net;
+using OneItb.Entities.Models;
+using OneITB.Core.Services.Interfaces;
 
 namespace Services.Accounts
 {
     public class AccountsService : IAccountService
     {
-        private OneItbContext context;
-        public AccountsService(OneItbContext oneItbContext, IConfiguration configuration)
+        private readonly IUnitOfWork _uow;
+
+        public AccountsService(IUnitOfWork uow)
         {
-            context = oneItbContext;
-            this.Configuration = configuration;
+            _uow = uow;
         }
 
-        public AccountsService(IDbContextFactory<OneItbContext> oneItbContextFactory, CancellationToken? token = null)
+        public async Task<LoginPayload> LoginAsync(LoginInput input)
         {
-            context = oneItbContextFactory.CreateDbContext();
-        }
-        public IConfiguration Configuration { get; }
+            var user = await _uow.Users.GetByEmailAsync(input.Email);
+            if (user == null || !BCrypt.Net.BCrypt.Verify(input.Password, user.PasswordHash))
+                throw new Exception("Credenciales inválidas.");
 
-        public Account GetById(int id)
+            return new LoginPayload("token_generado_aqui", user.Username, true);
+        }
+
+        public Account GetById(Guid id)
         {
-            return context.Accounts.Where(a => a.Id == id).FirstOrDefault();
+            return _uow.Accounts.GetById(id);
         }
     }
 }

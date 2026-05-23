@@ -1,23 +1,47 @@
-﻿using Entities.Enums;
-using Entities.Models;
-using OneItb.Entities.Abstracts;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using OneItb.Entities.Abstracts;
 
 namespace OneItb.Entities.Models
 {
-    public class User : EntityModel
+    public class User : EntityModel<Guid>
     {
-        public string UserName { get; set; }
-        public string FullName { get; set; }
-        public string Email { get; set; }
-        public string Phone { get; set; }
-        public string Password { get; set; }
-        public Account Account { get; set; }
-        public int? AccountId { get; set; }
-        public States State { get; set; }
-    } 
+        private string _nombre = null!;
+        private string _apellido = null!;
+        private string _rol = null!;
+
+        public string Nombre
+        {
+            get => _nombre;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("El Nombre no puede ser nulo o vacío.", nameof(value));
+                _nombre = value;
+            }
+        }
+
+        public string Apellido
+        {
+            get => _apellido;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("El Apellido no puede ser nulo o vacío.", nameof(value));
+                _apellido = value;
+            }
+        }
+
+        public string Rol
+        {
+            get => _rol;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("El Rol no puede ser nulo o vacío.", nameof(value));
+                _rol = value;
+            }
+        }
+
+        public virtual Account Account { get; set; } = null!;
+    }
 }

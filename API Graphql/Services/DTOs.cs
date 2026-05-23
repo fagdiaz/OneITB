@@ -1,41 +1,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
 using HotChocolate;
 using HotChocolate.Types;
-using Services.Users;
-using Services.Accounts;
 
-namespace OneITB.GraphQL.Mutations
+namespace OneITB.Core.Services.Interfaces
 {
-    [ExtendObjectType(OperationTypeNames.Mutation)]
-    public class Mutation
-    {
-        /// <summary>
-        /// Resolver blindado contra inyecciones y DoS para el registro de usuarios.
-        /// </summary>
-        public async Task<RegisterPayload> RegisterUserAsync(
-            RegisterInput input,
-            [Service] IUsersService usersService)
-        {
-            if (input == null) throw new ArgumentNullException(nameof(input));
-            var userDto = await usersService.RegisterAsync(input);
-            return new RegisterPayload(userDto.Id, true, "Usuario registrado exitosamente en el sistema académico.");
-        }
-
-        /// <summary>
-        /// Resolver blindado para la autenticación segura (Login).
-        /// </summary>
-        public async Task<LoginPayload> LoginAsync(
-            LoginInput input,
-            [Service] IAccountService accountService)
-        {
-            if (input == null) throw new ArgumentNullException(nameof(input));
-            var authResult = await accountService.LoginAsync(input);
-            return new LoginPayload(authResult.Token, authResult.Username, authResult.IsAuthenticated);
-        }
-    }
-
     public record RegisterInput(
         [property: GraphQLType(typeof(NonNullType<StringType>))]
         [property: StringLength(30, MinimumLength = 3, ErrorMessage = "El nombre de usuario debe tener entre 3 y 30 caracteres.")]
@@ -63,7 +32,7 @@ namespace OneITB.GraphQL.Mutations
         string Password
     );
 
-    public record RegisterPayload(Guid Id, bool Success, string Message);
+    public record UserPayload(Guid Id, bool Success, string Message);
 
     public record LoginPayload(string Token, string Username, bool IsAuthenticated);
 }

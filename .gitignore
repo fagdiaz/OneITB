@@ -1,22 +1,60 @@
+# ==========================================
+# ROBUST GITIGNORE FOR .NET & REACT PROJECTS
+# ==========================================
+
+# ------------------------------------------
+# 1. Operating System Files
+# ------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ------------------------------------------
+# 2. IDEs and Editors
+# ------------------------------------------
 # Visual Studio / Rider
 .vs/
-.vscode/
+.idea/
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
-.idea/
+*.userprefs
+mono_crash.*
+*.resharper
+*.DotSettings.user
+*.sln.iml
 
-# Build outputs
-**/bin/
-**/obj/
-**/Debug/
-**/Release/
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local workspace toolings
+.antigravitycli/
+
+# ------------------------------------------
+# 3. .NET / C# Specifics
+# ------------------------------------------
+# Build Outputs
+**/[Bb]in/
+**/[Oo]bj/
+**/[Dd]ebug/
+**/[Rr]elease/
 **/x64/
 **/x86/
 **/bld/
+[Aa]rtifacts/
+[Pp]ublish/
 
-# .NET tooling
+# MSBuild / Package Restore
 *.nuget.props
 *.nuget.targets
 *.snupkg
@@ -25,9 +63,19 @@
 packages/
 project.lock.json
 project.fragment.lock.json
-artifacts/
 
-# Logs and caches
+# User Secrets / Keys
+**/Properties/serviceDependencies.json
+secrets.json
+*.pfx
+*.snk
+*.suo
+
+# Debug and Diagnostics
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
 *.log
 *.tlog
 *.cache
@@ -37,31 +85,64 @@ artifacts/
 *.db-wal
 *.pid
 *.svclog
-.DS_Store
-Thumbs.db
 
-# Web/Node
-node_modules/
-dist/
-build/
-.next/
-.cache/
-coverage/
+# EF Core / Local Database
+*.mdf
+*.ldf
+*.sdf
+
+# Test Results
+TestResults/
+*.trx
+*.coverage
+*.coverlet
+
+# ------------------------------------------
+# 4. Node / React / Frontend Specifics
+# ------------------------------------------
+# Dependencies
+**/node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+**/coverage/
 .nyc_output/
 
-# Env/config secrets
+# Production / Build Outputs
+**/dist/
+**/build/
+.next/
+out/
+.svelte-kit/
+.nuxt/
+
+# Frontend Package Manager specific files
+.npm/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.yarn-integrity
+.yarn/clean
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnpm-debug.log
+
+# Frontend Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------------
+# 5. Environment Secrets and Local Configurations
+# ------------------------------------------
 .env
-.env.*.local
 .env.local
-.env.production.local
 .env.development.local
 .env.test.local
-
-# Others
-*.pdb
-*.mdb
-*.opendb
-*.VC.db
-*.resharper
-*.DotSettings.user
-*.sln.iml
+.env.production.local
+.env.staging.local
+*.env.*

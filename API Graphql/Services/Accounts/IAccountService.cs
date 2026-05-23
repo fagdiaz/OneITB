@@ -1,8 +1,12 @@
-﻿using Entities.Models;
-namespace Services.Accounts
+using System;
+using System.Threading.Tasks;
+using OneItb.Entities.Models;
+
+namespace OneITB.Core.Services.Interfaces
 {
     public interface IAccountService
     {
-        public Account GetById(int id);
+        Task<LoginPayload> LoginAsync(LoginInput input);
+        Account GetById(Guid id);
     }
 }

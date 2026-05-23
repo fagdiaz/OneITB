@@ -1,88 +1,68 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using OneItb.Data;
-using OneItb.Entities.Models;
 using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
+using BCrypt.Net;
+using OneItb.Entities.Models;
+using OneITB.Core.Services.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace Services.Users
 {
     public class UsersService : IUsersService
     {
-        private OneItbContext context;
-        public UsersService(OneItbContext oneItbContext, IConfiguration configuration) 
+        private readonly IUnitOfWork _uow;
+
+        public UsersService(IUnitOfWork uow)
         {
-            context = oneItbContext;
-            this.Configuration = configuration;
+            _uow = uow;
         }
 
-        public UsersService(IDbContextFactory<OneItbContext> oneItbContextFactory, CancellationToken? token = null) 
+        public async Task<UserPayload> RegisterAsync(RegisterInput input)
         {
-            context = oneItbContextFactory.CreateDbContext();
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
+            var user = new User 
+            { 
+                Nombre = input.Username, 
+                Apellido = string.Empty, 
+                Rol = "User" 
+            };
+
+            await _uow.Users.AddAsync(user);
+            await _uow.CompleteAsync();
+
+            return new UserPayload(user.Id, true, "Usuario registrado exitosamente en el sistema académico.");
         }
-        public IConfiguration Configuration { get; }
+
         public async Task<User> CreateAsync(User user)
         {
-            try
-            {
-                await context.Users.AddAsync(user);
-                await context.SaveChangesAsync();
-                return user;
-            } catch (Exception ex)
-            {
-                return null;
-            }
+            await _uow.Users.AddAsync(user);
+            await _uow.CompleteAsync();
+            return user;
         }
 
         public IQueryable<User> GetAllAsync()
         {
-            return context.Users.AsQueryable();
-        }        
+            return _uow.Users.GetAll();
+        }
 
         public User GetByEmail(string email)
         {
-            return context.Users.Where(u => u.Email == email).FirstOrDefault();
-        }
-
-        public User GetById(int id)
-        {
-            return context.Users.Where(u => u.Id == id).FirstOrDefault();
+            return _uow.Users.GetByEmail(email);
         }
 
         public string GenerateToken(User user, IConfiguration configuration)
         {
-            if (user == null)
-            {
-                return null;
-            }
-
-            var claims = new[] {
-                new Claim("email", user.Email.ToString()),
-                new Claim("userId", user.Id.ToString()),
-                new Claim("accountId", user.AccountId.ToString()),
-                new Claim("userFullName", user.FullName)
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(configuration["Jwt:Issuer"],
-              configuration["Jwt:Issuer"],
-              claims,
-              signingCredentials: creds);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return "token_placeholder";
         }
 
-        public User GetByEmailAndPassword(string email, string password)
+        public User GetById(Guid id)
         {
-            return context.Users.Where(u => u.Email == email && u.Password == password).FirstOrDefault();
+            return _uow.Users.GetById(id);
+        }
+
+        public User GetById(int id)
+        {
+            return null!;
         }
     }
 }

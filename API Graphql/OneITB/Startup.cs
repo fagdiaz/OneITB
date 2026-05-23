@@ -1,4 +1,6 @@
 using GraphQL.GraphQL;
+using OneITB.GraphQL.Mutations;
+using OneITB.Core.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +16,6 @@ using HotChocolate.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Entities.Models;
 using Services.Accounts;
 
 namespace OneItb.GraphQL
@@ -53,8 +54,8 @@ namespace OneItb.GraphQL
                 .AddQueryType<Query>()
                 .AddMutationType<Mutation>();
 
-            services.AddTransient<UsersService>();
-            services.AddTransient<AccountsService>();
+            services.AddScoped<IUsersService, UsersService>();
+            services.AddScoped<IAccountService, AccountsService>();
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
