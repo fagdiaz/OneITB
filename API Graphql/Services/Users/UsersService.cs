@@ -19,12 +19,24 @@ namespace Services.Users
 
         public async Task<UserPayload> RegisterAsync(RegisterInput input)
         {
+            var userId = Guid.NewGuid();
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
+            
+            var account = new Account
+            {
+                Id = userId,
+                Email = input.Email,
+                PasswordHash = passwordHash,
+                FechaCreacion = DateTime.UtcNow
+            };
+
             var user = new User 
             { 
+                Id = userId,
                 Nombre = input.Username, 
                 Apellido = string.Empty, 
-                Rol = "User" 
+                Rol = "User",
+                Account = account
             };
 
             await _uow.Users.AddAsync(user);

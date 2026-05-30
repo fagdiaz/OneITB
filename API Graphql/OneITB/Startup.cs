@@ -43,9 +43,8 @@ namespace OneItb.GraphQL
                 });
             });
 
-            //services.AddScoped<OneItbContext>();
-
             services.AddPooledDbContextFactory<OneItbContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), b => b.MigrationsAssembly("Data")));
+            services.AddScoped<OneItbContext>(p => p.GetRequiredService<IDbContextFactory<OneItbContext>>().CreateDbContext());
 
             services.AddGraphQLServer()
                 .RegisterDbContext<OneItbContext>(DbContextKind.Pooled)
@@ -54,6 +53,7 @@ namespace OneItb.GraphQL
                 .AddQueryType<Query>()
                 .AddMutationType<Mutation>();
 
+            services.AddScoped<IUnitOfWork, Services.Repositories.UnitOfWork>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
 

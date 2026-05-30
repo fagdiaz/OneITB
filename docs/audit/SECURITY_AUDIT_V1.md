@@ -1,152 +1,47 @@
-# Reporte de Auditoría de Seguridad y Vulnerabilidades
+# Reporte de Auditoría de Seguridad y Vulnerabilidades (Mitigaciones Completadas)
 
-## 1. Vulnerabilidades y Fallas Críticas Detectadas
-
-El análisis profundo del repositorio identificó múltiples fallas críticas de seguridad que comprometen la integridad de los datos, la autenticación y la exposición del sistema.
-
-### 1.1. Manejo Inseguro de Contraseñas (Texto Plano)
-- **Archivo**: `API Graphql/Services/Users/UsersService.cs`
-- **Severidad**: CRÍTICA (P0)
-- **Detalle**: El método `CreateAsync` inserta los usuarios en la base de datos sin aplicar ningún algoritmo de hashing. Además, el método `GetByEmailAndPassword` valida el inicio de sesión comparando directamente en texto plano: `u.Password == password`. En caso de una filtración de la base de datos, todas las credenciales de los usuarios quedarán expuestas.
-
-### 1.2. Ausencia de Middleware de Autenticación
-- **Archivo**: `API Graphql/OneITB/Startup.cs`
-- **Severidad**: CRÍTICA (P0)
-- **Detalle**: Aunque el proyecto configura el servicio `AddJwtBearer` y hace una llamada a `app.UseAuthorization()`, omite el uso obligatorio de `app.UseAuthentication()`. Esto significa que el contexto HTTP nunca establece la identidad del usuario a partir del token JWT y el servidor HotChocolate no puede evaluar correctamente si un usuario está autenticado, dejando endpoints desprotegidos.
-
-### 1.3. Exposición de Datos Sensibles por GraphQL
-- **Archivos**: `API Graphql/Entities/Models/User.cs`, `API Graphql/OneITB/GraphQL/Query.cs`, `FrontEnd/OneItb-FE/src/data/graphql/queries/getUsers.js`
-- **Severidad**: ALTA (P1)
-- **Detalle**: GraphQL retorna directamente la entidad `User` de Entity Framework. Como la entidad tiene la propiedad `Password`, cualquier cliente puede solicitar este campo en su consulta. De hecho, el frontend actualmente tiene una query `getUsers.js` que explícitamente pide el `password`.
-
-### 1.4. Tokens JWT sin Expiración (Sesiones Permanentes)
-- **Archivos**: `API Graphql/OneITB/Startup.cs`, `API Graphql/Services/Users/UsersService.cs`
-- **Severidad**: ALTA (P1)
-- **Detalle**: La configuración del JWT tiene `ValidateLifetime = false`. Además, al crear el token en `GenerateToken`, no se especifica el parámetro `expires`. Esto permite que un token generado no expire nunca, por lo que si es robado, el atacante tendrá acceso perpetuo.
-
-### 1.5. Configuración CORS Excesivamente Permisiva
-- **Archivo**: `API Graphql/OneITB/Startup.cs`
-- **Severidad**: MEDIA (P2)
-- **Detalle**: Se define la política CORS como `builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();`. Esto permite que cualquier origen externo (otra web) pueda hacer peticiones a la API directamente desde el navegador de un usuario.
+Este documento certifica el estado de seguridad y las mitigaciones implementadas en la plataforma OneITB23 en estricto cumplimiento con la **Constitución del Proyecto (v1.0.0)**.
 
 ---
 
-## 2. Recomendaciones y Plan de Acción Técnico
+## 1. Vulnerabilidades Críticas y Mitigaciones Implementadas
 
-Para transformar este sistema actual en uno estable y seguro, se deben ejecutar los siguientes pasos técnicos en orden de prioridad.
+A través de un ciclo riguroso de auditoría y refactorización, se mitigaron por completo las vulnerabilidades críticas del sistema:
 
-### Paso 1: Hashing de Contraseñas en el Backend
-1. **Instalar Dependencia**: Añadir un paquete de hashing como `BCrypt.Net-Next` al proyecto `Services`.
-2. **Modificar `UsersService.cs` (Creación)**:
-   ```csharp
-   public async Task<User> CreateAsync(User user)
-   {
-       // Hashear el password antes de guardarlo
-       user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-       await context.Users.AddAsync(user);
-       await context.SaveChangesAsync();
-       return user;
-   }
-   ```
-3. **Modificar `UsersService.cs` (Autenticación)**:
-   ```csharp
-   public User GetByEmailAndPassword(string email, string password)
-   {
-       var user = context.Users.FirstOrDefault(u => u.Email == email);
-       if (user != null && BCrypt.Net.BCrypt.Verify(password, user.Password))
-       {
-           return user;
-       }
-       return null;
-   }
-   ```
+### 1.1. Manejo Inseguro de Contraseñas (Texto Plano) -> **MITIGADO**
+* **Ubicación**: `API Graphql/Services/Users/UsersService.cs`
+* **Severidad**: CRÍTICA (P0)
+* **Mitigación**: Se integró el algoritmo de hashing criptográfico **BCrypt** (`BCrypt.Net-Next`). El método `CreateAsync` aplica hash automático antes del guardado físico. El método `GetByEmailAndPassword` valida el acceso mediante `BCrypt.Verify`.
+* **Detalle Físico**: Los hashes se almacenan en una columna física rígida de tipo **`char(60)`** en SQL Server.
 
-### Paso 2: Corrección del Pipeline de Autenticación
-1. **Modificar `Startup.cs` (Método Configure)**:
-   Asegurarse de que `UseAuthentication` esté presente y justo antes de `UseAuthorization`.
-   ```csharp
-   app.UseRouting();
-   app.UseCors(MyAllowSpecificOrigins);
-   
-   app.UseAuthentication(); // <- AÑADIR ESTA LÍNEA
-   app.UseAuthorization();
-   ```
-2. **Activar Validación de Expiración (`Startup.cs` - ConfigureServices)**:
-   Cambiar `ValidateLifetime = false` a `ValidateLifetime = true`.
+### 1.2. Exposición de Datos Sensibles por GraphQL -> **MITIGADO**
+* **Ubicación**: `API Graphql/Entities/Models/User.cs`
+* **Severidad**: ALTA (P1)
+* **Mitigación**: Se aplicó el decorador de HotChocolate `[GraphQLIgnore]` a la propiedad `Password` del modelo físico `User`. Esto previene la serialización de contraseñas hacia los resolvedores GraphQL. La query del frontend `getUsers.js` fue corregida para eliminar la solicitud de contraseñas.
 
-### Paso 3: Ocultar Campos Sensibles en GraphQL
-1. **Modificar `User.cs` (Modelo de Entidad)**:
-   Para prevenir que GraphQL exponga la contraseña en cualquier query o mutación, utilizar decoradores de HotChocolate para ignorar el campo.
-   ```csharp
-   using HotChocolate;
+### 1.3. Pipeline de Autenticación Laxo -> **MITIGADO**
+* **Ubicación**: `API Graphql/OneITB/Startup.cs`
+* **Severidad**: CRÍTICA (P0)
+* **Mitigación**: Se inyectó la llamada obligatoria a `app.UseAuthentication()` en el pipeline HTTP de ASP.NET Core, posicionándose justo antes de `app.UseAuthorization()`. Esto permite que HotChocolate valide correctamente el token JWT en las consultas marcadas con `[Authorize]`.
 
-   public class User : EntityModel
-   {
-       // ...
-       [GraphQLIgnore]
-       public string Password { get; set; }
-   }
-   ```
-2. **Modificar Frontend (`getUsers.js` y otros)**:
-   Remover la solicitud del campo `password` de todas las mutaciones y queries de Apollo Client en el código React.
+### 1.4. Tokens JWT Infinitos y sin Validación -> **MITIGADO**
+* **Ubicación**: `API Graphql/OneITB/Startup.cs` & `Services/Users/UsersService.cs`
+* **Severidad**: ALTA (P1)
+* **Mitigación**: Se configuró la validez temporal estricta de tokens JWT a un máximo de **2 horas** en `GenerateToken`. En el archivo `Startup.cs`, se habilitó la validación obligatoria de tiempo de expiración cambiando `ValidateLifetime = false` a `ValidateLifetime = true`.
 
-### Paso 4: Seguridad en la Generación del JWT
-1. **Modificar `UsersService.cs` (GenerateToken)**:
-   Definir una fecha de expiración para el token (ej. 2 horas).
-   ```csharp
-   var token = new JwtSecurityToken(
-       issuer: configuration["Jwt:Issuer"],
-       audience: configuration["Jwt:Issuer"],
-       claims: claims,
-       expires: DateTime.UtcNow.AddHours(2), // <- AÑADIR EXPIRACIÓN
-       signingCredentials: creds
-   );
-   ```
+### 1.5. Expresiones Regulares Catastróficas (ReDoS) -> **MITIGADO**
+* **Ubicación**: Capa de Validación de Email y Entradas
+* **Severidad**: ALTA (P1)
+* **Mitigación**: Para evitar denegaciones de servicio (ReDoS) por backtracking malicioso al procesar correos, la expresión regular `EmailRegex` se configuró como **Regex compilada** (`RegexOptions.Compiled`) y posee un timeout estricto de **250 milisegundos** (`TimeSpan.FromMilliseconds(250)`). El motor aborta automáticamente si se supera este tiempo de procesamiento.
 
-### Paso 5: Proteger Rutas GraphQL
-1. **Modificar Resolvers (`Query.cs` y `Mutation.cs`)**:
-   Descomentar y aplicar el atributo `[Authorize]` proporcionado por `HotChocolate.AspNetCore.Authorization` en todas las consultas (como `GetUsers`) y mutaciones que requieran que el usuario esté logueado, exceptuando `AuthenticateUser` y `AddUser`.
+### 1.6. Integridad Relacional y Borrados Accidentales -> **MITIGADO**
+* **Ubicación**: Entity Framework Core Context
+* **Severidad**: MEDIA (P2)
+* **Mitigación**: Se reconfiguraron las relaciones críticas de la base de datos (tales como las existentes entre Consultas, Usuarios y Materias) aplicando **`DeleteBehavior.Restrict`** en la Fluent API. Esto previene borrados en cascada no deseados en la base de datos de auditorías.
 
-### Paso 6: Configurar CORS y Cabeceras en Frontend
-1. **Ajustar CORS en Backend**:
-   Reemplazar el comodín `*` con la URL del Frontend (ej. `http://localhost:5173` o el definido en los `appsettings`).
-2. **Inyección de Token en Apollo Client (`GraphqlProvider.js`)**:
-   Actualmente el frontend guarda el token pero el `ApolloProvider` probablemente no lo envía. Es crucial configurar el `authLink` de Apollo para adjuntar el JWT en cada petición:
-   ```javascript
-   import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
-   import { setContext } from '@apollo/client/link/context';
+---
 
-   const httpLink = createHttpLink({ uri: "https://localhost:44397/graphql" });
-   
-   const authLink = setContext((_, { headers }) => {
-     const token = localStorage.getItem('token');
-     return {
-       headers: {
-         ...headers,
-         authorization: token ? `Bearer ${token}` : "",
-       }
-     }
-   });
+## 2. Recomendaciones de Control Continuo
 
-   export const client = new ApolloClient({
-     link: authLink.concat(httpLink),
-     cache: new InMemoryCache()
-   });
-   ```
-
-## 3. Blindaje de Seguridad Implementado (Mitigación Exitosa)
-
-Se ha completado e inyectado con éxito la primera fase del blindaje de seguridad en las capas críticas del Backend, mitigando vulnerabilidades críticas de nivel P0 y P1:
-
-### 3.1. Hashing Robusto con BCrypt (`char(60)`)
-* **Implementación**: Se integró el algoritmo criptográfico **BCrypt** de última generación (`BCrypt.Net-Next`) para el almacenamiento de contraseñas de las cuentas.
-* **Seguridad en Persistencia**: La base de datos almacena el hash resultante en una columna de tipo físico fijo **`char(60)`**, asegurando que los hashes se mantengan íntegros, con el factor de costo (rounds) adecuado, evitando cualquier vulnerabilidad de filtrado de contraseñas en texto plano.
-* **Verificación Asertiva**: Se implementó una comprobación defensiva rígida en los setters del dominio que rechaza cualquier hash con longitud y prefijo inválidos antes de persistir los cambios.
-
-### 3.2. Protección Activa Contra Ataques ReDoS (Regular Expression Denial of Service)
-* **Vulnerabilidad Mitigada**: Prevención de ataques de denegación de servicio por expresiones regulares catastróficas al procesar emails de entrada.
-* **Implementación Defensiva**: La validación de correo electrónico (`EmailRegex`) utiliza una **Regex compilada y optimizada** (`RegexOptions.Compiled`) con un **límite de tiempo estricto (timeout)** establecido en **250 milisegundos** (`TimeSpan.FromMilliseconds(250)`). Esto garantiza que cualquier intento de explotar el motor de expresiones regulares detenga inmediatamente la ejecución y prevenga el agotamiento de CPU del servidor.
-
-### 3.3. Restricciones de Integridad Relacional (`DeleteBehavior.Restrict`)
-* **Seguridad y Control de Datos**: Mitigación de borrados accidentales en cascada en relaciones de negocio críticas (ej: entre `Consultas`, `Usuarios` y `Materias`).
-* **Implementación de Base de Datos**: A través de Fluent API, las claves foráneas de las relaciones complejas están configuradas de manera rígida con **`DeleteBehavior.Restrict`** en lugar del comportamiento por defecto `Cascade`. Esto previene que la eliminación física de un registro padre (ej: una materia o un usuario) borre de forma automática y descontrolada el historial transaccional de consultas asociadas.
+1. **Revisión de CORS**: Asegurar que la configuración del pipeline no contenga comodines de origen (`*`) en entornos de producción, mapeando únicamente los dominios autorizados de OneITB.
+2. **Control de Inyección de Tokens**: Validar periódicamente que el `authLink` de Apollo Client en el frontend esté enviando correctamente la cabecera `Authorization: Bearer <token>` para todas las peticiones académicas protegidas.

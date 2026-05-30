@@ -5,6 +5,7 @@ using HotChocolate;
 using HotChocolate.Types;
 using Services.Users;
 using Services.Accounts;
+using OneITB.Core.Services.Interfaces;
 
 namespace OneITB.GraphQL.Mutations
 {
@@ -14,13 +15,13 @@ namespace OneITB.GraphQL.Mutations
         /// <summary>
         /// Resolver blindado contra inyecciones y DoS para el registro de usuarios.
         /// </summary>
-        public async Task<RegisterPayload> RegisterUserAsync(
+        public async Task<UserPayload> RegisterUserAsync(
             RegisterInput input,
             [Service] IUsersService usersService)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
             var userDto = await usersService.RegisterAsync(input);
-            return new RegisterPayload(userDto.Id, true, "Usuario registrado exitosamente en el sistema académico.");
+            return userDto;
         }
 
         /// <summary>
@@ -32,38 +33,7 @@ namespace OneITB.GraphQL.Mutations
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
             var authResult = await accountService.LoginAsync(input);
-            return new LoginPayload(authResult.Token, authResult.Username, authResult.IsAuthenticated);
+            return authResult;
         }
     }
-
-    public record RegisterInput(
-        [property: GraphQLType(typeof(NonNullType<StringType>))]
-        [property: StringLength(30, MinimumLength = 3, ErrorMessage = "El nombre de usuario debe tener entre 3 y 30 caracteres.")]
-        [property: RegularExpression(@"^[a-zA-Z0-9_\-\.]+$", ErrorMessage = "El formato del nombre de usuario no es válido.")]
-        string Username,
-
-        [property: GraphQLType(typeof(NonNullType<StringType>))]
-        [property: StringLength(100, ErrorMessage = "El email no puede superar los 100 caracteres.")]
-        [property: EmailAddress(ErrorMessage = "El formato del correo electrónico no es válido.")]
-        string Email,
-
-        [property: GraphQLType(typeof(NonNullType<StringType>))]
-        [property: StringLength(64, MinimumLength = 8, ErrorMessage = "La contraseña debe tener entre 8 y 64 caracteres.")]
-        string Password
-    );
-
-    public record LoginInput(
-        [property: GraphQLType(typeof(NonNullType<StringType>))]
-        [property: StringLength(100, ErrorMessage = "El email supera el límite permitido.")]
-        [property: EmailAddress(ErrorMessage = "Formato inválido.")]
-        string Email,
-
-        [property: GraphQLType(typeof(NonNullType<StringType>))]
-        [property: StringLength(64, ErrorMessage = "La contraseña supera el límite permitido.")]
-        string Password
-    );
-
-    public record RegisterPayload(Guid Id, bool Success, string Message);
-
-    public record LoginPayload(string Token, string Username, bool IsAuthenticated);
 }

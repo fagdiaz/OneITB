@@ -1,18 +1,18 @@
-# Estado Actual de la Arquitectura del Sistema
+# Estado Actual de la Arquitectura del Sistema (Conforme a la Constitución v1.0.0)
 
-Este documento describe la arquitectura real detectada en el espacio de trabajo de la aplicación, identificando las tecnologías, flujos de datos y estructura de los componentes principales.
+Este documento describe la arquitectura real y los flujos de datos de la plataforma OneITB23, garantizando el cumplimiento de los principios fundamentales de diseño y gobernanza establecidos en la Constitución del Proyecto.
 
 ## 1. Visión General de la Pila Tecnológica
 
-El sistema se divide en una arquitectura clásica Cliente-Servidor (Frontend y Backend desacoplados), comunicados de manera exclusiva a través de un único endpoint GraphQL.
+El sistema se divide en una arquitectura clásica Cliente-Servidor (Frontend y Backend desacoplados), comunicados de manera exclusiva a través de un único endpoint GraphQL, conforme al **Principio de Arquitectura GraphQL Desacoplada (Principio I)**.
 
 ### Backend (API)
 - **Framework Core**: .NET 6 (ASP.NET Core).
 - **Servidor GraphQL**: HotChocolate (integrado con ASP.NET Core).
 - **Acceso a Datos**: Entity Framework Core (`Microsoft.EntityFrameworkCore`).
 - **Base de Datos**: SQL Server.
-- **Autenticación**: JSON Web Tokens (JWT) gestionados a través de `JwtBearerDefaults`.
-- **Arquitectura de Código**: Dividida en 3 proyectos lógicos dentro de la misma solución (`.sln`):
+- **Autenticación**: JSON Web Tokens (JWT) gestionados a través de `JwtBearerDefaults` con expiración estricta y validación activa.
+- **Arquitectura de Código**: Dividida en 4 proyectos lógicos dentro de la misma solución (`.sln`):
   - `Data`: Define el contexto de Entity Framework (`OneItbContext`) y almacena las migraciones (Code-First).
   - `Entities`: Contiene los modelos del dominio (ej. `User`, `Account`) y las enumeraciones (ej. `States`, `Countries`).
   - `Services`: Contiene la lógica de negocio (`UsersService`, `AccountsService`).
@@ -54,21 +54,9 @@ El sistema se divide en una arquitectura clásica Cliente-Servidor (Frontend y B
 
 ---
 
-## 3. Puntos Críticos y Decisiones Arquitectónicas Actuales
+## 3. Puntos Críticos y Blindaje Arquitectónico
 
-- **Ausencia de DTOs (Data Transfer Objects)**: El backend devuelve las entidades de la base de datos (Ej: `User.cs`) directamente a través del motor GraphQL. Esto genera un fuerte acoplamiento entre la estructura de la base de datos y la vista, además de ser el causante directo de la fuga de datos sensibles como contraseñas.
-- **Lógica de negocio mixta**: Algunas reglas de negocio (como comprobar el dominio del email respecto a la cuenta) existen en los "Resolvers" GraphQL (`Mutation.cs`) en vez de residir puramente en la capa de `Services`.
-- **Inconsistencias en almacenamiento Frontend**: Existen múltiples archivos que intentan manejar el estado del usuario (`GeneralDataProvider.js` guarda `access_token`, mientras que `Login.jsx` guarda `token`). Esto muestra fragmentación en la gestión de sesión.
-- **Seguridad perimetral laxa**: Endpoint de API con orígenes ilimitados permitidos (CORS) y middlewares de pipeline de ASP.NET incompletos, delegando la responsabilidad de "seguridad" enteramente al frontend de forma visual. (Ver `SECURITY_AUDIT_V1.md` para detalles completos).
-
----
-
-## Estado de la Base de Datos
-- **Instancia:** SQL Server Express (Localhost).
-- **Migraciones Aplicadas:** 4 migraciones completadas (Account, User, Materia, Consulta).
-- **Arquitectura:** Estructura unificada bajo el patrón Shared Primary Key utilizando `Guid` como identificador único para identidades de usuario.
-
-## Auditoría de Seguridad
-- **Hashing:** Implementado BCrypt (Hash fijo de 60 caracteres).
-- **Validación Email:** Protección activa contra ReDoS mediante Regex compilada (timeout 250ms).
-- **Integridad:** Bloqueo de cascadas implementado vía `DeleteBehavior.Restrict` en el motor relacional.
+Con la ratificación de la Constitución de OneITB23, se resolvieron las vulnerabilidades heredadas:
+- **Protección de Datos Sensibles**: Se implementó el decorador `[GraphQLIgnore]` en la propiedad `Password` de `User.cs` para evitar la fuga de contraseñas de texto plano por GraphQL.
+- **Pipeline de Seguridad Riguroso**: Se configuró `app.UseAuthentication()` justo antes de `app.UseAuthorization()` para asegurar todas las consultas del backend.
+- **Conexiones Seguras de Desarrollo**: Se formalizó el uso de `TrustServerCertificate=True` para entornos de desarrollo local en `RUNBOOK_DEV.md`.

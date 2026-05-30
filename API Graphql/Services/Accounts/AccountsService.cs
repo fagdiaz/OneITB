@@ -18,10 +18,10 @@ namespace Services.Accounts
         public async Task<LoginPayload> LoginAsync(LoginInput input)
         {
             var user = await _uow.Users.GetByEmailAsync(input.Email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(input.Password, user.PasswordHash))
+            if (user == null || !BCrypt.Net.BCrypt.Verify(input.Password, user.Account.PasswordHash))
                 throw new Exception("Credenciales inválidas.");
 
-            return new LoginPayload("token_generado_aqui", user.Username, true);
+            return new LoginPayload("token_generado_aqui", user.Nombre, true);
         }
 
         public Account GetById(Guid id)
