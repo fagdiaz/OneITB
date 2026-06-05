@@ -1,6 +1,6 @@
 <!--
 SYNC IMPACT REPORT
-- Version change: None -> 1.0.0
+- Version change: 1.0.0 -> 1.1.0
 - List of modified principles:
   * [PRINCIPLE_1_NAME] -> I. Decoupled GraphQL Architecture
   * [PRINCIPLE_2_NAME] -> II. Strict Security & Password Hashing
@@ -47,11 +47,13 @@ JWT access tokens MUST have a strict expiration time (e.g. 2 hours) and the pipe
 - **Local Environment**: Local development SQL Server instances must configure `TrustServerCertificate=True` in `appsettings.Development.json`.
 - **Database Migrations**: Database schema updates must be managed using Code-First migrations with the command: `dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"`.
 - **Smoke Testing**: Any PR or deployment must pass the 35 pre-defined smoke tests outlined in the development runbook (`docs/audit/RUNBOOK_DEV.md`).
+- **Roadmap & Logs**: Every completed implementation task must recalculate and update module percentages in `docs/project_docs/ROADMAP.md` and append chronological reverse summaries to `docs/audit/DEVELOPMENT_LOG.md`.
 
 ## Governance
 
 - The OneITB23 Constitution is the supreme design document. Any modifications to structural guidelines require a version bump.
 - PR reviews must verify compliance with this constitution. No code violating security principles (like text-plain password handling or wildcards CORS) will be merged.
+- Git auto-commits via speckit extensions MUST remain disabled to keep the commit tree clean and readable, relying instead on manual, feature-scoped commits.
 - Developers should refer to `docs/audit/RUNBOOK_DEV.md` for local setup and testing procedures.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-30 | **Last Amended**: 2026-05-30
+**Version**: 1.1.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-06-05
