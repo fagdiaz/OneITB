@@ -211,9 +211,32 @@ Check if `.specify/extensions.yml` exists in the project root.
 
 Report final status with summary of completed work.
 
+**REQUIRED (Roadmap Percentage Calculation)**:
+- Read the roadmap document `docs/project_docs/ROADMAP.md`.
+- Read the task lists inside the modules in `docs/project_docs/ROADMAP.md`.
+- For each task in each module (represented by checklists like `- [ ]` and `- [x]`):
+  - Count the total number of tasks in that module.
+  - Count the number of completed tasks (marked with `[x]` or `[X]`).
+  - Calculate the percentage of completion for that module: `(Completed / Total) * 100`.
+  - Update the module's line (e.g. `* 🟡 **Módulo 2: Perfiles de Usuario**: 50%` with the calculated percentage, and adjust the status icon (🔴 0%, 🟡 1% - 99%, 🟢 100%)).
+- Calculate the global completion percentage: `(Total Completed Tasks Across All Modules / Total Tasks Across All Modules) * 100` rounded to the nearest integer.
+- Update the header `## 1. Estado Global de Avance: X%` with this calculated percentage.
+- Overwrite `docs/project_docs/ROADMAP.md` with these updated values.
+
+**REQUIRED (Development Log Entry)**:
+- Write or append a brief summary of the completed implementation to `docs/audit/DEVELOPMENT_LOG.md` (create this file if it does not exist yet). Always place the new entry at the very top of the file (under the header) to maintain a reverse-chronological order. The entry must include:
+  - The date of completion (YYYY-MM-DD)
+  - The name of the feature / active branch
+  - A brief paragraph summarizing the implementation goal and outcome
+  - A bulleted list of key files created or modified
+- Also link this log entry to the updated status in `docs/audit/DOCUMENTATION_STATUS.md` if applicable.
+
 ## Done When
 
 - [ ] All tasks in tasks.md completed and marked `[X]`
 - [ ] Implementation validated against specification, plan, and test coverage
+- [ ] `docs/project_docs/ROADMAP.md` updated with the recalculated completion percentages
+- [ ] `docs/audit/DEVELOPMENT_LOG.md` updated with the new implementation log entry
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with summary of completed work
+

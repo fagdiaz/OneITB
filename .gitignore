@@ -153,5 +153,17 @@ pnpm-debug.log*
 *.pdf
 *.docx
 Circuito SPECKIT.txt
+GUIA_SPECKIT.md
+docs/audit/DEVELOPMENT_LOG.md
+OneITB doc TEAMS/
+
+
+
+
+# ------------------------------------------
+# 7. Local Human Reasoning Kernels (Gemini Web)
+# ------------------------------------------
+core-web/
+
 
 
