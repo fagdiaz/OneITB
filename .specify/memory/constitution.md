@@ -53,7 +53,8 @@ JWT access tokens MUST have a strict expiration time (e.g. 2 hours) and the pipe
 
 - The OneITB23 Constitution is the supreme design document. Any modifications to structural guidelines require a version bump.
 - PR reviews must verify compliance with this constitution. No code violating security principles (like text-plain password handling or wildcards CORS) will be merged.
+- **Git Branch Protection (STRICT)**: The `main` (and `master`) branch MUST NEVER be committed to directly, and the agent must never propose or suggest direct merges or checkouts to these branches. All integrations must go through intermediary development branches.
 - Git auto-commits via speckit extensions MUST remain disabled to keep the commit tree clean and readable, relying instead on manual, feature-scoped commits.
 - Developers should refer to `docs/audit/RUNBOOK_DEV.md` for local setup and testing procedures.
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-06-05
+**Version**: 1.2.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-06-05
