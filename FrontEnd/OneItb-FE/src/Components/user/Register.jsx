@@ -11,33 +11,86 @@ export const Register = () => {
   const {loading, error} = useQuery(GET_USERS);
   const {form, changed} = useForm({});
   const [saved, setSaved ] = useState("not_sended");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const saveUser = async (e) => {
     e.preventDefault();
+
+    if (!form.name) {
+      setErrorMessage("El campo Nombre es obligatorio.");
+      setSaved("validation_error");
+      return;
+    }
+
+    if (!form.surname) {
+      setErrorMessage("El campo Apellidos es obligatorio.");
+      setSaved("validation_error");
+      return;
+    }
+
+    if (!form.alias) {
+      setErrorMessage("El campo Alias es obligatorio.");
+      setSaved("validation_error");
+      return;
+    }
+
+    if (!form.email) {
+      setErrorMessage("El campo Correo electrónico es obligatorio.");
+      setSaved("validation_error");
+      return;
+    }
+
+    if (!form.password) {
+      setErrorMessage("El campo Contraseña es obligatorio.");
+      setSaved("validation_error");
+      return;
+    }
+
+    if (form.alias.length < 3) {
+      setErrorMessage("El alias debe tener al menos 3 caracteres.");
+      setSaved("validation_error");
+      return;
+    }
+
+    const emailPattern = /^[a-zA-Z0-9_\-\.]+@itbeltran\.com\.ar$/;
+    if (!emailPattern.test(form.email)) {
+      setErrorMessage("El correo electrónico debe pertenecer al dominio oficial @itbeltran.com.ar.");
+      setSaved("validation_error");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      setErrorMessage("La contraseña debe tener al menos 8 caracteres.");
+      setSaved("validation_error");
+      return;
+    }
+
+    const variables = {
+      input: {
+        username: form.alias,
+        nombre: form.name,
+        apellidos: form.surname,
+        email: form.email,
+        password: form.password,
+        carrerasInscritas: []
+      }
+    };
+
+    console.log("Datos a enviar a GraphQL:", variables);
+
     try{     
-      const { data } = await addUser();
+      const { data } = await addUser({ variables });
       setSaved("saved");
       console.log(data);
     }
     catch(error){
       console.log(error)
       setSaved("error");
-      alert(error.message);
+      setErrorMessage(error.message);
     }
-
-    
   }
 
-  const [addUser, {loading : addUserLoading}] = useMutation(ADD_USER, {
-    variables:{
-      fullName: form.name + form.surname,
-      email: form.email,
-      password: form.password,
-      alias: form.alias,
-      accountId: 1,
-      userName: form.name
-    }
-  });
+  const [addUser, {loading : addUserLoading}] = useMutation(ADD_USER);
   
   return (
     <>
@@ -51,7 +104,11 @@ export const Register = () => {
         : <></>}
 
       {saved == "error" ?
-        <strong className='alert alert-danger'> El usuario no se ha registrado</strong>
+        <strong className='alert alert-danger'> El usuario no se ha registrado: {errorMessage}</strong>
+        : <></>}
+
+      {saved == "validation_error" ?
+        <strong className='alert alert-danger'> {errorMessage}</strong>
         : <></>}
 
         <div className='content__posts'>

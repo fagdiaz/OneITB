@@ -1,42 +1,61 @@
-# Especificación de Diseño y Arquitectura - OneITB23
+# 4. Diagramas de Diseño, Flujo y Persistencia
 
-Este documento recopila las decisiones de diseño técnico, el Diagrama de Entidad-Relación (DER) y los diagramas de secuencia corregidos para la evaluación de arquitectura de **OneITB23**.
+## 4.1. Diagrama Entidad-Relación (DER) Normalizado
+
+```mermaid
+erDiagram
+    ACCOUNT {
+        Guid Id PK
+        string Email
+        string PasswordHash
+        string State
+    }
+    USER {
+        Guid Id PK
+        Guid AccountId FK
+        string Nombre
+        string Apellido
+        string Alias
+        int CountryId FK
+    }
+    COUNTRY {
+        int Id PK
+        string Nombre
+    }
+    SUBJECT {
+        int Id PK
+        string Nombre
+    }
+    CONSULTA {
+        Guid Id PK
+        string Titulo
+        string Contenido
+        DateTime FechaPublicacion
+        Guid UsuarioId FK
+        int SubjectId FK
+        Guid FileId FK
+    }
+    COMENTARIO {
+        Guid Id PK
+        string Contenido
+        DateTime Fecha
+        Guid ConsultaId FK
+        Guid UsuarioId FK
+    }
+
+    ACCOUNT ||--|| USER : "pertenece a"
+    COUNTRY ||--o{ USER : "residencia de"
+    USER ||--o{ CONSULTA : "crea"
+    SUBJECT ||--o{ CONSULTA : "pertenece a"
+    CONSULTA ||--o{ COMENTARIO : "composición (depende de)"
+    USER ||--o{ COMENTARIO : "escribe"
+```
 
 ---
 
-## 1. Patrones Arquitectónicos y Estructura
-El sistema implementa una arquitectura desacoplada por dominios:
-* **Backend**: Desarrollado en .NET 6 con Entity Framework Core. Implementa el patrón **Repository y Unit of Work** para desacoplar el acceso a datos del resolver GraphQL (HotChocolate).
-* **Frontend**: Desarrollado en React + Vite, consumiendo datos mediante **Apollo Client** de forma asíncrona.
+## 4.2. Diagramas de Secuencia Corregidos
 
----
-
-## 2. Correcciones de Diseño Técnico (Resolución de Evaluaciones)
-
-### 2.1. Normalización del Modelo de Datos (DER)
-* **Tabla Cuentas (`Account`)**: Se agregó el campo `State` (estado de admisión/bloqueo de la cuenta) para dar soporte al control de admisión.
-* **Países (`Country`)**: Normalización física de la entidad país en una tabla independiente, vinculada mediante llaves foráneas en lugar de almacenar strings duplicados.
-* **Exclusiones de Seguridad**: Se aplica la exclusión física del campo `Password` en el esquema de resolvedores mediante `[GraphQLIgnore]` para cumplir con las directivas constitucionales.
-
-### 2.2. Diagrama de Clases (Correcciones Aplicadas)
-* **Clase Usuario (`User`)**: 
-  - El método `Add` se documenta con su tipo de retorno específico (`Task<UserPayload>`).
-  - El método `Edit` se re-especifica listando únicamente los parámetros editables (Nombre, Apellido, Rol) y exponiendo métodos accesores `GET` explícitos.
-* **Clase Publicación (`Publication`)**:
-  - Se añade de forma obligatoria la relación directa con la entidad `Subject` (Materia/Curso).
-* **Relación Publicación-Comentario**:
-  - Se define físicamente mediante una **Composición** (rombo negro), dado que la existencia del comentario depende de manera exclusiva de la publicación padre.
-* **Enumeraciones de Usuario (`UserEnum`)**:
-  - Mapeadas en el diagrama de clases usando flechas con punta abierta (Generalización/Especialización).
-* **Ampliación de Alcance (Clase `Subject`)**:
-  - Para representar un mayor alcance del sistema, se incorpora la entidad `Subject` (Materia) con métodos explícitos como `CreateSubjectAsync(SubjectInput)` y `GetSubjectsByCareer(int careerId)` en los diagramas de clases, otorgando soporte de administración institucional.
-
----
-
-
-## 3. Diagramas de Secuencia Corregidos (Flujos de Negocio)
-
-### 3.1. Flujo de Registro de Usuario
+### 4.2.1. Registro de Usuario ➡️ Login
 ```mermaid
 sequenceDiagram
     actor Usuario
@@ -55,7 +74,7 @@ sequenceDiagram
     Frontend (Vite)->>Usuario: Redirección automática a /login
 ```
 
-### 3.2. Flujo de Inicio de Sesión (Login)
+### 4.2.2. Flujo de Inicio de Sesión (Login)
 ```mermaid
 sequenceDiagram
     actor Usuario
@@ -77,7 +96,7 @@ sequenceDiagram
     Frontend (Vite)->>Usuario: Acceso a layout privado
 ```
 
-### 3.3. Flujo de Cierre de Sesión (Logout)
+### 4.2.3. Flujo de Cierre de Sesión (Logout)
 ```mermaid
 sequenceDiagram
     actor Usuario
@@ -88,9 +107,8 @@ sequenceDiagram
     Frontend (Vite)->>Frontend (Vite): Limpia estado de AuthProvider
     Frontend (Vite)->>Usuario: Redirección automática a /login
 ```
-*(Nota: Conforme a las correcciones evaluadas, el cierre de sesión se realiza enteramente en el lado del cliente limpiando los estados locales de sesión, sin disparar operaciones de creación en el servidor).*
 
-### 3.4. Flujo de Creación de Publicación con Carga Desacoplada de Archivo
+### 4.2.4. Creación de Publicación con Carga Desacoplada
 ```mermaid
 sequenceDiagram
     actor Usuario
@@ -108,9 +126,8 @@ sequenceDiagram
     API Backend (GraphQL Mutation)-->>Frontend (Vite): PublicationPayload (Success = true)
     Frontend (Vite)-->>Usuario: Muestra la nueva publicación con el recurso vinculado
 ```
-*(Nota: El archivo físico se sube por un canal REST asíncrono e independiente para optimizar el rendimiento de la mutación GraphQL).*
 
-### 3.5. Flujo de Vista Previa de Archivo (Preview Endpoint)
+### 4.2.5. Flujo de Vista Previa de Archivo (Preview Endpoint)
 ```mermaid
 sequenceDiagram
     actor Usuario
@@ -126,4 +143,3 @@ sequenceDiagram
     API Backend (Preview Controller)-->>Frontend (Vite): Response HTTP 200 (Content-Type: application/pdf o image/*, Inline)
     Frontend (Vite)->>Usuario: Renderiza visor integrado en pantalla sin descargar archivo localmente
 ```
-

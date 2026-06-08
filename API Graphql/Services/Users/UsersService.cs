@@ -33,8 +33,8 @@ namespace Services.Users
             var user = new User 
             { 
                 Id = userId,
-                Nombre = input.Username, 
-                Apellido = string.Empty, 
+                Nombre = input.Nombre, 
+                Apellido = input.Apellidos, 
                 Rol = "User",
                 Account = account
             };

@@ -4,12 +4,12 @@ Este archivo define los módulos funcionales, objetivos de la plataforma y el es
 
 ---
 
-## 1. Estado Global de Avance: 40%
+## 1. Estado Global de Avance: 42%
 
 El porcentaje de avance se calcula basándose en el estado de los módulos obligatorios definidos para la entrega:
 
 * 🟢 **Módulo 1: Autenticación y Cuentas**: 100% (Backend compilando y verificado).
-* 🟡 **Módulo 2: Perfiles de Usuario**: 50% (Modelos físicos creados).
+* 🟡 **Módulo 2: Perfiles de Usuario**: 25% (Modelos físicos creados).
 * 🟡 **Módulo 3: Publicaciones y Comentarios**: 50% (Materia y Consulta creados).
 * 🔴 **Módulo 4: Mensajería Privada**: 0% (Pendiente de diseño).
 * 🔴 **Módulo 5: Recursos y Seguimiento**: 0% (Pendiente de diseño).

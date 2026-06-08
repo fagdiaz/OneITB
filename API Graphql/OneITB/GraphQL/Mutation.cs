@@ -9,7 +9,6 @@ using OneITB.Core.Services.Interfaces;
 
 namespace OneITB.GraphQL.Mutations
 {
-    [ExtendObjectType(OperationTypeNames.Mutation)]
     public class Mutation
     {
         /// <summary>
@@ -20,8 +19,15 @@ namespace OneITB.GraphQL.Mutations
             [Service] IUsersService usersService)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
-            var userDto = await usersService.RegisterAsync(input);
-            return userDto;
+            try
+            {
+                var userDto = await usersService.RegisterAsync(input);
+                return userDto;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
         }
 
         /// <summary>

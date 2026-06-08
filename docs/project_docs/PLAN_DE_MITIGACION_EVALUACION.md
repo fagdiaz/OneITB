@@ -34,9 +34,13 @@ Este documento detalla cada una de las observaciones y correcciones indicadas po
 * **Observación**: Mapear la relación entre `Publication` y `Subject` (Materia).
 * **Resolución**: Corregido en el modelo físico e implementada la clave foránea `IdMateria` en la tabla `Consultas` (`Consulta.cs`).
 
+### 2.4. Representación de Enumeraciones y Alcance del Diagrama
+* **Observación**: En el Diagrama de Clases, mapear `enum-user` con flechas de punta abierta (Generalización/Herencia) y ampliar el alcance del sistema (ej. creación de Materias/`Subjects`).
+* **Resolución**: Se corrigieron las relaciones de herencia de enumeraciones a flechas con punta abierta. Se añadieron al diagrama los métodos y clases para la administración y creación de materias (`Subject`).
+
 ---
 
-## 3. Correcciones de Base de Datos y DER
+## 3. Correcciones de Base de Datos, Flujos y Endpoints
 
 ### 3.1. Estado de la Cuenta
 * **Observación**: Agregar el campo `state` en la tabla `Account`.
@@ -45,6 +49,14 @@ Este documento detalla cada una de las observaciones y correcciones indicadas po
 ### 3.2. Normalización de País
 * **Observación**: Normalizar `country` (Países).
 * **Resolución**: El modelo de datos se normalizó separando el dominio geográfico en una entidad aislada vinculada por relaciones y llaves foráneas.
+
+### 3.3. Flujo de Crear Publicación y Carga de Archivos
+* **Observación**: Corregir el flujo de creación de publicaciones. El archivo no se sube en la petición principal de la publicación.
+* **Resolución**: El flujo de publicación fue desacoplado. El frontend realiza la subida física del archivo a un endpoint de almacenamiento estático o CDN, y luego asocia el identificador/URL del recurso en la mutación GraphQL `CreatePublication`.
+
+### 3.4. Endpoint de Vista Previa de Archivos
+* **Observación**: Diseñar un endpoint específico para la previsualización de archivos.
+* **Resolución**: Se definió un endpoint/controlador de API dedicado para servir flujos de lectura optimizados que permiten la vista previa en el navegador (en lugar de forzar la descarga de binarios).
 
 ---
 
@@ -57,3 +69,7 @@ Este documento detalla cada una de las observaciones y correcciones indicadas po
 | Seguridad en GraphQL | 🟢 **Resuelto** | Ocultamiento de la contraseña mediante atributo `[GraphQLIgnore]`. |
 | Borrado de Registros | 🟢 **Resuelto** | Configuración de relaciones con `DeleteBehavior.Restrict`. |
 | Compilación del Backend | 🟢 **Resuelto** | Compilación exitosa tras implementar la interfaz y repositorio de `IUnitOfWork`. |
+| Flujo Crear Publicación | 🟢 **Resuelto** | Carga asíncrona de archivos desacoplada del resolver de GraphQL. |
+| Vista Previa de Archivos | 🟢 **Resuelto** | Endpoint de streaming y vista previa integrado en el backend. |
+| Normalización de Datos | 🟢 **Resuelto** | Entidad País normalizada y campo `State` en `Account`. |
+

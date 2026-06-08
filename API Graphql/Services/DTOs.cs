@@ -18,7 +18,15 @@ namespace OneITB.Core.Services.Interfaces
 
         [property: GraphQLType(typeof(NonNullType<StringType>))]
         [property: StringLength(64, MinimumLength = 8, ErrorMessage = "La contraseña debe tener entre 8 y 64 caracteres.")]
-        string Password
+        string Password,
+
+        [property: GraphQLType(typeof(NonNullType<StringType>))]
+        string Nombre,
+
+        [property: GraphQLType(typeof(NonNullType<StringType>))]
+        string Apellidos,
+
+        string[]? CarrerasInscritas
     );
 
     public record LoginInput(

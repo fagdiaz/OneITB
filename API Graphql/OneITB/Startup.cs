@@ -48,10 +48,19 @@ namespace OneItb.GraphQL
 
             services.AddGraphQLServer()
                 .RegisterDbContext<OneItbContext>(DbContextKind.Pooled)
-                .RegisterService<User>()
-                .RegisterService<Account>()
                 .AddQueryType<Query>()
-                .AddMutationType<Mutation>();
+                .AddMutationType<Mutation>()
+                .AddType(new ObjectType<Account>(d => d.Field(f => f.PasswordHash).Ignore()))
+                .AddType(new ObjectType<User>(descriptor => 
+                {
+                    descriptor.Field(f => f.Id).Name("idUsuario");
+                    descriptor.Field(f => f.Nombre).Name("nombre");
+                    descriptor.Field("alias").Resolve(ctx => ctx.Parent<User>().Nombre);
+                    descriptor.Field(f => f.Apellido).Name("apellidos");
+                    descriptor.Field("email").Resolve(ctx => ctx.Parent<User>().Account?.Email);
+                    descriptor.Field("fullName").Resolve(ctx => $"{ctx.Parent<User>().Nombre} {ctx.Parent<User>().Apellido}".Trim());
+                    descriptor.Field("password").Resolve(ctx => "********");
+                }));
 
             services.AddScoped<IUnitOfWork, Services.Repositories.UnitOfWork>();
             services.AddScoped<IUsersService, UsersService>();
@@ -86,6 +95,7 @@ namespace OneItb.GraphQL
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
             app.UseCors(MyAllowSpecificOrigins);
 
