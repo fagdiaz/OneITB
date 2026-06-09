@@ -10,7 +10,7 @@ export const PublicLayout = () => {
   console.log(auth);
 
   return (
-    <>
+    <div className="layout">
         {/*LAYOUT */}
         <Header/>
 
@@ -22,6 +22,6 @@ export const PublicLayout = () => {
         }
         </section>
         
-    </>
+    </div>
   )
 }

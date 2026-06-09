@@ -1,32 +1,31 @@
 /*ESTILOS GENERALES*/
 :root {
-    --color-general-text: #333;
-    --color-backgroud-navbar: #3785e5;
-    --color-text-navbar: white;
-    --color-hover-navbar: #1756cc;
+    --color-general-text: #1e293b;
+    --color-backgroud-navbar: #0f172a;
+    --color-text-navbar: #f8fafc;
+    --color-hover-navbar: #3b82f6;
 
-    --color-border-headers: #eee;
+    --color-border-headers: #e2e8f0;
 
-    --color-background-btn-success: #5cb85c;
-    --color-border-btn-success: #4cae4c;
-    --color-background-btn-success-hover: #449d44;
-    --color-border-btn-success-hover: #398439;
+    --color-background-btn-success: #3b82f6;
+    --color-border-btn-success: #2563eb;
+    --color-background-btn-success-hover: #1d4ed8;
+    --color-border-btn-success-hover: #1e40af;
 
-    --color-background-btn-delete: #d9534f;
-    --color-border-btn-delete: #d43f3a;
-    --color-background-btn-delete-hover: #c9302c;
-    --color-border-btn-delete-hover: #ac2925;
+    --color-background-btn-delete: #ef4444;
+    --color-border-btn-delete: #dc2626;
+    --color-background-btn-delete-hover: #b91c1c;
+    --color-border-btn-delete-hover: #991b1b;
 
-    --color-border-post: #ddd;
-    --color-name-user: #337ab7;
+    --color-border-post: #e2e8f0;
+    --color-name-user: #2563eb;
 
-    --color-text-black: #555;
-    --color-text-nickname: #969393;
-    --color-number-stats: green;
+    --color-text-black: #0f172a;
+    --color-text-nickname: #64748b;
+    --color-number-stats: #3b82f6;
 
-    --color-border-textarea: #ccc;
-    --color-border-textarea-focus: #66afe9;
-
+    --color-border-textarea: #cbd5e1;
+    --color-border-textarea-focus: #3b82f6;
 }
 
 * {
@@ -34,6 +33,7 @@
     padding: 0;
     text-decoration: none;
     list-style: none;
+    box-sizing: border-box;
 }
 
 
@@ -48,8 +48,9 @@ body {
     width: 100%;
     height: 100%;
     font-size: 14px;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--color-general-text);
+    background-color: #f8fafc;
 }
 
 .layout{
@@ -459,4 +460,94 @@ button{
     background: #b83a3a;
     border: 1px solid #b81e0a;
     color: white;
+}
+
+/* REFAC VISUAL / PREMIUM UI-UX FOR FORMS */
+.form-login, .register-form {
+    max-width: 450px;
+    margin: 2rem auto;
+    padding: 3.5rem;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-group {
+    margin-bottom: 2.2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.075em;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 1.2rem 1.6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background-color: #f8fafc;
+    font-size: 1.4rem;
+    color: #1e293b;
+    transition: all 0.2s ease-in-out;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    background-color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+input[type="submit"] {
+    width: 100%;
+    padding: 1.4rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border: none;
+    border-radius: 10px;
+    color: #ffffff !important;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+input[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+}
+
+.alert {
+    width: 100%;
+    max-width: 450px;
+    padding: 1.2rem 1.6rem;
+    border-radius: 10px;
+    font-size: 1.4rem;
+    font-weight: 500;
+    margin: 0 auto 2rem auto;
+    box-sizing: border-box;
+}
+
+.alert-succes {
+    background-color: #ecfdf5;
+    border: 1px solid #10b981;
+    color: #065f46;
+}
+
+.alert-danger {
+    background-color: #fef2f2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
 }

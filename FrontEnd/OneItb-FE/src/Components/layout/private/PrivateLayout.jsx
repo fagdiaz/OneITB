@@ -9,7 +9,7 @@ export const PrivateLayout = () => {
   const {auth} = useAuth();
   console.log(auth);
   return (
-    <>
+    <div className="layout">
         {/*LAYOUT */}
         <Header/>
 
@@ -24,6 +24,6 @@ export const PrivateLayout = () => {
         
         {/* Barra Lateral */}
         <SideBar></SideBar>
-    </>
+    </div>
   )
 }

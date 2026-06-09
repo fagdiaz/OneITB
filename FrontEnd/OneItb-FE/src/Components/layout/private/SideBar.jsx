@@ -1,6 +1,6 @@
 import React from 'react'
 import useAuth from '../../../hooks/useAuth'
-
+import avatar from '../../../assets/img/user.png'
 
 export const SideBar = () => {
 
@@ -20,7 +20,7 @@ export const SideBar = () => {
 
                     <div className="profile-info__general-info">
                         <div className="general-info__container-avatar">
-                            <img src="assets/img/user.png" className="container-avatar__img" alt="Foto de perfil"/>
+                            <img src={`https://ui-avatars.com/api/?name=${auth.fullName || 'User'}&background=3785e5&color=fff`} className="container-avatar__img" alt="Foto de perfil"/>
                         </div>
 
                         <div className="general-info__container-names">
