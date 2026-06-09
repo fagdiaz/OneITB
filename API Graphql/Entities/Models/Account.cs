@@ -8,7 +8,7 @@ namespace OneItb.Entities.Models
     {
         private string _email = null!;
         private string _passwordHash = null!;
-        private DateTime _fechaCreacion;
+        private DateTime _createdAt;
 
         private static readonly Regex EmailRegex = new Regex(
             @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
@@ -47,15 +47,15 @@ namespace OneItb.Entities.Models
             }
         }
 
-        public DateTime FechaCreacion
+        public DateTime CreatedAt
         {
-            get => _fechaCreacion;
+            get => _createdAt;
             set
             {
                 if (value == default)
                     throw new ArgumentException("La FechaCreacion debe ser una fecha válida.", nameof(value));
 
-                _fechaCreacion = value;
+                _createdAt = value;
             }
         }
 

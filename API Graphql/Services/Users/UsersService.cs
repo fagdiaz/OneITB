@@ -24,19 +24,19 @@ namespace Services.Users
             
             var account = new Account
             {
-                Id = userId,
-                Email = input.Email,
-                PasswordHash = passwordHash,
-                FechaCreacion = DateTime.UtcNow
+                 Id = userId,
+                 Email = input.Email,
+                 PasswordHash = passwordHash,
+                 CreatedAt = DateTime.UtcNow
             };
 
             var user = new User 
             { 
-                Id = userId,
-                Nombre = input.Nombre, 
-                Apellido = input.Apellidos, 
-                Rol = "User",
-                Account = account
+                 Id = userId,
+                 FirstName = input.FirstName, 
+                 LastName = input.LastName, 
+                 Role = "User",
+                 Account = account
             };
 
             await _uow.Users.AddAsync(user);

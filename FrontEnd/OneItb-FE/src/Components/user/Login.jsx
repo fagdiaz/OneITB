@@ -12,25 +12,38 @@ export const Login = () => {
 
   const {form , changed } = useForm({});
   const [saved, setSaved] = useState("not_sended");
-  const {setAuth} = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
  
   const loginUser = async(e) =>{
-   
       e.preventDefault();
       try{
-      const { data } = await authenticateUser();
-      const { user, token } = data.authenticateUser;
-      GraphQLProvider.setToken(token);
-      GraphQLProvider.setUser(user);
+      const variables = {
+        input: {
+          email: form.email,
+          password: form.password
+        }
+      };
+      const { data } = await authenticateUser({ variables });
+      const { token, username, isAuthenticated, id } = data.login;
+      
+      if (isAuthenticated) {
+        GraphQLProvider.setToken(token);
+        const userObj = {
+          id: id,
+          username: username,
+          email: form.email
+        };
+        GraphQLProvider.setUser(userObj);
 
-      localStorage.setItem("token","token");
-      localStorage.setItem("user", JSON.stringify(user));
-      setSaved("login");//error
-      setAuth(data.user);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000)
+        login(token, userObj);
+        setSaved("login");
+        setTimeout(() => {
+          navigate('/social');
+        }, 1000);
+      } else {
+        setSaved("error");
+      }
       }
       catch(err){
         console.log(err);
@@ -39,10 +52,6 @@ export const Login = () => {
   }
 
   const [authenticateUser, {loading}] = useMutation(AUTHENTICATE_USER,{
-    variables:{
-      email : form.email,
-      password : form.password
-    },
     fetchPolicy: 'network-only',
   });
 

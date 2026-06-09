@@ -14,11 +14,6 @@ namespace GraphQL.GraphQL
 {
     public class Query
     {
-        public IQueryable<User> GetUsuarios([Service] IUsersService usersService)
-        {
-            return usersService.GetAllAsync();
-        }
-
         public IQueryable<User> GetUsers([Service] IUsersService usersService)
         {
             return usersService.GetAllAsync();

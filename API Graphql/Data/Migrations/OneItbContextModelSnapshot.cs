@@ -25,8 +25,12 @@ namespace Data.Migrations
             modelBuilder.Entity("OneItb.Entities.Models.Account", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("IdCuenta");
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<DateTime>("CreationDate")
                         .HasColumnType("datetime2");
@@ -43,11 +47,6 @@ namespace Data.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<DateTime>("FechaCreacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
                     b.Property<DateTime>("ModificationDate")
                         .HasColumnType("datetime2");
 
@@ -61,16 +60,15 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Cuentas", "dbo");
+                    b.ToTable("Accounts", "dbo");
                 });
 
-            modelBuilder.Entity("OneItb.Entities.Models.Consulta", b =>
+            modelBuilder.Entity("OneItb.Entities.Models.Inquiry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("IdConsulta");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Contenido")
+                    b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -84,20 +82,6 @@ namespace Data.Migrations
                     b.Property<bool>("Disabled")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("FechaPublicacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<Guid>("IdConsulta")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("IdMateria")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("IdUsuario")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("ModificationDate")
                         .HasColumnType("datetime2");
 
@@ -105,34 +89,40 @@ namespace Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Titulo")
+                    b.Property<DateTime>("PublishDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("IdMateria");
+                    b.HasIndex("SubjectId");
 
-                    b.HasIndex("IdUsuario");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("Consultas", "dbo", t =>
-                        {
-                            t.Property("IdConsulta")
-                                .HasColumnName("IdConsulta1");
-                        });
+                    b.ToTable("Inquiries", "dbo");
                 });
 
-            modelBuilder.Entity("OneItb.Entities.Models.Materia", b =>
+            modelBuilder.Entity("OneItb.Entities.Models.Subject", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("IdMateria");
+                        .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CodigoMateria")
+                    b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(10)
                         .IsUnicode(false)
@@ -155,32 +145,26 @@ namespace Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("NombreMateria")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CodigoMateria")
+                    b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("NombreMateria")
+                    b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Materias", "dbo");
+                    b.ToTable("Subjects", "dbo");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("IdUsuario");
-
-                    b.Property<string>("Apellido")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreationDate")
                         .HasColumnType("datetime2");
@@ -192,6 +176,16 @@ namespace Data.Migrations
                     b.Property<bool>("Disabled")
                         .HasColumnType("bit");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTime>("ModificationDate")
                         .HasColumnType("datetime2");
 
@@ -199,12 +193,7 @@ namespace Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Rol")
+                    b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
                         .IsUnicode(false)
@@ -212,20 +201,20 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Usuarios", "dbo");
+                    b.ToTable("Users", "dbo");
                 });
 
-            modelBuilder.Entity("OneItb.Entities.Models.Consulta", b =>
+            modelBuilder.Entity("OneItb.Entities.Models.Inquiry", b =>
                 {
-                    b.HasOne("OneItb.Entities.Models.Materia", null)
+                    b.HasOne("OneItb.Entities.Models.Subject", null)
                         .WithMany()
-                        .HasForeignKey("IdMateria")
+                        .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("OneItb.Entities.Models.User", null)
                         .WithMany()
-                        .HasForeignKey("IdUsuario")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

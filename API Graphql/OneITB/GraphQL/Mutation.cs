@@ -33,12 +33,12 @@ namespace OneITB.GraphQL.Mutations
         /// <summary>
         /// Resolver blindado para la autenticación segura (Login).
         /// </summary>
-        public async Task<LoginPayload> LoginAsync(
+        public async Task<AuthPayload> Login(
             LoginInput input,
             [Service] IAccountService accountService)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
-            var authResult = await accountService.LoginAsync(input);
+            var authResult = await accountService.Login(input);
             return authResult;
         }
     }

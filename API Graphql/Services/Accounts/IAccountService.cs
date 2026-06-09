@@ -6,7 +6,7 @@ namespace OneITB.Core.Services.Interfaces
 {
     public interface IAccountService
     {
-        Task<LoginPayload> LoginAsync(LoginInput input);
+        Task<AuthPayload> Login(LoginInput input);
         Account GetById(Guid id);
     }
 }

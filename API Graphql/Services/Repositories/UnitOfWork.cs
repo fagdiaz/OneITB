@@ -19,31 +19,31 @@ namespace Services.Repositories
 
         public async Task AddAsync(User user)
         {
-            await _context.Usuarios.AddAsync(user);
+            await _context.Users.AddAsync(user);
         }
 
         public IQueryable<User> GetAll()
         {
-            return _context.Usuarios.AsQueryable();
+            return _context.Users.AsQueryable();
         }
 
         public User GetByEmail(string email)
         {
-            return _context.Usuarios
+            return _context.Users
                 .Include(u => u.Account)
                 .FirstOrDefault(u => u.Account.Email == email);
         }
 
         public async Task<User> GetByEmailAsync(string email)
         {
-            return await _context.Usuarios
+            return await _context.Users
                 .Include(u => u.Account)
                 .FirstOrDefaultAsync(u => u.Account.Email == email);
         }
 
         public User GetById(Guid id)
         {
-            return _context.Usuarios
+            return _context.Users
                 .Include(u => u.Account)
                 .FirstOrDefault(u => u.Id == id);
         }
@@ -60,7 +60,7 @@ namespace Services.Repositories
 
         public Account GetById(Guid id)
         {
-            return _context.Cuentas
+            return _context.Accounts
                 .Include(a => a.User)
                 .FirstOrDefault(a => a.Id == id);
         }

@@ -68,11 +68,11 @@ export const Register = () => {
     const variables = {
       input: {
         username: form.alias,
-        nombre: form.name,
-        apellidos: form.surname,
+        firstName: form.name,
+        lastName: form.surname,
         email: form.email,
         password: form.password,
-        carrerasInscritas: []
+        enrolledCareers: []
       }
     };
 

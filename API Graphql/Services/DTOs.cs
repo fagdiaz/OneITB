@@ -21,12 +21,12 @@ namespace OneITB.Core.Services.Interfaces
         string Password,
 
         [property: GraphQLType(typeof(NonNullType<StringType>))]
-        string Nombre,
+        string FirstName,
 
         [property: GraphQLType(typeof(NonNullType<StringType>))]
-        string Apellidos,
+        string LastName,
 
-        string[]? CarrerasInscritas
+        string[]? EnrolledCareers
     );
 
     public record LoginInput(
@@ -42,5 +42,5 @@ namespace OneITB.Core.Services.Interfaces
 
     public record UserPayload(Guid Id, bool Success, string Message);
 
-    public record LoginPayload(string Token, string Username, bool IsAuthenticated);
+    public record AuthPayload(string Token, string Username, bool IsAuthenticated, Guid Id);
 }

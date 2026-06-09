@@ -9,25 +9,24 @@ namespace OneItb.Data
         {
         }
 
-        public DbSet<Account> Cuentas { get; set; } = null!;
-        public DbSet<User> Usuarios { get; set; } = null!;
-        public DbSet<Materia> Materias { get; set; } = null!;
-        public DbSet<Consulta> Consultas { get; set; } = null!;
+        public DbSet<Account> Accounts { get; set; } = null!;
+        public DbSet<User> Users { get; set; } = null!;
+        public DbSet<Subject> Subjects { get; set; } = null!;
+        public DbSet<Inquiry> Inquiries { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             // ==========================================
-            // MAPEO: TABLA CUENTAS
+            // MAPEO: TABLA ACCOUNTS
             // ==========================================
             modelBuilder.Entity<Account>(entity =>
             {
-                entity.ToTable("Cuentas", "dbo");
+                entity.ToTable("Accounts", "dbo");
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.Id)
-                    .HasColumnName("IdCuenta")
                     .ValueGeneratedNever();
 
                 entity.Property(e => e.Email)
@@ -38,33 +37,32 @@ namespace OneItb.Data
                     .IsRequired()
                     .HasColumnType("char(60)");
 
-                entity.Property(e => e.FechaCreacion)
+                entity.Property(e => e.CreatedAt)
                     .IsRequired()
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("SYSUTCDATETIME()");
             });
 
             // ==========================================
-            // MAPEO: TABLA USUARIOS (Relación 1:1 con Cuentas)
+            // MAPEO: TABLA USERS (Relación 1:1 con Cuentas)
             // ==========================================
             modelBuilder.Entity<User>(entity =>
             {
-                entity.ToTable("Usuarios", "dbo");
+                entity.ToTable("Users", "dbo");
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.Id)
-                    .HasColumnName("IdUsuario")
                     .ValueGeneratedNever();
 
-                entity.Property(e => e.Nombre)
+                entity.Property(e => e.FirstName)
                     .IsRequired()
                     .HasMaxLength(100);
 
-                entity.Property(e => e.Apellido)
+                entity.Property(e => e.LastName)
                     .IsRequired()
                     .HasMaxLength(100);
 
-                entity.Property(e => e.Rol)
+                entity.Property(e => e.Role)
                     .IsRequired()
                     .HasMaxLength(20)
                     .IsUnicode(false);
@@ -76,63 +74,61 @@ namespace OneItb.Data
             });
 
             // ==========================================
-            // MAPEO: TABLA MATERIAS
+            // MAPEO: TABLA SUBJECTS
             // ==========================================
-            modelBuilder.Entity<Materia>(entity =>
+            modelBuilder.Entity<Subject>(entity =>
             {
-                entity.ToTable("Materias", "dbo");
+                entity.ToTable("Subjects", "dbo");
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.Id)
-                    .HasColumnName("IdMateria")
                     .ValueGeneratedOnAdd();
 
-                entity.Property(e => e.NombreMateria)
+                entity.Property(e => e.Name)
                     .IsRequired()
                     .HasMaxLength(150);
 
-                entity.Property(e => e.CodigoMateria)
+                entity.Property(e => e.Code)
                     .IsRequired()
                     .HasMaxLength(10)
                     .IsUnicode(false);
 
-                entity.HasIndex(e => e.NombreMateria).IsUnique();
-                entity.HasIndex(e => e.CodigoMateria).IsUnique();
+                entity.HasIndex(e => e.Name).IsUnique();
+                entity.HasIndex(e => e.Code).IsUnique();
             });
 
             // ==========================================
-            // MAPEO: TABLA CONSULTAS (Modificado por QA P0)
+            // MAPEO: TABLA INQUIRIES
             // ==========================================
-            modelBuilder.Entity<Consulta>(entity =>
+            modelBuilder.Entity<Inquiry>(entity =>
             {
-                entity.ToTable("Consultas", "dbo");
+                entity.ToTable("Inquiries", "dbo");
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.Id)
-                    .HasColumnName("IdConsulta")
                     .ValueGeneratedNever();
 
-                entity.Property(e => e.Titulo)
+                entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(200);
 
-                entity.Property(e => e.Contenido)
+                entity.Property(e => e.Content)
                     .IsRequired()
                     .HasColumnType("nvarchar(max)");
 
-                entity.Property(e => e.FechaPublicacion)
+                entity.Property(e => e.PublishDate)
                     .IsRequired()
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("SYSUTCDATETIME()");
 
                 entity.HasOne<User>()
                     .WithMany()
-                    .HasForeignKey(c => c.IdUsuario)
+                    .HasForeignKey(c => c.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne<Materia>()
+                entity.HasOne<Subject>()
                     .WithMany()
-                    .HasForeignKey(c => c.IdMateria)
+                    .HasForeignKey(c => c.SubjectId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }

@@ -53,12 +53,12 @@ namespace OneItb.GraphQL
                 .AddType(new ObjectType<Account>(d => d.Field(f => f.PasswordHash).Ignore()))
                 .AddType(new ObjectType<User>(descriptor => 
                 {
-                    descriptor.Field(f => f.Id).Name("idUsuario");
-                    descriptor.Field(f => f.Nombre).Name("nombre");
-                    descriptor.Field("alias").Resolve(ctx => ctx.Parent<User>().Nombre);
-                    descriptor.Field(f => f.Apellido).Name("apellidos");
+                    descriptor.Field(f => f.Id).Name("id");
+                    descriptor.Field(f => f.FirstName).Name("firstName");
+                    descriptor.Field("alias").Resolve(ctx => ctx.Parent<User>().FirstName);
+                    descriptor.Field(f => f.LastName).Name("lastName");
                     descriptor.Field("email").Resolve(ctx => ctx.Parent<User>().Account?.Email);
-                    descriptor.Field("fullName").Resolve(ctx => $"{ctx.Parent<User>().Nombre} {ctx.Parent<User>().Apellido}".Trim());
+                    descriptor.Field("fullName").Resolve(ctx => $"{ctx.Parent<User>().FirstName} {ctx.Parent<User>().LastName}".Trim());
                     descriptor.Field("password").Resolve(ctx => "********");
                 }));
 
