@@ -7,6 +7,8 @@ import { Register } from '../Components/user/Register'
 import { PrivateLayout } from '../Components/layout/private/PrivateLayout'
 import { Feed } from '../Components/publication/Feed'
 import { UserProfile } from '../Components/profile/UserProfile'
+import { UserManagement } from '../Components/admin/UserManagement'
+import { EmployerLogin } from '../Components/auth/EmployerLogin'
 import { AuthProvider } from '../context/AuthProvider'
 import { Logout } from '../Components/user/Logout'
 
@@ -19,11 +21,13 @@ export const Routing = () => {
           <Route index element={<Landing />} />
           <Route path='login' element={<Login />} />
           <Route path='register' element={<Register />} />
+          <Route path='employer-login' element={<EmployerLogin />} />
         </Route>
 
         <Route path='/' element={<PrivateLayout />}>
           <Route path='feed' element={<Feed />} />
           <Route path='profile' element={<UserProfile />} />
+          <Route path='admin/users' element={<UserManagement />} />
           <Route path='logout' element={<Logout></Logout>} />
         </Route>
 

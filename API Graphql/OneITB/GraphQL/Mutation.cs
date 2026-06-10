@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using HotChocolate;
+using HotChocolate.Authorization;
 using HotChocolate.Types;
 using Services.Users;
 using Services.Accounts;
@@ -49,6 +50,34 @@ namespace OneITB.GraphQL.Mutations
             if (input == null) throw new ArgumentNullException(nameof(input));
             var payload = await usersService.UpdateProfileAsync(input);
             return payload;
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        public async Task<UserPayload> UpdateUserRole(Guid userId, string newRole, [Service] IUsersService usersService)
+        {
+            return await usersService.UpdateUserRoleAsync(userId, newRole);
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        public async Task<UserPayload> UpdateUserStatus(Guid userId, bool isActive, [Service] IUsersService usersService)
+        {
+            return await usersService.UpdateUserStatusAsync(userId, isActive);
+        }
+
+        public async Task<string> RequestMagicLink(string email, string cuit, [Service] IEmployerAuthService authService)
+        {
+            return await authService.RequestMagicLinkAsync(email, cuit);
+        }
+
+        public async Task<string> LoginWithMagicLink(string token, [Service] IEmployerAuthService authService)
+        {
+            return await authService.LoginWithMagicLinkAsync(token);
+        }
+
+        [Authorize]
+        public async Task<bool> ReportContent(Guid reporterId, string contentId, string contentType, string reason, [Service] IModerationService modService)
+        {
+            return await modService.ReportContentAsync(reporterId, contentId, contentType, reason);
         }
     }
 }

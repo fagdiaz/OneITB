@@ -1,22 +1,20 @@
+using System.Text;
 using GraphQL.GraphQL;
-using OneITB.GraphQL.Mutations;
-using OneITB.Core.Services.Interfaces;
+using HotChocolate.Types;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using OneItb.Data;
 using OneItb.Entities.Models;
-using Services.Users;
-using HotChocolate.Types;
-using HotChocolate.Types.Pagination;
-using HotChocolate.Data;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using OneITB.GraphQL.Mutations;
+using OneITB.Core.Services.Interfaces;
 using Services.Accounts;
+using Services.Users;
 
 namespace OneItb.GraphQL
 {
@@ -47,7 +45,11 @@ namespace OneItb.GraphQL
             services.AddScoped<OneItbContext>(p => p.GetRequiredService<IDbContextFactory<OneItbContext>>().CreateDbContext());
 
             services.AddGraphQLServer()
-                .RegisterDbContext<OneItbContext>(DbContextKind.Pooled)
+                // HC 14 breaking change: RegisterDbContext(DbContextKind.Pooled) →
+                // RegisterDbContextFactory<T>() — works with AddPooledDbContextFactory above.
+                .RegisterDbContextFactory<OneItbContext>()
+                .AddAuthorization()
+                .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true)
                 .AddQueryType<Query>()
                 .AddMutationType<Mutation>()
                 .AddType(new ObjectType<Account>(d => d.Field(f => f.PasswordHash).Ignore()))
@@ -68,6 +70,8 @@ namespace OneItb.GraphQL
                 }));
 
             services.AddScoped<IUnitOfWork, Services.Repositories.UnitOfWork>();
+            services.AddScoped<IEmployerAuthService, Services.Auth.EmployerAuthService>();
+            services.AddScoped<IModerationService, Services.Moderation.ModerationService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
 

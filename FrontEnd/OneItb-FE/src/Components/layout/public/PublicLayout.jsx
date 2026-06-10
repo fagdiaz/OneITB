@@ -1,26 +1,24 @@
 import React from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
-import { Header } from './Header'
+import { Header } from '../private/Header'
 import useAuth from '../../../hooks/useAuth'
 
 export const PublicLayout = () => {
 
   const {auth} = useAuth();
 
-  console.log(auth);
-
   return (
-    <div className="layout">
-        {/*LAYOUT */}
-        <Header/>
+    <div className="flex flex-col min-h-screen">
+        {/* Header (conditionally renders auth buttons inside Nav) */}
+        <Header />
 
         {/* Contenido principal */}
-        <section className='layout__content'>
+        <main className="flex-1">
           {!auth.id ?
-          <Outlet/>
-          : <Navigate to="/feed"></Navigate>
-        }
-        </section>
+            <Outlet />
+            : <Navigate to="/feed" replace />
+          }
+        </main>
         
     </div>
   )

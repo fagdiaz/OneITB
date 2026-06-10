@@ -41,7 +41,6 @@ export const Login = () => {
         setSaved('error');
       }
     } catch (err) {
-      console.log(err);
       setSaved('error');
     }
   };

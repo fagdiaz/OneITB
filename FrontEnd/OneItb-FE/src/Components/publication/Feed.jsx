@@ -1,7 +1,6 @@
-import React from 'react'
-import { useQuery } from '@apollo/client'
-import { GET_USERS } from '../../data/graphql/queries/getUsers'
+import React, { useState } from 'react'
 import useAuth from '../../hooks/useAuth'
+import { ReportModal } from '../moderation/ReportModal'
 
 /**
  * Feed — REFACTOR 037
@@ -52,6 +51,8 @@ const MOCK_POSTS = [
 
 export const Feed = () => {
   const { auth } = useAuth();
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState(null);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-4">
@@ -100,14 +101,27 @@ export const Feed = () => {
               </div>
             </div>
 
-            {/* Delete action */}
-            <button
-              type="button"
-              className="text-slate-300 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-50"
-              title="Eliminar publicación"
-            >
-              <i className="fa-solid fa-trash-can text-sm" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setReportTarget({ id: post.id, type: 'Post' });
+                  setIsReportModalOpen(true);
+                }}
+                className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50"
+                title="Reportar publicación"
+              >
+                <i className="fa-solid fa-flag text-sm" />
+              </button>
+              {/* Delete action */}
+              <button
+                type="button"
+                className="text-slate-300 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-50"
+                title="Eliminar publicación"
+              >
+                <i className="fa-solid fa-trash-can text-sm" />
+              </button>
+            </div>
           </div>
 
           {/* Post content */}
@@ -150,6 +164,12 @@ export const Feed = () => {
         Ver más publicaciones
       </button>
 
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        contentId={reportTarget?.id}
+        contentType={reportTarget?.type}
+      />
     </div>
   )
 }

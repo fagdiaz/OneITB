@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { useMutation, useQuery } from '@apollo/client'
-import { GET_USERS } from '../../data/graphql/queries/getUsers'
+import { useMutation } from '@apollo/client'
 import { useForm } from '../../hooks/useForm'
 import { ADD_USER } from '../../data/graphql/mutations/addUser'
 
@@ -11,7 +10,6 @@ import { ADD_USER } from '../../data/graphql/mutations/addUser'
  * All validation logic is 100% preserved.
  */
 export const Register = () => {
-  const { loading, error } = useQuery(GET_USERS);
   const { form, changed } = useForm({});
   const [saved, setSaved] = useState('not_sended');
   const [errorMessage, setErrorMessage] = useState('');
@@ -41,14 +39,10 @@ export const Register = () => {
       }
     };
 
-    console.log('Datos a enviar a GraphQL:', variables);
-
     try {
-      const { data } = await addUser({ variables });
+      await addUser({ variables });
       setSaved('saved');
-      console.log(data);
     } catch (err) {
-      console.log(err);
       setSaved('error');
       setErrorMessage(err.message);
     }

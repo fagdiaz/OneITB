@@ -14,8 +14,9 @@ Actualmente, el Módulo 1 (Autenticación) se encuentra 100% operativo a nivel d
 | **Register** | `src/Components/user/Register.jsx` | 🟢 100% | Conectado a mutación `ADD_USER`. Valida alias y restringe registro a dominio `@itbeltran.com.ar`. |
 | **Logout** | `src/Components/user/Logout.jsx` | 🟢 100% | Conectado a `AuthContext`. Limpia storage local y redirige a `/login`. |
 | **AuthContext** | `src/context/AuthContext.jsx` | 🟢 100% | Distribuye el estado de sesión `auth` y la validez del token en toda la app. |
-| **Feed (Muro)** | `src/Components/publication/feed.jsx` | 🟡 Parcial | Renderiza posts de prueba mockeados (estáticos). Sin conexión a queries de GraphQL. |
-| **SideBar** | `src/Components/layout/private/SideBar.jsx` | 🟡 Parcial | Carga datos del usuario para el perfil, pero el formulario de posts está inactivo (`disabled`) y sin mutación. |
+| **Feed (Muro)** | `src/Components/publication/Feed.jsx` | 🟢 Completado/Refactorizado | Refactorizado a Tailwind v4 y conectado con la Moderación. |
+| **SideBar** | `src/Components/layout/private/SideBar.jsx` | 🟢 Completado/Refactorizado | Refactorizado y funcional con Tailwind. |
+| **UserProfile** | `src/Components/profile/UserProfile.tsx` | 🟢 Completado/Refactorizado | Interfaz de perfil en el cliente frontend (completada mediante el trasplante del CV). |
 | **Nav** | `src/Components/layout/private/Nav.jsx` | 🟡 Parcial | Estructura visual de pestañas pero con hipervínculos muertos (`href="#"`). |
 
 ---
@@ -23,9 +24,7 @@ Actualmente, el Módulo 1 (Autenticación) se encuentra 100% operativo a nivel d
 ## 2. Diagnóstico de Errores Visibles e Inactividad
 
 * **Fallo de Visualización / Alineación del SideBar**:
-  - **Causa**: El contenedor principal en `styles.css` (`.layout`) está configurado como `display: grid` con áreas nombradas (`grid-template-areas: "nav nav" "content aside"`).
-  - En `App.jsx`, la clase `.layout` envuelve directamente al enrutador `<Routing />`. Dado que `Routing.jsx` inyecta componentes de contexto lógicos y wrappers intermedios (como `BrowserRouter`, `AuthProvider`, y `Routes`), se rompe la relación jerárquica de rejilla CSS directa. Como consecuencia, el navegador no renderiza las columnas del Grid correspondientes a `.layout__content` y `.layout__aside`, empujando el SideBar hacia el pie de la página o rompiendo su alineación.
-  - **Solución**: Mover la envoltura `.layout` al nivel de los componentes de estructura de diseño (`PrivateLayout.jsx` y `PublicLayout.jsx`) para que sus hijos sean elementos directos del Grid.
+  - **Estado**: 🟢 Resuelto. El CSS legacy fue purgado por completo y reemplazado por Tailwind CSS v4, eliminando los problemas de grillas CSS (`.layout`) y proporcionando una estructura de diseño robusta y responsiva.
 
 * **Botones e Íconos Inactivos en Header y Nav**:
   - Todos los botones principales en `Nav.jsx` usan etiquetas `<a>` puras con `href="#"`. Esto rompe el comportamiento Single Page Application (SPA), provocando recargas vacías o nula respuesta. Deben ser reemplazados por componentes `<Link>` de `react-router-dom`.

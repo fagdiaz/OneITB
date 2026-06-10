@@ -24,7 +24,7 @@ namespace Services.Repositories
 
         public IQueryable<User> GetAll()
         {
-            return _context.Users.AsQueryable();
+            return _context.Users.Include(u => u.Account).AsQueryable();
         }
 
         public User GetByEmail(string email)
@@ -69,8 +69,8 @@ namespace Services.Repositories
     public class UnitOfWork : IUnitOfWork
     {
         private readonly OneItbContext _context;
-        private IUserRepository _users;
-        private IAccountRepository _accounts;
+        private IUserRepository? _users;
+        private IAccountRepository? _accounts;
 
         public UnitOfWork(OneItbContext context)
         {

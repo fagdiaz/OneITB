@@ -29,7 +29,9 @@ El porcentaje de avance se calcula basándose en el estado de los módulos oblig
 * [x] **T2.1**: Mapeo físico de Entidad `User` y `Account` 1:1.
 * [x] **T2.2**: Carga de biografía y referencias a redes (LinkedIn, Facebook).
 * [x] **T2.3**: Registrar cursadas activas (TSAS / TECAS).
-* [x] **T2.4**: Interfaz de perfil en el cliente frontend.
+* [x] **T2.4**: Interfaz de perfil en el cliente frontend (completada mediante el trasplante del CV).
+
+> **Nota Adicional**: Se ha implementado exitosamente el motor Passwordless para Empleadores y la Moderación Comunitaria, superando los hitos originales estipulados.
 
 ### Módulo 3: Publicaciones y Comentarios (Estado: 🟡 En Progreso)
 * [x] **T3.1**: Estructura de publicaciones vinculadas a `Subject` (Materias).

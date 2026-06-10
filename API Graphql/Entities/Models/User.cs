@@ -47,6 +47,7 @@ namespace OneItb.Entities.Models
         public string? Facebook { get; set; }
         public string? Instagram { get; set; }
         public string? Phone { get; set; }
+        public bool IsActive { get; set; } = true;
 
         public virtual Account Account { get; set; } = null!;
     }

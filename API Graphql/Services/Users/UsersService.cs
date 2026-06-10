@@ -64,6 +64,24 @@ namespace Services.Users
             return new UpdateProfilePayload(user.Id, true, "Perfil actualizado exitosamente.");
         }
 
+        public async Task<UserPayload> UpdateUserRoleAsync(Guid userId, string newRole)
+        {
+            var user = _uow.Users.GetById(userId);
+            if (user == null) return new UserPayload(userId, false, "Usuario no encontrado.");
+            user.Role = newRole;
+            await _uow.CompleteAsync();
+            return new UserPayload(user.Id, true, "Rol actualizado exitosamente.");
+        }
+
+        public async Task<UserPayload> UpdateUserStatusAsync(Guid userId, bool isActive)
+        {
+            var user = _uow.Users.GetById(userId);
+            if (user == null) return new UserPayload(userId, false, "Usuario no encontrado.");
+            user.IsActive = isActive;
+            await _uow.CompleteAsync();
+            return new UserPayload(user.Id, true, "Estado actualizado exitosamente.");
+        }
+
         public async Task<User> CreateAsync(User user)
         {
             await _uow.Users.AddAsync(user);

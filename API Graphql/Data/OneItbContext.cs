@@ -13,6 +13,8 @@ namespace OneItb.Data
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Subject> Subjects { get; set; } = null!;
         public DbSet<Inquiry> Inquiries { get; set; } = null!;
+        public DbSet<CommunityReport> CommunityReports { get; set; } = null!;
+        public DbSet<MagicLink> MagicLinks { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -145,6 +147,46 @@ namespace OneItb.Data
                     .WithMany()
                     .HasForeignKey(c => c.SubjectId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA COMMUNITY_REPORTS
+            // ==========================================
+            modelBuilder.Entity<CommunityReport>(entity =>
+            {
+                entity.ToTable("CommunityReports", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.ContentId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.ContentType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Reason).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasOne(e => e.Reporter)
+                    .WithMany()
+                    .HasForeignKey(e => e.ReporterId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA MAGIC_LINKS
+            // ==========================================
+            modelBuilder.Entity<MagicLink>(entity =>
+            {
+                entity.ToTable("MagicLinks", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Token).IsRequired().HasMaxLength(256);
+                entity.Property(e => e.ExpiresAt).IsRequired().HasColumnType("datetime2");
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+                
+                entity.HasOne(e => e.Account)
+                    .WithMany()
+                    .HasForeignKey(e => e.AccountId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
