@@ -4,12 +4,12 @@ Este archivo define los módulos funcionales, objetivos de la plataforma y el es
 
 ---
 
-## 1. Estado Global de Avance: 42%
+## 1. Estado Global de Avance: 61%
 
 El porcentaje de avance se calcula basándose en el estado de los módulos obligatorios definidos para la entrega:
 
 * 🟢 **Módulo 1: Autenticación y Cuentas**: 100% (Backend compilando y verificado).
-* 🟡 **Módulo 2: Perfiles de Usuario**: 25% (Modelos físicos creados).
+* 🟢 **Módulo 2: Perfiles de Usuario**: 100% (Persistencia e interfaz terminada).
 * 🟡 **Módulo 3: Publicaciones y Comentarios**: 50% (Materia y Consulta creados).
 * 🔴 **Módulo 4: Mensajería Privada**: 0% (Pendiente de diseño).
 * 🔴 **Módulo 5: Recursos y Seguimiento**: 0% (Pendiente de diseño).
@@ -25,11 +25,11 @@ El porcentaje de avance se calcula basándose en el estado de los módulos oblig
 * [x] **T1.4**: Pipeline seguro (UseAuthentication antes de UseAuthorization).
 * [x] **T1.5**: Redirección cliente-servidor e inyección dinámica del token en Apollo.
 
-### Módulo 2: Perfiles de Usuario (Estado: 🟡 En Progreso)
+### Módulo 2: Perfiles de Usuario (Estado: 🟢 Completado)
 * [x] **T2.1**: Mapeo físico de Entidad `User` y `Account` 1:1.
-* [ ] **T2.2**: Carga de biografía y referencias a redes (LinkedIn, Facebook).
-* [ ] **T2.3**: Registrar cursadas activas (TSAS / TECAS).
-* [ ] **T2.4**: Interfaz de perfil en el cliente frontend.
+* [x] **T2.2**: Carga de biografía y referencias a redes (LinkedIn, Facebook).
+* [x] **T2.3**: Registrar cursadas activas (TSAS / TECAS).
+* [x] **T2.4**: Interfaz de perfil en el cliente frontend.
 
 ### Módulo 3: Publicaciones y Comentarios (Estado: 🟡 En Progreso)
 * [x] **T3.1**: Estructura de publicaciones vinculadas a `Subject` (Materias).

@@ -9,6 +9,7 @@ namespace OneITB.Core.Services.Interfaces
     public interface IUsersService
     {
         Task<UserPayload> RegisterAsync(RegisterInput input);
+        Task<UpdateProfilePayload> UpdateProfileAsync(UpdateProfileInput input);
         Task<User> CreateAsync(User user);
         IQueryable<User> GetAllAsync();
         User GetByEmail(string email);

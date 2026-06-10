@@ -60,6 +60,11 @@ namespace OneItb.GraphQL
                     descriptor.Field("email").Resolve(ctx => ctx.Parent<User>().Account?.Email);
                     descriptor.Field("fullName").Resolve(ctx => $"{ctx.Parent<User>().FirstName} {ctx.Parent<User>().LastName}".Trim());
                     descriptor.Field("password").Resolve(ctx => "********");
+                    descriptor.Field(f => f.Biography).Name("biography");
+                    descriptor.Field(f => f.LinkedIn).Name("linkedIn");
+                    descriptor.Field(f => f.Facebook).Name("facebook");
+                    descriptor.Field(f => f.Instagram).Name("instagram");
+                    descriptor.Field(f => f.Phone).Name("phone");
                 }));
 
             services.AddScoped<IUnitOfWork, Services.Repositories.UnitOfWork>();

@@ -43,4 +43,16 @@ namespace OneITB.Core.Services.Interfaces
     public record UserPayload(Guid Id, bool Success, string Message);
 
     public record AuthPayload(string Token, string Username, bool IsAuthenticated, Guid Id);
+
+    public record UpdateProfileInput(
+        [property: GraphQLType(typeof(NonNullType<IdType>))]
+        Guid Id,
+        string? Biography,
+        string? LinkedIn,
+        string? Facebook,
+        string? Instagram,
+        string? Phone
+    );
+
+    public record UpdateProfilePayload(Guid Id, bool Success, string Message);
 }

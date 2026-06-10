@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Inter", sans-serif;
+}
+
+@utility custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #94a3b8;
+    }
+  }
+}
+
+/* Root @page declaration for absolute printer standard size and margin safety */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+/* Visual scale wrapper for screen */
+.resume-scale-wrapper {
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+/* Custom global styles */
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Print Optimization */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide editor chrome and control buttons during printing */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Scale wrapper reset to ensure no scaling applies during print */
+  .resume-scale-wrapper {
+    width: 210mm !important;
+    height: 297mm !important;
+    transform: none !important;
+    transform-origin: unset !important;
+  }
+
+  /* Print container standard settings */
+  .resume-print-target {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 18mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    background-color: #ffffff !important;
+    overflow: hidden !important;
+    transform: none !important;
+    transform-origin: unset !important;
+    
+    /* Indestructible Flex Layout */
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Indestructible Inner bounded content */
+  .resume-print-target > div {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+  }
+
+  /* Indestructible Header Flex Row */
+  .resume-print-target .flex-row {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+  }
+
+  /* Indestructible Skills Grid */
+  .resume-print-target .grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  /* Prevent page breaks inside work experience, education, or projects */
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

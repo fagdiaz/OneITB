@@ -2,10 +2,11 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 
-// Local styles (FontAwesome is loaded via CDN in index.html)
-import './assets/css/normalize.css'
-import './assets/css/styles.css'
-import './assets/css/responsive.css'
+// Global design system — sole CSS source of truth (036-theme-and-css-supremacy)
+// Legacy files (styles.css, responsive.css, normalize.css) have been disconnected.
+// FontAwesome is loaded via CDN in index.html.
+import './index.css'
+
 import { GraphQLProvider } from './data/graphql/GraphqlProvider'
 import { ApolloProvider } from '@apollo/client'
 

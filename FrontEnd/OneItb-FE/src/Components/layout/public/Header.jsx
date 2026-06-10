@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { Nav } from './Nav'
 
 
@@ -7,10 +8,11 @@ export const Header = () => {
     <header className="layout__navbar">
 
             <div className="navbar__header">
-                <a href="#" className="navbar__title">ONEITB</a>
+                <Link to="/" className="navbar__title">ONEITB</Link>
             </div>
 
             <Nav></Nav>
         </header>
   )
 }
+

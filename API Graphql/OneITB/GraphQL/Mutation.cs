@@ -41,5 +41,14 @@ namespace OneITB.GraphQL.Mutations
             var authResult = await accountService.Login(input);
             return authResult;
         }
+
+        public async Task<UpdateProfilePayload> UpdateProfile(
+            UpdateProfileInput input,
+            [Service] IUsersService usersService)
+        {
+            if (input == null) throw new ArgumentNullException(nameof(input));
+            var payload = await usersService.UpdateProfileAsync(input);
+            return payload;
+        }
     }
 }

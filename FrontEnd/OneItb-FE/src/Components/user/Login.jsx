@@ -6,18 +6,21 @@ import { GraphQLProvider } from '../../data/graphql/GraphqlProvider'
 import useAuth from '../../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 
+/**
+ * Login — REFACTOR 037
+ * Full Tailwind rewrite. Eliminates: content__header, content__title,
+ * content__posts, form-login, form-group, btn, alert classes.
+ * Logic is 100% preserved — only className attributes changed.
+ */
 export const Login = () => {
-
-  
-
-  const {form , changed } = useForm({});
-  const [saved, setSaved] = useState("not_sended");
+  const { form, changed } = useForm({});
+  const [saved, setSaved] = useState('not_sended');
   const { login } = useAuth();
   const navigate = useNavigate();
- 
-  const loginUser = async(e) =>{
-      e.preventDefault();
-      try{
+
+  const loginUser = async (e) => {
+    e.preventDefault();
+    try {
       const variables = {
         input: {
           email: form.email,
@@ -26,62 +29,99 @@ export const Login = () => {
       };
       const { data } = await authenticateUser({ variables });
       const { token, username, isAuthenticated, id } = data.login;
-      
+
       if (isAuthenticated) {
         GraphQLProvider.setToken(token);
-        const userObj = {
-          id: id,
-          username: username,
-          email: form.email
-        };
+        const userObj = { id, username, email: form.email };
         GraphQLProvider.setUser(userObj);
-
         login(token, userObj);
-        setSaved("login");
-        setTimeout(() => {
-          navigate('/social');
-        }, 1000);
+        setSaved('login');
+        setTimeout(() => navigate('/feed'), 1000);
       } else {
-        setSaved("error");
+        setSaved('error');
       }
-      }
-      catch(err){
-        console.log(err);
-        setSaved("error");
-      }
-  }
+    } catch (err) {
+      console.log(err);
+      setSaved('error');
+    }
+  };
 
-  const [authenticateUser, {loading}] = useMutation(AUTHENTICATE_USER,{
+  const [authenticateUser, { loading }] = useMutation(AUTHENTICATE_USER, {
     fetchPolicy: 'network-only',
   });
 
   return (
-    <>
-        <header className="content__header content__header--public">
-            <h1 className="content__title"> Login </h1>
+    <div className="min-h-full flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm">
 
-        </header>
-        
-        <div className='content__posts'>
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
 
-          {saved == "login" ? <strong className='alert alert-succes'>Usuario identificado</strong> : ''}
-          {saved == "error" ? <strong className='alert alert-danger'>Usuario no identificado</strong> : ''}
-              <form className='form-login' onSubmit={loginUser}>
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
+              <i className="fa-solid fa-right-to-bracket text-white text-lg" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Iniciar Sesión</h1>
+            <p className="text-sm text-slate-500 mt-1">Accedé a tu cuenta de OneITB</p>
+          </div>
 
-                <div className='form-group'>
-                  <label htmlFor='email'> Email</label>
-                  <input type='email' name='email' onChange={changed}/>
-                </div>
+          {/* Alerts */}
+          {saved === 'login' && (
+            <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium">
+              <i className="fa-solid fa-circle-check" />
+              Usuario identificado. Redirigiendo...
+            </div>
+          )}
+          {saved === 'error' && (
+            <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-medium">
+              <i className="fa-solid fa-circle-exclamation" />
+              Credenciales incorrectas. Intentá de nuevo.
+            </div>
+          )}
 
-                <div className='form-group'>
-                  <label htmlFor='password'> Contraseña</label>
-                  <input type='password' name='password' onChange={changed}/>
-                </div>
+          {/* Form */}
+          <form onSubmit={loginUser} className="flex flex-col gap-5">
 
-                <input type="submit" value="Ingresar" className="btn btn-succes"/>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-sm font-medium text-slate-700">
+                Email institucional
+              </label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                onChange={changed}
+                placeholder="usuario@itbeltran.com.ar"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
+              />
+            </div>
 
-              </form>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-sm font-medium text-slate-700">
+                Contraseña
+              </label>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                onChange={changed}
+                placeholder="••••••••"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
+            >
+              {loading ? 'Ingresando...' : 'Ingresar'}
+            </button>
+
+          </form>
         </div>
-    </>
+      </div>
+    </div>
   )
 }

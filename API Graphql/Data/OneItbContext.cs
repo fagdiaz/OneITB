@@ -67,6 +67,21 @@ namespace OneItb.Data
                     .HasMaxLength(20)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Biography)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.LinkedIn)
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Facebook)
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Instagram)
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Phone)
+                    .HasMaxLength(50);
+
                 entity.HasOne(u => u.Account)
                     .WithOne(a => a.User)
                     .HasForeignKey<User>(u => u.Id)

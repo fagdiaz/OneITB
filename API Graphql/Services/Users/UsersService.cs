@@ -45,6 +45,25 @@ namespace Services.Users
             return new UserPayload(user.Id, true, "Usuario registrado exitosamente en el sistema académico.");
         }
 
+        public async Task<UpdateProfilePayload> UpdateProfileAsync(UpdateProfileInput input)
+        {
+            var user = _uow.Users.GetById(input.Id);
+            if (user == null)
+            {
+                return new UpdateProfilePayload(input.Id, false, "Usuario no encontrado.");
+            }
+
+            user.Biography = input.Biography;
+            user.LinkedIn = input.LinkedIn;
+            user.Facebook = input.Facebook;
+            user.Instagram = input.Instagram;
+            user.Phone = input.Phone;
+
+            await _uow.CompleteAsync();
+
+            return new UpdateProfilePayload(user.Id, true, "Perfil actualizado exitosamente.");
+        }
+
         public async Task<User> CreateAsync(User user)
         {
             await _uow.Users.AddAsync(user);

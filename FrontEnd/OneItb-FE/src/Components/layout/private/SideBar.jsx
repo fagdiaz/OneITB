@@ -1,84 +1,113 @@
 import React from 'react'
 import useAuth from '../../../hooks/useAuth'
-import avatar from '../../../assets/img/user.png'
+import { Link } from 'react-router-dom'
 
+/**
+ * SideBar — REFACTOR 034
+ * 
+ * Replaces all legacy BEM class names (.layout__aside, .aside__container, etc.)
+ * with equivalent Tailwind utility classes.
+ * All data display is preserved: avatar, name, alias, stats, quick-post form.
+ */
 export const SideBar = () => {
 
-    const { auth } = useAuth();
-    console.log( auth );
-        
+  const { auth } = useAuth();
+
   return (
-    <aside className="layout__aside">
+    <div className="flex flex-col h-full p-4 gap-4">
 
-            <header className="aside__header">
-                <h1 className="aside__title">Hola, {auth.fullName} </h1>
-            </header>
+      {/* Profile Card */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
 
-            <div className="aside__container">
+        {/* Header */}
+        <div className="border-b border-slate-100 pb-3 mb-3">
+          <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+            Mi Cuenta
+          </h2>
+        </div>
 
-                <div className="aside__profile-info">
+        {/* Avatar + Name */}
+        <div className="flex items-center gap-3 mb-4">
+          <Link to="/profile" className="shrink-0">
+            <img
+              src={`https://ui-avatars.com/api/?name=${auth.fullName || 'User'}&background=3785e5&color=fff&size=64`}
+              className="w-12 h-12 rounded-full ring-2 ring-blue-200 object-cover"
+              alt="Foto de perfil"
+            />
+          </Link>
+          <div className="min-w-0">
+            <Link
+              to="/profile"
+              className="block text-sm font-semibold text-slate-800 hover:text-blue-600 transition-colors truncate"
+            >
+              {auth.fullName || 'Usuario'}
+            </Link>
+            <p className="text-xs text-slate-500 truncate">
+              @{auth.username || 'usuario'}
+            </p>
+          </div>
+        </div>
 
-                    <div className="profile-info__general-info">
-                        <div className="general-info__container-avatar">
-                            <img src={`https://ui-avatars.com/api/?name=${auth.fullName || 'User'}&background=3785e5&color=fff`} className="container-avatar__img" alt="Foto de perfil"/>
-                        </div>
+        {/* Stats Row */}
+        <div className="flex divide-x divide-slate-100 border-t border-slate-100 pt-3">
+          <a href="#" className="flex-1 flex flex-col items-center gap-0.5 hover:text-blue-600 transition-colors group">
+            <span className="text-lg font-bold text-blue-600 group-hover:text-blue-700">10</span>
+            <span className="text-xs text-slate-500">Siguiendo</span>
+          </a>
+          <a href="#" className="flex-1 flex flex-col items-center gap-0.5 hover:text-blue-600 transition-colors group">
+            <span className="text-lg font-bold text-blue-600 group-hover:text-blue-700">13</span>
+            <span className="text-xs text-slate-500">Seguidores</span>
+          </a>
+          <a href="#" className="flex-1 flex flex-col items-center gap-0.5 hover:text-blue-600 transition-colors group">
+            <span className="text-lg font-bold text-blue-600 group-hover:text-blue-700">17</span>
+            <span className="text-xs text-slate-500">Posts</span>
+          </a>
+        </div>
+      </div>
 
-                        <div className="general-info__container-names">
-                            <a href="#" className="container-names__name">OneItb</a>
-                            <p className="container-names__nickname">OneItb</p>
-                        </div>
-                    </div>
+      {/* Quick Post Form */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex-1">
+        <h3 className="text-sm font-semibold text-slate-700 mb-3">
+          ¿Qué estás pensando?
+        </h3>
 
-                    <div className="profile-info__stats">
+        <form className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="sidebar-post" className="text-xs font-medium text-slate-500">
+              Contenido
+            </label>
+            <textarea
+              id="sidebar-post"
+              name="post"
+              rows={4}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
+              placeholder="Comparte algo con la comunidad..."
+            />
+          </div>
 
-                        <div className="stats__following">
-                            <a href="#" className="following__link">
-                                <span className="following__title">Siguiendo</span>
-                                <span className="following__number">10</span>
-                            </a>
-                        </div>
-                        <div className="stats__following">
-                            <a href="#" className="following__link">
-                                <span className="following__title">Seguidores</span>
-                                <span className="following__number">13</span>
-                            </a>
-                        </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="sidebar-image" className="text-xs font-medium text-slate-500">
+              Imagen (opcional)
+            </label>
+            <input
+              id="sidebar-image"
+              type="file"
+              name="image"
+              accept="image/*"
+              className="w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition"
+            />
+          </div>
 
+          <button
+            type="submit"
+            disabled
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            Publicar
+          </button>
+        </form>
+      </div>
 
-                        <div className="stats__following">
-                            <a href="#" className="following__link">
-                                <span className="following__title">Publicaciones</span>
-                                <span className="following__number">17</span>
-                            </a>
-                        </div>
-
-
-                    </div>
-                </div>
-
-
-                <div className="aside__container-form">
-
-                    <form className="container-form__form-post">
-
-                        <div className="form-post__inputs">
-                            <label htmlFor="post" className="form-post__label">¿Que estas pesando hoy?</label>
-                            <textarea name="post" className="form-post__textarea"></textarea>
-                        </div>
-
-                        <div className="form-post__inputs">
-                            <label htmlFor="image" className="form-post__label">Sube tu foto</label>
-                            <input type="file" name="image" className="form-post__image"/>
-                        </div>
-
-                        <input type="submit" value="Enviar" className="form-post__btn-submit" disabled/>
-
-                    </form>
-
-                </div>
-
-            </div>
-
-        </aside>
+    </div>
   )
 }
