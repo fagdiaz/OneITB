@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_COMMUNITY_REPORTS } from '../../data/graphql/queries/admin';
 import { UPDATE_REPORT_STATUS } from '../../data/graphql/mutations/moderation';
@@ -7,6 +7,7 @@ export const ModerationManagement = () => {
   const { data, loading, error, refetch } = useQuery(GET_COMMUNITY_REPORTS, {
     fetchPolicy: 'cache-and-network'
   });
+  const reports = data?.communityReports ?? [];
   const [view, setView] = useState('pending'); // 'pending' | 'history'
 
   const pendingReports = useMemo(
@@ -36,7 +37,7 @@ export const ModerationManagement = () => {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">Moderación y reportes</h2>
+          <h2 className="text-lg font-bold text-slate-800">Moderacion y reportes</h2>
           <p className="text-sm text-slate-500">
             {pendingReports.length} reportes pendientes, {historyReports.length} en historial.
           </p>
@@ -73,8 +74,8 @@ export const ModerationManagement = () => {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-5 py-3">Publicación</th>
-                <th className="px-5 py-3">Razón</th>
+                <th className="px-5 py-3">Publicacion</th>
+                <th className="px-5 py-3">Razon</th>
                 <th className="px-5 py-3">Reportado por</th>
                 <th className="px-5 py-3">Estado</th>
                 <th className="px-5 py-3 text-right">Acciones</th>

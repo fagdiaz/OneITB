@@ -43,7 +43,7 @@ export const SubjectManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-800">Materias</h2>
-          <p className="text-sm text-slate-500">Catálogo académico disponible para publicaciones.</p>
+          <p className="text-sm text-slate-500">Catalogo academico disponible para publicaciones.</p>
         </div>
         <div className="flex gap-2">
           <button 
@@ -103,7 +103,7 @@ export const SubjectManagement = () => {
               className="space-y-4"
             >
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-600">Código</label>
+                <label className="text-xs font-semibold text-slate-600">Codigo</label>
                 <input
                   type="text"
                   required
@@ -155,7 +155,7 @@ export const SubjectManagement = () => {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-5 py-3">Código</th>
+                <th className="px-5 py-3">Codigo</th>
                 <th className="px-5 py-3">Nombre</th>
                 <th className="px-5 py-3 text-right">Acciones</th>
               </tr>
