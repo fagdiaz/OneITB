@@ -94,18 +94,25 @@ export const UserManagement = () => {
                     </select>
                   </td>
                   <td className="px-5 py-4">
-                    <button
-                      type="button"
-                      disabled={updatingStatus}
-                      onClick={() => toggleStatus(user.id, user.isActive)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        user.isActive
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      {user.isActive ? 'Activo' : 'Suspendido'}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          user.isActive
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-200 text-slate-600'
+                        }`}>
+                        {user.isActive ? 'Activo' : 'Suspendido'}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={updatingStatus}
+                        onClick={() => toggleStatus(user.id, user.isActive)}
+                        className={`text-xs font-medium hover:underline ${
+                          user.isActive ? 'text-red-600' : 'text-emerald-600'
+                        }`}
+                      >
+                        {user.isActive ? 'Suspender' : 'Activar'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

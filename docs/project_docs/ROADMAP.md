@@ -44,6 +44,13 @@ reportar. El seed administrado aporta 5 materias, 10 usuarios, 30 publicaciones,
 - [ ] Integracion o simulacion SIU Guarani.
 - [ ] Preferencias de notificacion por materia.
 
+## Modulo 6: Administración y Moderación - 100%
+
+- [x] Panel de Usuarios (Roles y Suspensión).
+- [x] Panel de Materias (CRUD completo y desactivación).
+- [x] Panel de Moderación (Cambio de estado de reportes de comunidad).
+- [x] Unificación del diseño (Listas tabulares).
+
 ## Prioridad vigente
 
 Completar archivos educativos del Modulo 3 antes de ampliar el alcance hacia

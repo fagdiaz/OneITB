@@ -26,7 +26,7 @@ const buildCommentTree = (comments) => {
   return roots;
 };
 
-const CommentNode = ({ comment, onReply, submitting }) => {
+const CommentNode = ({ comment, onReply, onReport, submitting }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [reply, setReply] = useState('');
 
@@ -45,18 +45,30 @@ const CommentNode = ({ comment, onReply, submitting }) => {
           <span className="text-xs font-semibold text-slate-700">
             {comment.user?.firstName} {comment.user?.lastName}
           </span>
-          <time className="text-[11px] text-slate-400">
-            {new Date(comment.createdAt).toLocaleString()}
-          </time>
+          <div className="flex items-center gap-3">
+            <time className="text-[11px] text-slate-400">
+              {new Date(comment.createdAt).toLocaleDateString('es-AR')} {new Date(comment.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+            </time>
+            <button
+              type="button"
+              onClick={() => onReport && onReport(comment.inquiryId)}
+              className="text-slate-300 hover:text-red-500"
+              title="Reportar comentario"
+            >
+              <i className="fa-solid fa-flag text-xs" />
+            </button>
+          </div>
         </div>
         <p className="mt-1 text-sm leading-relaxed text-slate-600">{comment.content}</p>
-        <button
-          type="button"
-          onClick={() => setIsReplying((current) => !current)}
-          className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
-        >
-          Responder
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setIsReplying((current) => !current)}
+            className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
+          >
+            Responder
+          </button>
+        </div>
       </div>
 
       {isReplying && (
@@ -85,6 +97,7 @@ const CommentNode = ({ comment, onReply, submitting }) => {
               key={replyComment.id}
               comment={replyComment}
               onReply={onReply}
+              onReport={onReport}
               submitting={submitting}
             />
           ))}
@@ -94,7 +107,7 @@ const CommentNode = ({ comment, onReply, submitting }) => {
   );
 };
 
-export const CommentThread = ({ comments, onComment, submitting }) => {
+export const CommentThread = ({ comments, onComment, onReport, submitting }) => {
   const [draft, setDraft] = useState('');
   const tree = useMemo(() => buildCommentTree(comments), [comments]);
 
@@ -131,6 +144,7 @@ export const CommentThread = ({ comments, onComment, submitting }) => {
               key={comment.id}
               comment={comment}
               onReply={onComment}
+              onReport={onReport}
               submitting={submitting}
             />
           ))}
@@ -141,3 +155,4 @@ export const CommentThread = ({ comments, onComment, submitting }) => {
     </section>
   );
 };
+

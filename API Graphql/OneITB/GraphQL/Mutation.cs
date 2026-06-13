@@ -91,6 +91,58 @@ namespace OneITB.GraphQL.Mutations
                 reason);
         }
 
+        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        public async Task<CommunityReport> UpdateReportStatus(
+            Guid reportId,
+            string status,
+            [Service] OneItbContext context)
+        {
+            var report = await context.CommunityReports.FindAsync(reportId);
+            if (report == null) throw new GraphQLException("Reporte no encontrado.");
+            report.Status = status;
+            await context.SaveChangesAsync();
+            return report;
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        public async Task<Subject> AddSubject(
+            string code,
+            string name,
+            [Service] OneItbContext context)
+        {
+            var subject = new Subject { Code = code, Name = name, IsActive = true };
+            context.Subjects.Add(subject);
+            await context.SaveChangesAsync();
+            return subject;
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        public async Task<Subject> UpdateSubject(
+            int id,
+            string code,
+            string name,
+            [Service] OneItbContext context)
+        {
+            var subject = await context.Subjects.FindAsync(id);
+            if (subject == null) throw new GraphQLException("Materia no encontrada.");
+            subject.Code = code;
+            subject.Name = name;
+            await context.SaveChangesAsync();
+            return subject;
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        public async Task<Subject> ToggleSubjectStatus(
+            int id,
+            [Service] OneItbContext context)
+        {
+            var subject = await context.Subjects.FindAsync(id);
+            if (subject == null) throw new GraphQLException("Materia no encontrada.");
+            subject.IsActive = !subject.IsActive;
+            await context.SaveChangesAsync();
+            return subject;
+        }
+
         [Authorize]
         public async Task<Inquiry> AddInquiry(
             int subjectId,

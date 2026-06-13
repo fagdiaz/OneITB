@@ -18,31 +18,31 @@ namespace OneItb.Data
 
         private static readonly SeedUser[] SeedUsers =
         {
-            new(AdminId, "admin@itbeltran.com.ar", "Sofía", "Martínez", "Administrador", "Administración académica y tecnológica."),
-            new(StudentId, "student@itbeltran.com.ar", "Lucía", "Fernández", "Estudiante", "Estudiante de Análisis de Sistemas."),
-            new(TeacherId, "teacher@itbeltran.com.ar", "Gabriel", "Rossi", "Profesor", "Docente de programación y bases de datos."),
-            new(ModeratorId, "moderator@itbeltran.com.ar", "Valentina", "Suárez", "Moderador", "Moderación y convivencia de la comunidad."),
-            new(EmployerId, "employer@itbeltran.com.ar", "Martín", "Pereyra", "Empleador", "Vinculación profesional y oportunidades laborales."),
+            new(AdminId, "admin@itbeltran.com.ar", "Sofia", "Martinez", "Administrador", "Administracion academica y tecnologica."),
+            new(StudentId, "student@itbeltran.com.ar", "Lucia", "Fernandez", "Estudiante", "Estudiante de Analisis de Sistemas."),
+            new(TeacherId, "teacher@itbeltran.com.ar", "Gabriel", "Rossi", "Profesor", "Docente de programacion y bases de datos."),
+            new(ModeratorId, "moderator@itbeltran.com.ar", "Valentina", "Suarez", "Moderador", "Moderacion y convivencia de la comunidad."),
+            new(EmployerId, "employer@itbeltran.com.ar", "Martin", "Pereyra", "Empleador", "Vinculacion profesional y oportunidades laborales."),
             new(Guid.Parse("6b7c8d9e-0f1a-2b3c-4d5e-6f7a8b9c0d1e"), "camila.torres@itbeltran.com.ar", "Camila", "Torres", "Estudiante", "Interesada en desarrollo web y experiencia de usuario."),
-            new(Guid.Parse("7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f"), "tomas.gimenez@itbeltran.com.ar", "Tomás", "Giménez", "Estudiante", "Estudiante orientado a infraestructura y redes."),
-            new(Guid.Parse("8d9e0f1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a"), "paula.arias@itbeltran.com.ar", "Paula", "Arias", "Profesor", "Docente de análisis matemático y estadística."),
+            new(Guid.Parse("7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f"), "tomas.gimenez@itbeltran.com.ar", "Tomas", "Gimenez", "Estudiante", "Estudiante orientado a infraestructura y redes."),
+            new(Guid.Parse("8d9e0f1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a"), "paula.arias@itbeltran.com.ar", "Paula", "Arias", "Profesor", "Docente de analisis matematico y estadistica."),
             new(Guid.Parse("9e0f1a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b"), "diego.molina@itbeltran.com.ar", "Diego", "Molina", "Estudiante", "Estudiante interesado en calidad de software."),
-            new(Guid.Parse("0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c"), "julieta.castro@itbeltran.com.ar", "Julieta", "Castro", "Estudiante", "Estudiante de primer año y ayudante de estudio.")
+            new(Guid.Parse("0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c"), "julieta.castro@itbeltran.com.ar", "Julieta", "Castro", "Estudiante", "Estudiante de primer anio y ayudante de estudio.")
         };
 
         private static readonly SeedSubject[] SeedSubjects =
         {
-            new("Programación I", "PROG1"),
+            new("Programacion I", "PROG1"),
             new("Base de Datos", "BDD"),
-            new("Análisis de Sistemas", "ADS"),
+            new("Analisis de Sistemas", "ADS"),
             new("Redes y Comunicaciones", "REDES"),
-            new("Matemática Aplicada", "MAT")
+            new("Matematica Aplicada", "MAT")
         };
 
         private static readonly string[] InquiryTopics =
         {
-            "Material para preparar el próximo parcial",
-            "Duda sobre el trabajo práctico integrador",
+            "Material para preparar el proximo parcial",
+            "Duda sobre el trabajo practico integrador",
             "Grupo de estudio para esta semana"
         };
 
@@ -216,7 +216,7 @@ namespace OneItb.Data
                         Id = parentId,
                         InquiryId = inquiries[inquiryIndex].Id,
                         UserId = SeedUsers[(inquiryIndex + 2) % SeedUsers.Length].Id,
-                        Content = "Me sumo a la consulta. Puedo compartir mis apuntes y una guía de ejercicios.",
+                        Content = "Me sumo a la consulta. Puedo compartir mis apuntes y una guia de ejercicios.",
                         CreatedAt = inquiries[inquiryIndex].PublishDate.AddMinutes(15)
                     });
                 }
@@ -248,7 +248,7 @@ namespace OneItb.Data
                     Id = StableGuid("report-0"),
                     InquiryId = inquiries[0].Id,
                     ReporterId = ModeratorId,
-                    Reason = "Contenido duplicado que requiere revisión.",
+                    Reason = "Contenido duplicado que requiere revision.",
                     Status = "Pending",
                     CreatedAt = inquiries[0].PublishDate.AddHours(2)
                 },
@@ -257,7 +257,7 @@ namespace OneItb.Data
                     Id = StableGuid("report-1"),
                     InquiryId = inquiries[1].Id,
                     ReporterId = StudentId,
-                    Reason = "Posible información incorrecta sobre la fecha de entrega.",
+                    Reason = "Posible informacion incorrecta sobre la fecha de entrega.",
                     Status = "Pending",
                     CreatedAt = inquiries[1].PublishDate.AddHours(2)
                 }
@@ -276,9 +276,9 @@ namespace OneItb.Data
         {
             string[] details =
             {
-                "¿Qué bibliografía y ejercicios recomiendan para repasar los conceptos principales?",
+                "Que bibliografia y ejercicios recomiendan para repasar los conceptos principales?",
                 "Estoy revisando la consigna y quisiera comparar el enfoque de modelado antes de entregar.",
-                "Propongo una reunión breve para ordenar dudas y resolver ejemplos en conjunto."
+                "Propongo una reunion breve para ordenar dudas y resolver ejemplos en conjunto."
             };
             return $"{details[topicIndex]} La consulta corresponde a {subjectName} y fue preparada por el usuario de prueba {userIndex + 1}.";
         }

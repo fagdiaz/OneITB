@@ -182,7 +182,7 @@ export const Feed = () => {
                     {post.user?.firstName} {post.user?.lastName}
                   </p>
                   <p className="text-xs text-slate-400">
-                    {post.subject?.name} · {new Date(post.publishDate).toLocaleString()}
+                    {post.subject?.name} · {new Date(post.publishDate).toLocaleDateString('es-AR')} {new Date(post.publishDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
@@ -230,6 +230,7 @@ export const Feed = () => {
                 onComment={(parentCommentId, commentContent) =>
                   handleComment(post.id, parentCommentId, commentContent)
                 }
+                onReport={() => setReportTargetId(post.id)}
               />
             )}
           </article>

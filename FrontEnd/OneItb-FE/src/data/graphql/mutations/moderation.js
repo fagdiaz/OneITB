@@ -11,3 +11,12 @@ export const REPORT_INQUIRY = gql`
     }
   }
 `;
+
+export const UPDATE_REPORT_STATUS = gql`
+  mutation UpdateReportStatus($reportId: UUID!, $status: String!) {
+    updateReportStatus(reportId: $reportId, status: $status) {
+      id
+      status
+    }
+  }
+`;

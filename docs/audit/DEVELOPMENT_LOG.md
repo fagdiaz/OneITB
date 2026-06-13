@@ -5,6 +5,43 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-13] - Admin CRUD & UI Polish (Spec: 101-admin-actions-and-ui-polish)
+
+* **Objetivo**: Dotar de interactividad completa (CRUD) a las pestañas de Materias y Reportes en el AdminDashboard, igualando la UI del reporte de comentarios con la publicación principal, y solucionar definitivamente los problemas de codificación de caracteres especiales (Encoding) en los datos de la plataforma.
+* **Resultado**:
+  - Se eliminaron los caracteres acentuados de las cadenas en `DbInitializer.cs` para mitigar el problema de Encoding sin reconfigurar la base de datos subyacente.
+  - Se movió el botón "Reportar" en la interfaz de comentarios a un icono de bandera alineado a la derecha en la cabecera.
+  - Se integró el modelo `Subject` con la propiedad `IsActive` a través de EF Core Migrations.
+  - Se implementaron y conectaron las mutaciones GraphQL de gestión de Materias (`AddSubject`, `UpdateSubject`, `ToggleSubjectStatus`) y la actualización de Reportes (`UpdateReportStatus` a 'Resolved' y 'Rejected').
+  - Validaciones completadas: Compilación de `API Graphql/OneITB/GraphQL.csproj` en Release, `npm run build` del frontend exitosos, y aplicación correcta de la migración en EF Core.
+* **Archivos Modificados**:
+  - `API Graphql/Entities/Models/Subject.cs`
+  - `API Graphql/Data/DbInitializer.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/CommentThread.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/SubjectManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/ModerationManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/subjects.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/mutations/subjects.js` (Nuevo)
+  - `FrontEnd/OneItb-FE/src/data/graphql/mutations/moderation.js`
+
+## [2026-06-13] - UI: Quick Wins y Pulido de Interfaz (Spec: 100-quick-wins-ui-polish)
+
+* **Objetivo**: Ejecutar una fase de pulido integral sobre la UI del Módulo 3 y el Panel de Administración para resolver problemas de codificación de caracteres, formateo de fechas, reportes en comentarios y consistencia visual en administración.
+* **Resultado**:
+  - Se forzó el formato UTF-8 en la base de datos simulada (`DbInitializer.cs`) asegurando que los caracteres especiales (eñes, tildes) se sirvan correctamente.
+  - Se mejoró la legibilidad temporal eliminando los segundos de las publicaciones y comentarios usando `toLocaleString` con opciones estrictas (`HH:mm`).
+  - Se incorporó la funcionalidad "Reportar" en la lista de comentarios anidados de `CommentThread.jsx`, propagando su ID al modal genérico de reportes.
+  - Se hizo explícito el botón de suspensión y activación de cuentas en la tabla de `UserManagement.jsx`.
+  - Se unificó el diseño visual del panel administrativo al refactorizar `SubjectManagement.jsx` y `ModerationManagement.jsx` de tarjetas al formato de lista tabular utilizado en `UserManagement.jsx`.
+* **Archivos Modificados**:
+  - `API Graphql/Data/DbInitializer.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/CommentThread.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/UserManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/SubjectManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/ModerationManagement.jsx`
+
 ## [2026-06-13] - Full-Stack: Ecosistema Social, Mega-Seed y Administracion (Spec: 099-social-admin-ecosystem)
 
 * **Objetivo**: Habilitar un entorno demostrable con datos realistas, interacciones sociales completas y un panel administrativo por pestañas.
