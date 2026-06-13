@@ -7,9 +7,15 @@ export const ModerationManagement = () => {
   const { data, loading, error, refetch } = useQuery(GET_COMMUNITY_REPORTS, {
     fetchPolicy: 'cache-and-network'
   });
-  const reports = data?.communityReports ?? [];
+  const [view, setView] = useState('pending'); // 'pending' | 'history'
+
   const pendingReports = useMemo(
     () => reports.filter((report) => report.status === 'Pending'),
+    [reports]
+  );
+  
+  const historyReports = useMemo(
+    () => reports.filter((report) => report.status !== 'Pending'),
     [reports]
   );
   
@@ -31,11 +37,35 @@ export const ModerationManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-800">Moderación y reportes</h2>
-          <p className="text-sm text-slate-500">{pendingReports.length} reportes pendientes.</p>
+          <p className="text-sm text-slate-500">
+            {pendingReports.length} reportes pendientes, {historyReports.length} en historial.
+          </p>
         </div>
-        <button type="button" onClick={() => refetch()} className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600">
-          Actualizar
-        </button>
+        <div className="flex gap-2">
+          <div className="flex rounded-lg bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => setView('pending')}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                view === 'pending' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Pendientes
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('history')}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                view === 'history' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Historial
+            </button>
+          </div>
+          <button type="button" onClick={() => refetch()} className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100">
+            Actualizar
+          </button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -51,7 +81,7 @@ export const ModerationManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {pendingReports.map((report) => (
+              {(view === 'pending' ? pendingReports : historyReports).map((report) => (
                 <tr key={report.id}>
                   <td className="px-5 py-4">
                     <p className="font-semibold text-slate-800">{report.inquiry?.title}</p>
@@ -64,38 +94,46 @@ export const ModerationManagement = () => {
                     <p className="text-[11px] text-slate-400">{new Date(report.createdAt).toLocaleDateString('es-AR')} {new Date(report.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
                   </td>
                   <td className="px-5 py-4">
-                    <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                      report.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
+                      report.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
                       {report.status}
                     </span>
                   </td>
                   <td className="px-5 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={async () => {
-                          await updateStatus({ variables: { reportId: report.id, status: 'Resolved' } });
-                        }}
-                        disabled={updating}
-                        className="rounded-lg bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-100 disabled:opacity-50"
-                      >
-                        Resolver
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await updateStatus({ variables: { reportId: report.id, status: 'Rejected' } });
-                        }}
-                        disabled={updating}
-                        className="rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
-                      >
-                        Rechazar
-                      </button>
-                    </div>
+                    {view === 'pending' ? (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={async () => {
+                            await updateStatus({ variables: { reportId: report.id, status: 'Resolved' } });
+                          }}
+                          disabled={updating}
+                          className="rounded-lg bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-100 disabled:opacity-50"
+                        >
+                          Resolver
+                        </button>
+                        <button
+                          onClick={async () => {
+                            await updateStatus({ variables: { reportId: report.id, status: 'Rejected' } });
+                          }}
+                          disabled={updating}
+                          className="rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">Procesado</span>
+                    )}
                   </td>
                 </tr>
               ))}
-              {pendingReports.length === 0 && (
+              {(view === 'pending' ? pendingReports : historyReports).length === 0 && (
                 <tr>
                   <td colSpan="5" className="px-5 py-8 text-center text-sm text-slate-500">
-                    No hay reportes pendientes.
+                    No hay reportes en esta vista.
                   </td>
                 </tr>
               )}

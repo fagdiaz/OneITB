@@ -5,6 +5,18 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-13] - Admin Dashboard UX Refinement (Spec: 102-admin-ux-refinement)
+
+* **Objetivo**: Refinar la Experiencia de Usuario (UX) en el AdminDashboard.jsx, implementando modales dedicados para la edición de materias y reestructurando la pestaña de moderación para mostrar un historial completo de reportes divididos por estado.
+* **Resultado**:
+  - Se refactorizó `SubjectManagement.jsx` para utilizar un componente Modal superpuesto con `z-index` y `bg-black/50`, reemplazando el formulario estático (inline) que rompía el desplazamiento visual de la pantalla.
+  - Se actualizó `ModerationManagement.jsx` implementando un *Split View* (botones en formato "tabs" integrados). Ahora la vista se divide dinámicamente entre el array de reportes "Pendientes" y el "Historial", permitiendo a los moderadores auditar las decisiones previas sin requerir mutaciones o queries nuevas.
+  - Se confirmó el cumplimiento de la directiva estricta "Frontend Only" implementando los cambios lógicos del lado del cliente.
+  - Validaciones completadas: `npm run build` del frontend exitoso con Vite (0 errores).
+* **Archivos Modificados**:
+  - `FrontEnd/OneItb-FE/src/Components/admin/SubjectManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/ModerationManagement.jsx`
+
 ## [2026-06-13] - Admin CRUD & UI Polish (Spec: 101-admin-actions-and-ui-polish)
 
 * **Objetivo**: Dotar de interactividad completa (CRUD) a las pestañas de Materias y Reportes en el AdminDashboard, igualando la UI del reporte de comentarios con la publicación principal, y solucionar definitivamente los problemas de codificación de caracteres especiales (Encoding) en los datos de la plataforma.
