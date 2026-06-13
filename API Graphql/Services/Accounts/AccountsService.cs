@@ -29,7 +29,7 @@ namespace Services.Accounts
                 throw new Exception("Credenciales inválidas.");
 
             string token = GenerateJwtToken(user);
-            return new AuthPayload(token, user.FirstName, true, user.Id);
+            return new AuthPayload(token, user.FirstName, true, user.Id, user.Role);
         }
 
         private string GenerateJwtToken(User user)

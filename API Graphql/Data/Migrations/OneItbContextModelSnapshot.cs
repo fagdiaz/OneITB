@@ -63,25 +63,53 @@ namespace Data.Migrations
                     b.ToTable("Accounts", "dbo");
                 });
 
-            modelBuilder.Entity("OneItb.Entities.Models.CommunityReport", b =>
+            modelBuilder.Entity("OneItb.Entities.Models.Comment", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ContentId")
+                    b.Property<string>("Content")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("InquiryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ParentCommentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InquiryId");
+
+                    b.HasIndex("ParentCommentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Comments", "dbo");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.CommunityReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("InquiryId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Reason")
                         .IsRequired()
@@ -98,7 +126,15 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InquiryId");
+
                     b.HasIndex("ReporterId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("InquiryId", "ReporterId", "Status")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Pending'");
 
                     b.ToTable("CommunityReports", "dbo");
                 });
@@ -183,6 +219,32 @@ namespace Data.Migrations
                     b.HasIndex("AccountId");
 
                     b.ToTable("MagicLinks", "dbo");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.Reaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("InquiryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("InquiryId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("Reactions", "dbo");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.Subject", b =>
@@ -298,30 +360,68 @@ namespace Data.Migrations
                     b.ToTable("Users", "dbo");
                 });
 
+            modelBuilder.Entity("OneItb.Entities.Models.Comment", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.Inquiry", "Inquiry")
+                        .WithMany("Comments")
+                        .HasForeignKey("InquiryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.Comment", "ParentComment")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("OneItb.Entities.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Inquiry");
+
+                    b.Navigation("ParentComment");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("OneItb.Entities.Models.CommunityReport", b =>
                 {
+                    b.HasOne("OneItb.Entities.Models.Inquiry", "Inquiry")
+                        .WithMany("Reports")
+                        .HasForeignKey("InquiryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("OneItb.Entities.Models.User", "Reporter")
                         .WithMany()
                         .HasForeignKey("ReporterId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Inquiry");
+
                     b.Navigation("Reporter");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.Inquiry", b =>
                 {
-                    b.HasOne("OneItb.Entities.Models.Subject", null)
-                        .WithMany()
+                    b.HasOne("OneItb.Entities.Models.Subject", "Subject")
+                        .WithMany("Inquiries")
                         .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("OneItb.Entities.Models.User", null)
+                    b.HasOne("OneItb.Entities.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Subject");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.MagicLink", b =>
@@ -333,6 +433,25 @@ namespace Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.Reaction", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.Inquiry", "Inquiry")
+                        .WithMany("Reactions")
+                        .HasForeignKey("InquiryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Inquiry");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.User", b =>
@@ -350,6 +469,25 @@ namespace Data.Migrations
                 {
                     b.Navigation("User")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.Comment", b =>
+                {
+                    b.Navigation("Replies");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.Inquiry", b =>
+                {
+                    b.Navigation("Comments");
+
+                    b.Navigation("Reactions");
+
+                    b.Navigation("Reports");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.Subject", b =>
+                {
+                    b.Navigation("Inquiries");
                 });
 #pragma warning restore 612, 618
         }

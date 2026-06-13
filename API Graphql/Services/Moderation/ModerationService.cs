@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
@@ -16,28 +17,45 @@ namespace Services.Moderation
             _context = context;
         }
 
-        public async Task<bool> ReportContentAsync(Guid reporterId, string contentId, string contentType, string reason)
+        public IQueryable<CommunityReport> GetCommunityReports()
         {
+            return _context.CommunityReports
+                .AsNoTracking()
+                .OrderByDescending(report => report.CreatedAt);
+        }
+
+        public async Task<CommunityReport> ReportInquiryAsync(Guid reporterId, Guid inquiryId, string reason)
+        {
+            string normalizedReason = reason?.Trim() ?? string.Empty;
+            if (normalizedReason.Length == 0)
+                throw new ArgumentException("El motivo del reporte no puede estar vacío.");
+            if (normalizedReason.Length > 500)
+                throw new ArgumentException("El motivo del reporte no puede superar 500 caracteres.");
+
+            if (!await _context.Inquiries.AnyAsync(inquiry => inquiry.Id == inquiryId))
+                throw new InvalidOperationException("La publicación no existe.");
+
+            if (!await _context.Users.AnyAsync(user => user.Id == reporterId && user.IsActive))
+                throw new InvalidOperationException("El usuario autenticado no está disponible.");
+
+            bool alreadyPending = await _context.CommunityReports.AnyAsync(report =>
+                report.ReporterId == reporterId &&
+                report.InquiryId == inquiryId &&
+                report.Status == "Pending");
+
+            if (alreadyPending)
+                throw new InvalidOperationException("Ya enviaste un reporte pendiente para esta publicación.");
+
             var report = new CommunityReport
             {
                 ReporterId = reporterId,
-                ContentId = contentId,
-                ContentType = contentType,
-                Reason = reason
+                InquiryId = inquiryId,
+                Reason = normalizedReason
             };
 
             _context.CommunityReports.Add(report);
             await _context.SaveChangesAsync();
-
-            // Threshold logic (simulate hiding the post if report count >= 5)
-            var reportCount = await _context.CommunityReports.CountAsync(r => r.ContentId == contentId && r.Status == "Pending");
-            if (reportCount >= 5)
-            {
-                // TODO: Integrate ILogger<ModerationService> and emit a structured warning.
-                // At >= 5 pending reports, the post should be flagged for review.
-            }
-
-            return true;
+            return report;
         }
     }
 }

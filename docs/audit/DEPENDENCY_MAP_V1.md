@@ -1,65 +1,55 @@
-# DEPENDENCY_MAP_V1
+# Mapa de dependencias V1
+
+> Snapshot actualizado el 2026-06-13. El estado operativo vigente se mantiene
+> en `fix-roadmap-13-06-2026.md`.
 
 ## Backend
 
-### Diagrama ASCII
-```
-GraphQL (Query/Mutation)
-  -> Services (UsersService, AccountsService)
-      -> Data (OneItbContext)
-          -> Entities (User, Account, Enums)
+```text
+HotChocolate Query/Mutation
+  -> Services interfaces
+    -> Services implementations
+      -> UnitOfWork / OneItbContext
+        -> SQL Server
 ```
 
-### Tabla de dependencias (backend)
-| Clase | Depende de | Motivo |
-|---|---|---|
-| `GraphQL.Query` | `Services.Users.UsersService` | Resolver de consultas GraphQL consume servicio |
-| `GraphQL.Mutation` | `Services.Users.UsersService`, `Services.Accounts.AccountsService`, `IConfiguration` | Resolver de mutaciones ejecuta l?gica y genera token |
-| `Services.Users.UsersService` | `OneItb.Data.OneItbContext`, `IConfiguration`, `JwtSecurityTokenHandler` | Acceso DB y generaci?n de JWT |
-| `Services.Accounts.AccountsService` | `OneItb.Data.OneItbContext` | Lectura de cuentas |
-| `OneItb.Data.OneItbContext` | `Entities.Models.User`, `Entities.Models.Account` | DbSet de entidades |
+Excepcion temporal: los resolvers de `subjects`, `inquiries` y `addInquiry`
+usan `OneItbContext` directamente. Deben revisarse durante la estabilizacion
+para recuperar la separacion por servicios.
 
-## Frontend
+## Feed
 
-### Diagrama ASCII (Login flow)
+```text
+Feed.jsx
+  -> GET_SUBJECTS
+  -> GET_INQUIRIES
+  -> CREATE_INQUIRY
+  -> Apollo Client
+  -> /graphql
+  -> Query.GetSubjects / Query.GetInquiries / Mutation.AddInquiry
+  -> OneItbContext
+  -> SQL Server
 ```
+
+Brecha actual:
+
+```text
+Frontend solicita Inquiry.user.idUsuario/nombre/apellidos
+Esquema expone User.id/firstName/lastName
+Inquiry no expone user
+```
+
+## Autenticacion
+
+```text
 Login.jsx
-  -> authenticateUser mutation
-    -> ApolloClient (GraphqlProvider)
-      -> /graphql
-  -> localStorage (token/user)
-  -> AuthProvider (context)
-  -> PrivateLayout (gating)
+  -> login mutation
+  -> AccountsService
+  -> BCrypt verification
+  -> JWT
+  -> AuthContext
+  -> Apollo authLink
 ```
 
-### Diagrama ASCII (Query flow)
-```
-GET_USERS query
-  -> ApolloClient
-    -> /graphql
-  -> Query.GetUsers
-  -> UsersService.GetAllAsync
-  -> DbContext.Users
-```
-
-### Diagrama ASCII (Mutation flow)
-```
-ADD_USER mutation
-  -> ApolloClient
-    -> /graphql
-  -> Mutation.AddUser
-  -> AccountsService.GetById
-  -> UsersService.GetByEmail + CreateAsync
-  -> DbContext.SaveChangesAsync
-```
-
-### Tabla de dependencias (frontend)
-| M?dulo | Depende de | Motivo |
-|---|---|---|
-| `src/main.jsx` | `ApolloProvider`, `GraphqlProvider` | Inicializa Apollo Client global |
-| `src/router/Routing.jsx` | `AuthProvider`, `PrivateLayout`, `PublicLayout` | Orquestaci?n de rutas |
-| `AuthProvider` | `localStorage` | Inicializa sesi?n desde storage |
-| `PrivateLayout` | `useAuth` | Gating por `auth.id` |
-| `GraphqlProvider` | `ApolloClient` | Configuraci?n del endpoint GraphQL |
-| `Login.jsx` | `authenticateUser` mutation, `localStorage` | Login y persistencia de sesi?n |
-| `Register.jsx` | `addUser` mutation | Alta de usuarios |
+Deuda actual: `AuthContext` y `GraphqlProvider` mantienen compatibilidad con
+`token` y `access_token`; debe quedar una unica fuente de verdad.

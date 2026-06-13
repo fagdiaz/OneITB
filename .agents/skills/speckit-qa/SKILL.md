@@ -40,6 +40,20 @@ Analizar el `tasks.md` generado. Tu objetivo es purgar la deuda técnica implíc
 * **Sensitive Data Handling**: Si la tarea implica persistencia o manejo de contraseñas, tokens o datos sensibles, el plan **debe incluir explícitamente su encriptación/hashing** (ej. BCrypt, Argon2) antes de guardarse en la base de datos. No permitas el almacenamiento en texto plano bajo ninguna circunstancia.
 * **Exposure Prevention**: Verify that sensitive fields (such as `PasswordHash`, `Password`, `Salt`, `Secret`, or `Token`) are decorated with `[GraphQLIgnore]` or ignored via fluent descriptor configuration `.Ignore()` in `Startup.cs` to prevent credential exposure.
 
+### 4. Validation Evidence & Documentation Closure
+* **Runtime Evidence**: A successful build does not prove a GraphQL contract, database
+  write, authentication rule, Apollo cache update, or browser flow. Require explicit
+  end-to-end validation tasks for affected behavior.
+* **No Unsupported Completion Claims**: If runtime validation was not executed, the
+  feature and roadmap must say `Unverified` or `Blocked`, never `Completed`.
+* **Mandatory Spec Closeout**: Every `tasks.md` must include final tasks to:
+  - update `docs/project_docs/ROADMAP.md` from checklist evidence;
+  - insert exactly one entry at the top of `docs/audit/DEVELOPMENT_LOG.md`,
+    immediately after its introductory block;
+  - verify all log entries remain ordered newest to oldest;
+  - update `docs/audit/DOCUMENTATION_STATUS.md` when canonical status changes;
+  - record the exact validation commands and outcomes.
+
 ## Output Format
 Si encuentras deuda técnica, errores de consistencia, discrepancias de idioma o vulnerabilidades en el archivo `tasks.md`, detén el flujo y estructura tu respuesta de la siguiente manera:
 

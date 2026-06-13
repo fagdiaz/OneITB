@@ -1,25 +1,43 @@
-# Documentation Alignment Status Check
+# Estado de documentacion
 
-**Active Project**: OneITB23
-**Target alignment**: Project Constitution v1.0.0 compliance
+**Ultima verificacion**: 2026-06-13
 
-| Document Asset | Location | Status | Verified |
-|----------------|----------|--------|----------|
-| Repository Root README | [README.md](file:///F:/React/OneITB23/README.md) | ✅ Completed | Yes |
-| Development Runbook | [docs/audit/RUNBOOK_DEV.md](file:///F:/React/OneITB23/docs/audit/RUNBOOK_DEV.md) | ✅ Completed | Yes |
-| System Audit Report | [docs/audit/SYSTEM_AUDIT_V1.md](file:///F:/React/OneITB23/docs/audit/SYSTEM_AUDIT_V1.md) | ✅ Completed | Yes |
-| Security Audit Report | [docs/audit/SECURITY_AUDIT_V1.md](file:///F:/React/OneITB23/docs/audit/SECURITY_AUDIT_V1.md) | ✅ Completed | Yes |
-| Spec Template | [.specify/templates/spec-template.md](file:///F:/React/OneITB23/.specify/templates/spec-template.md) | ✅ Completed | Yes |
-| Plan Template | [.specify/templates/plan-template.md](file:///F:/React/OneITB23/.specify/templates/plan-template.md) | ✅ Completed | Yes |
-| Tasks Template | [.specify/templates/tasks-template.md](file:///F:/React/OneITB23/.specify/templates/tasks-template.md) | ✅ Completed | Yes |
-| Requirements Spec | [docs/project_docs/REQUERIMIENTOS.md](file:///F:/React/OneITB23/docs/project_docs/REQUERIMIENTOS.md) | ✅ Completed | Yes |
-| Architecture & Design | [docs/project_docs/ARQUITECTURA_Y_DISENO.md](file:///F:/React/OneITB23/docs/project_docs/ARQUITECTURA_Y_DISENO.md) | ✅ Completed | Yes |
-| Evaluation Mitigation | [docs/project_docs/PLAN_DE_MITIGACION_EVALUACION.md](file:///F:/React/OneITB23/docs/project_docs/PLAN_DE_MITIGACION_EVALUACION.md) | ✅ Completed | Yes |
-| Development Log | [docs/audit/DEVELOPMENT_LOG.md](file:///F:/React/OneITB23/docs/audit/DEVELOPMENT_LOG.md) | ✅ Completed | Yes |
-| Academic Presentation | [docs/academic/01_Presentacion_General.md](file:///F:/React/OneITB23/docs/academic/01_Presentacion_General.md) | ✅ Completed | Yes |
-| Academic Requirements | [docs/academic/02_Requerimientos.md](file:///F:/React/OneITB23/docs/academic/02_Requerimientos.md) | ✅ Completed | Yes |
-| Academic Use Cases | [docs/academic/03_Casos_De_Uso.md](file:///F:/React/OneITB23/docs/academic/03_Casos_De_Uso.md) | ✅ Completed | Yes |
-| Academic Diagrams | [docs/academic/04_Diagramas.md](file:///F:/React/OneITB23/docs/academic/04_Diagramas.md) | ✅ Completed | Yes |
-| Core-Web governance optimization | [core-web/](file:///F:/React/OneITB23/core-web) | 🟢 Optimized | Yes |
+## Documentos canonicos
 
+| Documento | Proposito | Estado |
+|---|---|---|
+| `AGENTS.md` | Reglas operativas para agentes | Vigente |
+| `.specify/memory/constitution.md` | Reglas superiores del proyecto | Vigente, v1.3.0 |
+| `docs/audit/fix-roadmap-13-06-2026.md` | Baseline de estabilizacion | Vigente |
+| `docs/project_docs/ROADMAP.md` | Avance funcional por checklist | Vigente |
+| `docs/audit/RUNBOOK_DEV.md` | Ejecucion y validacion local | Vigente |
+| `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de cambios | Vigente |
+| `README.md` | Entrada al repositorio | Vigente |
+| `specs/099-social-admin-ecosystem/` | Ecosistema social, seed y administracion | Completa y verificada |
 
+## Snapshots historicos
+
+Los siguientes documentos conservan valor de auditoria, pero no deben usarse
+como fuente unica del estado actual:
+
+- `docs/audit/SYSTEM_AUDIT_V1.md`
+- `docs/audit/BACKEND_AUDIT_REPORT.md`
+- `docs/audit/FRONTEND_AUDIT_REPORT.md`
+- `docs/audit/SECURITY_AUDIT_V1.md`
+- `docs/audit/DEPENDENCY_MAP_V1.md`
+
+## Brechas documentadas
+
+- El feed, el seed y el panel administrativo fueron verificados end-to-end en
+  la spec `099-social-admin-ecosystem`.
+- `Inquiry.user`, materias, publicaciones, comentarios, reacciones y reportes
+  responden con el contrato GraphQL vigente.
+- Los aliases `idUsuario`, `nombre` y `apellidos` son compatibilidad temporal;
+  el contrato canonico permanece en ingles.
+- JWT valida vigencia y CORS queda restringido a los origenes configurados.
+- La administracion de materias es de solo lectura en esta etapa.
+- Archivos educativos, mensajeria privada y recursos academicos siguen fuera
+  del alcance completado.
+- Estado Git contiene cambios de multiples specs sin consolidar.
+
+Estas brechas se gestionan en `docs/audit/fix-roadmap-13-06-2026.md`.

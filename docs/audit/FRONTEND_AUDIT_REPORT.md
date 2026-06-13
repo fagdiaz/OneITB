@@ -1,5 +1,11 @@
 # Frontend Deep Audit Report - OneITB-FE
 
+> Historical snapshot. For current stabilization status, use
+> `docs/audit/fix-roadmap-13-06-2026.md`. The frontend currently builds with
+> React 18, Apollo Client 3.7, Vite 8.0.16, and Tailwind CSS 4. The feed is not
+> verified end-to-end because its publication query does not match the active
+> GraphQL schema.
+
 Este reporte consolidado detalla el estado actual del árbol de componentes, la estructura de enrutamiento y propone un estándar moderno de nomenclatura y arquitectura de archivos para el frontend de **OneITB23**.
 
 ---
@@ -14,7 +20,7 @@ Actualmente, el Módulo 1 (Autenticación) se encuentra 100% operativo a nivel d
 | **Register** | `src/Components/user/Register.jsx` | 🟢 100% | Conectado a mutación `ADD_USER`. Valida alias y restringe registro a dominio `@itbeltran.com.ar`. |
 | **Logout** | `src/Components/user/Logout.jsx` | 🟢 100% | Conectado a `AuthContext`. Limpia storage local y redirige a `/login`. |
 | **AuthContext** | `src/context/AuthContext.jsx` | 🟢 100% | Distribuye el estado de sesión `auth` y la validez del token en toda la app. |
-| **Feed (Muro)** | `src/Components/publication/Feed.jsx` | 🟢 Completado/Refactorizado | Refactorizado a Tailwind v4 y conectado con la Moderación. |
+| **Feed (Muro)** | `src/Components/publication/Feed.jsx` | 🔴 No verificado | Compila, pero la query de publicaciones no coincide con el esquema GraphQL activo. |
 | **SideBar** | `src/Components/layout/private/SideBar.jsx` | 🟢 Completado/Refactorizado | Refactorizado y funcional con Tailwind. |
 | **UserProfile** | `src/Components/profile/UserProfile.tsx` | 🟢 Completado/Refactorizado | Interfaz de perfil en el cliente frontend (completada mediante el trasplante del CV). |
 | **Nav** | `src/Components/layout/private/Nav.jsx` | 🟡 Parcial | Estructura visual de pestañas pero con hipervínculos muertos (`href="#"`). |

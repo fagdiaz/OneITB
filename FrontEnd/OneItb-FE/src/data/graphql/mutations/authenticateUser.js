@@ -4,9 +4,10 @@ export const AUTHENTICATE_USER = gql`
 mutation Login($input: LoginInput!) {
     login(input: $input) {                  
         token
-        username
-        isAuthenticated
-        id           
+      username
+      isAuthenticated
+      id
+      role
     }
 }
 `;

@@ -3,11 +3,11 @@ import { setContext } from '@apollo/client/link/context';
 import { GeneralDataProvider } from '../GeneralDataProvider';
 
 const httpLink = createHttpLink({
-        uri: "https://localhost:44397/graphql",
+        uri: import.meta.env.VITE_GRAPHQL_URL || "https://localhost:44397/graphql",
 });
 
 const authLink = setContext((_, { headers }) => {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('token');
         return {
                 headers: {
                         ...headers,

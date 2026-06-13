@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using HotChocolate;
 using HotChocolate.Authorization;
@@ -7,6 +8,9 @@ using HotChocolate.Types;
 using Services.Users;
 using Services.Accounts;
 using OneITB.Core.Services.Interfaces;
+using OneItb.Data;
+using OneItb.Entities.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace OneITB.GraphQL.Mutations
 {
@@ -75,9 +79,65 @@ namespace OneITB.GraphQL.Mutations
         }
 
         [Authorize]
-        public async Task<bool> ReportContent(Guid reporterId, string contentId, string contentType, string reason, [Service] IModerationService modService)
+        public async Task<CommunityReport> ReportInquiry(
+            Guid inquiryId,
+            string reason,
+            [Service] IModerationService moderationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
-            return await modService.ReportContentAsync(reporterId, contentId, contentType, reason);
+            return await moderationService.ReportInquiryAsync(
+                GetAuthenticatedUserId(httpContextAccessor),
+                inquiryId,
+                reason);
+        }
+
+        [Authorize]
+        public async Task<Inquiry> AddInquiry(
+            int subjectId,
+            string title,
+            string content,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            return await socialService.AddInquiryAsync(
+                GetAuthenticatedUserId(httpContextAccessor),
+                subjectId,
+                title,
+                content);
+        }
+
+        [Authorize]
+        public async Task<Comment> AddComment(
+            Guid inquiryId,
+            string content,
+            Guid? parentCommentId,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            return await socialService.AddCommentAsync(
+                GetAuthenticatedUserId(httpContextAccessor),
+                inquiryId,
+                content,
+                parentCommentId);
+        }
+
+        [Authorize]
+        public async Task<ToggleReactionPayload> ToggleReaction(
+            Guid inquiryId,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            return await socialService.ToggleReactionAsync(
+                GetAuthenticatedUserId(httpContextAccessor),
+                inquiryId);
+        }
+
+        private static Guid GetAuthenticatedUserId(IHttpContextAccessor httpContextAccessor)
+        {
+            string value = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(value, out Guid userId))
+                throw new GraphQLException("No se pudo identificar al usuario autenticado.");
+            return userId;
         }
     }
 }

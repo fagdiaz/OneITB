@@ -1,5 +1,9 @@
 # Reporte de Auditoría de Seguridad y Vulnerabilidades (Mitigaciones Completadas)
 
+> Snapshot histórico. No representa conformidad vigente: al 2026-06-13,
+> `ValidateLifetime` está desactivado y CORS permite cualquier origen. Consultar
+> `docs/audit/fix-roadmap-13-06-2026.md`.
+
 Este documento certifica el estado de seguridad y las mitigaciones implementadas en la plataforma OneITB23 en estricto cumplimiento con la **Constitución del Proyecto (v1.0.0)**.
 
 ---

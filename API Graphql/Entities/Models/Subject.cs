@@ -29,5 +29,7 @@ namespace OneItb.Entities.Models
                 _code = value;
             }
         }
+
+        public virtual System.Collections.Generic.ICollection<Inquiry> Inquiries { get; set; } = new System.Collections.Generic.List<Inquiry>();
     }
 }

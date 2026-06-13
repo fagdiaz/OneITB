@@ -1,7 +1,6 @@
 export class GeneralDataProvider {
     static setToken (token) {
-      localStorage.setItem('token_type', 'Bearer ');
-      localStorage.setItem('access_token', token);
+      localStorage.setItem('token', token);
       this.token = token;
     }
   
@@ -11,13 +10,12 @@ export class GeneralDataProvider {
   
     static getToken () {
       return (
-        this.token ? 'Bearer ' + this.token : localStorage.getItem('token_type') + localStorage.getItem('access_token')
+        this.token ? 'Bearer ' + this.token : `Bearer ${localStorage.getItem('token') || ''}`
       );
     }
   
     static resetToken () {
-      localStorage.removeItem('token_type');
-      localStorage.removeItem('access_token');
+      localStorage.removeItem('token');
       this.token = undefined;
     }
   

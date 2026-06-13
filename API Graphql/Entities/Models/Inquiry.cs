@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using OneItb.Entities.Abstracts;
 
 namespace OneItb.Entities.Models
@@ -33,5 +34,10 @@ namespace OneItb.Entities.Models
         public DateTime PublishDate { get; set; }
         public Guid UserId { get; set; }
         public int SubjectId { get; set; }
+        public virtual User User { get; set; } = null!;
+        public virtual Subject Subject { get; set; } = null!;
+        public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+        public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+        public virtual ICollection<CommunityReport> Reports { get; set; } = new List<CommunityReport>();
     }
 }

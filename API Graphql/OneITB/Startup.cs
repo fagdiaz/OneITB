@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using GraphQL.GraphQL;
 using HotChocolate.Types;
@@ -15,6 +16,7 @@ using OneITB.GraphQL.Mutations;
 using OneITB.Core.Services.Interfaces;
 using Services.Accounts;
 using Services.Users;
+using Services.Social;
 
 namespace OneItb.GraphQL
 {
@@ -32,22 +34,34 @@ namespace OneItb.GraphQL
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddHttpContextAccessor();
             services.AddCors(options =>
             {
                 options.AddPolicy(MyAllowSpecificOrigins,
                 builder =>
                 {
-                    builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
+                    string[] allowedOrigins = Configuration
+                        .GetSection("Cors:AllowedOrigins")
+                        .Get<string[]>() ?? new[] { "http://localhost:5173", "https://localhost:5173" };
+                    builder.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
                 });
             });
 
-            services.AddPooledDbContextFactory<OneItbContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), b => b.MigrationsAssembly("Data")));
+            services.AddPooledDbContextFactory<OneItbContext>(opt =>
+                opt.UseSqlServer(
+                    Configuration.GetConnectionString("DefaultConnection"),
+                    sql => sql
+                        .MigrationsAssembly("Data")
+                        .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
             services.AddScoped<OneItbContext>(p => p.GetRequiredService<IDbContextFactory<OneItbContext>>().CreateDbContext());
 
             services.AddGraphQLServer()
                 // HC 14 breaking change: RegisterDbContext(DbContextKind.Pooled) →
                 // RegisterDbContextFactory<T>() — works with AddPooledDbContextFactory above.
                 .RegisterDbContextFactory<OneItbContext>()
+                .AddProjections()
+                .AddFiltering()
+                .AddSorting()
                 .AddAuthorization()
                 .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true)
                 .AddQueryType<Query>()
@@ -59,6 +73,16 @@ namespace OneItb.GraphQL
                     descriptor.Field(f => f.FirstName).Name("firstName");
                     descriptor.Field("alias").Resolve(ctx => ctx.Parent<User>().FirstName);
                     descriptor.Field(f => f.LastName).Name("lastName");
+                    // Temporary compatibility fields for the current feed query.
+                    descriptor.Field("idUsuario")
+                        .Type<NonNullType<UuidType>>()
+                        .Resolve(ctx => ctx.Parent<User>().Id);
+                    descriptor.Field("nombre")
+                        .Type<NonNullType<StringType>>()
+                        .Resolve(ctx => ctx.Parent<User>().FirstName);
+                    descriptor.Field("apellidos")
+                        .Type<NonNullType<StringType>>()
+                        .Resolve(ctx => ctx.Parent<User>().LastName);
                     descriptor.Field("email").Resolve(ctx => ctx.Parent<User>().Account?.Email);
                     descriptor.Field("fullName").Resolve(ctx => $"{ctx.Parent<User>().FirstName} {ctx.Parent<User>().LastName}".Trim());
                     descriptor.Field("password").Resolve(ctx => "********");
@@ -72,6 +96,7 @@ namespace OneItb.GraphQL
             services.AddScoped<IUnitOfWork, Services.Repositories.UnitOfWork>();
             services.AddScoped<IEmployerAuthService, Services.Auth.EmployerAuthService>();
             services.AddScoped<IModerationService, Services.Moderation.ModerationService>();
+            services.AddScoped<ISocialService, SocialService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
 
@@ -82,7 +107,8 @@ namespace OneItb.GraphQL
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
-                    ValidateLifetime = false,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromMinutes(1),
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = Configuration["Jwt:Issuer"],
                     ValidAudience = Configuration["Jwt:Issuer"],

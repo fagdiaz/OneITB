@@ -1,5 +1,9 @@
 # Backend Audit Report - OneITB23
 
+> Historical snapshot. For the current verified baseline, use
+> `docs/audit/fix-roadmap-13-06-2026.md` and `docs/audit/DOCUMENTATION_STATUS.md`.
+> The current backend is .NET 8, EF Core 8.0.6, and HotChocolate 14.2.0.
+
 Este documento funciona como un mapa topográfico y arquitectónico del backend del proyecto, desarrollado en .NET 8 con GraphQL. Es la contraparte del reporte frontend y proporciona contexto de la estructura, entidades y endpoints expuestos.
 
 ---

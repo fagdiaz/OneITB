@@ -4,7 +4,8 @@
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: Include the validation needed to prove the acceptance scenarios. Compilation
+alone is insufficient for GraphQL contracts, persistence, authentication, or browser flows.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -68,6 +69,13 @@
 - [ ] T011 [P] Documentation updates in docs/
 - [ ] T012 Code cleanup and refactoring
 - [ ] T013 Run quickstart.md validation
+- [ ] T014 Run the applicable backend and frontend build commands
+- [ ] T015 Execute the affected GraphQL or browser flow end to end
+- [ ] T016 Record the executed validation evidence in this feature
+- [ ] T017 Recalculate `docs/project_docs/ROADMAP.md` from its checklists
+- [ ] T018 Insert one feature entry at the top of `docs/audit/DEVELOPMENT_LOG.md`
+- [ ] T019 Verify `DEVELOPMENT_LOG.md` is ordered newest to oldest
+- [ ] T020 Update `docs/audit/DOCUMENTATION_STATUS.md` when status or canonical docs changed
 
 ---
 
@@ -79,3 +87,15 @@
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
 - **User Stories (Phase 3+)**: All depend on Foundational phase completion
 - **Polish (Final Phase)**: Depends on all desired user stories being complete
+
+## Definition Of Done
+
+- [ ] All required tasks are marked `[X]`
+- [ ] Acceptance scenarios were validated with recorded evidence
+- [ ] Backend and frontend builds pass when affected
+- [ ] GraphQL schema and operation names match when affected
+- [ ] Persistence survives reload when the feature stores data
+- [ ] `ROADMAP.md` reflects checklist evidence
+- [ ] `DEVELOPMENT_LOG.md` contains exactly one new feature entry at the top
+- [ ] Every log entry is ordered newest to oldest
+- [ ] Unverified or blocked behavior is not reported as complete

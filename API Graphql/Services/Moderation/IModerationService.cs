@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using OneItb.Entities.Models;
 
 namespace OneITB.Core.Services.Interfaces
 {
     public interface IModerationService
     {
-        Task<bool> ReportContentAsync(Guid reporterId, string contentId, string contentType, string reason);
+        IQueryable<CommunityReport> GetCommunityReports();
+        Task<CommunityReport> ReportInquiryAsync(Guid reporterId, Guid inquiryId, string reason);
     }
 }

@@ -1,50 +1,50 @@
-# Roadmap del Proyecto y Estado de Objetivos - OneITB23
+# Roadmap funcional - OneITB23
 
-Este archivo define los módulos funcionales, objetivos de la plataforma y el estado de avance global del proyecto para la evaluación.
+## Estado global: 65%
 
----
+Calculo: 13 tareas completadas de 20 tareas totales. El porcentaje se deriva
+exclusivamente de los checklists de este archivo.
 
-## 1. Estado Global de Avance: 61%
+## Modulo 1: Autenticacion y cuentas - 100%
 
-El porcentaje de avance se calcula basándose en el estado de los módulos obligatorios definidos para la entrega:
+- [x] Registro institucional implementado.
+- [x] Passwords almacenados con BCrypt `char(60)`.
+- [x] Login entrega JWT.
+- [x] Validacion de vigencia JWT activa y verificada.
+- [x] Sesion frontend normalizada sobre una unica clave de token.
 
-* 🟢 **Módulo 1: Autenticación y Cuentas**: 100% (Backend compilando y verificado).
-* 🟢 **Módulo 2: Perfiles de Usuario**: 100% (Persistencia e interfaz terminada).
-* 🟡 **Módulo 3: Publicaciones y Comentarios**: 50% (Materia y Consulta creados).
-* 🔴 **Módulo 4: Mensajería Privada**: 0% (Pendiente de diseño).
-* 🔴 **Módulo 5: Recursos y Seguimiento**: 0% (Pendiente de diseño).
+## Modulo 2: Perfiles de usuario - 100%
 
----
+- [x] Relacion `User` y `Account`.
+- [x] Biografia y redes sociales.
+- [x] Datos de carrera/cursada implementados.
+- [x] Interfaz de perfil integrada.
 
-## 2. Detalle de Módulos y Tareas
+## Modulo 3: Publicaciones y comentarios - 80%
 
-### Módulo 1: Autenticación y Cuentas (Estado: 🟢 Completado)
-* [x] **T1.1**: Registro de usuarios con validación `@itbeltran.com.ar`.
-* [x] **T1.2**: Hashing seguro mediante BCrypt char(60).
-* [x] **T1.3**: Inicio de sesión (Login) con retorno de JWT expirable.
-* [x] **T1.4**: Pipeline seguro (UseAuthentication antes de UseAuthorization).
-* [x] **T1.5**: Redirección cliente-servidor e inyección dinámica del token en Apollo.
+- [x] Entidades `Subject` e `Inquiry`.
+- [x] Estructura de comentarios existente.
+- [x] Creacion y lectura de publicaciones verificadas end-to-end.
+- [ ] Archivos educativos.
+- [x] Reacciones verificadas end-to-end.
 
-### Módulo 2: Perfiles de Usuario (Estado: 🟢 Completado)
-* [x] **T2.1**: Mapeo físico de Entidad `User` y `Account` 1:1.
-* [x] **T2.2**: Carga de biografía y referencias a redes (LinkedIn, Facebook).
-* [x] **T2.3**: Registrar cursadas activas (TSAS / TECAS).
-* [x] **T2.4**: Interfaz de perfil en el cliente frontend (completada mediante el trasplante del CV).
+Estado tecnico: el feed permite publicar, reaccionar, comentar, responder y
+reportar. El seed administrado aporta 5 materias, 10 usuarios, 30 publicaciones,
+90 reacciones, 45 comentarios y 2 reportes sin duplicarse al reiniciar.
 
-> **Nota Adicional**: Se ha implementado exitosamente el motor Passwordless para Empleadores y la Moderación Comunitaria, superando los hitos originales estipulados.
+## Modulo 4: Mensajeria privada - 0%
 
-### Módulo 3: Publicaciones y Comentarios (Estado: 🟡 En Progreso)
-* [x] **T3.1**: Estructura de publicaciones vinculadas a `Subject` (Materias).
-* [x] **T3.2**: Composición de comentarios (dependencia existencial en la base de datos).
-* [ ] **T3.3**: Carga y descarga física de archivos educativos.
-* [ ] **T3.4**: Reacciones a las publicaciones en el frontend.
+- [ ] Conversaciones uno a uno.
+- [ ] Persistencia de mensajes.
+- [ ] Notificaciones de mensajes nuevos.
 
-### Módulo 4: Mensajería Privada (Estado: 🔴 Pendiente)
-* [ ] **T4.1**: Servicio de mensajería y chat directo uno a uno.
-* [ ] **T4.2**: Base de datos de mensajes privados.
-* [ ] **T4.3**: Notificaciones en tiempo real para mensajes nuevos.
+## Modulo 5: Recursos y seguimiento - 0%
 
-### Módulo 5: Recursos y Seguimiento (Estado: 🔴 Pendiente)
-* [ ] **T5.1**: Tablero de visualización de notas.
-* [ ] **T5.2**: Mock de consumo de la API de SIU Guaraní.
-* [ ] **T5.3**: Habilitar/Deshabilitar notificaciones por materia.
+- [ ] Visualizacion de notas.
+- [ ] Integracion o simulacion SIU Guarani.
+- [ ] Preferencias de notificacion por materia.
+
+## Prioridad vigente
+
+Completar archivos educativos del Modulo 3 antes de ampliar el alcance hacia
+Mensajeria privada o Recursos y seguimiento.

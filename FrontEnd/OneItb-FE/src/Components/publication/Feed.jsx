@@ -1,175 +1,247 @@
-import React, { useState } from 'react'
-import useAuth from '../../hooks/useAuth'
-import { ReportModal } from '../moderation/ReportModal'
-
-/**
- * Feed — REFACTOR 037
- * 
- * Full Tailwind rewrite. Eliminates all BEM classes:
- *   content__header, content__title, content__button,
- *   content__posts, posts__post, post__container,
- *   post__image-user, post__user-image (was unconstrained — caused giant avatar),
- *   post__body, post__user-info, user-info__name, user-info__divider,
- *   user-info__create-date, post__content, post__buttons, post__button,
- *   content__container-btn, content__btn-more-post
- *
- * Each post is now a bg-white rounded-xl shadow-sm card.
- * Avatars are strictly constrained to w-10 h-10 rounded-full object-cover.
- */
-
-// Mock posts data — replaces the duplicated hardcoded JSX blocks
-const MOCK_POSTS = [
-  {
-    id: 'p1',
-    author: 'Leandro Díaz',
-    username: 'leandrodiaz',
-    timeAgo: 'Hace 1 hora',
-    content: 'Hola, buenos días a toda la comunidad ITB. ¡Empezamos la semana con todo!',
-  },
-  {
-    id: 'p2',
-    author: 'María García',
-    username: 'mariagarcia',
-    timeAgo: 'Hace 2 horas',
-    content: '¿Alguien tiene apuntes de la materia de Redes? Los necesito para el parcial del viernes.',
-  },
-  {
-    id: 'p3',
-    author: 'Carlos López',
-    username: 'carloslopez',
-    timeAgo: 'Hace 3 horas',
-    content: 'Recordatorio: mañana hay examen de Programación II. ¡Éxitos a todos!',
-  },
-  {
-    id: 'p4',
-    author: 'Ana Martínez',
-    username: 'anamartinez',
-    timeAgo: 'Hace 5 horas',
-    content: 'Acabo de subir mis apuntes de Análisis Matemático al campus. Espero que les sirvan.',
-  },
-];
+import React, { useState } from 'react';
+import { useMutation, useQuery } from '@apollo/client';
+import useAuth from '../../hooks/useAuth';
+import { ReportModal } from '../moderation/ReportModal';
+import { CommentThread } from './CommentThread';
+import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
+import {
+  ADD_COMMENT,
+  CREATE_INQUIRY,
+  TOGGLE_REACTION
+} from '../../data/graphql/mutations/inquiries';
+import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
 
 export const Feed = () => {
   const { auth } = useAuth();
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportTarget, setReportTarget] = useState(null);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [openThreads, setOpenThreads] = useState({});
+  const [reportTargetId, setReportTargetId] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+
+  const { data: subjectsData, loading: subjectsLoading } = useQuery(GET_SUBJECTS);
+  const {
+    data: inquiriesData,
+    loading: inquiriesLoading,
+    error: inquiriesError,
+    refetch
+  } = useQuery(GET_INQUIRIES, { fetchPolicy: 'cache-and-network' });
+
+  const refetchOptions = {
+    refetchQueries: [{ query: GET_INQUIRIES }],
+    awaitRefetchQueries: true
+  };
+  const [createInquiry, { loading: isPublishing }] = useMutation(CREATE_INQUIRY, refetchOptions);
+  const [toggleReaction, { loading: isReacting }] = useMutation(TOGGLE_REACTION, refetchOptions);
+  const [addComment, { loading: isCommenting }] = useMutation(ADD_COMMENT, refetchOptions);
+
+  const showFeedback = (type, message) => setFeedback({ type, message });
+
+  const handlePublish = async (event) => {
+    event.preventDefault();
+    if (!title.trim() || !content.trim() || !selectedSubject) return;
+
+    try {
+      await createInquiry({
+        variables: {
+          subjectId: Number(selectedSubject),
+          title: title.trim(),
+          content: content.trim()
+        }
+      });
+      setTitle('');
+      setContent('');
+      setSelectedSubject('');
+      showFeedback('success', 'La publicación se creó correctamente.');
+    } catch (error) {
+      showFeedback('error', error.message);
+    }
+  };
+
+  const handleReaction = async (inquiryId) => {
+    try {
+      await toggleReaction({ variables: { inquiryId } });
+    } catch (error) {
+      showFeedback('error', error.message);
+    }
+  };
+
+  const handleComment = async (inquiryId, parentCommentId, commentContent) => {
+    try {
+      await addComment({
+        variables: {
+          inquiryId,
+          parentCommentId,
+          content: commentContent.trim()
+        }
+      });
+      showFeedback('success', parentCommentId ? 'Respuesta publicada.' : 'Comentario publicado.');
+    } catch (error) {
+      showFeedback('error', error.message);
+      throw error;
+    }
+  };
+
+  const posts = inquiriesData?.inquiries ?? [];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-4">
-
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-2">
+    <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
+      <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-1 h-7 bg-blue-600 rounded-full" />
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Timeline</h1>
+          <div className="h-7 w-1 rounded-full bg-blue-600" />
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">Muro académico</h1>
+            <p className="text-xs text-slate-500">{posts.length} publicaciones activas</p>
+          </div>
         </div>
         <button
           type="button"
-          className="text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+          onClick={() => refetch()}
+          className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-100"
         >
-          Mostrar nuevas
+          Actualizar
         </button>
-      </div>
+      </header>
 
-      {/* Post cards */}
-      {MOCK_POSTS.map((post) => (
-        <article
-          key={post.id}
-          className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow"
+      {feedback && (
+        <div
+          role="status"
+          className={`rounded-lg border px-4 py-3 text-sm ${
+            feedback.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
         >
-          {/* Post header: avatar + author info */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {/* Avatar — strictly constrained */}
-              <a href="#" className="shrink-0">
+          {feedback.message}
+        </div>
+      )}
+
+      <form onSubmit={handlePublish} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <input
+          type="text"
+          maxLength={200}
+          placeholder="Título de tu consulta"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <textarea
+          maxLength={10000}
+          placeholder="¿Qué querés compartir con la comunidad?"
+          value={content}
+          onChange={(event) => setContent(event.target.value)}
+          className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <select
+            value={selectedSubject}
+            onChange={(event) => setSelectedSubject(event.target.value)}
+            disabled={subjectsLoading}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Seleccioná una materia...</option>
+            {subjectsData?.subjects?.map((subject) => (
+              <option key={subject.id} value={subject.id}>{subject.name}</option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            disabled={isPublishing || !title.trim() || !content.trim() || !selectedSubject}
+            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPublishing ? 'Publicando...' : 'Publicar'}
+          </button>
+        </div>
+      </form>
+
+      {inquiriesLoading && posts.length === 0 && (
+        <p className="py-6 text-center text-sm text-slate-500">Cargando publicaciones...</p>
+      )}
+      {inquiriesError && (
+        <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          No se pudo cargar el muro: {inquiriesError.message}
+        </p>
+      )}
+
+      {posts.map((post) => {
+        const isLiked = post.reactions.some((reaction) => reaction.userId === auth.id);
+        const threadOpen = Boolean(openThreads[post.id]);
+
+        return (
+          <article key={post.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
                 <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=3b82f6&color=fff&size=80`}
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100"
-                  alt={`Avatar de ${post.author}`}
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(`${post.user?.firstName ?? ''} ${post.user?.lastName ?? ''}`)}&background=3b82f6&color=fff&size=80`}
+                  className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm"
+                  alt={`Avatar de ${post.user?.firstName ?? 'usuario'}`}
                 />
-              </a>
-
-              {/* Name + timestamp */}
-              <div className="min-w-0">
-                <a
-                  href="#"
-                  className="block text-sm font-semibold text-slate-800 hover:text-blue-600 transition-colors truncate"
-                >
-                  {post.author}
-                </a>
-                <span className="text-xs text-slate-400">{post.timeAgo}</span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {post.user?.firstName} {post.user?.lastName}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {post.subject?.name} · {new Date(post.publishDate).toLocaleString()}
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setReportTarget({ id: post.id, type: 'Post' });
-                  setIsReportModalOpen(true);
-                }}
-                className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50"
+                onClick={() => setReportTargetId(post.id)}
+                className="rounded-lg p-2 text-slate-300 hover:bg-red-50 hover:text-red-500"
                 title="Reportar publicación"
               >
                 <i className="fa-solid fa-flag text-sm" />
               </button>
-              {/* Delete action */}
+            </div>
+
+            <div>
+              <h2 className="font-semibold text-slate-800">{post.title}</h2>
+              <p className="mt-1 text-sm leading-relaxed text-slate-700">{post.content}</p>
+            </div>
+
+            <div className="flex items-center gap-4 border-t border-slate-100 pt-3">
               <button
                 type="button"
-                className="text-slate-300 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-50"
-                title="Eliminar publicación"
+                disabled={isReacting}
+                onClick={() => handleReaction(post.id)}
+                className={`flex items-center gap-1.5 text-xs font-medium ${
+                  isLiked ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'
+                }`}
               >
-                <i className="fa-solid fa-trash-can text-sm" />
+                <i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up`} />
+                {post.reactions.length} {post.reactions.length === 1 ? 'Me gusta' : 'Me gusta'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpenThreads((current) => ({ ...current, [post.id]: !current[post.id] }))}
+                className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-blue-500"
+              >
+                <i className="fa-regular fa-comment" />
+                {post.comments.length} comentarios
               </button>
             </div>
-          </div>
 
-          {/* Post content */}
-          <p className="text-sm text-slate-700 leading-relaxed">
-            {post.content}
-          </p>
-
-          {/* Post reactions row */}
-          <div className="flex items-center gap-4 pt-2 border-t border-slate-50">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-500 transition-colors"
-            >
-              <i className="fa-regular fa-thumbs-up" />
-              Me gusta
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-500 transition-colors"
-            >
-              <i className="fa-regular fa-comment" />
-              Comentar
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-500 transition-colors"
-            >
-              <i className="fa-solid fa-share-nodes" />
-              Compartir
-            </button>
-          </div>
-        </article>
-      ))}
-
-      {/* Load more */}
-      <button
-        type="button"
-        className="w-full py-2.5 text-sm font-medium text-slate-500 hover:text-blue-600 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl transition-all"
-      >
-        Ver más publicaciones
-      </button>
+            {threadOpen && (
+              <CommentThread
+                comments={post.comments}
+                submitting={isCommenting}
+                onComment={(parentCommentId, commentContent) =>
+                  handleComment(post.id, parentCommentId, commentContent)
+                }
+              />
+            )}
+          </article>
+        );
+      })}
 
       <ReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        contentId={reportTarget?.id}
-        contentType={reportTarget?.type}
+        isOpen={Boolean(reportTargetId)}
+        inquiryId={reportTargetId}
+        onClose={() => setReportTargetId(null)}
+        onReported={() => showFeedback('success', 'El reporte fue enviado a moderación.')}
       />
     </div>
-  )
-}
+  );
+};

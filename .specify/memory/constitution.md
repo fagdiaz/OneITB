@@ -1,6 +1,6 @@
 <!--
 SYNC IMPACT REPORT
-- Version change: 1.0.0 -> 1.1.0
+- Version change: 1.2.0 -> 1.3.0
 - List of modified principles:
   * [PRINCIPLE_1_NAME] -> I. Decoupled GraphQL Architecture
   * [PRINCIPLE_2_NAME] -> II. Strict Security & Password Hashing
@@ -15,7 +15,8 @@ SYNC IMPACT REPORT
   * .specify/templates/plan-template.md (✅ updated)
   * .specify/templates/spec-template.md (✅ updated)
   * .specify/templates/tasks-template.md (✅ updated)
-- Follow-up TODOs: None
+- Follow-up TODOs: Stabilize the feed and close the active security gaps recorded in
+  docs/audit/fix-roadmap-13-06-2026.md.
 -->
 
 # OneITB23 Constitution
@@ -23,7 +24,7 @@ SYNC IMPACT REPORT
 ## Core Principles
 
 ### I. Decoupled GraphQL Architecture
-The system MUST maintain a strict separation between the Frontend (React/Vite) and Backend (.NET 6 API). All communication MUST happen exclusively through the single GraphQL endpoint (`/graphql`). No direct database access or separate REST endpoints are permitted for standard operations. Resolvers in HotChocolate MUST delegate logic to service layers to maintain clean architectural decoupling.
+The system MUST maintain a strict separation between the Frontend (React/Vite) and Backend (.NET 8 API). All communication MUST happen exclusively through the single GraphQL endpoint (`/graphql`). No direct database access or separate REST endpoints are permitted for standard operations. Resolvers in HotChocolate MUST delegate logic to service layers to maintain clean architectural decoupling.
 
 ### II. Strict Security & Password Hashing
 All user passwords MUST be hashed using BCrypt (`BCrypt.Net-Next`) with a physical column format of exactly `char(60)` in the database. Direct text/plain validation or persistence of passwords is strictly forbidden. Sensitive fields like passwords MUST be ignored by GraphQL using `[GraphQLIgnore]`.
@@ -47,7 +48,13 @@ JWT access tokens MUST have a strict expiration time (e.g. 2 hours) and the pipe
 - **Local Environment**: Local development SQL Server instances must configure `TrustServerCertificate=True` in `appsettings.Development.json`.
 - **Database Migrations**: Database schema updates must be managed using Code-First migrations with the command: `dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"`.
 - **Smoke Testing**: Any PR or deployment must pass the 35 pre-defined smoke tests outlined in the development runbook (`docs/audit/RUNBOOK_DEV.md`).
-- **Roadmap & Logs**: Every completed implementation task must recalculate and update module percentages in `docs/project_docs/ROADMAP.md` and append chronological reverse summaries to `docs/audit/DEVELOPMENT_LOG.md`.
+- **Evidence-Based Completion**: Compilation is necessary but not sufficient. GraphQL
+  contracts, persistence, authentication, cache updates, and browser workflows MUST be
+  validated at runtime when affected. Unverified behavior MUST NOT be reported as complete.
+- **Roadmap & Logs**: Every completed spec MUST recalculate module percentages from the
+  checklists in `docs/project_docs/ROADMAP.md`, add a reverse-chronological entry to
+  `docs/audit/DEVELOPMENT_LOG.md`, and update
+  `docs/audit/DOCUMENTATION_STATUS.md` when canonical status changes.
 
 ## Governance
 
@@ -57,4 +64,4 @@ JWT access tokens MUST have a strict expiration time (e.g. 2 hours) and the pipe
 - Git auto-commits via speckit extensions MUST remain disabled to keep the commit tree clean and readable, relying instead on manual, feature-scoped commits.
 - Developers should refer to `docs/audit/RUNBOOK_DEV.md` for local setup and testing procedures.
 
-**Version**: 1.2.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-06-05
+**Version**: 1.3.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-06-13

@@ -1,12 +1,16 @@
 # Especificación de Diseño y Arquitectura - OneITB23
 
+> Documento de diseño histórico. Los flujos REST de archivos descritos más
+> abajo son propuestas no implementadas y requieren una decisión constitucional
+> antes de desarrollarse. La arquitectura operativa vigente usa `/graphql`.
+
 Este documento recopila las decisiones de diseño técnico, el Diagrama de Entidad-Relación (DER) y los diagramas de secuencia corregidos para la evaluación de arquitectura de **OneITB23**.
 
 ---
 
 ## 1. Patrones Arquitectónicos y Estructura
 El sistema implementa una arquitectura desacoplada por dominios:
-* **Backend**: Desarrollado en .NET 6 con Entity Framework Core. Implementa el patrón **Repository y Unit of Work** para desacoplar el acceso a datos del resolver GraphQL (HotChocolate).
+* **Backend**: Desarrollado en .NET 8 con Entity Framework Core 8. Implementa los patrones **Repository y Unit of Work**, aunque algunos resolvers del feed todavía acceden directamente a `OneItbContext` y deben normalizarse.
 * **Frontend**: Desarrollado en React + Vite, consumiendo datos mediante **Apollo Client** de forma asíncrona.
 
 ---
@@ -126,4 +130,3 @@ sequenceDiagram
     API Backend (Preview Controller)-->>Frontend (Vite): Response HTTP 200 (Content-Type: application/pdf o image/*, Inline)
     Frontend (Vite)->>Usuario: Renderiza visor integrado en pantalla sin descargar archivo localmente
 ```
-

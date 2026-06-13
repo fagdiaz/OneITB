@@ -224,7 +224,11 @@ Report final status with summary of completed work.
 - Overwrite `docs/project_docs/ROADMAP.md` with these updated values.
 
 **REQUIRED (Development Log Entry)**:
-- Write or append a brief summary of the completed implementation to `docs/audit/DEVELOPMENT_LOG.md` (create this file if it does not exist yet). Always place the new entry at the very top of the file (under the header) to maintain a reverse-chronological order. The entry must include:
+- Write a brief summary of the completed implementation to `docs/audit/DEVELOPMENT_LOG.md` (create this file if it does not exist yet).
+- Insert exactly one new entry immediately below the file's title, introductory text, and initial separator. Never append it to the end of the file.
+- Keep every `## [YYYY-MM-DD]` entry ordered newest to oldest. Preserve the existing order between entries that share the same date, with the newly completed spec first.
+- Before reporting completion, verify that the dates are monotonically descending and that the active spec appears in the first entry.
+- The entry must include:
   - The date of completion (YYYY-MM-DD)
   - The name of the feature / active branch
   - A brief paragraph summarizing the implementation goal and outcome
@@ -237,6 +241,6 @@ Report final status with summary of completed work.
 - [ ] Implementation validated against specification, plan, and test coverage
 - [ ] `docs/project_docs/ROADMAP.md` updated with the recalculated completion percentages
 - [ ] `docs/audit/DEVELOPMENT_LOG.md` updated with the new implementation log entry
+- [ ] `DEVELOPMENT_LOG.md` is ordered newest to oldest and the active spec is the first entry
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with summary of completed work
-

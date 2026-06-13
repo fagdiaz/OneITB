@@ -1,4 +1,5 @@
 using HotChocolate;
+using HotChocolate.Data;
 using HotChocolate.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,8 @@ namespace GraphQL.GraphQL
 {
     public class Query
     {
+        [Authorize(Roles = new[] { "Administrador" })]
+        [UseProjection]
         public IQueryable<User> GetUsers([Service] IUsersService usersService)
         {
             return usersService.GetAllAsync();
@@ -22,6 +25,25 @@ namespace GraphQL.GraphQL
         public User GetUserById([Service] IUsersService usersService, Guid id)
         {
             return usersService.GetById(id);
+        }
+
+        [UseProjection]
+        public IQueryable<Subject> GetSubjects([Service] OneItbContext context)
+        {
+            return context.Subjects;
+        }
+
+        [UseProjection]
+        public IQueryable<Inquiry> GetInquiries([Service] ISocialService socialService)
+        {
+            return socialService.GetInquiries();
+        }
+
+        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        [UseProjection]
+        public IQueryable<CommunityReport> GetCommunityReports([Service] IModerationService moderationService)
+        {
+            return moderationService.GetCommunityReports();
         }
     }
 }

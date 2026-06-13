@@ -13,6 +13,8 @@ namespace OneItb.Data
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Subject> Subjects { get; set; } = null!;
         public DbSet<Inquiry> Inquiries { get; set; } = null!;
+        public DbSet<Comment> Comments { get; set; } = null!;
+        public DbSet<Reaction> Reactions { get; set; } = null!;
         public DbSet<CommunityReport> CommunityReports { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
 
@@ -138,14 +140,70 @@ namespace OneItb.Data
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("SYSUTCDATETIME()");
 
-                entity.HasOne<User>()
+                entity.HasOne(i => i.User)
                     .WithMany()
-                    .HasForeignKey(c => c.UserId)
+                    .HasForeignKey(i => i.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne<Subject>()
+                entity.HasOne(i => i.Subject)
+                    .WithMany(s => s.Inquiries)
+                    .HasForeignKey(i => i.SubjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA COMMENTS
+            // ==========================================
+            modelBuilder.Entity<Comment>(entity =>
+            {
+                entity.ToTable("Comments", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Content).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => e.InquiryId);
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.ParentCommentId);
+
+                entity.HasOne(e => e.Inquiry)
+                    .WithMany(i => i.Comments)
+                    .HasForeignKey(e => e.InquiryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.User)
                     .WithMany()
-                    .HasForeignKey(c => c.SubjectId)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.ParentComment)
+                    .WithMany(e => e.Replies)
+                    .HasForeignKey(e => e.ParentCommentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA REACTIONS
+            // ==========================================
+            modelBuilder.Entity<Reaction>(entity =>
+            {
+                entity.ToTable("Reactions", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => new { e.InquiryId, e.UserId }).IsUnique();
+
+                entity.HasOne(e => e.Inquiry)
+                    .WithMany(i => i.Reactions)
+                    .HasForeignKey(e => e.InquiryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -158,11 +216,21 @@ namespace OneItb.Data
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
-                entity.Property(e => e.ContentId).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.ContentType).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Reason).IsRequired().HasMaxLength(500);
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => e.InquiryId);
+                entity.HasIndex(e => e.ReporterId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => new { e.InquiryId, e.ReporterId, e.Status })
+                    .IsUnique()
+                    .HasFilter("[Status] = 'Pending'");
+
+                entity.HasOne(e => e.Inquiry)
+                    .WithMany(i => i.Reports)
+                    .HasForeignKey(e => e.InquiryId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.Reporter)
                     .WithMany()

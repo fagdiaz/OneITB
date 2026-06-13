@@ -15,7 +15,7 @@
     <PackageReference Include="HotChocolate.Types" Version="14.2.0" />
     <!-- System.ComponentModel.Annotations is inbox in .NET 8 — no PackageReference needed -->
     <!-- BCrypt.Net-Next — framework-agnostic, no version change needed -->
-    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
   </ItemGroup>
 
 </Project>

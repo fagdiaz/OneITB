@@ -1,0 +1,21 @@
+using System;
+using System.Collections.Generic;
+
+namespace OneItb.Entities.Models
+{
+    public class Comment
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid InquiryId { get; set; }
+        public Guid UserId { get; set; }
+        public Guid? ParentCommentId { get; set; }
+        public string Content { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public virtual Inquiry Inquiry { get; set; } = null!;
+        public virtual User User { get; set; } = null!;
+        public virtual Comment? ParentComment { get; set; }
+        public virtual ICollection<Comment> Replies { get; set; } = new List<Comment>();
+    }
+}
+

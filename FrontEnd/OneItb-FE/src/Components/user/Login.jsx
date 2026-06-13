@@ -15,11 +15,13 @@ import { useNavigate } from 'react-router-dom'
 export const Login = () => {
   const { form, changed } = useForm({});
   const [saved, setSaved] = useState('not_sended');
+  const [loginError, setLoginError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const loginUser = async (e) => {
     e.preventDefault();
+    setLoginError('');
     try {
       const variables = {
         input: {
@@ -28,20 +30,26 @@ export const Login = () => {
         }
       };
       const { data } = await authenticateUser({ variables });
-      const { token, username, isAuthenticated, id } = data.login;
+      const { token, username, isAuthenticated, id, role } = data.login;
 
       if (isAuthenticated) {
         GraphQLProvider.setToken(token);
-        const userObj = { id, username, email: form.email };
+        const userObj = { id, username, email: form.email, role };
         GraphQLProvider.setUser(userObj);
         login(token, userObj);
         setSaved('login');
         setTimeout(() => navigate('/feed'), 1000);
       } else {
         setSaved('error');
+        setLoginError('El backend rechazó las credenciales.');
       }
     } catch (err) {
+      console.error('Login failed', err.networkError?.result ?? err.graphQLErrors ?? err.message);
       setSaved('error');
+      const backendMessage = err.networkError?.result?.errors
+        ?.map((item) => item.message)
+        .join(' ');
+      setLoginError(backendMessage || err.message || 'No se pudo completar el inicio de sesión.');
     }
   };
 
@@ -75,7 +83,7 @@ export const Login = () => {
           {saved === 'error' && (
             <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-medium">
               <i className="fa-solid fa-circle-exclamation" />
-              Credenciales incorrectas. Intentá de nuevo.
+              {loginError || 'Credenciales incorrectas. Intentá de nuevo.'}
             </div>
           )}
 

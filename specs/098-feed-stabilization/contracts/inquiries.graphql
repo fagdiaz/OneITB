@@ -1,0 +1,29 @@
+query GetInquiriesWithAuthor {
+  inquiries {
+    id
+    title
+    content
+    publishDate
+    user {
+      id
+      firstName
+      lastName
+    }
+    subject {
+      id
+      name
+    }
+  }
+}
+
+query GetInquiriesCurrentFeedCompatibility {
+  inquiries {
+    id
+    user {
+      idUsuario
+      nombre
+      apellidos
+      alias
+    }
+  }
+}

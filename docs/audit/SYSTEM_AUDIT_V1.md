@@ -1,5 +1,9 @@
 # Estado Actual de la Arquitectura del Sistema (Conforme a la Constitución v1.0.0)
 
+> Snapshot histórico. La fuente vigente es
+> `docs/audit/fix-roadmap-13-06-2026.md`. El stack actual utiliza .NET 8,
+> EF Core 8.0.6, HotChocolate 14.2.0 y Vite 8.
+
 Este documento describe la arquitectura real y los flujos de datos de la plataforma OneITB23, garantizando el cumplimiento de los principios fundamentales de diseño y gobernanza establecidos en la Constitución del Proyecto.
 
 ## 1. Visión General de la Pila Tecnológica
