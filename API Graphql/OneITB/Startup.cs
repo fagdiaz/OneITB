@@ -100,6 +100,7 @@ namespace OneItb.GraphQL
                     descriptor.Field(f => f.Facebook).Name("facebook");
                     descriptor.Field(f => f.Instagram).Name("instagram");
                     descriptor.Field(f => f.Phone).Name("phone");
+                    descriptor.Field(f => f.Role).Name("role");
                 }));
 
             services.AddScoped<IUnitOfWork, Services.Repositories.UnitOfWork>();
