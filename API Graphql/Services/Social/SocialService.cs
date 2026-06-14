@@ -21,7 +21,7 @@ namespace Services.Social
                 .OrderByDescending(inquiry => inquiry.PublishDate);
         }
 
-        public async Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content)
+        public async Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content, string? attachedFileUrl = null)
         {
             string normalizedTitle = RequireText(title, 200, "El título");
             string normalizedContent = RequireText(content, 10000, "El contenido");
@@ -39,6 +39,7 @@ namespace Services.Social
                 SubjectId = subjectId,
                 Title = normalizedTitle,
                 Content = normalizedContent,
+                AttachedFileUrl = attachedFileUrl,
                 PublishDate = DateTime.UtcNow
             };
 

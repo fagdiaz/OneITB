@@ -1,8 +1,10 @@
 using System;
 using System.Text;
+using System.Threading.Tasks;
 using GraphQL.GraphQL;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +19,9 @@ using OneITB.Core.Services.Interfaces;
 using Services.Accounts;
 using Services.Users;
 using Services.Social;
+using Services.Messaging;
+using OneITB.GraphQL.Subscriptions;
+using OneItb.GraphQL.Authentication;
 
 namespace OneItb.GraphQL
 {
@@ -63,9 +68,13 @@ namespace OneItb.GraphQL
                 .AddFiltering()
                 .AddSorting()
                 .AddAuthorization()
-                .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true)
+                .ModifyRequestOptions(opt =>
+                    opt.IncludeExceptionDetails = Configuration.GetValue<bool>("GraphQL:IncludeExceptionDetails"))
                 .AddQueryType<Query>()
                 .AddMutationType<Mutation>()
+                .AddSubscriptionType<Subscription>()
+                .AddInMemorySubscriptions()
+                .AddSocketSessionInterceptor<AuthenticationSocketSessionInterceptor>()
                 .AddType(new ObjectType<Account>(d => d.Field(f => f.PasswordHash).Ignore()))
                 .AddType(new ObjectType<User>(descriptor => 
                 {
@@ -97,12 +106,40 @@ namespace OneItb.GraphQL
             services.AddScoped<IEmployerAuthService, Services.Auth.EmployerAuthService>();
             services.AddScoped<IModerationService, Services.Moderation.ModerationService>();
             services.AddScoped<ISocialService, SocialService>();
+            services.AddScoped<IMessagingService, MessagingService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
 
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddScheme<AuthenticationSchemeOptions, SkipWebSocketAuthenticationHandler>(
+                SkipWebSocketAuthenticationHandler.SchemeName,
+                _ => { })
             .AddJwtBearer(options =>
             {
+                options.ForwardDefaultSelector = context =>
+                    !context.Items.ContainsKey(AuthenticationSocketSessionInterceptor.WebSocketTokenKey) &&
+                    context.WebSockets.IsWebSocketRequest
+                        ? SkipWebSocketAuthenticationHandler.SchemeName
+                        : null;
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        if (context.HttpContext.Items.TryGetValue(
+                                AuthenticationSocketSessionInterceptor.WebSocketTokenKey,
+                                out object token))
+                        {
+                            context.Token = token as string;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -127,21 +164,28 @@ namespace OneItb.GraphQL
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
+            var webSocketOptions = new WebSocketOptions();
+            string[] allowedOrigins = Configuration
+                .GetSection("Cors:AllowedOrigins")
+                .Get<string[]>() ?? new[] { "http://localhost:5173", "https://localhost:5173" };
+            foreach (string origin in allowedOrigins)
+                webSocketOptions.AllowedOrigins.Add(origin);
+            app.UseWebSockets(webSocketOptions);
 
             app.UseRouting();
 
-            app.UseAuthentication();
-            app.UseAuthorization();
             app.UseCors(MyAllowSpecificOrigins);
 
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
                 endpoints.MapGraphQL();
             });
-
-            
         }
     }
 }

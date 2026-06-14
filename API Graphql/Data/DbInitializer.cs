@@ -54,6 +54,7 @@ namespace OneItb.Data
             SeedSubjectData(context);
             SeedInquiryData(context);
             SeedSocialData(context);
+            SeedMessagesData(context);
         }
 
         private static void SeedAccountsAndUsers(OneItbContext context)
@@ -269,6 +270,48 @@ namespace OneItb.Data
                 .ToHashSet();
 
             context.CommunityReports.AddRange(reportSeeds.Where(report => !existingReportIds.Contains(report.Id)));
+            context.SaveChanges();
+        }
+
+        private static void SeedMessagesData(OneItbContext context)
+        {
+            var messageSeeds = new[]
+            {
+                new Message
+                {
+                    Id = StableGuid("msg-student-admin-1"),
+                    SenderId = StudentId,
+                    ReceiverId = AdminId,
+                    Content = "Hola Sofia, ¿tienen novedades sobre la inscripción a las materias de segundo año?",
+                    SentAt = SeedStart.AddDays(1).AddHours(10),
+                    IsRead = true
+                },
+                new Message
+                {
+                    Id = StableGuid("msg-admin-student-1"),
+                    SenderId = AdminId,
+                    ReceiverId = StudentId,
+                    Content = "Hola Lucia. Si, las inscripciones abren la próxima semana. Atenta al muro.",
+                    SentAt = SeedStart.AddDays(1).AddHours(11),
+                    IsRead = true
+                },
+                new Message
+                {
+                    Id = StableGuid("msg-student-teacher-1"),
+                    SenderId = StudentId,
+                    ReceiverId = TeacherId,
+                    Content = "Profe, le dejé una consulta en el foro sobre el TP final.",
+                    SentAt = SeedStart.AddDays(2).AddHours(15),
+                    IsRead = false
+                }
+            };
+
+            var existingMessageIds = context.Messages
+                .Where(m => messageSeeds.Select(s => s.Id).Contains(m.Id))
+                .Select(m => m.Id)
+                .ToHashSet();
+
+            context.Messages.AddRange(messageSeeds.Where(m => !existingMessageIds.Contains(m.Id)));
             context.SaveChanges();
         }
 

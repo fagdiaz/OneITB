@@ -6,6 +6,7 @@ export const GET_INQUIRIES = gql`
       id
       title
       content
+      attachedFileUrl
       publishDate
       user {
         id

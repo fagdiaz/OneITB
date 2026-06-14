@@ -66,11 +66,32 @@ namespace Services.Repositories
         }
     }
 
+    public class MessageRepository : IMessageRepository
+    {
+        private readonly OneItbContext _context;
+
+        public MessageRepository(OneItbContext context)
+        {
+            _context = context;
+        }
+
+        public IQueryable<Message> Query()
+        {
+            return _context.Messages.AsNoTracking();
+        }
+
+        public async Task AddAsync(Message message)
+        {
+            await _context.Messages.AddAsync(message);
+        }
+    }
+
     public class UnitOfWork : IUnitOfWork
     {
         private readonly OneItbContext _context;
         private IUserRepository? _users;
         private IAccountRepository? _accounts;
+        private IMessageRepository? _messages;
 
         public UnitOfWork(OneItbContext context)
         {
@@ -80,6 +101,8 @@ namespace Services.Repositories
         public IUserRepository Users => _users ??= new UserRepository(_context);
 
         public IAccountRepository Accounts => _accounts ??= new AccountRepository(_context);
+
+        public IMessageRepository Messages => _messages ??= new MessageRepository(_context);
 
         public async Task<int> CompleteAsync()
         {

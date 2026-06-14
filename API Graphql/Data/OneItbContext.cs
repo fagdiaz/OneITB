@@ -16,6 +16,7 @@ namespace OneItb.Data
         public DbSet<Comment> Comments { get; set; } = null!;
         public DbSet<Reaction> Reactions { get; set; } = null!;
         public DbSet<CommunityReport> CommunityReports { get; set; } = null!;
+        public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -140,6 +141,10 @@ namespace OneItb.Data
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("SYSUTCDATETIME()");
 
+                entity.Property(e => e.AttachedFileUrl)
+                    .HasMaxLength(500)
+                    .IsUnicode(true);
+
                 entity.HasOne(i => i.User)
                     .WithMany()
                     .HasForeignKey(i => i.UserId)
@@ -235,6 +240,37 @@ namespace OneItb.Data
                 entity.HasOne(e => e.Reporter)
                     .WithMany()
                     .HasForeignKey(e => e.ReporterId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA MESSAGES
+            // ==========================================
+            modelBuilder.Entity<Message>(entity =>
+            {
+                entity.ToTable("Messages", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.SentAt)
+                    .IsRequired()
+                    .HasColumnType("datetime2")
+                    .HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.IsRead).IsRequired().HasDefaultValue(false);
+
+                entity.HasIndex(e => new { e.SenderId, e.ReceiverId, e.SentAt, e.Id });
+                entity.HasIndex(e => new { e.ReceiverId, e.SenderId, e.SentAt, e.Id });
+                entity.HasIndex(e => new { e.ReceiverId, e.IsRead, e.SentAt });
+
+                entity.HasOne(e => e.Sender)
+                    .WithMany(u => u.SentMessages)
+                    .HasForeignKey(e => e.SenderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Receiver)
+                    .WithMany(u => u.ReceivedMessages)
+                    .HasForeignKey(e => e.ReceiverId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

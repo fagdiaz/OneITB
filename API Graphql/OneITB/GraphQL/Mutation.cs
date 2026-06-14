@@ -11,6 +11,9 @@ using OneITB.Core.Services.Interfaces;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using HotChocolate.Subscriptions;
+using OneITB.GraphQL.Subscriptions;
 
 namespace OneITB.GraphQL.Mutations
 {
@@ -148,6 +151,7 @@ namespace OneITB.GraphQL.Mutations
             int subjectId,
             string title,
             string content,
+            string attachedFileUrl,
             [Service] ISocialService socialService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -155,7 +159,8 @@ namespace OneITB.GraphQL.Mutations
                 GetAuthenticatedUserId(httpContextAccessor),
                 subjectId,
                 title,
-                content);
+                content,
+                attachedFileUrl);
         }
 
         [Authorize]
@@ -182,6 +187,59 @@ namespace OneITB.GraphQL.Mutations
             return await socialService.ToggleReactionAsync(
                 GetAuthenticatedUserId(httpContextAccessor),
                 inquiryId);
+        }
+
+        [Authorize]
+        public async Task<Message> SendMessage(
+            Guid receiverId,
+            string content,
+            [Service] IMessagingService messagingService,
+            [Service] ITopicEventSender eventSender,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ILogger<Mutation> logger)
+        {
+            try
+            {
+                Guid senderId = GetAuthenticatedUserId(httpContextAccessor);
+                Message message = await messagingService.SendMessageAsync(senderId, receiverId, content);
+
+                try
+                {
+                    await eventSender.SendAsync(PrivateMessageTopics.ForUser(senderId), message);
+                    await eventSender.SendAsync(PrivateMessageTopics.ForUser(receiverId), message);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(
+                        ex,
+                        "Message {MessageId} persisted but real-time publication failed.",
+                        message.Id);
+                }
+
+                return message;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<MarkConversationReadPayload> MarkConversationRead(
+            Guid otherUserId,
+            [Service] IMessagingService messagingService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await messagingService.MarkConversationReadAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    otherUserId);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
         }
 
         private static Guid GetAuthenticatedUserId(IHttpContextAccessor httpContextAccessor)

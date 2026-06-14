@@ -11,6 +11,7 @@ import { AdminDashboard } from '../Components/admin/AdminDashboard'
 import { EmployerLogin } from '../Components/auth/EmployerLogin'
 import { AuthProvider } from '../context/AuthProvider'
 import { Logout } from '../Components/user/Logout'
+import { PrivateChat } from '../Components/chat/PrivateChat'
 
 export const Routing = () => {
   return (
@@ -27,6 +28,7 @@ export const Routing = () => {
         <Route path='/' element={<PrivateLayout />}>
           <Route path='feed' element={<Feed />} />
           <Route path='profile' element={<UserProfile />} />
+          <Route path='chat' element={<PrivateChat />} />
           <Route path='admin' element={<AdminDashboard />} />
           <Route path='admin/users' element={<Navigate to="/admin" replace />} />
           <Route path='logout' element={<Logout></Logout>} />

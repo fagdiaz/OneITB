@@ -31,6 +31,7 @@ namespace OneItb.Entities.Models
             }
         }
 
+        public string? AttachedFileUrl { get; set; }
         public DateTime PublishDate { get; set; }
         public Guid UserId { get; set; }
         public int SubjectId { get; set; }

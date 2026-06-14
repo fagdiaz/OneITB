@@ -1,11 +1,12 @@
 import { gql } from '@apollo/client';
 
 export const CREATE_INQUIRY = gql`
-  mutation CreateInquiry($subjectId: Int!, $title: String!, $content: String!) {
-    addInquiry(subjectId: $subjectId, title: $title, content: $content) {
+  mutation CreateInquiry($subjectId: Int!, $title: String!, $content: String!, $attachedFileUrl: String) {
+    addInquiry(subjectId: $subjectId, title: $title, content: $content, attachedFileUrl: $attachedFileUrl) {
       id
       title
       content
+      attachedFileUrl
       publishDate
     }
   }

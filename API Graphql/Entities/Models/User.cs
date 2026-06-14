@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using OneItb.Entities.Abstracts;
 
 namespace OneItb.Entities.Models
@@ -50,5 +51,7 @@ namespace OneItb.Entities.Models
         public bool IsActive { get; set; } = true;
 
         public virtual Account Account { get; set; } = null!;
+        public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
+        public virtual ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
     }
 }

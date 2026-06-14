@@ -18,10 +18,17 @@ namespace OneITB.Core.Services.Interfaces
         Account GetById(Guid id);
     }
 
+    public interface IMessageRepository
+    {
+        IQueryable<Message> Query();
+        Task AddAsync(Message message);
+    }
+
     public interface IUnitOfWork : IDisposable
     {
         IUserRepository Users { get; }
         IAccountRepository Accounts { get; }
+        IMessageRepository Messages { get; }
         Task<int> CompleteAsync();
     }
 }

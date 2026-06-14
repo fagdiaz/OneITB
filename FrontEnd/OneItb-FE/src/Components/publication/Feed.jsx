@@ -19,6 +19,8 @@ export const Feed = () => {
   const [openThreads, setOpenThreads] = useState({});
   const [reportTargetId, setReportTargetId] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: subjectsData, loading: subjectsLoading } = useQuery(GET_SUBJECTS);
   const {
@@ -42,17 +44,47 @@ export const Feed = () => {
     event.preventDefault();
     if (!title.trim() || !content.trim() || !selectedSubject) return;
 
+    let attachedFileUrl = null;
+
+    if (selectedFile) {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const baseUrl = (import.meta.env.VITE_GRAPHQL_URL || 'https://localhost:44397/graphql').replace('/graphql', '');
+        const uploadResponse = await fetch(`${baseUrl}/api/files/upload`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!uploadResponse.ok) throw new Error('Error al subir el archivo.');
+        const data = await uploadResponse.json();
+        attachedFileUrl = data.url;
+      } catch (error) {
+        showFeedback('error', error.message);
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
     try {
       await createInquiry({
         variables: {
           subjectId: Number(selectedSubject),
           title: title.trim(),
-          content: content.trim()
+          content: content.trim(),
+          attachedFileUrl
         }
       });
       setTitle('');
       setContent('');
       setSelectedSubject('');
+      setSelectedFile(null);
       showFeedback('success', 'La publicación se creó correctamente.');
     } catch (error) {
       showFeedback('error', error.message);
@@ -133,6 +165,13 @@ export const Feed = () => {
           onChange={(event) => setContent(event.target.value)}
           className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <div className="flex items-center gap-2">
+          <input
+            type="file"
+            onChange={(e) => setSelectedFile(e.target.files[0])}
+            className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <select
             value={selectedSubject}
@@ -147,10 +186,10 @@ export const Feed = () => {
           </select>
           <button
             type="submit"
-            disabled={isPublishing || !title.trim() || !content.trim() || !selectedSubject}
+            disabled={isPublishing || isUploading || !title.trim() || !content.trim() || !selectedSubject}
             className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {isPublishing ? 'Publicando...' : 'Publicar'}
+            {isPublishing || isUploading ? 'Publicando...' : 'Publicar'}
           </button>
         </div>
       </form>
@@ -199,6 +238,19 @@ export const Feed = () => {
             <div>
               <h2 className="font-semibold text-slate-800">{post.title}</h2>
               <p className="mt-1 text-sm leading-relaxed text-slate-700">{post.content}</p>
+              {post.attachedFileUrl && (
+                <div className="mt-3">
+                  <a
+                    href={(import.meta.env.VITE_GRAPHQL_URL || 'https://localhost:44397/graphql').replace('/graphql', '') + `/api/files/preview/${post.attachedFileUrl.split('/').pop()}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                  >
+                    <i className="fa-solid fa-paperclip"></i>
+                    Ver archivo adjunto
+                  </a>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4 border-t border-slate-100 pt-3">

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneItb.Data;
 
@@ -11,9 +12,11 @@ using OneItb.Data;
 namespace Data.Migrations
 {
     [DbContext(typeof(OneItbContext))]
-    partial class OneItbContextModelSnapshot : ModelSnapshot
+    [Migration("20260613233525_AddAttachedFileUrlToInquiry")]
+    partial class AddAttachedFileUrlToInquiry
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -224,43 +227,6 @@ namespace Data.Migrations
                     b.HasIndex("AccountId");
 
                     b.ToTable("MagicLinks", "dbo");
-                });
-
-            modelBuilder.Entity("OneItb.Entities.Models.Message", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsRead")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<Guid>("ReceiverId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SenderId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SentAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReceiverId", "IsRead", "SentAt");
-
-                    b.HasIndex("ReceiverId", "SenderId", "SentAt", "Id");
-
-                    b.HasIndex("SenderId", "ReceiverId", "SentAt", "Id");
-
-                    b.ToTable("Messages", "dbo");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.Reaction", b =>
@@ -480,25 +446,6 @@ namespace Data.Migrations
                     b.Navigation("Account");
                 });
 
-            modelBuilder.Entity("OneItb.Entities.Models.Message", b =>
-                {
-                    b.HasOne("OneItb.Entities.Models.User", "Receiver")
-                        .WithMany("ReceivedMessages")
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("OneItb.Entities.Models.User", "Sender")
-                        .WithMany("SentMessages")
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Receiver");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("OneItb.Entities.Models.Reaction", b =>
                 {
                     b.HasOne("OneItb.Entities.Models.Inquiry", "Inquiry")
@@ -552,13 +499,6 @@ namespace Data.Migrations
             modelBuilder.Entity("OneItb.Entities.Models.Subject", b =>
                 {
                     b.Navigation("Inquiries");
-                });
-
-            modelBuilder.Entity("OneItb.Entities.Models.User", b =>
-                {
-                    b.Navigation("ReceivedMessages");
-
-                    b.Navigation("SentMessages");
                 });
 #pragma warning restore 612, 618
         }

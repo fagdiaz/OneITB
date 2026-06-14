@@ -8,7 +8,7 @@ namespace OneITB.Core.Services.Interfaces
     public interface ISocialService
     {
         IQueryable<Inquiry> GetInquiries();
-        Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content);
+        Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content, string? attachedFileUrl = null);
         Task<Comment> AddCommentAsync(Guid userId, Guid inquiryId, string content, Guid? parentCommentId);
         Task<ToggleReactionPayload> ToggleReactionAsync(Guid userId, Guid inquiryId);
     }

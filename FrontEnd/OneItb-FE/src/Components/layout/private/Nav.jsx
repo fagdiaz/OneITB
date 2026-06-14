@@ -47,6 +47,23 @@ export const Nav = () => {
             <span>Inicio</span>
           </NavLink>
         </li>
+        {isAuthenticated && (
+          <li>
+            <NavLink
+              to="/chat"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-white/15 text-white'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`
+              }
+            >
+              <i className="fa-regular fa-comment-dots text-xs" />
+              <span>Mensajes</span>
+            </NavLink>
+          </li>
+        )}
         {isAuthenticated && auth.role === 'Administrador' && (
           <li>
             <NavLink
