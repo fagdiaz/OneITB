@@ -246,6 +246,11 @@ export const PrivateChat = () => {
       appendMessageToConversation(client.cache, otherUserId, message);
       updateContactCache(client.cache, otherUserId, message, auth.id, isSelected);
 
+      const isActive = activeData?.activeConversations?.nodes?.some(u => u.id === otherUserId);
+      if (!isActive) {
+        refetchActive();
+      }
+
       if (isSelected && message.receiverId === auth.id) {
         markConversationRead({
           variables: { otherUserId },
@@ -259,6 +264,7 @@ export const PrivateChat = () => {
     setSelectedContactId(contactId);
     setFeedback('');
     setForm({ content: '' });
+    setSearchTerm('');
   };
 
   const handleSubmit = async (event) => {
@@ -299,6 +305,11 @@ export const PrivateChat = () => {
           updateContactCache(cache, selectedContactId, message, auth.id, true);
         },
       });
+
+      const isActive = activeData?.activeConversations?.nodes?.some(u => u.id === selectedContactId);
+      if (!isActive) {
+        refetchActive();
+      }
     } catch (error) {
       setForm({ content });
       setFeedback(error.message || 'No se pudo enviar el mensaje.');
@@ -350,12 +361,12 @@ export const PrivateChat = () => {
   } else {
     displayActive = activeContacts.filter(c => 
       `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchInput) ||
-      c.role.toLowerCase().includes(searchInput)
+      c.role?.toLowerCase().includes(searchInput)
     );
     displayNew = allContacts.filter(c => 
       !activeContacts.some(ac => ac.userId === c.userId) &&
       (`${c.firstName} ${c.lastName}`.toLowerCase().includes(searchInput) ||
-      c.role.toLowerCase().includes(searchInput))
+      c.role?.toLowerCase().includes(searchInput))
     );
   }
 
@@ -549,6 +560,12 @@ export const PrivateChat = () => {
                   name="content"
                   value={form.content}
                   onChange={changed}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }}
                   maxLength={2000}
                   rows={1}
                   placeholder="Escribí un mensaje..."
