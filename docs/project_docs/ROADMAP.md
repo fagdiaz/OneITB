@@ -41,6 +41,8 @@ reportar. El seed administrado aporta 5 materias, 10 usuarios, 30 publicaciones,
 Estado tecnico: GraphQL expone contactos e historial paginados, envio y lectura
 autenticados y una suscripcion privada por usuario. Apollo usa WebSockets con
 JWT, actualizacion optimista, deduplicacion y reconciliacion al reconectar.
+Adicionalmente, se cuenta con un buscador inteligente de contactos y mensajes
+integrado con una interfaz reactiva, resolviendo fallos de UX previos.
 
 ## Modulo 5: Recursos y seguimiento - 0%
 

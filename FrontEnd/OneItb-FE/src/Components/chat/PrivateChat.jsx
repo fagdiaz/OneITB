@@ -181,7 +181,8 @@ export const PrivateChat = () => {
   const activeUsers = activeData?.activeConversations?.nodes || [];
   
   // Merge unreadCount from GET_MESSAGING_CONTACTS into activeUsers
-  const activeContacts = activeUsers.map(user => {
+  const activeContacts = activeUsers.map(dto => {
+    const user = dto.contact;
     const contactInfo = allContacts.find(c => c.userId === user.id);
     return {
       userId: user.id,
@@ -190,6 +191,7 @@ export const PrivateChat = () => {
       role: user.role,
       unreadCount: contactInfo?.unreadCount || 0,
       lastMessageAt: contactInfo?.lastMessageAt || null,
+      lastMessageContent: dto.lastMessage || contactInfo?.lastMessageContent || null,
     };
   });
 
@@ -246,7 +248,7 @@ export const PrivateChat = () => {
       appendMessageToConversation(client.cache, otherUserId, message);
       updateContactCache(client.cache, otherUserId, message, auth.id, isSelected);
 
-      const isActive = activeData?.activeConversations?.nodes?.some(u => u.id === otherUserId);
+      const isActive = activeData?.activeConversations?.nodes?.some(u => u.contact.id === otherUserId);
       if (!isActive) {
         refetchActive();
       }
@@ -306,7 +308,7 @@ export const PrivateChat = () => {
         },
       });
 
-      const isActive = activeData?.activeConversations?.nodes?.some(u => u.id === selectedContactId);
+      const isActive = activeData?.activeConversations?.nodes?.some(u => u.contact.id === selectedContactId);
       if (!isActive) {
         refetchActive();
       }
@@ -357,12 +359,13 @@ export const PrivateChat = () => {
   let displayNew = [];
   
   if (!searchInput) {
-    displayActive = activeContacts;
+    displayActive = [...activeContacts].sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
   } else {
     displayActive = activeContacts.filter(c => 
       `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchInput) ||
       c.role?.toLowerCase().includes(searchInput)
-    );
+    ).sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+    
     displayNew = allContacts.filter(c => 
       !activeContacts.some(ac => ac.userId === c.userId) &&
       (`${c.firstName} ${c.lastName}`.toLowerCase().includes(searchInput) ||
@@ -372,6 +375,7 @@ export const PrivateChat = () => {
 
   const renderContactItem = (contact, isNew = false) => {
     const active = contact.userId === selectedContactId;
+    const preview = !isNew ? contact.lastMessageContent : null;
     return (
       <button
         key={contact.userId}
@@ -386,7 +390,9 @@ export const PrivateChat = () => {
           <p className="truncate font-semibold">
             {contact.firstName} {contact.lastName} {isNew && <span className="ml-1 text-[10px] uppercase tracking-wider text-emerald-500 font-bold">(Nuevo)</span>}
           </p>
-          <p className={`truncate text-xs ${active ? 'text-blue-100' : 'text-slate-500'}`}>{contact.role}</p>
+          <p className={`truncate text-xs ${active ? 'text-blue-100' : 'text-slate-500'}`}>
+            {preview ? `"${preview}"` : contact.role}
+          </p>
         </div>
         {contact.unreadCount > 0 && !isNew && (
           <span className={`min-w-6 rounded-full px-2 py-1 text-center text-xs font-bold ${active ? 'bg-white text-blue-700' : 'bg-blue-600 text-white'}`}>

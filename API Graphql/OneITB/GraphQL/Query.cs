@@ -87,7 +87,7 @@ namespace GraphQL.GraphQL
         [Authorize]
         [UsePaging(MaxPageSize = 50, IncludeTotalCount = true)]
         [UseProjection]
-        public IQueryable<User> GetActiveConversations(
+        public IQueryable<ActiveConversationDto> GetActiveConversations(
             [Service] IMessagingService messagingService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {

@@ -1,6 +1,6 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-14
+**Ultima verificacion**: 2026-06-15
 
 ## Documentos canonicos
 
@@ -15,6 +15,8 @@
 | `README.md` | Entrada al repositorio | Vigente |
 | `specs/099-social-admin-ecosystem/` | Ecosistema social, seed y administracion | Completa y verificada |
 | `specs/104-realtime-private-messaging/` | Mensajeria privada persistente y en tiempo real | Completa y verificada |
+| `specs/106-chat-smart-search/` | Buscador inteligente de chats y mensajes | Completa y verificada |
+| `specs/107-chat-ux-refinement/` | Refinamiento de estado, cache y UX de chat | Completa y verificada |
 
 ## Snapshots historicos
 
@@ -41,6 +43,5 @@ como fuente unica del estado actual:
 - Archivos educativos y recursos academicos siguen fuera del alcance completado.
 - El arbol npm reporta vulnerabilidades heredadas que requieren una actualizacion
   de dependencias separada y controlada.
-- Estado Git contiene cambios de multiples specs sin consolidar.
 
 Estas brechas se gestionan en `docs/audit/fix-roadmap-13-06-2026.md`.

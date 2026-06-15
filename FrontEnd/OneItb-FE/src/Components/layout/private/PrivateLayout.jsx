@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Header } from './Header'
 import { SideBar } from './SideBar'
+import { MiniChatWidget } from '../../chat/MiniChatWidget'
 import useAuth from '../../../hooks/useAuth'
 
 /**
@@ -47,17 +48,9 @@ export const PrivateLayout = () => {
 
       </div>
 
-      {/* Floating Message Button (conditional on session) */}
-      {auth.id && location.pathname !== '/chat' && (
-        <Link
-          to="/chat"
-          className="fixed bottom-5 right-5 lg:right-80 w-14 h-14 rounded-full text-white flex items-center justify-center shadow-lg cursor-pointer z-50 transition-all duration-300 hover:scale-110 hover:shadow-xl no-print"
-          style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' }}
-          title="Mensajería Privada"
-          aria-label="Abrir mensajería privada"
-        >
-          <i className="fa-regular fa-comment-dots text-2xl" />
-        </Link>
+      {/* Mini Chat Widget (Módulo 4) */}
+      {auth.id && !location.pathname.toLowerCase().startsWith('/chat') && (
+        <MiniChatWidget />
       )}
 
     </div>

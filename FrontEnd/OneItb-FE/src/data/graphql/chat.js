@@ -9,6 +9,7 @@ export const GET_MESSAGING_CONTACTS = gql`
         lastName
         role
         lastMessageAt
+        lastMessageContent
         unreadCount
       }
       pageInfo {
@@ -77,10 +78,13 @@ export const GET_ACTIVE_CONVERSATIONS = gql`
   query ActiveConversations($first: Int, $after: String) {
     activeConversations(first: $first, after: $after) {
       nodes {
-        id
-        firstName
-        lastName
-        role
+        contact {
+          id
+          firstName
+          lastName
+          role
+        }
+        lastMessage
       }
       pageInfo {
         hasNextPage

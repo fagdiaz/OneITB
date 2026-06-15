@@ -50,13 +50,23 @@ namespace Services.Messaging
                                 .Where(message => message.SenderId == currentUserId)
                                 .Select(message => (DateTime?)message.SentAt))
                         .Max(),
+                    LastMessageContent = user.SentMessages
+                        .Where(message => message.ReceiverId == currentUserId)
+                        .Select(m => new { m.SentAt, m.Content })
+                        .Concat(
+                            user.ReceivedMessages
+                                .Where(message => message.SenderId == currentUserId)
+                                .Select(m => new { m.SentAt, m.Content }))
+                        .OrderByDescending(m => m.SentAt)
+                        .Select(m => m.Content)
+                        .FirstOrDefault() ?? string.Empty,
                     UnreadCount = user.SentMessages.Count(message =>
                         message.ReceiverId == currentUserId &&
                         !message.IsRead)
                 });
         }
 
-        public IQueryable<User> GetActiveConversations(Guid currentUserId)
+        public IQueryable<ActiveConversationDto> GetActiveConversations(Guid currentUserId)
         {
             EnsureActiveUser(currentUserId);
 
@@ -65,9 +75,23 @@ namespace Services.Messaging
                 .Where(user => user.Id != currentUserId && user.IsActive &&
                     (user.SentMessages.Any(m => m.ReceiverId == currentUserId) ||
                      user.ReceivedMessages.Any(m => m.SenderId == currentUserId)))
-                .OrderBy(user => user.FirstName)
-                .ThenBy(user => user.LastName)
-                .ThenBy(user => user.Id);
+                .Select(user => new ActiveConversationDto
+                {
+                    Contact = user,
+                    LastMessage = user.SentMessages
+                        .Where(message => message.ReceiverId == currentUserId)
+                        .Select(m => new { m.SentAt, m.Content })
+                        .Concat(
+                            user.ReceivedMessages
+                                .Where(message => message.SenderId == currentUserId)
+                                .Select(m => new { m.SentAt, m.Content }))
+                        .OrderByDescending(m => m.SentAt)
+                        .Select(m => m.Content)
+                        .FirstOrDefault() ?? string.Empty
+                })
+                .OrderBy(dto => dto.Contact.FirstName)
+                .ThenBy(dto => dto.Contact.LastName)
+                .ThenBy(dto => dto.Contact.Id);
         }
 
         public IQueryable<Message> SearchMyMessages(Guid currentUserId, string searchTerm)
