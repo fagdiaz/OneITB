@@ -1,6 +1,6 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-13
+**Ultima verificacion**: 2026-06-14
 
 ## Documentos canonicos
 
@@ -14,6 +14,7 @@
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de cambios | Vigente |
 | `README.md` | Entrada al repositorio | Vigente |
 | `specs/099-social-admin-ecosystem/` | Ecosistema social, seed y administracion | Completa y verificada |
+| `specs/104-realtime-private-messaging/` | Mensajeria privada persistente y en tiempo real | Completa y verificada |
 
 ## Snapshots historicos
 
@@ -35,9 +36,11 @@ como fuente unica del estado actual:
 - Los aliases `idUsuario`, `nombre` y `apellidos` son compatibilidad temporal;
   el contrato canonico permanece en ingles.
 - JWT valida vigencia y CORS queda restringido a los origenes configurados.
-- La administracion de materias es de solo lectura en esta etapa.
-- Archivos educativos, mensajeria privada y recursos academicos siguen fuera
-  del alcance completado.
+- La mensajeria privada persiste historial, autentica HTTP/WebSocket y entrega
+  eventos aislados por usuario; el pub/sub actual es para una sola instancia.
+- Archivos educativos y recursos academicos siguen fuera del alcance completado.
+- El arbol npm reporta vulnerabilidades heredadas que requieren una actualizacion
+  de dependencias separada y controlada.
 - Estado Git contiene cambios de multiples specs sin consolidar.
 
 Estas brechas se gestionan en `docs/audit/fix-roadmap-13-06-2026.md`.

@@ -1,8 +1,8 @@
 # Roadmap funcional - OneITB23
 
-## Estado global: 65%
+## Estado global: 83%
 
-Calculo: 13 tareas completadas de 20 tareas totales. El porcentaje se deriva
+Calculo: 20 tareas completadas de 24 tareas totales. El porcentaje se deriva
 exclusivamente de los checklists de este archivo.
 
 ## Modulo 1: Autenticacion y cuentas - 100%
@@ -32,11 +32,15 @@ Estado tecnico: el feed permite publicar, reaccionar, comentar, responder y
 reportar. El seed administrado aporta 5 materias, 10 usuarios, 30 publicaciones,
 90 reacciones, 45 comentarios y 2 reportes sin duplicarse al reiniciar.
 
-## Modulo 4: Mensajeria privada - 0%
+## Modulo 4: Mensajeria privada - 100%
 
-- [ ] Conversaciones uno a uno.
-- [ ] Persistencia de mensajes.
-- [ ] Notificaciones de mensajes nuevos.
+- [x] Conversaciones uno a uno.
+- [x] Persistencia de mensajes.
+- [x] Notificaciones de mensajes nuevos.
+
+Estado tecnico: GraphQL expone contactos e historial paginados, envio y lectura
+autenticados y una suscripcion privada por usuario. Apollo usa WebSockets con
+JWT, actualizacion optimista, deduplicacion y reconciliacion al reconectar.
 
 ## Modulo 5: Recursos y seguimiento - 0%
 
@@ -53,5 +57,6 @@ reportar. El seed administrado aporta 5 materias, 10 usuarios, 30 publicaciones,
 
 ## Prioridad vigente
 
-Completar archivos educativos del Modulo 3 antes de ampliar el alcance hacia
-Mensajeria privada o Recursos y seguimiento.
+Completar archivos educativos del Modulo 3 antes de ampliar Recursos y
+seguimiento. Para escalar Mensajeria a multiples instancias se debe reemplazar
+el pub/sub en memoria por un transporte distribuido.

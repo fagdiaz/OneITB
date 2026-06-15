@@ -9,7 +9,7 @@
 4. Use `docs/audit/fix-roadmap-13-06-2026.md` as the current stabilization baseline.
 
 Active implementation plan:
-`specs/099-social-admin-ecosystem/plan.md`
+`specs/104-realtime-private-messaging/plan.md`
 
 Do not infer that a feature works because its tasks are checked or because it appears in
 `docs/audit/DEVELOPMENT_LOG.md`. Runtime evidence takes precedence over historical notes.

@@ -5,6 +5,62 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-14] - Chat UX Refinement (Spec: 107-chat-ux-refinement)
+
+* **Objetivo**: Corregir la usabilidad de la interfaz de chat en tres aspectos críticos: el estado de búsqueda persistente, la falta de reactividad al contactar nuevos usuarios, y el manejo de envíos por teclado.
+* **Resultado**:
+  - Se agregó `setSearchTerm('')` al seleccionar usuarios/mensajes.
+  - Se implementó la revalidación reactiva del query de conversaciones activas (`refetchActive()`) al enviar o recibir mensajes de usuarios ausentes de dicha lista.
+  - Se configuró el `<textarea>` nativamente para que la combinación `Enter` (sin la tecla modificadora `Shift`) despache el mensaje al estilo estándar de las plataformas de mensajería.
+* **Validaciones ejecutadas**:
+  - Tareas documentadas en `tasks.md` tras completar los cambios previos en el código.
+  - El proyecto fue compilado y verificado.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/chat/PrivateChat.jsx`
+
+## [2026-06-14] - Chat Smart Search (Spec: 106-chat-smart-search)
+
+* **Objetivo**: Refinar la usabilidad del chat privado implementando un sistema de filtrado y búsqueda categorizada con tres niveles de prioridad (Conversaciones activas, Nuevos usuarios, Mensajes coincidentes).
+* **Resultado**:
+  - Backend: Se implementaron `GetActiveConversations` y `SearchMyMessages` en `IMessagingService.cs` y `MessagingService.cs`, restringidos por el JWT del usuario, y se mapearon en `Query.cs`.
+  - Frontend: Se refactorizó `PrivateChat.jsx` para gestionar el estado de `searchTerm` reactivamente. Ahora consume las nuevas consultas para priorizar contactos y habilitar la búsqueda dinámica por nombre, rol y contenido de mensajes sin perder los contadores de mensajes no leídos.
+* **Validaciones ejecutadas**:
+  - Backend compilado en Release sin errores.
+  - Frontend Vite build exitoso.
+  - Tareas en `tasks.md` marcadas como finalizadas y código commiteado.
+* **Archivos principales**:
+  - `API Graphql/Services/Messaging/IMessagingService.cs`
+  - `API Graphql/Services/Messaging/MessagingService.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `FrontEnd/OneItb-FE/src/Components/chat/PrivateChat.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/chat.js`
+
+## [2026-06-14] - Mensajeria Privada en Tiempo Real (Spec: 104-realtime-private-messaging)
+
+* **Objetivo**: Implementar conversaciones privadas uno a uno con historial persistente, entrega en tiempo real mediante GraphQL Subscriptions y una interfaz responsive integrada al frontend.
+* **Resultado**:
+  - Se agrego la entidad `Message` con claves foraneas explicitas para emisor y receptor, indices de conversacion/no leidos y `DeleteBehavior.Restrict` en ambas relaciones.
+  - Se incorporaron `messagingContacts`, `conversation`, `sendMessage`, `markConversationRead` y `messageReceived`, todos derivados del usuario autenticado por JWT.
+  - HotChocolate autentica el `connection_init` del WebSocket y publica cada mensaje en los topicos privados del emisor y receptor.
+  - Apollo Client separa HTTP y WebSocket con `graphql-ws`, aplica actualizaciones optimistas, deduplicacion por ID, sincronizacion de no leidos y reconciliacion al reconectar.
+  - La ruta `/chat`, el enlace de navegacion y la burbuja flotante quedaron integrados. La UI responsive evita que la burbuja tape el boton de envio en movil.
+* **Base de datos**: Se genero y aplico `20260614022436_AddPrivateMessaging`; EF Core confirmo que no quedan cambios de modelo pendientes.
+* **Validaciones ejecutadas**:
+  - Backend Release: 0 errores y 0 advertencias.
+  - Frontend Vite: build exitoso con 0 errores.
+  - Tres clientes WebSocket: entrega unica a emisor/receptor, aislamiento de un tercero y rechazo sin JWT.
+  - Persistencia: historial recuperado despues de desconexion y estado de lectura verificado.
+  - Navegador: contactos, historial y envio inmediato verificados en escritorio y viewport movil `390x844`, sin errores finales de consola.
+* **Evidencia**: `specs/104-realtime-private-messaging/evidence.md`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Message.cs`
+  - `API Graphql/Services/Messaging/`
+  - `API Graphql/OneITB/GraphQL/Subscription.cs`
+  - `API Graphql/OneITB/Authentication/AuthenticationSocketSessionInterceptor.cs`
+  - `FrontEnd/OneItb-FE/src/Components/chat/PrivateChat.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/chat.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js`
+
 ## [2026-06-13] - Admin Dashboard UX Refinement (Spec: 102-admin-ux-refinement)
 
 * **Objetivo**: Refinar la Experiencia de Usuario (UX) en el AdminDashboard.jsx, implementando modales dedicados para la edición de materias y reestructurando la pestaña de moderación para mostrar un historial completo de reportes divididos por estado.
