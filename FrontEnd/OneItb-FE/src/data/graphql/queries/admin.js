@@ -8,6 +8,11 @@ export const GET_ADMIN_USERS = gql`
       lastName
       role
       isActive
+      mutedUntil
+      totalPosts
+      totalComments
+      totalLikesReceived
+      totalReportsReceived
       account {
         email
       }

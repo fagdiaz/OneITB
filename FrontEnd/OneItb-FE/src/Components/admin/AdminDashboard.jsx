@@ -3,11 +3,15 @@ import useAuth from '../../hooks/useAuth';
 import { UserManagement } from './UserManagement';
 import { SubjectManagement } from './SubjectManagement';
 import { ModerationManagement } from './ModerationManagement';
+import { PublicationManagement } from './PublicationManagement';
+import { CommentManagement } from './CommentManagement';
 
 const tabs = [
   { id: 'users', label: 'Usuarios', icon: 'fa-users', component: UserManagement },
   { id: 'subjects', label: 'Materias', icon: 'fa-book-open', component: SubjectManagement },
-  { id: 'moderation', label: 'Moderación / Reportes', icon: 'fa-shield-halved', component: ModerationManagement }
+  { id: 'publications', label: 'Publicaciones', icon: 'fa-newspaper', component: PublicationManagement },
+  { id: 'comments', label: 'Comentarios', icon: 'fa-comments', component: CommentManagement },
+  { id: 'moderation', label: 'Moderacion / Reportes', icon: 'fa-shield-halved', component: ModerationManagement },
 ];
 
 export const AdminDashboard = () => {
@@ -20,7 +24,7 @@ export const AdminDashboard = () => {
       <div className="mx-auto max-w-xl p-8">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
           <h1 className="text-lg font-bold text-red-700">Acceso restringido</h1>
-          <p className="mt-2 text-sm text-red-600">Esta sección requiere el rol Administrador.</p>
+          <p className="mt-2 text-sm text-red-600">Esta seccion requiere el rol Administrador.</p>
         </div>
       </div>
     );
@@ -29,8 +33,8 @@ export const AdminDashboard = () => {
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Panel de administración</h1>
-        <p className="mt-1 text-sm text-slate-500">Gestión operativa de la comunidad OneITB23.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Panel de administracion</h1>
+        <p className="mt-1 text-sm text-slate-500">Gestion operativa de la comunidad OneITB23.</p>
       </header>
 
       <nav className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2" aria-label="Secciones administrativas">

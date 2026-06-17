@@ -30,15 +30,87 @@ namespace GraphQL.GraphQL
         }
 
         [UseProjection]
-        public IQueryable<Subject> GetSubjects([Service] OneItbContext context)
+        public IQueryable<Career> GetCareers([Service] OneItbContext context)
         {
-            return context.Subjects;
+            return context.Careers.AsNoTracking().Where(career => career.IsActive).OrderBy(career => career.Name);
+        }
+
+        [Authorize]
+        [UseProjection]
+        public IQueryable<Career> GetMyCareers(
+            [Service] OneItbContext context,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            Guid userId = GetAuthenticatedUserId(httpContextAccessor);
+            return context.UserCareers
+                .AsNoTracking()
+                .Where(link => link.UserId == userId && link.Career.IsActive)
+                .Select(link => link.Career)
+                .OrderBy(career => career.Name);
         }
 
         [UseProjection]
-        public IQueryable<Inquiry> GetInquiries([Service] ISocialService socialService)
+        public IQueryable<Subject> GetSubjects(int? careerId, [Service] OneItbContext context)
         {
-            return socialService.GetInquiries();
+            IQueryable<Subject> query = context.Subjects
+                .AsNoTracking()
+                .Where(subject => subject.IsActive);
+
+            if (careerId.HasValue)
+            {
+                int selectedCareerId = careerId.Value;
+                query = query.Where(subject =>
+                    subject.SubjectCareers.Any(link => link.CareerId == selectedCareerId));
+            }
+
+            return query.OrderBy(subject => subject.Name);
+        }
+
+        [UseProjection]
+        public IQueryable<Inquiry> GetInquiries(
+            string? searchTerm,
+            int? careerId,
+            int[]? subjectIds,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            Guid? currentUserId = TryGetAuthenticatedUserId(httpContextAccessor);
+            return socialService.GetInquiries(currentUserId, searchTerm, careerId, subjectIds);
+        }
+
+        public async Task<PublicProfileSummary> GetPublicProfile(
+            Guid userId,
+            [Service] OneItbContext context)
+        {
+            User user = await context.Users
+                .AsNoTracking()
+                .Include(item => item.Account)
+                .Include(item => item.UserCareers)
+                .ThenInclude(link => link.Career)
+                .SingleOrDefaultAsync(item => item.Id == userId && item.IsActive)
+                ?? throw new GraphQLException("Usuario no encontrado.");
+
+            int totalPublications = await context.Inquiries
+                .AsNoTracking()
+                .CountAsync(inquiry => inquiry.UserId == userId);
+
+            return new PublicProfileSummary(
+                user.Id,
+                user.FirstName,
+                user.LastName,
+                $"{user.FirstName} {user.LastName}".Trim(),
+                user.Role,
+                user.Biography,
+                user.LinkedIn,
+                user.Facebook,
+                user.Instagram,
+                user.Phone,
+                user.UserCareers
+                    .Where(link => link.Career.IsActive)
+                    .Select(link => link.Career.Name)
+                    .OrderBy(name => name)
+                    .ToArray(),
+                totalPublications);
         }
 
         [Authorize(Roles = new[] { "Administrador", "Moderador" })]
@@ -126,6 +198,13 @@ namespace GraphQL.GraphQL
             if (!Guid.TryParse(value, out Guid userId))
                 throw new GraphQLException("No se pudo identificar al usuario autenticado.");
             return userId;
+        }
+
+        private static Guid? TryGetAuthenticatedUserId(IHttpContextAccessor httpContextAccessor)
+        {
+            string value = httpContextAccessor.HttpContext?.User
+                .FindFirstValue(ClaimTypes.NameIdentifier);
+            return Guid.TryParse(value, out Guid userId) ? userId : null;
         }
     }
 }

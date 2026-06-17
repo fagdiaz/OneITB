@@ -101,6 +101,56 @@ namespace OneItb.GraphQL
                     descriptor.Field(f => f.Instagram).Name("instagram");
                     descriptor.Field(f => f.Phone).Name("phone");
                     descriptor.Field(f => f.Role).Name("role");
+                    descriptor.Field(f => f.MutedUntil).Name("mutedUntil");
+                    descriptor.Field("totalPosts")
+                        .Type<NonNullType<IntType>>()
+                        .Resolve(async ctx =>
+                        {
+                            User user = ctx.Parent<User>();
+                            OneItbContext db = ctx.Service<OneItbContext>();
+                            return await db.Inquiries.IgnoreQueryFilters().CountAsync(inquiry => inquiry.UserId == user.Id);
+                        });
+                    descriptor.Field("totalComments")
+                        .Type<NonNullType<IntType>>()
+                        .Resolve(async ctx =>
+                        {
+                            User user = ctx.Parent<User>();
+                            OneItbContext db = ctx.Service<OneItbContext>();
+                            return await db.Comments.IgnoreQueryFilters().CountAsync(comment => comment.UserId == user.Id);
+                        });
+                    descriptor.Field("totalLikesReceived")
+                        .Type<NonNullType<IntType>>()
+                        .Resolve(async ctx =>
+                        {
+                            User user = ctx.Parent<User>();
+                            OneItbContext db = ctx.Service<OneItbContext>();
+                            return await db.Reactions.IgnoreQueryFilters().CountAsync(reaction => reaction.Inquiry.UserId == user.Id);
+                        });
+                    descriptor.Field("totalReportsReceived")
+                        .Type<NonNullType<IntType>>()
+                        .Resolve(async ctx =>
+                        {
+                            User user = ctx.Parent<User>();
+                            OneItbContext db = ctx.Service<OneItbContext>();
+                            return await db.CommunityReports.IgnoreQueryFilters().CountAsync(report => report.Inquiry.UserId == user.Id);
+                        });
+                }))
+                .AddType(new ObjectType<Inquiry>(descriptor =>
+                {
+                    descriptor.Field("reportCount")
+                        .Type<NonNullType<IntType>>()
+                        .Resolve(async ctx =>
+                        {
+                            Inquiry inquiry = ctx.Parent<Inquiry>();
+                            OneItbContext db = ctx.Service<OneItbContext>();
+                            return await db.CommunityReports.IgnoreQueryFilters().CountAsync(report => report.InquiryId == inquiry.Id);
+                        });
+                }))
+                .AddType(new ObjectType<Comment>(descriptor =>
+                {
+                    descriptor.Field("reportCount")
+                        .Type<NonNullType<IntType>>()
+                        .Resolve(_ => 0);
                 }));
 
             services.AddScoped<IUnitOfWork, Services.Repositories.UnitOfWork>();

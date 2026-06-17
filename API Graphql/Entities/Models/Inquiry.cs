@@ -33,6 +33,8 @@ namespace OneItb.Entities.Models
 
         public string? AttachedFileUrl { get; set; }
         public DateTime PublishDate { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public bool IsActive { get; set; } = true;
         public Guid UserId { get; set; }
         public int SubjectId { get; set; }
         public virtual User User { get; set; } = null!;

@@ -12,6 +12,10 @@ namespace OneItb.Data
         public DbSet<Account> Accounts { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Subject> Subjects { get; set; } = null!;
+        public DbSet<Career> Careers { get; set; } = null!;
+        public DbSet<UserCareer> UserCareers { get; set; } = null!;
+        public DbSet<SubjectCareer> SubjectCareers { get; set; } = null!;
+        public DbSet<UserInteraction> UserInteractions { get; set; } = null!;
         public DbSet<Inquiry> Inquiries { get; set; } = null!;
         public DbSet<Comment> Comments { get; set; } = null!;
         public DbSet<Reaction> Reactions { get; set; } = null!;
@@ -87,6 +91,9 @@ namespace OneItb.Data
                 entity.Property(e => e.Phone)
                     .HasMaxLength(50);
 
+                entity.Property(e => e.MutedUntil)
+                    .HasColumnType("datetime2");
+
                 entity.HasOne(u => u.Account)
                     .WithOne(a => a.User)
                     .HasForeignKey<User>(u => u.Id)
@@ -118,6 +125,92 @@ namespace OneItb.Data
             });
 
             // ==========================================
+            // MAPEO: TABLA CAREERS
+            // ==========================================
+            modelBuilder.Entity<Career>(entity =>
+            {
+                entity.ToTable("Careers", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(150);
+
+                entity.Property(e => e.IsActive)
+                    .IsRequired()
+                    .HasDefaultValue(true);
+
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // ==========================================
+            // MAPEO: TABLA USER_CAREERS
+            // ==========================================
+            modelBuilder.Entity<UserCareer>(entity =>
+            {
+                entity.ToTable("UserCareers", "dbo");
+                entity.HasKey(e => new { e.UserId, e.CareerId });
+
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.UserCareers)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Career)
+                    .WithMany(c => c.UserCareers)
+                    .HasForeignKey(e => e.CareerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA SUBJECT_CAREERS
+            // ==========================================
+            modelBuilder.Entity<SubjectCareer>(entity =>
+            {
+                entity.ToTable("SubjectCareers", "dbo");
+                entity.HasKey(e => new { e.SubjectId, e.CareerId });
+
+                entity.HasOne(e => e.Subject)
+                    .WithMany(s => s.SubjectCareers)
+                    .HasForeignKey(e => e.SubjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Career)
+                    .WithMany(c => c.SubjectCareers)
+                    .HasForeignKey(e => e.CareerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA USER_INTERACTIONS
+            // ==========================================
+            modelBuilder.Entity<UserInteraction>(entity =>
+            {
+                entity.ToTable("UserInteractions", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Type).IsRequired().HasConversion<string>().HasMaxLength(20);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => new { e.ObserverId, e.TargetId }).IsUnique();
+                entity.HasIndex(e => new { e.ObserverId, e.Type });
+
+                entity.HasOne(e => e.Observer)
+                    .WithMany(u => u.ObservedInteractions)
+                    .HasForeignKey(e => e.ObserverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Target)
+                    .WithMany(u => u.TargetedInteractions)
+                    .HasForeignKey(e => e.TargetId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
             // MAPEO: TABLA INQUIRIES
             // ==========================================
             modelBuilder.Entity<Inquiry>(entity =>
@@ -141,9 +234,21 @@ namespace OneItb.Data
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("SYSUTCDATETIME()");
 
+                entity.Property(e => e.UpdatedAt)
+                    .HasColumnType("datetime2");
+
+                entity.Property(e => e.IsActive)
+                    .IsRequired()
+                    .HasDefaultValue(true);
+
                 entity.Property(e => e.AttachedFileUrl)
                     .HasMaxLength(500)
                     .IsUnicode(true);
+
+                entity.HasQueryFilter(e => e.IsActive);
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.SubjectId);
+                entity.HasIndex(e => e.PublishDate);
 
                 entity.HasOne(i => i.User)
                     .WithMany()
@@ -167,6 +272,10 @@ namespace OneItb.Data
                 entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.Property(e => e.Content).IsRequired().HasMaxLength(1000);
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+                entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
+
+                entity.HasQueryFilter(e => e.IsActive);
 
                 entity.HasIndex(e => e.InquiryId);
                 entity.HasIndex(e => e.UserId);
@@ -199,6 +308,7 @@ namespace OneItb.Data
                 entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
 
+                entity.HasQueryFilter(e => e.Inquiry.IsActive);
                 entity.HasIndex(e => new { e.InquiryId, e.UserId }).IsUnique();
 
                 entity.HasOne(e => e.Inquiry)
@@ -225,6 +335,7 @@ namespace OneItb.Data
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
 
+                entity.HasQueryFilter(e => e.Inquiry.IsActive);
                 entity.HasIndex(e => e.InquiryId);
                 entity.HasIndex(e => e.ReporterId);
                 entity.HasIndex(e => e.Status);

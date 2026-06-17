@@ -39,6 +39,19 @@ namespace OneItb.Data
             new("Matematica Aplicada", "MAT")
         };
 
+        private static readonly string[] SeedCareers =
+        {
+            "Analisis de Sistemas",
+            "Diseno Industrial",
+            "Enfermeria",
+            "Radiologia",
+            "Higiene Seguridad y Ambiente Laboral",
+            "Comunicacion Multimedial",
+            "Administracion Contable",
+            "Administracion de PyMES",
+            "Ciencia de Datos e Inteligencia Artificial"
+        };
+
         private static readonly string[] InquiryTopics =
         {
             "Material para preparar el proximo parcial",
@@ -51,7 +64,9 @@ namespace OneItb.Data
             context.Database.Migrate();
 
             SeedAccountsAndUsers(context);
+            SeedCareerData(context);
             SeedSubjectData(context);
+            SeedAcademicLinks(context);
             SeedInquiryData(context);
             SeedSocialData(context);
             SeedMessagesData(context);
@@ -109,6 +124,25 @@ namespace OneItb.Data
             context.SaveChanges();
         }
 
+        private static void SeedCareerData(OneItbContext context)
+        {
+            var existingNames = context.Careers
+                .Where(career => SeedCareers.Contains(career.Name))
+                .Select(career => career.Name)
+                .ToHashSet();
+
+            foreach (string careerName in SeedCareers.Where(career => !existingNames.Contains(career)))
+            {
+                context.Careers.Add(new Career
+                {
+                    Name = careerName,
+                    IsActive = true
+                });
+            }
+
+            context.SaveChanges();
+        }
+
         private static void SeedSubjectData(OneItbContext context)
         {
             var existingCodes = context.Subjects
@@ -122,6 +156,92 @@ namespace OneItb.Data
                 {
                     Name = subject.Name,
                     Code = subject.Code
+                });
+            }
+
+            context.SaveChanges();
+        }
+
+        private static void SeedAcademicLinks(OneItbContext context)
+        {
+            var careers = context.Careers
+                .Where(career => SeedCareers.Contains(career.Name))
+                .ToDictionary(career => career.Name, career => career.Id);
+
+            var subjects = context.Subjects
+                .Where(subject => SeedSubjects.Select(seed => seed.Code).Contains(subject.Code))
+                .ToDictionary(subject => subject.Code, subject => subject.Id);
+
+            if (careers.Count == 0 || subjects.Count == 0)
+                return;
+
+            var subjectCareerSeeds = new (string SubjectCode, string CareerName)[]
+            {
+                ("PROG1", "Analisis de Sistemas"),
+                ("BDD", "Analisis de Sistemas"),
+                ("ADS", "Analisis de Sistemas"),
+                ("REDES", "Analisis de Sistemas"),
+                ("MAT", "Analisis de Sistemas"),
+                ("MAT", "Ciencia de Datos e Inteligencia Artificial"),
+                ("BDD", "Ciencia de Datos e Inteligencia Artificial"),
+                ("ADS", "Administracion de PyMES"),
+                ("MAT", "Administracion Contable"),
+                ("PROG1", "Comunicacion Multimedial")
+            };
+
+            var existingSubjectCareerKeys = context.SubjectCareers
+                .Select(link => new { link.SubjectId, link.CareerId })
+                .ToHashSet();
+
+            foreach ((string subjectCode, string careerName) in subjectCareerSeeds)
+            {
+                if (!subjects.TryGetValue(subjectCode, out int subjectId) ||
+                    !careers.TryGetValue(careerName, out int careerId))
+                    continue;
+
+                var key = new { SubjectId = subjectId, CareerId = careerId };
+                if (existingSubjectCareerKeys.Contains(key))
+                    continue;
+
+                context.SubjectCareers.Add(new SubjectCareer
+                {
+                    SubjectId = subjectId,
+                    CareerId = careerId
+                });
+            }
+
+            var userCareerSeeds = SeedUsers.SelectMany((user, index) =>
+            {
+                string primaryCareer = SeedCareers[index % SeedCareers.Length];
+                if (user.Id == StudentId)
+                {
+                    return new[]
+                    {
+                        (UserId: user.Id, CareerName: "Analisis de Sistemas"),
+                        (UserId: user.Id, CareerName: "Ciencia de Datos e Inteligencia Artificial")
+                    };
+                }
+
+                return new[] { (UserId: user.Id, CareerName: primaryCareer) };
+            }).ToArray();
+
+            var existingUserCareerKeys = context.UserCareers
+                .Select(link => new { link.UserId, link.CareerId })
+                .ToHashSet();
+
+            foreach ((Guid userId, string careerName) in userCareerSeeds)
+            {
+                if (!careers.TryGetValue(careerName, out int careerId))
+                    continue;
+
+                var key = new { UserId = userId, CareerId = careerId };
+                if (existingUserCareerKeys.Contains(key))
+                    continue;
+
+                context.UserCareers.Add(new UserCareer
+                {
+                    UserId = userId,
+                    CareerId = careerId
                 });
             }
 
@@ -161,7 +281,8 @@ namespace OneItb.Data
                         SubjectId = subject.Id,
                         Title = InquiryTopics[topicIndex],
                         Content = BuildInquiryContent(subject.Name, userIndex, topicIndex),
-                        PublishDate = SeedStart.AddHours(userIndex * 3 + topicIndex)
+                        PublishDate = SeedStart.AddHours(userIndex * 3 + topicIndex),
+                        IsActive = true
                     });
                 }
             }
@@ -235,11 +356,48 @@ namespace OneItb.Data
                         UserId = SeedUsers[(inquiryIndex + 4) % SeedUsers.Length].Id,
                         ParentCommentId = parentId,
                         Content = "Gracias. Organicemos el material por tema y coordinemos un horario.",
-                        CreatedAt = inquiries[inquiryIndex].PublishDate.AddMinutes(28)
+                        CreatedAt = inquiries[inquiryIndex].PublishDate.AddMinutes(28),
+                        IsActive = true
                     });
                 }
             }
 
+            context.SaveChanges();
+
+            var interactionSeeds = new[]
+            {
+                new UserInteraction
+                {
+                    Id = StableGuid("interaction-student-teacher-follow"),
+                    ObserverId = StudentId,
+                    TargetId = TeacherId,
+                    Type = InteractionType.Follow,
+                    CreatedAt = SeedStart.AddDays(3)
+                },
+                new UserInteraction
+                {
+                    Id = StableGuid("interaction-student-admin-follow"),
+                    ObserverId = StudentId,
+                    TargetId = AdminId,
+                    Type = InteractionType.Follow,
+                    CreatedAt = SeedStart.AddDays(3).AddMinutes(10)
+                },
+                new UserInteraction
+                {
+                    Id = StableGuid("interaction-student-employer-mute"),
+                    ObserverId = StudentId,
+                    TargetId = EmployerId,
+                    Type = InteractionType.Mute,
+                    CreatedAt = SeedStart.AddDays(3).AddMinutes(20)
+                }
+            };
+
+            var existingInteractionIds = context.UserInteractions
+                .Where(interaction => interactionSeeds.Select(seed => seed.Id).Contains(interaction.Id))
+                .Select(interaction => interaction.Id)
+                .ToHashSet();
+
+            context.UserInteractions.AddRange(interactionSeeds.Where(interaction => !existingInteractionIds.Contains(interaction.Id)));
             context.SaveChanges();
 
             var reportSeeds = new[]

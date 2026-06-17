@@ -14,7 +14,11 @@ const socketListeners = new Set();
 
 const publishSocketStatus = (status) => {
   socketStatus = status;
-  socketListeners.forEach((listener) => listener(status));
+  socketListeners.forEach((listener) => {
+    queueMicrotask(() => {
+      if (socketListeners.has(listener)) listener(status);
+    });
+  });
 };
 
 export const subscribeToGraphQLWsStatus = (listener) => {

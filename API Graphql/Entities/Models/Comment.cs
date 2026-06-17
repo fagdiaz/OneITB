@@ -11,6 +11,8 @@ namespace OneItb.Entities.Models
         public Guid? ParentCommentId { get; set; }
         public string Content { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
+        public bool IsActive { get; set; } = true;
 
         public virtual Inquiry Inquiry { get; set; } = null!;
         public virtual User User { get; set; } = null!;
@@ -18,4 +20,3 @@ namespace OneItb.Entities.Models
         public virtual ICollection<Comment> Replies { get; set; } = new List<Comment>();
     }
 }
-

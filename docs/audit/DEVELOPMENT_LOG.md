@@ -5,6 +5,85 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-17] - Feed Gamification UX (Spec: 112-feed-gamification-ux)
+
+* **Objetivo**: completar la segunda tanda recomendada de UX social/gamificacion sin introducir nueva persistencia: perfiles clickeables, seguir inline, badges de participacion, jerarquia visual para administradores y modales de revision admin.
+* **Resultado**:
+  - Feed: los nombres de autores ahora navegan a `/profile/{id}`, las tarjetas de autores ajenos incluyen accion inline "Seguir" y los usuarios con actividad suficiente muestran badges compactos.
+  - Comentarios: los autores tambien son navegables y comparten badges de participacion.
+  - Jerarquia visual: publicaciones y comentarios de `Administrador` reciben tratamiento azul sutil para distinguir contenido institucional.
+  - Busqueda/filtros: administradores y moderadores conservan busqueda global; usuarios normales priorizan filtros por sus carreras cuando existen.
+  - Admin Dashboard: publicaciones y comentarios tienen modales de preview con contenido completo, metadata, short IDs, reportes y contexto asociado.
+* **Validaciones ejecutadas**:
+  - Backend Release: compilacion correcta con 0 errores y 0 advertencias.
+  - Frontend Vite: build exitoso con 0 errores; persiste solo advertencia deprecada de `vite:react-babel`.
+* **Runtime**: smoke GraphQL/browser bloqueado; el arranque temporal del backend falla por configuracion SQL Server encryption/certificado y permisos de Windows Event Log.
+* **Evidencia**: `specs/112-feed-gamification-ux/evidence.md`.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/inquiries.js`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/CommentThread.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/PublicationManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/CommentManagement.jsx`
+
+## [2026-06-17] - Moderation Roles Safety (Spec: 111-moderation-roles-safety)
+
+* **Objetivo**: agregar el rol operativo `Egresado`, silenciamiento temporal, proteccion de cuentas administradoras y metricas de moderacion sin ampliar todavia la gamificacion visual completa.
+* **Resultado**:
+  - Backend: `User` incorpora `MutedUntil`; `silenceUser(userId, hours)` permite silenciar usuarios no administradores por duraciones controladas.
+  - Seguridad: `UsersService` bloquea cambios de rol, suspension y silenciamiento sobre cuentas `Administrador`.
+  - Publicaciones/comentarios: `SocialService` impide crear contenido si el usuario autenticado tiene un silencio vigente.
+  - GraphQL: se exponen metricas de usuario (`totalPosts`, `totalComments`, `totalLikesReceived`, `totalReportsReceived`) y contadores `reportCount` para publicaciones/comentarios.
+  - Frontend: el panel de usuarios muestra short IDs, metricas, reportes recibidos, estado de silencio, rol `Egresado` y controles deshabilitados para administradores.
+* **Base de datos**: se genero y aplico `20260617015425_AddUserMutedUntil`.
+* **Validaciones ejecutadas**:
+  - Backend Release: compilacion correcta con 0 errores y 0 advertencias.
+  - Frontend Vite: build exitoso con 0 errores; persiste solo advertencia deprecada de `vite:react-babel`.
+  - `dotnet ef database update`: migracion aplicada correctamente.
+  - `dotnet ef migrations list`: `20260617015425_AddUserMutedUntil` figura como ultima migracion aplicada.
+* **Runtime**: smoke GraphQL/browser bloqueado; el endpoint `localhost:44397/graphql` corta la conexion y el arranque temporal via `Start-Process` fallo por conflicto `Path`/`PATH`.
+* **Evidencia**: `specs/111-moderation-roles-safety/evidence.md`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/User.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Data/Migrations/20260617015425_AddUserMutedUntil.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `API Graphql/OneITB/Startup.cs`
+  - `API Graphql/Services/Users/UsersService.cs`
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `FrontEnd/OneItb-FE/src/Components/admin/UserManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/admin.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/mutations/admin.js`
+
+## [2026-06-15] - Mega Refactor Core (Spec: 110-mega-refactor-core)
+
+* **Objetivo**: estabilizar el cruce `MiniChatWidget`/`PrivateChat`, implementar carreras/cursadas, filtros del feed, soft-delete de publicaciones/comentarios, grafo social y perfil publico de solo lectura con edicion aislada.
+* **Resultado**:
+  - Backend: se agregaron `Career`, `UserCareer`, `SubjectCareer` y `UserInteraction`; `Inquiry` y `Comment` ahora soportan `IsActive`/`UpdatedAt` con filtros globales.
+  - EF Core: relaciones nuevas mapeadas explicitamente con `DeleteBehavior.Restrict`, indices de consulta y migraciones `20260615211200_AddCareersAndSocialGraph` y `20260615211900_SeedCareersAndSocialGraphData` aplicadas.
+  - GraphQL: se expusieron `careers`, `myCareers`, `subjects(careerId)`, `inquiries(searchTerm, careerId, subjectIds)`, `publicProfile`, y mutaciones de vinculo de carreras, edicion/soft-delete e interacciones sociales.
+  - Frontend: el chat comparte helpers de cache en `chatCache.js`, usa `useMemo` para derivaciones y protege callbacks asincronicos con guards de montaje.
+  - Feed: se agregaron busqueda, filtros por carrera/materia, seleccion carrera -> materia para publicar, acciones de editar/eliminar, reportar, seguir, silenciar y bloquear.
+  - Perfil: `/profile` ahora es lectura resumida con modal "Ver mas" y publicaciones recientes; `/profile/edit` conserva la edicion aislada desde el menu del avatar.
+* **Validaciones ejecutadas**:
+  - Backend Release: compilacion correcta con 0 errores.
+  - Frontend Vite: build exitoso con 0 errores.
+  - `git diff --check`: sin errores de whitespace, solo advertencias CRLF.
+  - `dotnet ef migrations list`: migraciones 110 aplicadas sin estado `(Pending)`.
+* **Notas operativas**:
+  - `dotnet ef migrations add` no pudo usarse por bloqueo de acceso a NuGet en el entorno; las migraciones EF se agregaron manualmente y compilan.
+  - El arranque del backend desde sandbox no pudo ejecutar `DbInitializer` por `Failed to generate SSPI context`; por eso se agrego una migracion SQL idempotente para poblar carreras/vinculos.
+* **Evidencia**: `specs/110-mega-refactor-core/evidence.md`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Career.cs`
+  - `API Graphql/Entities/Models/UserInteraction.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/chatCache.js`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+
 ## [2026-06-14] - Chat UX Refinement (Spec: 107-chat-ux-refinement)
 
 * **Objetivo**: Corregir la usabilidad de la interfaz de chat en tres aspectos críticos: el estado de búsqueda persistente, la falta de reactividad al contactar nuevos usuarios, y el manejo de envíos por teclado.

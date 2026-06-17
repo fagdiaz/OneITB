@@ -33,5 +33,6 @@ namespace OneItb.Entities.Models
         public bool IsActive { get; set; } = true;
 
         public virtual System.Collections.Generic.ICollection<Inquiry> Inquiries { get; set; } = new System.Collections.Generic.List<Inquiry>();
+        public virtual System.Collections.Generic.ICollection<SubjectCareer> SubjectCareers { get; set; } = new System.Collections.Generic.List<SubjectCareer>();
     }
 }

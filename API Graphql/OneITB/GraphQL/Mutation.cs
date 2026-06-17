@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using HotChocolate;
@@ -11,6 +13,7 @@ using OneITB.Core.Services.Interfaces;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using HotChocolate.Subscriptions;
 using OneITB.GraphQL.Subscriptions;
@@ -69,6 +72,12 @@ namespace OneITB.GraphQL.Mutations
         public async Task<UserPayload> UpdateUserStatus(Guid userId, bool isActive, [Service] IUsersService usersService)
         {
             return await usersService.UpdateUserStatusAsync(userId, isActive);
+        }
+
+        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        public async Task<UserPayload> SilenceUser(Guid userId, int hours, [Service] IUsersService usersService)
+        {
+            return await usersService.SilenceUserAsync(userId, hours);
         }
 
         public async Task<string> RequestMagicLink(string email, string cuit, [Service] IEmployerAuthService authService)
@@ -151,7 +160,7 @@ namespace OneITB.GraphQL.Mutations
             int subjectId,
             string title,
             string content,
-            string attachedFileUrl,
+            string? attachedFileUrl,
             [Service] ISocialService socialService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -187,6 +196,170 @@ namespace OneITB.GraphQL.Mutations
             return await socialService.ToggleReactionAsync(
                 GetAuthenticatedUserId(httpContextAccessor),
                 inquiryId);
+        }
+
+        [Authorize]
+        public async Task<IReadOnlyList<Career>> LinkUserToCareers(
+            IReadOnlyList<int> careerIds,
+            [Service] OneItbContext context,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            Guid userId = GetAuthenticatedUserId(httpContextAccessor);
+            int[] normalizedIds = careerIds?.Distinct().ToArray() ?? Array.Empty<int>();
+            if (normalizedIds.Length == 0)
+                throw new GraphQLException("SeleccionÃ¡ al menos una carrera.");
+
+            var careers = await context.Careers
+                .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
+                .OrderBy(career => career.Name)
+                .ToListAsync();
+
+            if (careers.Count != normalizedIds.Length)
+                throw new GraphQLException("Una o mÃ¡s carreras seleccionadas no existen.");
+
+            var existingLinks = await context.UserCareers
+                .Where(link => link.UserId == userId)
+                .ToListAsync();
+
+            context.UserCareers.RemoveRange(existingLinks);
+            context.UserCareers.AddRange(careers.Select(career => new UserCareer
+            {
+                UserId = userId,
+                CareerId = career.Id
+            }));
+
+            await context.SaveChangesAsync();
+            return careers;
+        }
+
+        [Authorize]
+        public async Task<Inquiry> EditInquiry(
+            Guid inquiryId,
+            string newTitle,
+            string newContent,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await socialService.EditInquiryAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    CanModerate(httpContextAccessor),
+                    inquiryId,
+                    newTitle,
+                    newContent);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<Inquiry> ToggleInquiryStatus(
+            Guid inquiryId,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await socialService.ToggleInquiryStatusAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    CanModerate(httpContextAccessor),
+                    inquiryId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<Comment> EditComment(
+            Guid commentId,
+            string newContent,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await socialService.EditCommentAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    CanModerate(httpContextAccessor),
+                    commentId,
+                    newContent);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<Comment> ToggleCommentStatus(
+            Guid commentId,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await socialService.ToggleCommentStatusAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    CanModerate(httpContextAccessor),
+                    commentId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<UserInteraction> InteractWithUser(
+            Guid targetUserId,
+            InteractionType type,
+            [Service] OneItbContext context,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            Guid observerId = GetAuthenticatedUserId(httpContextAccessor);
+            if (observerId == targetUserId)
+                throw new GraphQLException("No podÃ©s interactuar socialmente con tu propio usuario.");
+
+            bool targetExists = await context.Users.AnyAsync(user => user.Id == targetUserId && user.IsActive);
+            if (!targetExists)
+                throw new GraphQLException("Usuario objetivo no encontrado.");
+
+            UserInteraction? interaction = await context.UserInteractions
+                .SingleOrDefaultAsync(item => item.ObserverId == observerId && item.TargetId == targetUserId);
+
+            if (interaction is null)
+            {
+                interaction = new UserInteraction
+                {
+                    Id = Guid.NewGuid(),
+                    ObserverId = observerId,
+                    TargetId = targetUserId,
+                    Type = type,
+                    CreatedAt = DateTime.UtcNow
+                };
+                context.UserInteractions.Add(interaction);
+            }
+            else
+            {
+                interaction.Type = type;
+                interaction.CreatedAt = DateTime.UtcNow;
+            }
+
+            await context.SaveChangesAsync();
+            return interaction;
         }
 
         [Authorize]
@@ -248,6 +421,12 @@ namespace OneITB.GraphQL.Mutations
             if (!Guid.TryParse(value, out Guid userId))
                 throw new GraphQLException("No se pudo identificar al usuario autenticado.");
             return userId;
+        }
+
+        private static bool CanModerate(IHttpContextAccessor httpContextAccessor)
+        {
+            string? role = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
+            return role is "Administrador" or "Moderador";
         }
     }
 }

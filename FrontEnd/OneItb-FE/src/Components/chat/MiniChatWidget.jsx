@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { gql, useApolloClient, useMutation, useQuery, useSubscription } from '@apollo/client';
+import { useApolloClient, useMutation, useQuery, useSubscription } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { useForm } from '../../hooks/useForm';
 import {
@@ -15,117 +15,11 @@ import { subscribeToGraphQLWsStatus } from '../../data/graphql/GraphqlProvider';
 
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
-
-// Re-use fragments and cache helpers from PrivateChat logic
-const MESSAGE_FRAGMENT = gql`
-  fragment CachedMessage on Message {
-    id
-    senderId
-    receiverId
-    content
-    sentAt
-    isRead
-  }
-`;
-
-const formatTime = (value) => new Intl.DateTimeFormat('es-AR', {
-  hour: '2-digit',
-  minute: '2-digit',
-}).format(new Date(value));
-
-const appendMessageToConversation = (cache, otherUserId, message, optimisticId) => {
-  const messageReference = cache.writeFragment({
-    fragment: MESSAGE_FRAGMENT,
-    data: {
-      __typename: 'Message',
-      ...message,
-    },
-  });
-
-  cache.modify({
-    id: 'ROOT_QUERY',
-    fields: {
-      conversation(existingConnection, { readField, storeFieldName }) {
-        if (!existingConnection || !storeFieldName.includes(otherUserId)) {
-          return existingConnection;
-        }
-
-        const withoutOptimistic = (existingConnection.nodes || []).filter(
-          (reference) => !optimisticId || readField('id', reference) !== optimisticId,
-        );
-        const alreadyPresent = withoutOptimistic.some(
-          (reference) => readField('id', reference) === message.id,
-        );
-
-        return {
-          ...existingConnection,
-          nodes: alreadyPresent
-            ? withoutOptimistic
-            : [messageReference, ...withoutOptimistic],
-        };
-      },
-    },
-  });
-};
-
-const updateContactCache = (cache, otherUserId, message, currentUserId, isSelected) => {
-  cache.modify({
-    id: 'ROOT_QUERY',
-    fields: {
-      messagingContacts(existingConnection, { readField }) {
-        if (!existingConnection) return existingConnection;
-
-        return {
-          ...existingConnection,
-          nodes: (existingConnection.nodes || []).map((contact) => {
-            if (readField('userId', contact) !== otherUserId) return contact;
-
-            const incoming = message.receiverId === currentUserId;
-            const currentUnread = readField('unreadCount', contact) || 0;
-            return {
-              ...contact,
-              lastMessageAt: message.sentAt,
-              unreadCount: incoming && !isSelected ? currentUnread + 1 : currentUnread,
-            };
-          }),
-        };
-      },
-    },
-  });
-};
-
-const clearConversationUnread = (cache, otherUserId, currentUserId) => {
-  cache.modify({
-    id: 'ROOT_QUERY',
-    fields: {
-      messagingContacts(existingConnection, { readField }) {
-        if (!existingConnection) return existingConnection;
-        return {
-          ...existingConnection,
-          nodes: (existingConnection.nodes || []).map((contact) => (
-            readField('userId', contact) === otherUserId
-              ? { ...contact, unreadCount: 0 }
-              : contact
-          )),
-        };
-      },
-      conversation(existingConnection, { readField, storeFieldName }) {
-        if (!existingConnection || !storeFieldName.includes(otherUserId)) {
-          return existingConnection;
-        }
-        return {
-          ...existingConnection,
-          nodes: (existingConnection.nodes || []).map((message) => (
-            readField('senderId', message) === otherUserId &&
-            readField('receiverId', message) === currentUserId
-              ? { ...message, isRead: true }
-              : message
-          )),
-        };
-      },
-    },
-  });
-};
+import {
+  appendMessageToConversation,
+  clearConversationUnread,
+  updateContactCache,
+} from './chatCache';
 
 export const MiniChatWidget = () => {
   const { auth } = useAuth();
@@ -138,6 +32,7 @@ export const MiniChatWidget = () => {
   const [socketStatus, setSocketStatus] = useState('disconnected');
   const [feedback, setFeedback] = useState('');
   const previousSocketStatus = useRef('disconnected');
+  const mountedRef = useRef(true);
   const messageEndRef = useRef(null);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -186,27 +81,41 @@ export const MiniChatWidget = () => {
   const [markConversationRead] = useMutation(MARK_CONVERSATION_READ);
   const [sendMessage, { loading: sending }] = useMutation(SEND_MESSAGE);
   
-  const allContacts = contactsData?.messagingContacts?.nodes || [];
-  const activeUsers = activeData?.activeConversations?.nodes || [];
+  const allContacts = useMemo(
+    () => contactsData?.messagingContacts?.nodes || [],
+    [contactsData],
+  );
+  const activeUsers = useMemo(
+    () => activeData?.activeConversations?.nodes || [],
+    [activeData],
+  );
   
-  const activeContacts = activeUsers.map(dto => {
-    const user = dto.contact;
-    const contactInfo = allContacts.find(c => c.userId === user.id);
-    return {
-      userId: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      unreadCount: contactInfo?.unreadCount || 0,
-      lastMessageAt: contactInfo?.lastMessageAt || null,
-      lastMessageContent: dto.lastMessage || contactInfo?.lastMessageContent || null,
-    };
-  });
+  const activeContacts = useMemo(() => activeUsers.map(dto => {
+      const user = dto.contact;
+      const contactInfo = allContacts.find(c => c.userId === user.id);
+      return {
+        userId: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        unreadCount: contactInfo?.unreadCount || 0,
+        lastMessageAt: contactInfo?.lastMessageAt || null,
+        lastMessageContent: dto.lastMessage || contactInfo?.lastMessageContent || null,
+      };
+    }),
+    [activeUsers, allContacts],
+  );
 
-  const searchedMessages = searchMessagesData?.searchMyMessages?.nodes || [];
+  const searchedMessages = useMemo(
+    () => searchMessagesData?.searchMyMessages?.nodes || [],
+    [searchMessagesData],
+  );
 
-  const selectedContact = allContacts.find((contact) => contact.userId === selectedContactId) 
-    || activeContacts.find((contact) => contact.userId === selectedContactId);
+  const selectedContact = useMemo(
+    () => allContacts.find((contact) => contact.userId === selectedContactId)
+      || activeContacts.find((contact) => contact.userId === selectedContactId),
+    [allContacts, activeContacts, selectedContactId],
+  );
 
   const messages = useMemo(
     () => [...(conversationData?.conversation?.nodes || [])].reverse(),
@@ -217,7 +126,16 @@ export const MiniChatWidget = () => {
     return allContacts.reduce((acc, contact) => acc + (contact.unreadCount || 0), 0);
   }, [allContacts]);
 
-  useEffect(() => subscribeToGraphQLWsStatus(setSocketStatus), []);
+  useEffect(() => {
+    mountedRef.current = true;
+    const unsubscribe = subscribeToGraphQLWsStatus((status) => {
+      if (mountedRef.current) setSocketStatus(status);
+    });
+    return () => {
+      mountedRef.current = false;
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const wasUnavailable = ['disconnected', 'error'].includes(previousSocketStatus.current);
@@ -243,7 +161,9 @@ export const MiniChatWidget = () => {
         },
       },
       update: (cache) => clearConversationUnread(cache, selectedContactId, auth.id),
-    }).catch(() => setFeedback('No se pudo actualizar el estado de lectura.'));
+    }).catch(() => {
+      if (mountedRef.current) setFeedback('No se pudo actualizar el estado de lectura.');
+    });
   }, [selectedContactId, auth.id, markConversationRead, isOpen]);
 
   useEffect(() => {
@@ -253,8 +173,10 @@ export const MiniChatWidget = () => {
   const { error: subscriptionError } = useSubscription(MESSAGE_RECEIVED, {
     onData: ({ data }) => {
       const message = data.data?.messageReceived;
-      if (!message) return;
+      if (!message || !mountedRef.current) return;
 
+      setTimeout(() => {
+        if (!mountedRef.current) return;
       const otherUserId = message.senderId === auth.id ? message.receiverId : message.senderId;
       const isSelected = selectedContactId === otherUserId && isOpen;
       appendMessageToConversation(client.cache, otherUserId, message);
@@ -262,15 +184,20 @@ export const MiniChatWidget = () => {
 
       const isActive = activeData?.activeConversations?.nodes?.some(u => u.contact.id === otherUserId);
       if (!isActive) {
-        refetchActive();
+        refetchActive().catch(() => {
+          if (mountedRef.current) setFeedback('No se pudo actualizar la lista de conversaciones.');
+        });
       }
 
       if (isSelected && message.receiverId === auth.id) {
         markConversationRead({
           variables: { otherUserId },
           update: (cache) => clearConversationUnread(cache, otherUserId, auth.id),
-        }).catch(() => setFeedback('El mensaje llegó, pero no se pudo marcar como leído.'));
+        }).catch(() => {
+          if (mountedRef.current) setFeedback('El mensaje llegó, pero no se pudo marcar como leído.');
+        });
       }
+      }, 0);
     },
   });
 
@@ -333,12 +260,14 @@ export const MiniChatWidget = () => {
       });
 
       const isActive = activeData?.activeConversations?.nodes?.some(u => u.contact.id === selectedContactId);
-      if (!isActive) {
-        refetchActive();
+      if (!isActive && mountedRef.current) {
+        await refetchActive();
       }
     } catch (error) {
-      setForm({ content });
-      setFeedback(error.message || 'No se pudo enviar el mensaje.');
+      if (mountedRef.current) {
+        setForm({ content });
+        setFeedback(error.message || 'No se pudo enviar el mensaje.');
+      }
     }
   };
 
@@ -360,23 +289,26 @@ export const MiniChatWidget = () => {
     });
   };
 
-  let displayActive = [];
-  let displayNew = [];
-  
-  if (!searchInput) {
-    displayActive = [...activeContacts].sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
-  } else {
-    displayActive = activeContacts.filter(c => 
-      `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchInput) ||
-      c.role?.toLowerCase().includes(searchInput)
-    ).sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
-    
-    displayNew = allContacts.filter(c => 
-      !activeContacts.some(ac => ac.userId === c.userId) &&
-      (`${c.firstName} ${c.lastName}`.toLowerCase().includes(searchInput) ||
-      c.role?.toLowerCase().includes(searchInput))
-    );
-  }
+  const { displayActive, displayNew } = useMemo(() => {
+    if (!searchInput) {
+      return {
+        displayActive: [...activeContacts].sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0)),
+        displayNew: [],
+      };
+    }
+
+    return {
+      displayActive: activeContacts.filter(c =>
+        `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchInput) ||
+        c.role?.toLowerCase().includes(searchInput)
+      ).sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0)),
+      displayNew: allContacts.filter(c =>
+        !activeContacts.some(ac => ac.userId === c.userId) &&
+        (`${c.firstName} ${c.lastName}`.toLowerCase().includes(searchInput) ||
+        c.role?.toLowerCase().includes(searchInput))
+      ),
+    };
+  }, [activeContacts, allContacts, searchInput]);
 
   return (
     <div className="fixed bottom-5 right-5 lg:right-80 z-50 flex flex-col items-end">

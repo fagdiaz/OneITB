@@ -1,51 +1,165 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
+import { Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { ReportModal } from '../moderation/ReportModal';
 import { CommentThread } from './CommentThread';
+import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
+import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
 import {
   ADD_COMMENT,
   CREATE_INQUIRY,
-  TOGGLE_REACTION
+  EDIT_COMMENT,
+  EDIT_INQUIRY,
+  INTERACT_WITH_USER,
+  TOGGLE_COMMENT_STATUS,
+  TOGGLE_INQUIRY_STATUS,
+  TOGGLE_REACTION,
 } from '../../data/graphql/mutations/inquiries';
-import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
+
+const roleStyles = {
+  Administrador: { name: 'text-indigo-700', badge: 'bg-indigo-50 text-indigo-500', label: 'admin' },
+  Moderador: { name: 'text-amber-700', badge: 'bg-amber-50 text-amber-600', label: 'moderador' },
+  Profesor: { name: 'text-emerald-700', badge: 'bg-emerald-50 text-emerald-600', label: 'profesor' },
+  Estudiante: { name: 'text-blue-700', badge: 'bg-blue-50 text-blue-600', label: 'estudiante' },
+  Egresado: { name: 'text-cyan-700', badge: 'bg-cyan-50 text-cyan-600', label: 'egresado' },
+  Empleador: { name: 'text-fuchsia-700', badge: 'bg-fuchsia-50 text-fuchsia-600', label: 'empleador' },
+};
+
+const getRoleStyle = (role) => roleStyles[role] ?? { name: 'text-slate-800', badge: 'bg-slate-100 text-slate-500', label: role || 'usuario' };
+
+const getParticipationBadges = (user) => {
+  const badges = [];
+  if ((user?.totalPosts ?? 0) >= 10) badges.push({ icon: 'fa-pen-nib', label: 'Publicador' });
+  if ((user?.totalComments ?? 0) >= 20) badges.push({ icon: 'fa-comments', label: 'Conversador' });
+  if ((user?.totalLikesReceived ?? 0) >= 25) badges.push({ icon: 'fa-star', label: 'Valorado' });
+  return badges;
+};
+
+const ParticipationBadges = ({ user }) => {
+  const badges = getParticipationBadges(user);
+  if (badges.length === 0) return null;
+  return (
+    <span className="ml-2 inline-flex items-center gap-1 align-middle">
+      {badges.map((badge) => (
+        <span
+          key={badge.label}
+          title={badge.label}
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-yellow-50 text-[10px] text-yellow-600"
+        >
+          <i className={`fa-solid ${badge.icon}`} />
+        </span>
+      ))}
+    </span>
+  );
+};
 
 export const Feed = () => {
   const { auth } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [selectedCareer, setSelectedCareer] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
+  const [filterCareerIds, setFilterCareerIds] = useState([]);
+  const [filterSubjectIds, setFilterSubjectIds] = useState([]);
+  const [draftSearchTerm, setDraftSearchTerm] = useState('');
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   const [openThreads, setOpenThreads] = useState({});
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [reportTargetId, setReportTargetId] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
 
-  const { data: subjectsData, loading: subjectsLoading } = useQuery(GET_SUBJECTS);
+  const publicationCareerId = selectedCareer ? Number(selectedCareer) : null;
+  const filterCareerId = filterCareerIds.length === 1 ? filterCareerIds[0] : null;
+  const inquiryVariables = {
+    searchTerm: appliedSearchTerm.trim() || null,
+    careerId: filterCareerId,
+    subjectIds: filterSubjectIds.length > 0 ? filterSubjectIds : null,
+  };
+
+  const { data: careersData } = useQuery(GET_CAREERS);
+  const { data: myCareersData } = useQuery(GET_MY_CAREERS);
+  const { data: subjectsData, loading: subjectsLoading } = useQuery(GET_SUBJECTS, {
+    variables: { careerId: publicationCareerId },
+  });
+  const { data: filterSubjectsData } = useQuery(GET_SUBJECTS, {
+    variables: { careerId: filterCareerId },
+  });
   const {
     data: inquiriesData,
     loading: inquiriesLoading,
     error: inquiriesError,
-    refetch
-  } = useQuery(GET_INQUIRIES, { fetchPolicy: 'cache-and-network' });
+    refetch,
+  } = useQuery(GET_INQUIRIES, {
+    variables: inquiryVariables,
+    fetchPolicy: 'cache-and-network',
+  });
 
-  const refetchOptions = {
-    refetchQueries: [{ query: GET_INQUIRIES }],
-    awaitRefetchQueries: true
-  };
-  const [createInquiry, { loading: isPublishing }] = useMutation(CREATE_INQUIRY, refetchOptions);
-  const [toggleReaction, { loading: isReacting }] = useMutation(TOGGLE_REACTION, refetchOptions);
-  const [addComment, { loading: isCommenting }] = useMutation(ADD_COMMENT, refetchOptions);
+  const [createInquiry, { loading: isPublishing }] = useMutation(CREATE_INQUIRY);
+  const [toggleReaction, { loading: isReacting }] = useMutation(TOGGLE_REACTION);
+  const [addComment, { loading: isCommenting }] = useMutation(ADD_COMMENT);
+  const [editInquiry] = useMutation(EDIT_INQUIRY);
+  const [toggleInquiryStatus] = useMutation(TOGGLE_INQUIRY_STATUS);
+  const [editComment] = useMutation(EDIT_COMMENT);
+  const [toggleCommentStatus] = useMutation(TOGGLE_COMMENT_STATUS);
+  const [interactWithUser] = useMutation(INTERACT_WITH_USER);
+
+  const careers = careersData?.careers ?? [];
+  const myCareers = myCareersData?.myCareers ?? [];
+  const publicationSubjects = subjectsData?.subjects ?? [];
+  const filterSubjects = filterSubjectsData?.subjects ?? [];
+  const posts = inquiriesData?.inquiries ?? [];
+  const isModerator = auth.role === 'Administrador' || auth.role === 'Moderador';
+  const canSelectCareerForPost = myCareers.length > 1;
+  const filterCareerOptions = isModerator ? careers : (myCareers.length > 0 ? myCareers : careers);
+  const publicationCareerOptions = auth.role === 'Administrador' ? careers : myCareers;
+  const mustSelectCareerForPost = auth.role === 'Administrador' || myCareers.length > 1;
+  const effectivePublicationSubjects = useMemo(() => {
+    if (!mustSelectCareerForPost || selectedCareer) return publicationSubjects;
+    return [];
+  }, [mustSelectCareerForPost, publicationSubjects, selectedCareer]);
+
+  useEffect(() => {
+    const closeMenu = (event) => {
+      if (!event.target.closest('[data-post-menu]')) setOpenMenuId(null);
+    };
+    document.addEventListener('mousedown', closeMenu);
+    return () => document.removeEventListener('mousedown', closeMenu);
+  }, []);
 
   const showFeedback = (type, message) => setFeedback({ type, message });
+
+  const toggleCareerFilter = (careerId) => {
+    setFilterCareerIds((current) =>
+      current.includes(careerId)
+        ? current.filter((id) => id !== careerId)
+        : [careerId]
+    );
+    setFilterSubjectIds([]);
+  };
+
+  const toggleSubjectFilter = (subjectId) => {
+    setFilterSubjectIds((current) =>
+      current.includes(subjectId)
+        ? current.filter((id) => id !== subjectId)
+        : [...current, subjectId]
+    );
+  };
+
+  const submitSearch = (event) => {
+    event.preventDefault();
+    setAppliedSearchTerm(draftSearchTerm);
+  };
 
   const handlePublish = async (event) => {
     event.preventDefault();
     if (!title.trim() || !content.trim() || !selectedSubject) return;
 
     let attachedFileUrl = null;
-
     if (selectedFile) {
       setIsUploading(true);
       const formData = new FormData();
@@ -57,8 +171,8 @@ export const Feed = () => {
           method: 'POST',
           body: formData,
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
         });
 
         if (!uploadResponse.ok) throw new Error('Error al subir el archivo.');
@@ -78,14 +192,16 @@ export const Feed = () => {
           subjectId: Number(selectedSubject),
           title: title.trim(),
           content: content.trim(),
-          attachedFileUrl
-        }
+          attachedFileUrl,
+        },
       });
+      await refetch();
       setTitle('');
       setContent('');
+      setSelectedCareer('');
       setSelectedSubject('');
       setSelectedFile(null);
-      showFeedback('success', 'La publicación se creó correctamente.');
+      showFeedback('success', 'La publicacion se creo correctamente.');
     } catch (error) {
       showFeedback('error', error.message);
     }
@@ -94,6 +210,7 @@ export const Feed = () => {
   const handleReaction = async (inquiryId) => {
     try {
       await toggleReaction({ variables: { inquiryId } });
+      await refetch();
     } catch (error) {
       showFeedback('error', error.message);
     }
@@ -105,9 +222,10 @@ export const Feed = () => {
         variables: {
           inquiryId,
           parentCommentId,
-          content: commentContent.trim()
-        }
+          content: commentContent.trim(),
+        },
       });
+      await refetch();
       showFeedback('success', parentCommentId ? 'Respuesta publicada.' : 'Comentario publicado.');
     } catch (error) {
       showFeedback('error', error.message);
@@ -115,7 +233,57 @@ export const Feed = () => {
     }
   };
 
-  const posts = inquiriesData?.inquiries ?? [];
+  const saveEditPost = async (event) => {
+    event.preventDefault();
+    if (!editingPost?.title.trim() || !editingPost?.content.trim()) return;
+
+    try {
+      await editInquiry({
+        variables: {
+          inquiryId: editingPost.id,
+          newTitle: editingPost.title.trim(),
+          newContent: editingPost.content.trim(),
+        },
+      });
+      setEditingPost(null);
+      await refetch();
+      showFeedback('success', 'Publicacion actualizada.');
+    } catch (error) {
+      showFeedback('error', error.message);
+    }
+  };
+
+  const handleTogglePost = async (inquiryId) => {
+    setOpenMenuId(null);
+    try {
+      await toggleInquiryStatus({ variables: { inquiryId } });
+      await refetch();
+      showFeedback('success', 'Estado de la publicacion actualizado.');
+    } catch (error) {
+      showFeedback('error', error.message);
+    }
+  };
+
+  const handleEditComment = async (commentId, newContent) => {
+    await editComment({ variables: { commentId, newContent: newContent.trim() } });
+    await refetch();
+  };
+
+  const handleToggleComment = async (commentId) => {
+    await toggleCommentStatus({ variables: { commentId } });
+    await refetch();
+  };
+
+  const handleUserInteraction = async (targetUserId, type) => {
+    setOpenMenuId(null);
+    try {
+      await interactWithUser({ variables: { targetUserId, type } });
+      await refetch();
+      showFeedback('success', 'Interaccion social actualizada.');
+    } catch (error) {
+      showFeedback('error', error.message);
+    }
+  };
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
@@ -123,7 +291,7 @@ export const Feed = () => {
         <div className="flex items-center gap-3">
           <div className="h-7 w-1 rounded-full bg-blue-600" />
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-800">Muro académico</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">Muro academico</h1>
             <p className="text-xs text-slate-500">{posts.length} publicaciones activas</p>
           </div>
         </div>
@@ -135,6 +303,62 @@ export const Feed = () => {
           Actualizar
         </button>
       </header>
+
+      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <form onSubmit={submitSearch} className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="search"
+            value={draftSearchTerm}
+            onChange={(event) => setDraftSearchTerm(event.target.value)}
+            placeholder="Buscar por texto, materia o autor..."
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Buscar
+          </button>
+        </form>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Carreras</p>
+            <div className="flex flex-wrap gap-2">
+              {filterCareerOptions.map((career) => (
+                <label key={career.id} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  <input
+                    type="checkbox"
+                    checked={filterCareerIds.includes(career.id)}
+                    onChange={() => toggleCareerFilter(career.id)}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600"
+                  />
+                  {career.name}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Materias</p>
+            <div className="flex flex-wrap gap-2">
+              {filterSubjects.map((subject) => (
+                <label key={subject.id} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  <input
+                    type="checkbox"
+                    checked={filterSubjectIds.includes(subject.id)}
+                    onChange={() => toggleSubjectFilter(subject.id)}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600"
+                  />
+                  {subject.name}
+                </label>
+              ))}
+              {filterSubjects.length === 0 && (
+                <span className="text-xs text-slate-400">Selecciona una carrera para acotar materias.</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {feedback && (
         <div
@@ -153,14 +377,14 @@ export const Feed = () => {
         <input
           type="text"
           maxLength={200}
-          placeholder="Título de tu consulta"
+          placeholder="Titulo de tu consulta"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <textarea
           maxLength={10000}
-          placeholder="¿Qué querés compartir con la comunidad?"
+          placeholder="Que queres compartir con la comunidad?"
           value={content}
           onChange={(event) => setContent(event.target.value)}
           className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -168,19 +392,34 @@ export const Feed = () => {
         <div className="flex items-center gap-2">
           <input
             type="file"
-            onChange={(e) => setSelectedFile(e.target.files[0])}
+            onChange={(event) => setSelectedFile(event.target.files[0])}
             className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
           />
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {mustSelectCareerForPost && (
+            <select
+              value={selectedCareer}
+              onChange={(event) => {
+                setSelectedCareer(event.target.value);
+                setSelectedSubject('');
+              }}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecciona una carrera...</option>
+              {publicationCareerOptions.map((career) => (
+                <option key={career.id} value={career.id}>{career.name}</option>
+              ))}
+            </select>
+          )}
           <select
             value={selectedSubject}
             onChange={(event) => setSelectedSubject(event.target.value)}
-            disabled={subjectsLoading}
+            disabled={subjectsLoading || (mustSelectCareerForPost && !selectedCareer)}
             className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Seleccioná una materia...</option>
-            {subjectsData?.subjects?.map((subject) => (
+            <option value="">Selecciona una materia...</option>
+            {effectivePublicationSubjects.map((subject) => (
               <option key={subject.id} value={subject.id}>{subject.name}</option>
             ))}
           </select>
@@ -206,9 +445,13 @@ export const Feed = () => {
       {posts.map((post) => {
         const isLiked = post.reactions.some((reaction) => reaction.userId === auth.id);
         const threadOpen = Boolean(openThreads[post.id]);
+        const roleStyle = getRoleStyle(post.user?.role);
+        const isAdminPost = post.user?.role === 'Administrador';
 
         return (
-          <article key={post.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <article key={post.id} className={`flex flex-col gap-3 rounded-xl border p-4 shadow-sm ${
+            isAdminPost ? 'border-blue-200 bg-blue-50/60' : 'border-slate-100 bg-white'
+          }`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <img
@@ -217,27 +460,77 @@ export const Feed = () => {
                   alt={`Avatar de ${post.user?.firstName ?? 'usuario'}`}
                 />
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {post.user?.firstName} {post.user?.lastName}
+                  <p className={`text-sm font-semibold ${roleStyle.name}`}>
+                    <Link to={`/profile/${post.user?.id}`} className="hover:underline">
+                      {post.user?.firstName} {post.user?.lastName}
+                    </Link>
+                    <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleStyle.badge}`}>
+                      {roleStyle.label}
+                    </span>
+                    <ParticipationBadges user={post.user} />
                   </p>
                   <p className="text-xs text-slate-400">
                     {post.subject?.name} · {new Date(post.publishDate).toLocaleDateString('es-AR')} {new Date(post.publishDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setReportTargetId(post.id)}
-                className="rounded-lg p-2 text-slate-300 hover:bg-red-50 hover:text-red-500"
-                title="Reportar publicación"
-              >
-                <i className="fa-solid fa-flag text-sm" />
-              </button>
+              <div className="relative" data-post-menu>
+                <button
+                  type="button"
+                  onClick={() => setOpenMenuId((current) => (current === post.id ? null : post.id))}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                  aria-label="Abrir acciones de publicacion"
+                >
+                  <i className="fa-solid fa-ellipsis-vertical text-sm" />
+                </button>
+                {openMenuId === post.id && (
+                <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-xl">
+                  {post.user?.id === auth.id && (
+                    <>
+                      <button type="button" onClick={() => { setEditingPost({ id: post.id, title: post.title, content: post.content }); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50">Editar</button>
+                      <button type="button" onClick={() => handleTogglePost(post.id)} className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50">Eliminar</button>
+                    </>
+                  )}
+                  {post.user?.id !== auth.id && (
+                    <>
+                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'FOLLOW')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50">Seguir autor</button>
+                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'MUTE')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50">Silenciar</button>
+                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'BLOCK')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50">Bloquear</button>
+                      <button type="button" onClick={() => { setReportTargetId(post.id); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50">Reportar</button>
+                    </>
+                  )}
+                  {isModerator && (
+                    <button type="button" onClick={() => handleTogglePost(post.id)} className="block w-full border-t border-slate-100 px-4 py-2 text-left text-amber-700 hover:bg-amber-50">Desactivar contenido</button>
+                  )}
+                </div>
+                )}
+              </div>
             </div>
 
             <div>
-              <h2 className="font-semibold text-slate-800">{post.title}</h2>
-              <p className="mt-1 text-sm leading-relaxed text-slate-700">{post.content}</p>
+              {editingPost?.id === post.id ? (
+                <form onSubmit={saveEditPost} className="space-y-2">
+                  <input
+                    value={editingPost.title}
+                    onChange={(event) => setEditingPost((current) => ({ ...current, title: event.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <textarea
+                    value={editingPost.content}
+                    onChange={(event) => setEditingPost((current) => ({ ...current, content: event.target.value }))}
+                    className="min-h-24 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex gap-2">
+                    <button type="submit" className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white">Guardar</button>
+                    <button type="button" onClick={() => setEditingPost(null)} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">Cancelar</button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <h2 className={`font-semibold ${isAdminPost ? 'text-blue-950' : 'text-slate-800'}`}>{post.title}</h2>
+                  <p className={`mt-1 text-sm leading-relaxed ${isAdminPost ? 'text-blue-900' : 'text-slate-700'}`}>{post.content}</p>
+                </>
+              )}
               {post.attachedFileUrl && (
                 <div className="mt-3">
                   <a
@@ -246,7 +539,7 @@ export const Feed = () => {
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100"
                   >
-                    <i className="fa-solid fa-paperclip"></i>
+                    <i className="fa-solid fa-paperclip" />
                     Ver archivo adjunto
                   </a>
                 </div>
@@ -263,7 +556,7 @@ export const Feed = () => {
                 }`}
               >
                 <i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up`} />
-                {post.reactions.length} {post.reactions.length === 1 ? 'Me gusta' : 'Me gusta'}
+                {post.reactions.length} Me gusta
               </button>
               <button
                 type="button"
@@ -273,6 +566,22 @@ export const Feed = () => {
                 <i className="fa-regular fa-comment" />
                 {post.comments.length} comentarios
               </button>
+              {post.user?.id && post.user.id !== auth.id && (
+                <button
+                  type="button"
+                  onClick={() => handleUserInteraction(post.user.id, 'FOLLOW')}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100"
+                >
+                  <i className="fa-solid fa-user-plus" />
+                  Seguir
+                </button>
+              )}
+              {isModerator && (
+                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+                  <i className="fa-solid fa-flag" />
+                  {post.reportCount ?? 0} reportes
+                </span>
+              )}
             </div>
 
             {threadOpen && (
@@ -283,6 +592,10 @@ export const Feed = () => {
                   handleComment(post.id, parentCommentId, commentContent)
                 }
                 onReport={() => setReportTargetId(post.id)}
+                auth={auth}
+                isModerator={isModerator}
+                onEditComment={handleEditComment}
+                onToggleComment={handleToggleComment}
               />
             )}
           </article>
@@ -293,7 +606,7 @@ export const Feed = () => {
         isOpen={Boolean(reportTargetId)}
         inquiryId={reportTargetId}
         onClose={() => setReportTargetId(null)}
-        onReported={() => showFeedback('success', 'El reporte fue enviado a moderación.')}
+        onReported={() => showFeedback('success', 'El reporte fue enviado a moderacion.')}
       />
     </div>
   );

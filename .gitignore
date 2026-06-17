@@ -1,5 +1,5 @@
 # ==========================================
-# ROBUST GITIGNORE FOR .NET & REACT PROJECTS
+# ONE ITB - REPOSITORY GITIGNORE
 # ==========================================
 
 # ------------------------------------------
@@ -37,11 +37,8 @@ mono_crash.*
 !.vscode/extensions.json
 *.code-workspace
 
-# Local workspace toolings
-.antigravitycli/
-
 # ------------------------------------------
-# 3. .NET / C# Specifics
+# 3. .NET / C# Specifics (Backend)
 # ------------------------------------------
 # Build Outputs
 **/[Bb]in/
@@ -69,7 +66,6 @@ project.fragment.lock.json
 secrets.json
 *.pfx
 *.snk
-
 
 # Debug and Diagnostics
 *.pdb
@@ -148,20 +144,31 @@ pnpm-debug.log*
 *.env.*
 
 # ------------------------------------------
-# 6. Documents and Office Files
+# 6. School / Internal Academic Documents
 # ------------------------------------------
+# Exclude school templates, guidelines, and rough drafts
 *.pdf
 *.docx
-Circuito SPECKIT.txt
-GUIA_SPECKIT.md
+*.pptx
+*.xlsx
 OneITB doc TEAMS/
-
-
-
+"Programa 2026 - Prácticas Profesionalizantes III- TSA (1).pdf"
+"Prácticas Profesionalizantes III - Plantilla de documento base (1).docx"
+"50. Práctica profesional - Infografía - Modelo.pptx"
+"70. Práctica Profesional - Plantilla de documento base (1) - Copia (1).docx"
+"Presentación de proyectos - Documento formal - Díaz, Francisco & Díaz, Leandro.docx"
+correcciones*.txt
 
 # ------------------------------------------
-# 7. Local Human Reasoning Kernels (Gemini Web)
+# 7. AI Agents & Internal Workflow Tooling
 # ------------------------------------------
+# Hide automated dev logs, specifications, and AI instructions for a cleaner professional look
+.agents/
+.specify/
+.antigravitycli/
+AGENTS.md
+GUIA_SPECKIT.md
+Circuito\ SPECKIT.txt
+specs/
+test.py
 core-web/
-
-

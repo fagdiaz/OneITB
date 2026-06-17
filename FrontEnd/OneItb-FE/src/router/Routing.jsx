@@ -7,6 +7,7 @@ import { Register } from '../Components/user/Register'
 import { PrivateLayout } from '../Components/layout/private/PrivateLayout'
 import { Feed } from '../Components/publication/Feed'
 import { UserProfile } from '../Components/profile/UserProfile'
+import { CvEditorProfile } from '../Components/profile/CvEditorProfile'
 import { AdminDashboard } from '../Components/admin/AdminDashboard'
 import { EmployerLogin } from '../Components/auth/EmployerLogin'
 import { AuthProvider } from '../context/AuthProvider'
@@ -28,6 +29,7 @@ export const Routing = () => {
         <Route path='/' element={<PrivateLayout />}>
           <Route path='feed' element={<Feed />} />
           <Route path='profile' element={<UserProfile />} />
+          <Route path='profile/edit' element={<CvEditorProfile />} />
           <Route path='chat' element={<PrivateChat />} />
           <Route path='admin' element={<AdminDashboard />} />
           <Route path='admin/users' element={<Navigate to="/admin" replace />} />

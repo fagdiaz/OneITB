@@ -55,4 +55,19 @@ namespace OneITB.Core.Services.Interfaces
     );
 
     public record UpdateProfilePayload(Guid Id, bool Success, string Message);
+
+    public record PublicProfileSummary(
+        Guid Id,
+        string FirstName,
+        string LastName,
+        string FullName,
+        string Role,
+        string? Biography,
+        string? LinkedIn,
+        string? Facebook,
+        string? Instagram,
+        string? Phone,
+        IReadOnlyList<string> Careers,
+        int TotalPublications
+    );
 }

@@ -19,3 +19,13 @@ export const UPDATE_USER_STATUS = gql`
     }
   }
 `;
+
+export const SILENCE_USER = gql`
+  mutation SilenceUser($userId: UUID!, $hours: Int!) {
+    silenceUser(userId: $userId, hours: $hours) {
+      id
+      success
+      message
+    }
+  }
+`;

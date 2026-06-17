@@ -12,6 +12,7 @@ namespace OneITB.Core.Services.Interfaces
         Task<UpdateProfilePayload> UpdateProfileAsync(UpdateProfileInput input);
         Task<UserPayload> UpdateUserRoleAsync(Guid userId, string newRole);
         Task<UserPayload> UpdateUserStatusAsync(Guid userId, bool isActive);
+        Task<UserPayload> SilenceUserAsync(Guid userId, int hours);
         Task<User> CreateAsync(User user);
         IQueryable<User> GetAllAsync();
         User GetByEmail(string email);

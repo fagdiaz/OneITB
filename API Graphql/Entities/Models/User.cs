@@ -48,10 +48,14 @@ namespace OneItb.Entities.Models
         public string? Facebook { get; set; }
         public string? Instagram { get; set; }
         public string? Phone { get; set; }
+        public DateTime? MutedUntil { get; set; }
         public bool IsActive { get; set; } = true;
 
         public virtual Account Account { get; set; } = null!;
         public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
         public virtual ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
+        public virtual ICollection<UserCareer> UserCareers { get; set; } = new List<UserCareer>();
+        public virtual ICollection<UserInteraction> ObservedInteractions { get; set; } = new List<UserInteraction>();
+        public virtual ICollection<UserInteraction> TargetedInteractions { get; set; } = new List<UserInteraction>();
     }
 }
