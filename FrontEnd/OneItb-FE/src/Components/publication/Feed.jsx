@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { ReportModal } from '../moderation/ReportModal';
 import { CommentThread } from './CommentThread';
@@ -61,10 +61,7 @@ export const Feed = () => {
   const [content, setContent] = useState('');
   const [selectedCareer, setSelectedCareer] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [filterCareerIds, setFilterCareerIds] = useState([]);
-  const [filterSubjectIds, setFilterSubjectIds] = useState([]);
-  const [draftSearchTerm, setDraftSearchTerm] = useState('');
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
+  const [searchParams] = useSearchParams();
   const [openThreads, setOpenThreads] = useState({});
   const [openMenuId, setOpenMenuId] = useState(null);
   const [reportTargetId, setReportTargetId] = useState(null);
@@ -74,11 +71,15 @@ export const Feed = () => {
   const [editingPost, setEditingPost] = useState(null);
 
   const publicationCareerId = selectedCareer ? Number(selectedCareer) : null;
-  const filterCareerId = filterCareerIds.length === 1 ? filterCareerIds[0] : null;
+  const searchTermParam = searchParams.get('q');
+  const careerParam = searchParams.get('career');
+  const subjectParam = searchParams.get('subject');
+
+  const filterCareerId = careerParam ? Number(careerParam) : null;
   const inquiryVariables = {
-    searchTerm: appliedSearchTerm.trim() || null,
+    searchTerm: searchTermParam?.trim() || null,
     careerId: filterCareerId,
-    subjectIds: filterSubjectIds.length > 0 ? filterSubjectIds : null,
+    subjectIds: subjectParam ? [Number(subjectParam)] : null,
   };
 
   const { data: careersData } = useQuery(GET_CAREERS);
@@ -86,9 +87,7 @@ export const Feed = () => {
   const { data: subjectsData, loading: subjectsLoading } = useQuery(GET_SUBJECTS, {
     variables: { careerId: publicationCareerId },
   });
-  const { data: filterSubjectsData } = useQuery(GET_SUBJECTS, {
-    variables: { careerId: filterCareerId },
-  });
+
   const {
     data: inquiriesData,
     loading: inquiriesLoading,
@@ -111,11 +110,9 @@ export const Feed = () => {
   const careers = careersData?.careers ?? [];
   const myCareers = myCareersData?.myCareers ?? [];
   const publicationSubjects = subjectsData?.subjects ?? [];
-  const filterSubjects = filterSubjectsData?.subjects ?? [];
   const posts = inquiriesData?.inquiries ?? [];
   const isModerator = auth.role === 'Administrador' || auth.role === 'Moderador';
   const canSelectCareerForPost = myCareers.length > 1;
-  const filterCareerOptions = isModerator ? careers : (myCareers.length > 0 ? myCareers : careers);
   const publicationCareerOptions = auth.role === 'Administrador' ? careers : myCareers;
   const mustSelectCareerForPost = auth.role === 'Administrador' || myCareers.length > 1;
   const effectivePublicationSubjects = useMemo(() => {
@@ -131,29 +128,13 @@ export const Feed = () => {
     return () => document.removeEventListener('mousedown', closeMenu);
   }, []);
 
+  useEffect(() => {
+    if (inquiriesError) {
+      console.error('GraphQL Error fetching inquiries:', inquiriesError);
+    }
+  }, [inquiriesError]);
+
   const showFeedback = (type, message) => setFeedback({ type, message });
-
-  const toggleCareerFilter = (careerId) => {
-    setFilterCareerIds((current) =>
-      current.includes(careerId)
-        ? current.filter((id) => id !== careerId)
-        : [careerId]
-    );
-    setFilterSubjectIds([]);
-  };
-
-  const toggleSubjectFilter = (subjectId) => {
-    setFilterSubjectIds((current) =>
-      current.includes(subjectId)
-        ? current.filter((id) => id !== subjectId)
-        : [...current, subjectId]
-    );
-  };
-
-  const submitSearch = (event) => {
-    event.preventDefault();
-    setAppliedSearchTerm(draftSearchTerm);
-  };
 
   const handlePublish = async (event) => {
     event.preventDefault();
@@ -304,61 +285,7 @@ export const Feed = () => {
         </button>
       </header>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <form onSubmit={submitSearch} className="flex flex-col gap-2 sm:flex-row">
-          <input
-            type="search"
-            value={draftSearchTerm}
-            onChange={(event) => setDraftSearchTerm(event.target.value)}
-            placeholder="Buscar por texto, materia o autor..."
-            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-          >
-            Buscar
-          </button>
-        </form>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Carreras</p>
-            <div className="flex flex-wrap gap-2">
-              {filterCareerOptions.map((career) => (
-                <label key={career.id} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                  <input
-                    type="checkbox"
-                    checked={filterCareerIds.includes(career.id)}
-                    onChange={() => toggleCareerFilter(career.id)}
-                    className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600"
-                  />
-                  {career.name}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Materias</p>
-            <div className="flex flex-wrap gap-2">
-              {filterSubjects.map((subject) => (
-                <label key={subject.id} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                  <input
-                    type="checkbox"
-                    checked={filterSubjectIds.includes(subject.id)}
-                    onChange={() => toggleSubjectFilter(subject.id)}
-                    className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600"
-                  />
-                  {subject.name}
-                </label>
-              ))}
-              {filterSubjects.length === 0 && (
-                <span className="text-xs text-slate-400">Selecciona una carrera para acotar materias.</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {feedback && (
         <div

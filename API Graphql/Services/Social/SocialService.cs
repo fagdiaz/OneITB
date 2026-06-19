@@ -32,6 +32,8 @@ namespace Services.Social
                     inquiry.Title.Contains(normalizedSearch) ||
                     inquiry.Content.Contains(normalizedSearch) ||
                     inquiry.Subject.Name.Contains(normalizedSearch) ||
+                    inquiry.Subject.Code.Contains(normalizedSearch) ||
+                    inquiry.Subject.Career.Code.Contains(normalizedSearch) ||
                     inquiry.User.FirstName.Contains(normalizedSearch) ||
                     inquiry.User.LastName.Contains(normalizedSearch));
             }
@@ -39,8 +41,7 @@ namespace Services.Social
             if (careerId.HasValue)
             {
                 int selectedCareerId = careerId.Value;
-                query = query.Where(inquiry =>
-                    inquiry.Subject.SubjectCareers.Any(link => link.CareerId == selectedCareerId));
+                query = query.Where(inquiry => inquiry.Subject.CareerId == selectedCareerId);
             }
 
             if (subjectIds is { Length: > 0 })

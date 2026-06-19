@@ -5,6 +5,7 @@ export const GET_CAREERS = gql`
     careers {
       id
       name
+      code
       isActive
     }
   }
@@ -15,6 +16,7 @@ export const GET_MY_CAREERS = gql`
     myCareers {
       id
       name
+      code
       isActive
     }
   }

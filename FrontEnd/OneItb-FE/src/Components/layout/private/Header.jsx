@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Nav } from './Nav'
+import { GlobalSearch } from './GlobalSearch'
 
 /**
  * Header — REFACTOR 034
@@ -20,9 +21,11 @@ export const Header = () => {
         ONEITB
       </Link>
 
-      {/* Navigation */}
-      <Nav />
-
+      {/* Navigation and Search */}
+      <div className="flex items-center gap-4 z-50">
+        <GlobalSearch />
+        <Nav />
+      </div>
     </header>
   )
 }
