@@ -1,67 +1,151 @@
-# Roadmap funcional - OneITB23
+# Roadmap unico de OneITB23
 
-## Estado global: 88%
+**Ultima revision**: 2026-06-19
 
-Calculo: 21 tareas completadas de 24 tareas totales. El porcentaje se deriva
-exclusivamente de los checklists de este archivo.
+**Estado global**: 69% (52 de 75 items)
 
-## Modulo 1: Autenticacion y cuentas - 100%
+Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
-- [x] Registro institucional implementado.
-- [x] Passwords almacenados con BCrypt `char(60)`.
-- [x] Login entrega JWT.
-- [x] Validacion de vigencia JWT activa y verificada.
-- [x] Sesion frontend normalizada sobre una unica clave de token.
+## Convencion de estado
 
-## Modulo 2: Perfiles de usuario - 100%
+- `[x] [V]`: completado y verificado mediante runtime.
+- `[x] [I]`: implementado con evidencia de codigo, build, migracion o prueba aislada; puede requerir regresion runtime.
+- `[ ] [P]`: pendiente.
+- `[ ] [B]`: implementacion o validacion bloqueada por una condicion concreta.
 
-- [x] Relacion `User` y `Account`.
-- [x] Biografia y redes sociales.
-- [x] Datos de carrera/cursada implementados.
-- [x] Interfaz de perfil integrada.
+Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre implementacion y verificacion.
 
-## Modulo 3: Publicaciones y comentarios - 100%
+## Modulo 1 - Identidad, cuentas y seguridad: 88% (7/8)
 
-- [x] Entidades `Subject` e `Inquiry`.
-- [x] Estructura de comentarios existente.
-- [x] Creacion y lectura de publicaciones verificadas end-to-end.
-- [x] Archivos educativos.
-- [x] Reacciones verificadas end-to-end.
+- [x] [V] Relacion 1:1 `Account`-`User` y passwords BCrypt `char(60)`.
+- [x] [V] Registro y login con JWT.
+- [x] [V] Bloqueo de acceso para cuentas inactivas.
+- [x] [V] Expiracion JWT, pipeline de autenticacion y CORS restringido.
+- [x] [V] Sesion frontend normalizada sobre `token` y `user`.
+- [x] [V] Autorizacion por roles en operaciones sensibles.
+- [x] [I] Flujo Magic Link para empleadores.
+- [ ] [P] Suite automatizada de registro, login, expiracion y autorizacion.
 
-Estado tecnico: el feed permite publicar, reaccionar, comentar, responder,
-reportar y adjuntar archivos educativos mediante una carga REST desacoplada y
-URLs persistidas en publicaciones y comentarios. La UI clasifica imagenes,
-PDF, presentaciones y documentos, y reconoce enlaces seguros de YouTube. El
-seed administrado aporta 5 materias, 10 usuarios, 30 publicaciones, 90
-reacciones, 45 comentarios y 2 reportes sin duplicarse al reiniciar.
+## Modulo 2 - Perfiles e identidad social: 88% (7/8)
 
-## Modulo 4: Mensajeria privada - 100%
+- [x] [V] Perfil publico y perfil propio autenticado.
+- [x] [I] Edicion aislada del perfil y CV.
+- [x] [I] Biografia, contacto y redes sociales.
+- [x] [I] Asociacion de usuarios a multiples carreras.
+- [x] [I] Resumen de publicaciones en perfil publico.
+- [x] [I] Roles diferenciados e insignias de participacion.
+- [x] [I] Seguir, silenciar y bloquear usuarios.
+- [ ] [P] Controles de privacidad y gestion explicita de seguidores.
 
-- [x] Conversaciones uno a uno.
-- [x] Persistencia de mensajes.
-- [x] Notificaciones de mensajes nuevos.
+## Modulo 3 - Carreras y materias: 86% (6/7)
 
-Estado tecnico: GraphQL expone contactos e historial paginados, envio y lectura
-autenticados y una suscripcion privada por usuario. Apollo usa WebSockets con
-JWT, actualizacion optimista, deduplicacion y reconciliacion al reconectar.
-Adicionalmente, se cuenta con un buscador inteligente de contactos y mensajes
-integrado con una interfaz reactiva, resolviendo fallos de UX previos.
+- [x] [I] CRUD y estado activo de carreras.
+- [x] [I] Materias asociadas obligatoriamente a una carrera.
+- [x] [I] Anio de cursada validado entre 1 y 6.
+- [x] [I] Correlatividades N:M con integridad restrictiva.
+- [x] [I] Inscripcion de usuarios a multiples carreras.
+- [x] [I] Selectores en cascada carrera-materia en feed y administracion.
+- [ ] [P] Progreso academico, cursadas y notas por usuario.
 
-## Modulo 5: Recursos y seguimiento - 0%
+## Modulo 4 - Feed, comentarios y multimedia: 75% (12/16)
 
-- [ ] Visualizacion de notas.
-- [ ] Integracion o simulacion SIU Guarani.
-- [ ] Preferencias de notificacion por materia.
+- [x] [V] `Inquiry` vinculada a autor y materia sin N+1.
+- [x] [V] Creacion, lectura, refetch y persistencia de publicaciones.
+- [x] [I] Busqueda y filtros por carrera y materias.
+- [x] [I] Edicion y soft-delete de publicaciones.
+- [x] [V] Comentarios y respuestas anidadas.
+- [x] [I] Edicion y soft-delete de comentarios.
+- [x] [V] Reacciones con contador.
+- [x] [V] Reportes comunitarios.
+- [x] [I] Prioridad de seguidos y exclusion de silenciados/bloqueados.
+- [x] [I] Upload desacoplado y `Inquiry.FileUrl`.
+- [x] [I] Adjuntos persistentes en comentarios y respuestas.
+- [x] [I] Imagenes inline, tarjetas de documentos y YouTube seguro.
+- [ ] [B] Regresion end-to-end de uploads/rich media con backend local disponible.
+- [ ] [P] Limpieza de archivos huerfanos cuando GraphQL falla tras el upload.
+- [ ] [P] Paginacion o scroll incremental del feed.
+- [ ] [P] Pruebas automatizadas de publicaciones, comentarios y archivos.
 
-## Modulo 6: Administración y Moderación - 100%
+## Modulo 5 - Mensajeria privada: 88% (7/8)
 
-- [x] Panel de Usuarios (Roles y Suspensión).
-- [x] Panel de Materias (CRUD, carrera obligatoria, anio, correlatividades y desactivacion).
-- [x] Panel de Moderación (Cambio de estado de reportes de comunidad).
-- [x] Unificación del diseño (Listas tabulares).
+- [x] [V] Persistencia de mensajes uno a uno.
+- [x] [V] Contactos e historial paginados.
+- [x] [V] Queries y mutations autenticadas por participante.
+- [x] [V] Subscription privada con JWT por WebSocket.
+- [x] [V] UI optimista, deduplicacion y reconciliacion al reconectar.
+- [x] [V] Busqueda de contactos y mensajes.
+- [x] [I] Integracion entre chat completo y widget sin updates cruzados.
+- [ ] [P] Reemplazar pub/sub en memoria por transporte distribuido.
 
-## Prioridad vigente
+## Modulo 6 - Administracion y moderacion: 80% (8/10)
 
-Avanzar sobre Recursos y seguimiento. Para escalar Mensajeria a multiples
-instancias se debe reemplazar
-el pub/sub en memoria por un transporte distribuido.
+- [x] [I] Gestion de usuarios, roles y estado.
+- [x] [I] Proteccion de cuentas administradoras y promocion con password.
+- [x] [I] Gestion de carreras, materias y correlatividades.
+- [x] [V] Flujo de reportes comunitarios.
+- [x] [I] Explorador de publicaciones y comentarios.
+- [x] [I] Silenciamiento temporal por moderadores.
+- [x] [I] Metricas, short IDs y jerarquia visual por rol.
+- [x] [V] Seed administrado e idempotente.
+- [ ] [P] Auditoria persistente de acciones administrativas y de moderacion.
+- [ ] [B] Regresion runtime del panel tras cambios de materias y superadmin.
+
+## Modulo 7 - Recursos y seguimiento academico: 0% (0/6)
+
+- [ ] [P] Entidad y repositorio de recursos academicos independiente del feed.
+- [ ] [P] Permisos de recursos por carrera, materia y rol.
+- [ ] [P] Busqueda, categorias y versionado de recursos.
+- [ ] [P] Visualizacion de notas y progreso academico.
+- [ ] [P] Adaptador o simulador desacoplado para SIU Guarani.
+- [ ] [P] Preferencias de notificacion por materia.
+
+## Modulo 8 - Calidad, operacion y escalabilidad: 42% (5/12)
+
+- [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
+- [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
+- [x] [I] Builds Release/Vite y gates de migraciones documentados.
+- [x] [I] Documentacion consolidada y fuentes de verdad definidas.
+- [x] [I] Evidencia por spec y development log cronologico inverso.
+- [ ] [P] Pruebas unitarias del backend.
+- [ ] [P] Pruebas de componentes y estado frontend.
+- [ ] [P] Pruebas de integracion GraphQL con SQL Server de prueba.
+- [ ] [P] Pipeline CI para build, tests y validacion de migraciones.
+- [ ] [P] Logging estructurado, metricas y trazabilidad de errores.
+- [ ] [B] Entorno local reproducible sin bloqueo de cifrado/Event Log.
+- [ ] [P] Actualizacion controlada de dependencias y division del bundle frontend.
+
+## Prioridades
+
+### P0 - Estabilizacion inmediata
+
+1. Resolver el arranque local SQL Server/Event Log.
+2. Revalidar materias, superadmin, uploads y rich media end-to-end.
+3. Incorporar pruebas automatizadas de autenticacion y feed.
+
+### P1 - Cierre del nucleo social
+
+1. Paginar el feed.
+2. Limpiar uploads huerfanos.
+3. Agregar auditoria persistente de moderacion.
+
+### P2 - Alcance academico pendiente
+
+1. Recursos por materia.
+2. Progreso y notas.
+3. Adaptador SIU y preferencias de notificacion.
+
+### P3 - Escalabilidad y operacion
+
+1. Pub/sub distribuido.
+2. Almacenamiento compartido de archivos.
+3. CI, observabilidad y actualizacion de dependencias.
+
+## Definition of Done por feature
+
+1. Spec, plan y tasks completos.
+2. Backend/frontend compilan cuando son afectados.
+3. Migracion revisada, aplicada y sin cambios pendientes cuando corresponde.
+4. Contrato GraphQL real ejecutado.
+5. Autenticacion, cache y persistencia validadas en runtime.
+6. Evidencia registra comandos y bloqueos reales.
+7. Este roadmap, `DEVELOPMENT_LOG.md` y `DOCUMENTATION_STATUS.md` quedan sincronizados.

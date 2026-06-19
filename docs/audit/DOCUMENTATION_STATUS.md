@@ -2,55 +2,47 @@
 
 **Ultima verificacion**: 2026-06-19
 
-## Documentos canonicos
+## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
+| `README.md` | Unico indice general del repositorio | Vigente |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 52/75 (69%) |
+| `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
+| `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
+| `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
+| `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
+| `.specify/memory/constitution.md` | Reglas superiores del proyecto | Vigente, v1.4.0 |
 | `AGENTS.md` | Reglas operativas para agentes | Vigente |
-| `.specify/memory/constitution.md` | Reglas superiores del proyecto | Vigente, v1.3.0 |
-| `docs/audit/fix-roadmap-13-06-2026.md` | Baseline de estabilizacion | Vigente |
-| `docs/project_docs/ROADMAP.md` | Avance funcional por checklist | Vigente |
-| `docs/audit/RUNBOOK_DEV.md` | Ejecucion y validacion local | Vigente |
-| `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de cambios | Vigente |
-| `README.md` | Entrada al repositorio | Vigente |
-| `specs/099-social-admin-ecosystem/` | Ecosistema social, seed y administracion | Completa y verificada |
-| `specs/104-realtime-private-messaging/` | Mensajeria privada persistente y en tiempo real | Completa y verificada |
-| `specs/106-chat-smart-search/` | Buscador inteligente de chats y mensajes | Completa y verificada |
-| `specs/107-chat-ux-refinement/` | Refinamiento de estado, cache y UX de chat | Completa y verificada |
-| `specs/118-end-to-end-subjects-module/` | Gestion academica de materias, carreras y correlatividades | Implementada; build y migracion verificados, runtime bloqueado por entorno |
-| `specs/119-superadmin-security/` | Proteccion de administradores y confirmacion reforzada de promociones | Implementada; builds verificados, runtime bloqueado por entorno |
-| `specs/121-file-upload-inquiries/` | Carga desacoplada de adjuntos educativos en publicaciones | Implementada; migracion y builds verificados, runtime backend bloqueado por entorno |
-| `specs/122-rich-media-comment-files/` | Rich media y adjuntos persistentes en comentarios | Implementada; migracion, builds y parser verificados, runtime backend bloqueado por entorno |
 
-## Snapshots historicos
+## Documentacion complementaria
 
-Los siguientes documentos conservan valor de auditoria, pero no deben usarse
-como fuente unica del estado actual:
+| Documento | Proposito |
+|---|---|
+| `docs/academic/01-project-overview.md` | Presentacion academica |
+| `docs/academic/02-software-requirements.md` | Resumen academico de requisitos |
+| `docs/academic/03-use-cases.md` | Casos de uso principales |
+| `docs/academic/04-design-diagrams.md` | Diagramas resumidos |
+| `docs/audit/HISTORICAL_AUDITS.md` | Auditorias supersedidas consolidadas |
 
-- `docs/audit/SYSTEM_AUDIT_V1.md`
-- `docs/audit/BACKEND_AUDIT_REPORT.md`
-- `docs/audit/FRONTEND_AUDIT_REPORT.md`
-- `docs/audit/SECURITY_AUDIT_V1.md`
-- `docs/audit/DEPENDENCY_MAP_V1.md`
+## Evidencia reciente
 
-## Brechas documentadas
+| Spec | Estado verificable |
+|---|---|
+| `specs/099-social-admin-ecosystem/` | Feed social, seed y administracion verificados end-to-end |
+| `specs/104-realtime-private-messaging/` | Mensajeria persistente y tiempo real verificados |
+| `specs/118-end-to-end-subjects-module/` | Implementada; migracion/build verificados, runtime reciente bloqueado |
+| `specs/119-superadmin-security/` | Implementada; builds verificados, runtime reciente bloqueado |
+| `specs/121-file-upload-inquiries/` | Implementada; migracion/build verificados, runtime reciente bloqueado |
+| `specs/122-rich-media-comment-files/` | Implementada; migracion/build/parser verificados, runtime reciente bloqueado |
 
-- El feed, el seed y el panel administrativo fueron verificados end-to-end en
-  la spec `099-social-admin-ecosystem`.
-- `Inquiry.user`, materias, publicaciones, comentarios, reacciones y reportes
-  responden con el contrato GraphQL vigente.
-- Los aliases `idUsuario`, `nombre` y `apellidos` son compatibilidad temporal;
-  el contrato canonico permanece en ingles.
-- JWT valida vigencia y CORS queda restringido a los origenes configurados.
-- La mensajeria privada persiste historial, autentica HTTP/WebSocket y entrega
-  eventos aislados por usuario; el pub/sub actual es para una sola instancia.
-- La carga desacoplada de archivos educativos esta implementada con limite de
-  15 MB, URL persistida y archivos estaticos. Publicaciones y comentarios
-  comparten el flujo; imagenes, documentos y YouTube tienen representacion
-  enriquecida. Falta repetir el flujo autenticado end-to-end cuando el backend
-  local pueda iniciar.
-- Recursos academicos siguen fuera del alcance completado.
-- El arbol npm reporta vulnerabilidades heredadas que requieren una actualizacion
-  de dependencias separada y controlada.
+## Brechas vigentes
 
-Estas brechas se gestionan en `docs/audit/fix-roadmap-13-06-2026.md`.
+- Recursos, notas, SIU y notificaciones academicas permanecen pendientes.
+- Faltan suites automatizadas de autenticacion, feed, GraphQL y componentes.
+- Pub/sub y almacenamiento de archivos sirven a una sola instancia.
+- Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
+- El entorno temporal de validacion reciente esta bloqueado por cifrado SQL Server y permisos de Windows Event Log.
+- El frontend conserva deuda de dependencias y tamano de bundle.
+
+Ante contradicciones, prevalecen codigo, esquema ejecutado y evidencia runtime. Los porcentajes se recalculan exclusivamente desde los checklists de `ROADMAP.md`.

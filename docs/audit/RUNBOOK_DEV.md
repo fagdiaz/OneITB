@@ -1,11 +1,13 @@
-# RUNBOOK_DEV - OneITB23
+# Runbook de desarrollo - OneITB23
+
+**Ultima revision**: 2026-06-19
 
 ## Requisitos
 
 - .NET SDK 8.
-- Node.js compatible con Vite 8 y npm.
-- SQL Server.
-- `dotnet-ef` 8.x.
+- SQL Server accesible con la cadena configurada.
+- Node.js compatible con Vite 8.
+- Certificado HTTPS de desarrollo confiable.
 
 ## Backend
 
@@ -15,84 +17,66 @@ dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release
 dotnet run --project "API Graphql/OneITB/GraphQL.csproj"
 ```
 
-IIS Express usa actualmente:
+Endpoints locales esperados:
 
-- HTTP: `http://localhost:64303`
-- HTTPS: `https://localhost:44397`
-- GraphQL: `https://localhost:44397/graphql`
+- GraphQL HTTP/WebSocket: `https://localhost:44397/graphql`
+- Upload REST: `https://localhost:44397/api/upload`
+- Archivos: `https://localhost:44397/uploads/{file}`
 
-Si Visual Studio o IIS Express bloquea los binarios `Debug`, validar con
-configuracion `Release` sin detener procesos del desarrollador.
-
-## Base de datos
-
-La cadena de desarrollo debe incluir `TrustServerCertificate=True`.
+## Entity Framework Core
 
 ```powershell
+dotnet ef migrations list --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
 dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
+dotnet ef migrations has-pending-model-changes --configuration Release --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
 ```
 
-No ejecutar `database drop`, eliminar migraciones ni limpiar datos sin
-autorizacion explicita.
+Cada migracion debe revisarse antes de aplicarse. Un cambio de nombre debe usar `RenameColumn`; las nuevas FKs deben declarar su comportamiento de borrado.
 
 ## Frontend
 
 ```powershell
-Set-Location FrontEnd/OneItb-FE
+Set-Location "FrontEnd/OneItb-FE"
 npm.cmd ci
 npm.cmd run build
 npm.cmd run dev
 ```
 
-En PowerShell se usa `npm.cmd` para evitar bloqueos de `npm.ps1` por la
-politica de ejecucion.
+El frontend usa `VITE_GRAPHQL_URL`; el valor local por defecto es `https://localhost:44397/graphql`.
 
-## Validacion minima por tipo de cambio
+## Validacion por tipo de cambio
 
 ### Backend o GraphQL
 
-1. Compilar el backend en `Release`.
-2. Iniciar o reutilizar el servidor local.
-3. Introspectar el esquema activo.
-4. Ejecutar la query o mutacion afectada.
-5. Verificar errores GraphQL y efecto en SQL Server.
+1. Build Release sin errores.
+2. Migraciones sincronizadas.
+3. Introspeccion del campo afectado en el servidor real.
+4. Ejecucion autenticada de la query/mutation.
 
 ### Frontend
 
-1. Ejecutar `npm.cmd run build`.
-2. Abrir el flujo afectado en el navegador.
-3. Revisar consola y red.
-4. Confirmar estados de carga, exito y error.
+1. Build Vite.
+2. Verificacion en navegador del flujo modificado.
+3. Revision de consola y Network.
+4. Recarga para confirmar cache y persistencia.
 
-### Persistencia
+### Archivos
 
-1. Crear o modificar el registro desde la UI.
-2. Confirmar respuesta GraphQL.
-3. Recargar el navegador.
-4. Confirmar que el dato permanece.
+1. Upload sin JWT devuelve `401`.
+2. Archivo invalido o mayor a 15 MB se rechaza.
+3. URL devuelta comienza con `/uploads/`.
+4. Publicacion/comentario conserva la URL tras recargar.
 
-## Smoke tests de estabilizacion
+## Problemas locales conocidos
 
-- [ ] Backend compila con 0 errores.
-- [ ] Frontend compila con 0 errores.
-- [ ] `/graphql` responde.
-- [ ] Login valido entrega JWT.
-- [ ] Login invalido devuelve error controlado.
-- [ ] `ValidateLifetime` esta activo.
-- [ ] CORS esta restringido al origen configurado.
-- [ ] Apollo envia `Authorization: Bearer <token>`.
-- [ ] Sesion usa una unica clave de token.
-- [ ] `subjects` coincide con el esquema activo.
-- [ ] `inquiries` coincide con el esquema activo.
-- [ ] `Inquiry` expone autor y materia sin N+1.
-- [ ] `addInquiry` rechaza solicitudes sin JWT.
-- [ ] Una publicacion autenticada se persiste.
-- [ ] La publicacion aparece sin recargar.
-- [ ] La publicacion permanece despues de recargar.
-- [ ] Los errores del feed se muestran en la UI.
-- [ ] `PasswordHash` no se expone en GraphQL.
-- [ ] BCrypt se almacena como `char(60)`.
-- [ ] Relaciones criticas usan `DeleteBehavior.Restrict`.
+### SQL Server exige cifrado
 
-Los checks ejecutados deben registrarse en la spec activa. Los no ejecutados
-permanecen pendientes.
+Si aparece `The instance of SQL Server ... requires encryption`, revisar la cadena del entorno local y el certificado. `TrustServerCertificate=True` solo es aceptable en desarrollo controlado; no debe copiarse a produccion.
+
+### Windows Event Log deniega acceso
+
+El host puede ocultar el error original al intentar escribir en Event Log sin permisos. Para diagnostico local usar logging de consola/archivo o ejecutar con una configuracion que no registre en Event Log.
+
+## Criterio de evidencia
+
+Compilar no demuestra que GraphQL, autenticacion o persistencia funcionen. Si el runtime no puede iniciarse, registrar el bloqueo exacto en `specs/<feature>/evidence.md` y no declarar el flujo como verificado.
