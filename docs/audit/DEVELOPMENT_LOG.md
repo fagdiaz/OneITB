@@ -5,6 +5,63 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-18] - Superadmin Security (Spec: 119-superadmin-security)
+
+* **Objetivo**: proteger cuentas administradoras existentes y exigir revalidacion de contraseña antes de promover otro usuario a Administrador.
+* **Resultado**:
+  - Backend: UpdateUserRole recibe el ID del operador autenticado y una contraseña opcional; la promoción valida rol activo, cuenta y hash BCrypt del operador.
+  - Protección: cualquier cambio de rol o estado dirigido a un Administrador genera GraphQLException y no modifica datos.
+  - Frontend: seleccionar Administrador abre un modal de confirmación con contraseña y advertencia de privilegios máximos.
+  - Estado sensible: la contraseña se limpia al cancelar, completar o fallar la verificación.
+  - UI: los controles de rol y estado de Administradores permanecen deshabilitados y grisados.
+* **Validaciones ejecutadas**:
+  - Backend Release y frontend Vite: compilación exitosa con 0 errores.
+  - Revisión estática: la contraseña solo aparece como argumento efímero, estado local y entrada de BCrypt.Verify.
+* **Runtime**: GraphQL/browser bloqueado porque la instancia temporal no puede iniciar por cifrado SQL Server en ese proceso.
+* **Evidencia**: specs/119-superadmin-security/evidence.md.
+* **Archivos principales**:
+  - API Graphql/Services/Users/IUsersService.cs
+  - API Graphql/Services/Users/UsersService.cs
+  - API Graphql/OneITB/GraphQL/Mutation.cs
+  - FrontEnd/OneItb-FE/src/data/graphql/mutations/admin.js
+  - FrontEnd/OneItb-FE/src/Components/admin/UserManagement.jsx
+
+## [2026-06-18] - End-to-End Subjects Module (Spec: 118-end-to-end-subjects-module)
+
+* **Objetivo**: completar la gestion academica de materias con carrera obligatoria, anio de cursada y correlatividades, desde SQL Server hasta el panel administrativo.
+* **Resultado**:
+  - Dominio: `Subject` ahora tiene `CareerId`, `Career`, `Year` y coleccion `Prerequisites`; se retiro la relacion N:M obsoleta `SubjectCareer`.
+  - Integridad: `SubjectPrerequisite` usa clave compuesta, restriccion anti-autorreferencia y `DeleteBehavior.Restrict` en ambas FKs; materia-carrera tambien usa `Restrict`.
+  - Migracion: `20260618230159_AddAcademicRulesToSubjects` copia primero los vinculos historicos y recien despues elimina `SubjectCareers`.
+  - GraphQL: `addSubject` y `updateSubject` validan carrera activa, anio 1-6, unicidad y correlativas de la misma carrera.
+  - Frontend: el formulario incorpora carrera, anio y selector tildable de correlativas; la tabla muestra todas las reglas academicas.
+* **Validaciones ejecutadas**:
+  - Backend Release y frontend Vite: compilacion exitosa con 0 errores.
+  - `dotnet ef database update`: migracion aplicada correctamente.
+  - `dotnet ef migrations has-pending-model-changes`: sin cambios pendientes.
+* **Runtime**: GraphQL/browser bloqueado por cifrado SQL Server y permisos de Windows Event Log en la instancia temporal.
+* **Evidencia**: `specs/118-end-to-end-subjects-module/evidence.md`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Subject.cs`
+  - `API Graphql/Entities/Models/SubjectPrerequisite.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Data/Migrations/20260618230159_AddAcademicRulesToSubjects.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `FrontEnd/OneItb-FE/src/Components/admin/SubjectManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/subjects.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/mutations/subjects.js`
+
+## [2026-06-17] - Rediseño UI de Página 404 (NotFound)
+
+* **Objetivo**: Rediseñar la interfaz de usuario de la página de error 404 para hacerla más profesional, dinámica y atractiva utilizando Tailwind CSS.
+* **Resultado**:
+  - Se creó el nuevo componente `NotFound.jsx` utilizando diseño de glassmorphism, fondos interactivos (animate-pulse) y gradientes modernos.
+  - Se actualizó el enrutador principal (`Routing.jsx`) para renderizar el nuevo componente `NotFound` en lugar del layout provisorio.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/layout/NotFound.jsx`
+  - `FrontEnd/OneItb-FE/src/router/Routing.jsx`
+
 ## [2026-06-17] - Feed Gamification UX (Spec: 112-feed-gamification-ux)
 
 * **Objetivo**: completar la segunda tanda recomendada de UX social/gamificacion sin introducir nueva persistencia: perfiles clickeables, seguir inline, badges de participacion, jerarquia visual para administradores y modales de revision admin.

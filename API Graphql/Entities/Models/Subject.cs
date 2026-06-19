@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using OneItb.Entities.Abstracts;
 
 namespace OneItb.Entities.Models
@@ -30,9 +31,13 @@ namespace OneItb.Entities.Models
             }
         }
 
+        public int CareerId { get; set; }
+        public int? Year { get; set; }
         public bool IsActive { get; set; } = true;
 
-        public virtual System.Collections.Generic.ICollection<Inquiry> Inquiries { get; set; } = new System.Collections.Generic.List<Inquiry>();
-        public virtual System.Collections.Generic.ICollection<SubjectCareer> SubjectCareers { get; set; } = new System.Collections.Generic.List<SubjectCareer>();
+        public virtual Career Career { get; set; } = null!;
+        public virtual ICollection<Inquiry> Inquiries { get; set; } = new List<Inquiry>();
+        public virtual ICollection<Subject> Prerequisites { get; set; } = new List<Subject>();
+        public virtual ICollection<Subject> RequiredBy { get; set; } = new List<Subject>();
     }
 }

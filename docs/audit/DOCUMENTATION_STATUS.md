@@ -1,6 +1,6 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-15
+**Ultima verificacion**: 2026-06-18
 
 ## Documentos canonicos
 
@@ -17,6 +17,8 @@
 | `specs/104-realtime-private-messaging/` | Mensajeria privada persistente y en tiempo real | Completa y verificada |
 | `specs/106-chat-smart-search/` | Buscador inteligente de chats y mensajes | Completa y verificada |
 | `specs/107-chat-ux-refinement/` | Refinamiento de estado, cache y UX de chat | Completa y verificada |
+| `specs/118-end-to-end-subjects-module/` | Gestion academica de materias, carreras y correlatividades | Implementada; build y migracion verificados, runtime bloqueado por entorno |
+| `specs/119-superadmin-security/` | Proteccion de administradores y confirmacion reforzada de promociones | Implementada; builds verificados, runtime bloqueado por entorno |
 
 ## Snapshots historicos
 

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { GET_PUBLIC_PROFILE } from '../../data/graphql/queries/publicProfile';
@@ -6,12 +7,15 @@ import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
 
 export const UserProfile = () => {
   const { auth } = useAuth();
+  const { id } = useParams();
   const [showFullProfile, setShowFullProfile] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
 
+  const targetUserId = id || auth.id;
+
   const { data, loading, error } = useQuery(GET_PUBLIC_PROFILE, {
-    variables: { userId: auth.id },
-    skip: !auth.id,
+    variables: { userId: targetUserId },
+    skip: !targetUserId,
     fetchPolicy: 'cache-and-network',
   });
   const { data: inquiriesData } = useQuery(GET_INQUIRIES, {
@@ -23,8 +27,8 @@ export const UserProfile = () => {
   const profile = data?.publicProfile;
   const userPosts = useMemo(() => {
     const posts = inquiriesData?.inquiries ?? [];
-    return posts.filter((post: any) => post.user?.id === auth.id);
-  }, [auth.id, inquiriesData]);
+    return posts.filter((post: any) => post.user?.id === targetUserId);
+  }, [targetUserId, inquiriesData]);
   const visiblePosts = showAllPosts ? userPosts : userPosts.slice(0, 3);
 
   if (loading) {

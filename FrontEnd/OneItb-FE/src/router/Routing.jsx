@@ -13,6 +13,7 @@ import { EmployerLogin } from '../Components/auth/EmployerLogin'
 import { AuthProvider } from '../context/AuthProvider'
 import { Logout } from '../Components/user/Logout'
 import { PrivateChat } from '../Components/chat/PrivateChat'
+import { NotFound } from '../Components/layout/NotFound'
 
 export const Routing = () => {
   return (
@@ -29,6 +30,7 @@ export const Routing = () => {
         <Route path='/' element={<PrivateLayout />}>
           <Route path='feed' element={<Feed />} />
           <Route path='profile' element={<UserProfile />} />
+          <Route path='profile/:id' element={<UserProfile />} />
           <Route path='profile/edit' element={<CvEditorProfile />} />
           <Route path='chat' element={<PrivateChat />} />
           <Route path='admin' element={<AdminDashboard />} />
@@ -36,14 +38,7 @@ export const Routing = () => {
           <Route path='logout' element={<Logout></Logout>} />
         </Route>
 
-        <Route path='*' element={
-          <>
-            <p>
-              <h1>Error 404</h1>
-              <Link to="/"> Volver al inicio</Link>
-            </p>
-          </>
-        } />
+        <Route path='*' element={<NotFound />} />
 
       </Routes>
       </AuthProvider>

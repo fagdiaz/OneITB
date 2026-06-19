@@ -28,6 +28,10 @@ const formatMutedUntil = (value) => {
 
 export const UserManagement = () => {
   const [feedback, setFeedback] = useState(null);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [pendingPromotion, setPendingPromotion] = useState(null);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [promotionError, setPromotionError] = useState('');
   const { data, loading, error, refetch } = useQuery(GET_ADMIN_USERS, {
     fetchPolicy: 'cache-and-network',
   });
@@ -43,14 +47,64 @@ export const UserManagement = () => {
     });
   };
 
-  const changeRole = async (user, newRole) => {
-    if (isAdmin(user)) return;
+  const executeRoleChange = async (userId, newRole, adminPassword = null) => {
     try {
-      const { data: result } = await updateUserRole({ variables: { userId: user.id, newRole } });
+      const { data: result } = await updateUserRole({
+        variables: { userId, newRole, adminPassword },
+      });
       showPayloadFeedback(result.updateUserRole);
       await refetch();
+      return true;
     } catch (mutationError) {
       setFeedback({ type: 'error', message: mutationError.message });
+      return false;
+    }
+  };
+
+  const changeRole = async (user, newRole) => {
+    if (isAdmin(user)) return;
+    if (newRole === 'Administrador') {
+      setPendingPromotion({
+        userId: user.id,
+        fullName: user.firstName + ' ' + user.lastName,
+      });
+      setAdminPasswordInput('');
+      setPromotionError('');
+      setShowAdminModal(true);
+      return;
+    }
+
+    await executeRoleChange(user.id, newRole);
+  };
+
+  const closeAdminModal = () => {
+    setShowAdminModal(false);
+    setPendingPromotion(null);
+    setAdminPasswordInput('');
+    setPromotionError('');
+  };
+
+  const confirmAdminPromotion = async (event) => {
+    event.preventDefault();
+    if (!pendingPromotion || !adminPasswordInput.trim()) {
+      setPromotionError('Ingresa tu contraseña de administrador.');
+      return;
+    }
+
+    try {
+      const { data: result } = await updateUserRole({
+        variables: {
+          userId: pendingPromotion.userId,
+          newRole: 'Administrador',
+          adminPassword: adminPasswordInput,
+        },
+      });
+      showPayloadFeedback(result.updateUserRole);
+      await refetch();
+      closeAdminModal();
+    } catch (mutationError) {
+      setPromotionError(mutationError.message);
+      setAdminPasswordInput('');
     }
   };
 
@@ -106,6 +160,77 @@ export const UserManagement = () => {
         }`}>
           {feedback.message}
         </p>
+      )}
+
+      {showAdminModal && pendingPromotion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-promotion-title"
+            className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-6 shadow-2xl"
+          >
+            <div className="mb-4 flex items-start gap-3">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <i className="fa-solid fa-triangle-exclamation" />
+              </span>
+              <div>
+                <h3 id="admin-promotion-title" className="text-lg font-bold text-slate-900">
+                  Atención: Estás a punto de otorgar privilegios máximos
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Usuario objetivo: {pendingPromotion.fullName}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={confirmAdminPromotion} className="space-y-4">
+              <label className="block space-y-1 text-sm font-semibold text-slate-700">
+                Contraseña del administrador actual
+                <input
+                  type="password"
+                  value={adminPasswordInput}
+                  onChange={(event) => {
+                    setAdminPasswordInput(event.target.value);
+                    setPromotionError('');
+                  }}
+                  autoComplete="current-password"
+                  autoFocus
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 font-normal focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
+                  placeholder="Ingresa tu contraseña"
+                />
+              </label>
+
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                ¿Estás seguro? Esta cuenta quedará protegida y no podrá degradarse ni desactivarse desde el sistema.
+              </div>
+
+              {promotionError && (
+                <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {promotionError}
+                </p>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeAdminModal}
+                  disabled={updatingRole}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingRole || !adminPasswordInput.trim()}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {updatingRole ? 'Verificando...' : 'Confirmar y Asignar Rol'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">

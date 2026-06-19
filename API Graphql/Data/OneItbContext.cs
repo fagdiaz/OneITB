@@ -14,7 +14,7 @@ namespace OneItb.Data
         public DbSet<Subject> Subjects { get; set; } = null!;
         public DbSet<Career> Careers { get; set; } = null!;
         public DbSet<UserCareer> UserCareers { get; set; } = null!;
-        public DbSet<SubjectCareer> SubjectCareers { get; set; } = null!;
+        public DbSet<SubjectPrerequisite> SubjectPrerequisites { get; set; } = null!;
         public DbSet<UserInteraction> UserInteractions { get; set; } = null!;
         public DbSet<Inquiry> Inquiries { get; set; } = null!;
         public DbSet<Comment> Comments { get; set; } = null!;
@@ -105,7 +105,10 @@ namespace OneItb.Data
             // ==========================================
             modelBuilder.Entity<Subject>(entity =>
             {
-                entity.ToTable("Subjects", "dbo");
+                entity.ToTable("Subjects", "dbo", table =>
+                    table.HasCheckConstraint(
+                        "CK_Subjects_Year",
+                        "[Year] IS NULL OR ([Year] BETWEEN 1 AND 6)"));
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.Id)
@@ -120,8 +123,39 @@ namespace OneItb.Data
                     .HasMaxLength(10)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Year);
+
                 entity.HasIndex(e => e.Name).IsUnique();
                 entity.HasIndex(e => e.Code).IsUnique();
+                entity.HasIndex(e => e.CareerId);
+
+                entity.HasOne(e => e.Career)
+                    .WithMany(career => career.Subjects)
+                    .HasForeignKey(e => e.CareerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(e => e.Prerequisites)
+                    .WithMany(e => e.RequiredBy)
+                    .UsingEntity<SubjectPrerequisite>(
+                        right => right
+                            .HasOne(link => link.Prerequisite)
+                            .WithMany()
+                            .HasForeignKey(link => link.PrerequisiteId)
+                            .OnDelete(DeleteBehavior.Restrict),
+                        left => left
+                            .HasOne(link => link.Subject)
+                            .WithMany()
+                            .HasForeignKey(link => link.SubjectId)
+                            .OnDelete(DeleteBehavior.Restrict),
+                        join =>
+                        {
+                            join.ToTable("SubjectPrerequisites", "dbo", table =>
+                                table.HasCheckConstraint(
+                                    "CK_SubjectPrerequisites_NoSelfReference",
+                                    "[SubjectId] <> [PrerequisiteId]"));
+                            join.HasKey(link => new { link.SubjectId, link.PrerequisiteId });
+                            join.HasIndex(link => link.PrerequisiteId);
+                        });
             });
 
             // ==========================================
@@ -161,25 +195,6 @@ namespace OneItb.Data
 
                 entity.HasOne(e => e.Career)
                     .WithMany(c => c.UserCareers)
-                    .HasForeignKey(e => e.CareerId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // ==========================================
-            // MAPEO: TABLA SUBJECT_CAREERS
-            // ==========================================
-            modelBuilder.Entity<SubjectCareer>(entity =>
-            {
-                entity.ToTable("SubjectCareers", "dbo");
-                entity.HasKey(e => new { e.SubjectId, e.CareerId });
-
-                entity.HasOne(e => e.Subject)
-                    .WithMany(s => s.SubjectCareers)
-                    .HasForeignKey(e => e.SubjectId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(e => e.Career)
-                    .WithMany(c => c.SubjectCareers)
                     .HasForeignKey(e => e.CareerId)
                     .OnDelete(DeleteBehavior.Restrict);
             });

@@ -32,24 +32,66 @@ namespace OneItb.Data
 
         private static readonly SeedSubject[] SeedSubjects =
         {
+            // Analisis de Sistemas
             new("Programacion I", "PROG1"),
             new("Base de Datos", "BDD"),
             new("Analisis de Sistemas", "ADS"),
             new("Redes y Comunicaciones", "REDES"),
-            new("Matematica Aplicada", "MAT")
+            new("Matematica Aplicada", "MAT"),
+            new("Ingenieria de Software", "ISOFT"),
+
+            // Diseno Industrial
+            new("Ergonomia", "ERGO"),
+            new("Materiales y Procesos", "MATPRO"),
+            new("Dibujo Tecnico", "DIBTEC"),
+
+            // Enfermeria
+            new("Anatomia Funcional", "ANAT"),
+            new("Practica Profesional I", "PRAC1"),
+            new("Farmacologia", "FARMA"),
+
+            // Radiologia
+            new("Fisica de las Radiaciones", "FISRAD"),
+            new("Anatomia Radiologica", "ANATRAD"),
+            new("Tecnicas Radiologicas", "TECRAD"),
+
+            // Higiene Seguridad y Ambiente Laboral
+            new("Toxicologia", "TOXI"),
+            new("Ergonomia Laboral", "ERGOLAB"),
+            new("Legislacion Laboral", "LEGLAB"),
+
+            // Comunicacion Multimedial
+            new("Diseno Grafico", "DISGRAF"),
+            new("Produccion Audiovisual", "PRODAUD"),
+            new("Comunicacion Digital", "COMDIG"),
+
+            // Administracion Contable
+            new("Contabilidad I", "CONT1"),
+            new("Matematica Financiera", "MATFIN"),
+            new("Derecho Comercial", "DERCOM"),
+
+            // Administracion de PyMES
+            new("Gestion de Recursos Humanos", "RRHH"),
+            new("Marketing Estrategico", "MKT"),
+            new("Finanzas Corporativas", "FINCORP"),
+
+            // Ciencia de Datos e Inteligencia Artificial
+            new("Estadistica Aplicada", "ESTAP"),
+            new("Machine Learning", "ML"),
+            new("Bases de Datos NoSQL", "NOSQL")
         };
 
-        private static readonly string[] SeedCareers =
+        private static readonly (string Name, string Code)[] SeedCareers =
         {
-            "Analisis de Sistemas",
-            "Diseno Industrial",
-            "Enfermeria",
-            "Radiologia",
-            "Higiene Seguridad y Ambiente Laboral",
-            "Comunicacion Multimedial",
-            "Administracion Contable",
-            "Administracion de PyMES",
-            "Ciencia de Datos e Inteligencia Artificial"
+            ("Analisis de Sistemas", "ADS"),
+            ("Diseno Industrial", "DIND"),
+            ("Enfermeria", "ENF"),
+            ("Radiologia", "RAD"),
+            ("Higiene Seguridad y Ambiente Laboral", "HSAL"),
+            ("Comunicacion Multimedial", "CMM"),
+            ("Administracion Contable", "ACON"),
+            ("Administracion de PyMES", "APYM"),
+            ("Ciencia de Datos e Inteligencia Artificial", "CDIA")
         };
 
         private static readonly string[] InquiryTopics =
@@ -126,16 +168,17 @@ namespace OneItb.Data
 
         private static void SeedCareerData(OneItbContext context)
         {
-            var existingNames = context.Careers
-                .Where(career => SeedCareers.Contains(career.Name))
-                .Select(career => career.Name)
+            var existingCodes = context.Careers
+                .Where(career => SeedCareers.Select(seed => seed.Code).Contains(career.Code))
+                .Select(career => career.Code)
                 .ToHashSet();
 
-            foreach (string careerName in SeedCareers.Where(career => !existingNames.Contains(career)))
+            foreach (var career in SeedCareers.Where(career => !existingCodes.Contains(career.Code)))
             {
                 context.Careers.Add(new Career
                 {
-                    Name = careerName,
+                    Name = career.Name,
+                    Code = career.Code,
                     IsActive = true
                 });
             }
@@ -145,6 +188,14 @@ namespace OneItb.Data
 
         private static void SeedSubjectData(OneItbContext context)
         {
+            int fallbackCareerId = context.Careers
+                .OrderBy(career => career.Id)
+                .Select(career => career.Id)
+                .FirstOrDefault();
+
+            if (fallbackCareerId == 0)
+                throw new InvalidOperationException("No careers are available for subject seeding.");
+
             var existingCodes = context.Subjects
                 .Where(subject => SeedSubjects.Select(seed => seed.Code).Contains(subject.Code))
                 .Select(subject => subject.Code)
@@ -155,7 +206,8 @@ namespace OneItb.Data
                 context.Subjects.Add(new Subject
                 {
                     Name = subject.Name,
-                    Code = subject.Code
+                    Code = subject.Code,
+                    CareerId = fallbackCareerId
                 });
             }
 
@@ -165,54 +217,87 @@ namespace OneItb.Data
         private static void SeedAcademicLinks(OneItbContext context)
         {
             var careers = context.Careers
-                .Where(career => SeedCareers.Contains(career.Name))
+                .Where(career => SeedCareers.Select(seed => seed.Name).Contains(career.Name))
                 .ToDictionary(career => career.Name, career => career.Id);
 
             var subjects = context.Subjects
                 .Where(subject => SeedSubjects.Select(seed => seed.Code).Contains(subject.Code))
-                .ToDictionary(subject => subject.Code, subject => subject.Id);
+                .ToDictionary(subject => subject.Code);
 
             if (careers.Count == 0 || subjects.Count == 0)
                 return;
 
             var subjectCareerSeeds = new (string SubjectCode, string CareerName)[]
             {
+                // Analisis de Sistemas
                 ("PROG1", "Analisis de Sistemas"),
                 ("BDD", "Analisis de Sistemas"),
                 ("ADS", "Analisis de Sistemas"),
                 ("REDES", "Analisis de Sistemas"),
                 ("MAT", "Analisis de Sistemas"),
+                ("ISOFT", "Analisis de Sistemas"),
+
+                // Diseno Industrial
+                ("ERGO", "Diseno Industrial"),
+                ("MATPRO", "Diseno Industrial"),
+                ("DIBTEC", "Diseno Industrial"),
+
+                // Enfermeria
+                ("ANAT", "Enfermeria"),
+                ("PRAC1", "Enfermeria"),
+                ("FARMA", "Enfermeria"),
+
+                // Radiologia
+                ("FISRAD", "Radiologia"),
+                ("ANATRAD", "Radiologia"),
+                ("TECRAD", "Radiologia"),
+
+                // Higiene Seguridad y Ambiente Laboral
+                ("TOXI", "Higiene Seguridad y Ambiente Laboral"),
+                ("ERGOLAB", "Higiene Seguridad y Ambiente Laboral"),
+                ("LEGLAB", "Higiene Seguridad y Ambiente Laboral"),
+
+                // Comunicacion Multimedial
+                ("DISGRAF", "Comunicacion Multimedial"),
+                ("PRODAUD", "Comunicacion Multimedial"),
+                ("COMDIG", "Comunicacion Multimedial"),
+
+                // Administracion Contable
+                ("CONT1", "Administracion Contable"),
+                ("MATFIN", "Administracion Contable"),
+                ("DERCOM", "Administracion Contable"),
+                ("MAT", "Administracion Contable"),
+
+                // Administracion de PyMES
+                ("RRHH", "Administracion de PyMES"),
+                ("MKT", "Administracion de PyMES"),
+                ("FINCORP", "Administracion de PyMES"),
+                ("CONT1", "Administracion de PyMES"),
+                ("DERCOM", "Administracion de PyMES"),
+
+                // Ciencia de Datos e Inteligencia Artificial
+                ("ESTAP", "Ciencia de Datos e Inteligencia Artificial"),
+                ("ML", "Ciencia de Datos e Inteligencia Artificial"),
+                ("NOSQL", "Ciencia de Datos e Inteligencia Artificial"),
                 ("MAT", "Ciencia de Datos e Inteligencia Artificial"),
                 ("BDD", "Ciencia de Datos e Inteligencia Artificial"),
-                ("ADS", "Administracion de PyMES"),
-                ("MAT", "Administracion Contable"),
-                ("PROG1", "Comunicacion Multimedial")
+                ("PROG1", "Ciencia de Datos e Inteligencia Artificial")
             };
 
-            var existingSubjectCareerKeys = context.SubjectCareers
-                .Select(link => new { link.SubjectId, link.CareerId })
-                .ToHashSet();
-
-            foreach ((string subjectCode, string careerName) in subjectCareerSeeds)
+            foreach ((string subjectCode, string careerName) in subjectCareerSeeds
+                .GroupBy(seed => seed.SubjectCode)
+                .Select(group => group.First()))
             {
-                if (!subjects.TryGetValue(subjectCode, out int subjectId) ||
+                if (!subjects.TryGetValue(subjectCode, out Subject? subject) ||
                     !careers.TryGetValue(careerName, out int careerId))
                     continue;
 
-                var key = new { SubjectId = subjectId, CareerId = careerId };
-                if (existingSubjectCareerKeys.Contains(key))
-                    continue;
-
-                context.SubjectCareers.Add(new SubjectCareer
-                {
-                    SubjectId = subjectId,
-                    CareerId = careerId
-                });
+                subject.CareerId = careerId;
             }
 
             var userCareerSeeds = SeedUsers.SelectMany((user, index) =>
             {
-                string primaryCareer = SeedCareers[index % SeedCareers.Length];
+                string primaryCareer = SeedCareers[index % SeedCareers.Length].Name;
                 if (user.Id == StudentId)
                 {
                     return new[]

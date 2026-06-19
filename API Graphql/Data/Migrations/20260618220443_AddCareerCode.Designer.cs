@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneItb.Data;
 
@@ -11,9 +12,11 @@ using OneItb.Data;
 namespace Data.Migrations
 {
     [DbContext(typeof(OneItbContext))]
-    partial class OneItbContextModelSnapshot : ModelSnapshot
+    [Migration("20260618220443_AddCareerCode")]
+    partial class AddCareerCode
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -362,9 +365,6 @@ namespace Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CareerId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -396,12 +396,7 @@ namespace Data.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<int?>("Year")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("CareerId");
 
                     b.HasIndex("Code")
                         .IsUnique();
@@ -409,28 +404,22 @@ namespace Data.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Subjects", "dbo", t =>
-                        {
-                            t.HasCheckConstraint("CK_Subjects_Year", "[Year] IS NULL OR ([Year] BETWEEN 1 AND 6)");
-                        });
+                    b.ToTable("Subjects", "dbo");
                 });
 
-            modelBuilder.Entity("OneItb.Entities.Models.SubjectPrerequisite", b =>
+            modelBuilder.Entity("OneItb.Entities.Models.SubjectCareer", b =>
                 {
                     b.Property<int>("SubjectId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PrerequisiteId")
+                    b.Property<int>("CareerId")
                         .HasColumnType("int");
 
-                    b.HasKey("SubjectId", "PrerequisiteId");
+                    b.HasKey("SubjectId", "CareerId");
 
-                    b.HasIndex("PrerequisiteId");
+                    b.HasIndex("CareerId");
 
-                    b.ToTable("SubjectPrerequisites", "dbo", t =>
-                        {
-                            t.HasCheckConstraint("CK_SubjectPrerequisites_NoSelfReference", "[SubjectId] <> [PrerequisiteId]");
-                        });
+                    b.ToTable("SubjectCareers", "dbo");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.User", b =>
@@ -680,32 +669,21 @@ namespace Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("OneItb.Entities.Models.Subject", b =>
+            modelBuilder.Entity("OneItb.Entities.Models.SubjectCareer", b =>
                 {
                     b.HasOne("OneItb.Entities.Models.Career", "Career")
-                        .WithMany("Subjects")
+                        .WithMany("SubjectCareers")
                         .HasForeignKey("CareerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Career");
-                });
-
-            modelBuilder.Entity("OneItb.Entities.Models.SubjectPrerequisite", b =>
-                {
-                    b.HasOne("OneItb.Entities.Models.Subject", "Prerequisite")
-                        .WithMany()
-                        .HasForeignKey("PrerequisiteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("OneItb.Entities.Models.Subject", "Subject")
-                        .WithMany()
+                        .WithMany("SubjectCareers")
                         .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Prerequisite");
+                    b.Navigation("Career");
 
                     b.Navigation("Subject");
                 });
@@ -767,7 +745,7 @@ namespace Data.Migrations
 
             modelBuilder.Entity("OneItb.Entities.Models.Career", b =>
                 {
-                    b.Navigation("Subjects");
+                    b.Navigation("SubjectCareers");
 
                     b.Navigation("UserCareers");
                 });
@@ -789,6 +767,8 @@ namespace Data.Migrations
             modelBuilder.Entity("OneItb.Entities.Models.Subject", b =>
                 {
                     b.Navigation("Inquiries");
+
+                    b.Navigation("SubjectCareers");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.User", b =>

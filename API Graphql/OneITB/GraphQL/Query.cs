@@ -59,8 +59,7 @@ namespace GraphQL.GraphQL
             if (careerId.HasValue)
             {
                 int selectedCareerId = careerId.Value;
-                query = query.Where(subject =>
-                    subject.SubjectCareers.Any(link => link.CareerId == selectedCareerId));
+                query = query.Where(subject => subject.CareerId == selectedCareerId);
             }
 
             return query.OrderBy(subject => subject.Name);

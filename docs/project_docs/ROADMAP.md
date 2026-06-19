@@ -53,7 +53,7 @@ integrado con una interfaz reactiva, resolviendo fallos de UX previos.
 ## Modulo 6: Administración y Moderación - 100%
 
 - [x] Panel de Usuarios (Roles y Suspensión).
-- [x] Panel de Materias (CRUD completo y desactivación).
+- [x] Panel de Materias (CRUD, carrera obligatoria, anio, correlatividades y desactivacion).
 - [x] Panel de Moderación (Cambio de estado de reportes de comunidad).
 - [x] Unificación del diseño (Listas tabulares).
 

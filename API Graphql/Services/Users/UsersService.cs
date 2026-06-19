@@ -75,12 +75,36 @@ namespace Services.Users
             return new UpdateProfilePayload(user.Id, true, "Perfil actualizado exitosamente.");
         }
 
-        public async Task<UserPayload> UpdateUserRoleAsync(Guid userId, string newRole)
+        public async Task<UserPayload> UpdateUserRoleAsync(
+            Guid operatorUserId,
+            Guid userId,
+            string newRole,
+            string? adminPassword)
         {
             var user = _uow.Users.GetById(userId);
-            if (user == null) return new UserPayload(userId, false, "Usuario no encontrado.");
-            if (IsAdministrator(user)) return new UserPayload(user.Id, false, "Las cuentas administradoras no pueden cambiar de rol.");
-            if (!AllowedRoles.Contains(newRole)) return new UserPayload(user.Id, false, "Rol no permitido.");
+            if (user == null)
+                throw new InvalidOperationException("Usuario no encontrado.");
+            if (IsAdministrator(user))
+                throw new InvalidOperationException("No se puede modificar el rol de un Administrador desde el sistema.");
+            if (!AllowedRoles.Contains(newRole))
+                throw new InvalidOperationException("Rol no permitido.");
+
+            if (string.Equals(newRole, "Administrador", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(adminPassword))
+                    throw new InvalidOperationException("La contraseña del administrador es obligatoria.");
+
+                var operatorUser = _uow.Users.GetById(operatorUserId);
+                if (operatorUser == null ||
+                    !operatorUser.IsActive ||
+                    !IsAdministrator(operatorUser) ||
+                    operatorUser.Account == null)
+                    throw new InvalidOperationException("No se pudo validar al administrador autenticado.");
+
+                if (!BCrypt.Net.BCrypt.Verify(adminPassword, operatorUser.Account.PasswordHash))
+                    throw new InvalidOperationException("Contraseña de administrador incorrecta.");
+            }
+
             user.Role = newRole;
             await _uow.CompleteAsync();
             return new UserPayload(user.Id, true, "Rol actualizado exitosamente.");
@@ -89,8 +113,10 @@ namespace Services.Users
         public async Task<UserPayload> UpdateUserStatusAsync(Guid userId, bool isActive)
         {
             var user = _uow.Users.GetById(userId);
-            if (user == null) return new UserPayload(userId, false, "Usuario no encontrado.");
-            if (IsAdministrator(user)) return new UserPayload(user.Id, false, "Las cuentas administradoras no pueden suspenderse.");
+            if (user == null)
+                throw new InvalidOperationException("Usuario no encontrado.");
+            if (IsAdministrator(user))
+                throw new InvalidOperationException("No se puede desactivar la cuenta de un Administrador.");
             user.IsActive = isActive;
             await _uow.CompleteAsync();
             return new UserPayload(user.Id, true, "Estado actualizado exitosamente.");

@@ -63,15 +63,38 @@ namespace OneITB.GraphQL.Mutations
         }
 
         [Authorize(Roles = new[] { "Administrador" })]
-        public async Task<UserPayload> UpdateUserRole(Guid userId, string newRole, [Service] IUsersService usersService)
+        public async Task<UserPayload> UpdateUserRole(
+            Guid userId,
+            string newRole,
+            string? adminPassword,
+            [Service] IUsersService usersService,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
-            return await usersService.UpdateUserRoleAsync(userId, newRole);
+            try
+            {
+                return await usersService.UpdateUserRoleAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    userId,
+                    newRole,
+                    adminPassword);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
         }
 
         [Authorize(Roles = new[] { "Administrador" })]
         public async Task<UserPayload> UpdateUserStatus(Guid userId, bool isActive, [Service] IUsersService usersService)
         {
-            return await usersService.UpdateUserStatusAsync(userId, isActive);
+            try
+            {
+                return await usersService.UpdateUserStatusAsync(userId, isActive);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
         }
 
         [Authorize(Roles = new[] { "Administrador", "Moderador" })]
@@ -118,11 +141,39 @@ namespace OneITB.GraphQL.Mutations
 
         [Authorize(Roles = new[] { "Administrador" })]
         public async Task<Subject> AddSubject(
-            string code,
             string name,
+            string code,
+            int careerId,
+            int? year,
+            IReadOnlyList<int>? prerequisiteIds,
             [Service] OneItbContext context)
         {
-            var subject = new Subject { Code = code, Name = name, IsActive = true };
+            string normalizedCode = code.Trim().ToUpperInvariant();
+            string normalizedName = name.Trim();
+            ValidateSubjectYear(year);
+
+            if (await context.Subjects.AnyAsync(subject =>
+                subject.Code == normalizedCode || subject.Name == normalizedName))
+                throw new GraphQLException("Ya existe una materia con el mismo codigo o nombre.");
+
+            (Career career, List<Subject> prerequisites) = await LoadSubjectAcademicDataAsync(
+                context,
+                careerId,
+                year,
+                prerequisiteIds,
+                null);
+
+            var subject = new Subject
+            {
+                Code = normalizedCode,
+                Name = normalizedName,
+                CareerId = career.Id,
+                Career = career,
+                Year = year,
+                IsActive = true,
+                Prerequisites = prerequisites
+            };
+
             context.Subjects.Add(subject);
             await context.SaveChangesAsync();
             return subject;
@@ -131,14 +182,43 @@ namespace OneITB.GraphQL.Mutations
         [Authorize(Roles = new[] { "Administrador" })]
         public async Task<Subject> UpdateSubject(
             int id,
-            string code,
             string name,
+            string code,
+            int careerId,
+            int? year,
+            IReadOnlyList<int>? prerequisiteIds,
             [Service] OneItbContext context)
         {
-            var subject = await context.Subjects.FindAsync(id);
+            var subject = await context.Subjects
+                .Include(item => item.Career)
+                .Include(item => item.Prerequisites)
+                .SingleOrDefaultAsync(item => item.Id == id);
             if (subject == null) throw new GraphQLException("Materia no encontrada.");
-            subject.Code = code;
-            subject.Name = name;
+
+            string normalizedCode = code.Trim().ToUpperInvariant();
+            string normalizedName = name.Trim();
+            ValidateSubjectYear(year);
+
+            if (await context.Subjects.AnyAsync(item =>
+                item.Id != id && (item.Code == normalizedCode || item.Name == normalizedName)))
+                throw new GraphQLException("Ya existe otra materia con el mismo codigo o nombre.");
+
+            (Career career, List<Subject> prerequisites) = await LoadSubjectAcademicDataAsync(
+                context,
+                careerId,
+                year,
+                prerequisiteIds,
+                id);
+
+            subject.Code = normalizedCode;
+            subject.Name = normalizedName;
+            subject.CareerId = career.Id;
+            subject.Career = career;
+            subject.Year = year;
+            subject.Prerequisites.Clear();
+            foreach (Subject prerequisite in prerequisites)
+                subject.Prerequisites.Add(prerequisite);
+
             await context.SaveChangesAsync();
             return subject;
         }
@@ -427,6 +507,43 @@ namespace OneITB.GraphQL.Mutations
         {
             string? role = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
             return role is "Administrador" or "Moderador";
+        }
+
+        private static void ValidateSubjectYear(int? year)
+        {
+            if (year.HasValue && (year.Value < 1 || year.Value > 6))
+                throw new GraphQLException("El anio de cursada debe estar entre 1 y 6.");
+        }
+
+        private static async Task<(Career Career, List<Subject> Prerequisites)> LoadSubjectAcademicDataAsync(
+            OneItbContext context,
+            int careerId,
+            int? year,
+            IReadOnlyList<int>? prerequisiteIds,
+            int? subjectId)
+        {
+            ValidateSubjectYear(year);
+
+            Career career = await context.Careers
+                .SingleOrDefaultAsync(item => item.Id == careerId && item.IsActive)
+                ?? throw new GraphQLException("La carrera seleccionada no existe o esta inactiva.");
+
+            int[] normalizedIds = prerequisiteIds?
+                .Distinct()
+                .ToArray() ?? Array.Empty<int>();
+
+            if (subjectId.HasValue && normalizedIds.Contains(subjectId.Value))
+                throw new GraphQLException("Una materia no puede ser correlativa de si misma.");
+
+            List<Subject> prerequisites = await context.Subjects
+                .Where(item => normalizedIds.Contains(item.Id) && item.IsActive && item.CareerId == careerId)
+                .OrderBy(item => item.Name)
+                .ToListAsync();
+
+            if (prerequisites.Count != normalizedIds.Length)
+                throw new GraphQLException("Todas las correlativas deben existir, estar activas y pertenecer a la carrera seleccionada.");
+
+            return (career, prerequisites);
         }
     }
 }

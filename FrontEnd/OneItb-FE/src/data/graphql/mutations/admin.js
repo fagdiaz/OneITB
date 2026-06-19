@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const UPDATE_USER_ROLE = gql`
-  mutation UpdateUserRole($userId: UUID!, $newRole: String!) {
-    updateUserRole(userId: $userId, newRole: $newRole) {
+  mutation UpdateUserRole($userId: UUID!, $newRole: String!, $adminPassword: String) {
+    updateUserRole(userId: $userId, newRole: $newRole, adminPassword: $adminPassword) {
       id
       success
       message

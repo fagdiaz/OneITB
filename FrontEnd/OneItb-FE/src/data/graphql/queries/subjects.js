@@ -6,7 +6,19 @@ export const GET_SUBJECTS = gql`
       id
       name
       code
+      year
       isActive
+      career {
+        id
+        name
+        code
+      }
+      prerequisites {
+        id
+        name
+        code
+        year
+      }
     }
   }
 `;
