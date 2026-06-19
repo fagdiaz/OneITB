@@ -16,7 +16,7 @@ namespace OneItb.Data
         private static readonly DateTime SeedStart =
             DateTime.SpecifyKind(new DateTime(2026, 6, 1, 9, 0, 0), DateTimeKind.Utc);
 
-        private static readonly SeedUser[] SeedUsers =
+        private static readonly List<SeedUser> SeedUsers = new()
         {
             new(AdminId, "admin@itbeltran.com.ar", "Sofia", "Martinez", "Administrador", "Administracion academica y tecnologica."),
             new(StudentId, "student@itbeltran.com.ar", "Lucia", "Fernandez", "Estudiante", "Estudiante de Analisis de Sistemas."),
@@ -29,6 +29,25 @@ namespace OneItb.Data
             new(Guid.Parse("9e0f1a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b"), "diego.molina@itbeltran.com.ar", "Diego", "Molina", "Estudiante", "Estudiante interesado en calidad de software."),
             new(Guid.Parse("0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c"), "julieta.castro@itbeltran.com.ar", "Julieta", "Castro", "Estudiante", "Estudiante de primer anio y ayudante de estudio.")
         };
+
+        static DbInitializer()
+        {
+            // Mega-Seed: Generate 40 additional test users
+            for (int i = 1; i <= 40; i++)
+            {
+                var bytes = new byte[16];
+                new Random(i).NextBytes(bytes);
+                var id = new Guid(bytes);
+                SeedUsers.Add(new SeedUser(
+                    id, 
+                    $"user{i}@itbeltran.com.ar", 
+                    $"Usuario", 
+                    $"Prueba {i}", 
+                    "Estudiante", 
+                    $"Mega-Seed account #{i} for load testing."
+                ));
+            }
+        }
 
         private static readonly SeedSubject[] SeedSubjects =
         {
@@ -350,7 +369,7 @@ namespace OneItb.Data
                 .Select(inquiry => inquiry.Id)
                 .ToHashSet();
 
-            for (int userIndex = 0; userIndex < SeedUsers.Length; userIndex++)
+            for (int userIndex = 0; userIndex < SeedUsers.Count; userIndex++)
             {
                 for (int topicIndex = 0; topicIndex < InquiryTopics.Length; topicIndex++)
                 {
@@ -395,7 +414,7 @@ namespace OneItb.Data
             {
                 for (int offset = 1; offset <= 3; offset++)
                 {
-                    Guid userId = SeedUsers[(inquiryIndex + offset) % SeedUsers.Length].Id;
+                    Guid userId = SeedUsers[(inquiryIndex + offset) % SeedUsers.Count].Id;
                     var key = new { InquiryId = inquiries[inquiryIndex].Id, UserId = userId };
                     if (existingReactionKeys.Contains(key))
                         continue;
@@ -422,7 +441,7 @@ namespace OneItb.Data
                     {
                         Id = parentId,
                         InquiryId = inquiries[inquiryIndex].Id,
-                        UserId = SeedUsers[(inquiryIndex + 2) % SeedUsers.Length].Id,
+                        UserId = SeedUsers[(inquiryIndex + 2) % SeedUsers.Count].Id,
                         Content = "Me sumo a la consulta. Puedo compartir mis apuntes y una guia de ejercicios.",
                         CreatedAt = inquiries[inquiryIndex].PublishDate.AddMinutes(15)
                     });
@@ -438,7 +457,7 @@ namespace OneItb.Data
                     {
                         Id = replyId,
                         InquiryId = inquiries[inquiryIndex].Id,
-                        UserId = SeedUsers[(inquiryIndex + 4) % SeedUsers.Length].Id,
+                        UserId = SeedUsers[(inquiryIndex + 4) % SeedUsers.Count].Id,
                         ParentCommentId = parentId,
                         Content = "Gracias. Organicemos el material por tema y coordinemos un horario.",
                         CreatedAt = inquiries[inquiryIndex].PublishDate.AddMinutes(28),
