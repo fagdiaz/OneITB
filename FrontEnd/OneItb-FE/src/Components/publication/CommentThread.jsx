@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MediaAttachment } from './MediaAttachment';
+import MediaComponent from './MediaComponent';
 import { UPLOAD_ACCEPT } from '../../utils/uploadFile';
 
 const buildCommentTree = (comments) => {
@@ -174,9 +174,7 @@ const CommentNode = ({
           <p className="mt-1 text-sm leading-relaxed text-slate-600">{comment.content}</p>
         )}
 
-        {comment.fileUrl && (
-          <div className="mt-2"><MediaAttachment fileUrl={comment.fileUrl} compact /></div>
-        )}
+        <MediaComponent textContext={comment.content} fileUrl={comment.fileUrl} />
 
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={() => setIsReplying((current) => !current)} className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700">

@@ -5,6 +5,23 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-19] - Link Preview via Open Graph (Spec: 123-link-preview)
+
+* **Objetivo**: Implementar previsualizacion automatica de enlaces en tiempo real al redactar publicaciones y unificar el renderizado de medios.
+* **Resultado**:
+  - Backend: `MetadataController` expone un endpoint REST para extraer etiquetas Open Graph de URLs de manera segura, evadiendo problemas de CORS.
+  - Frontend: `Feed.jsx` incorpora un `useEffect` para detectar URLs mientras se redacta, y `MediaComponent.jsx` unifica la logica de renderizado de videos (YouTube), imagenes, documentos y tarjetas de vista previa (Link Previews).
+* **Validaciones ejecutadas**:
+  - Backend Release y frontend Vite: compilacion exitosa con 0 errores.
+  - Modificacion estatica para reemplazar componentes legacy.
+* **Runtime**: bloqueado por el inicio local de base de datos cifrada y permisos de Windows Event Log.
+* **Evidencia**: `specs/123-link-preview/evidence.md`.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Controllers/MetadataController.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/CommentThread.jsx`
+
 ## [2026-06-19] - Rich Media and Comment Files (Spec: 122-rich-media-comment-files)
 
 * **Objetivo**: enriquecer el muro con imagenes inline, videos de YouTube, tarjetas de documentos y adjuntos persistentes en comentarios y respuestas.

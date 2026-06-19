@@ -2,7 +2,7 @@
 
 **Ultima revision**: 2026-06-19
 
-**Estado global**: 69% (52 de 75 items)
+**Estado global**: 70% (53 de 76 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -47,7 +47,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Selectores en cascada carrera-materia en feed y administracion.
 - [ ] [P] Progreso academico, cursadas y notas por usuario.
 
-## Modulo 4 - Feed, comentarios y multimedia: 75% (12/16)
+## Modulo 4 - Feed, comentarios y multimedia: 76% (13/17)
 
 - [x] [V] `Inquiry` vinculada a autor y materia sin N+1.
 - [x] [V] Creacion, lectura, refetch y persistencia de publicaciones.
@@ -61,6 +61,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Upload desacoplado y `Inquiry.FileUrl`.
 - [x] [I] Adjuntos persistentes en comentarios y respuestas.
 - [x] [I] Imagenes inline, tarjetas de documentos y YouTube seguro.
+- [x] [I] Previsualizacion de enlaces via Open Graph en drafting y renderizado.
 - [ ] [B] Regresion end-to-end de uploads/rich media con backend local disponible.
 - [ ] [P] Limpieza de archivos huerfanos cuando GraphQL falla tras el upload.
 - [ ] [P] Paginacion o scroll incremental del feed.

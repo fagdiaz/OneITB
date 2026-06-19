@@ -4,8 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { ReportModal } from '../moderation/ReportModal';
 import { CommentThread } from './CommentThread';
-import { MediaAttachment, YouTubeEmbed } from './MediaAttachment';
-import { parseYouTubeContent } from '../../utils/mediaParser';
+import MediaComponent from './MediaComponent';
 import { UPLOAD_ACCEPT, uploadAttachment } from '../../utils/uploadFile';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
@@ -73,6 +72,27 @@ export const Feed = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingComment, setIsUploadingComment] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
+  const [linkPreviewData, setLinkPreviewData] = useState(null);
+
+  useEffect(() => {
+    const urlRegex = /(https?:\/\/[^\s]+)/;
+    const match = content.match(urlRegex);
+    if (match) {
+      const url = match[0];
+      if (!url.includes('youtube.com') && !url.includes('youtu.be') && (!linkPreviewData || linkPreviewData.originalUrl !== url)) {
+        fetch(`/api/metadata?url=${encodeURIComponent(url)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.success) setLinkPreviewData(data);
+          })
+          .catch(() => {});
+      }
+    } else {
+      setLinkPreviewData(null);
+    }
+  }, [content, linkPreviewData, token]);
 
   const publicationCareerId = selectedCareer ? Number(selectedCareer) : null;
   const searchTermParam = searchParams.get('q');
@@ -172,6 +192,7 @@ export const Feed = () => {
       setSelectedCareer('');
       setSelectedSubject('');
       setSelectedFile(null);
+      setLinkPreviewData(null);
       showFeedback('success', 'La publicacion se creo correctamente.');
     } catch (error) {
       showFeedback('error', error.message);
@@ -345,6 +366,11 @@ export const Feed = () => {
           )}
           <span className="text-xs text-slate-400">Maximo 15 MB</span>
         </div>
+        {linkPreviewData && (
+          <div className="-mt-1 mb-2">
+            <MediaComponent previewData={linkPreviewData} />
+          </div>
+        )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {mustSelectCareerForPost && (
             <select
@@ -396,7 +422,6 @@ export const Feed = () => {
         const threadOpen = Boolean(openThreads[post.id]);
         const roleStyle = getRoleStyle(post.user?.role);
         const isAdminPost = post.user?.role === 'Administrador';
-        const parsedContent = parseYouTubeContent(post.content);
 
         return (
           <article key={post.id} className={`flex flex-col gap-3 rounded-xl border p-4 shadow-sm ${
@@ -478,15 +503,14 @@ export const Feed = () => {
               ) : (
                 <>
                   <h2 className={`font-semibold ${isAdminPost ? 'text-blue-950' : 'text-slate-800'}`}>{post.title}</h2>
-                  {parsedContent.text && (
+                  {post.content && (
                     <p className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed ${isAdminPost ? 'text-blue-900' : 'text-slate-700'}`}>
-                      {parsedContent.text}
+                      {post.content}
                     </p>
                   )}
                 </>
               )}
-              {parsedContent.videoId && <div className="mt-3"><YouTubeEmbed videoId={parsedContent.videoId} /></div>}
-              {post.fileUrl && <div className="mt-3"><MediaAttachment fileUrl={post.fileUrl} /></div>}
+              <MediaComponent textContext={post.content} fileUrl={post.fileUrl} />
             </div>
 
             <div className="flex items-center gap-4 border-t border-slate-100 pt-3">
