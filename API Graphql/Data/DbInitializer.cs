@@ -187,19 +187,27 @@ namespace OneItb.Data
 
         private static void SeedCareerData(OneItbContext context)
         {
-            var existingCodes = context.Careers
-                .Where(career => SeedCareers.Select(seed => seed.Code).Contains(career.Code))
-                .Select(career => career.Code)
-                .ToHashSet();
+            var existingCareers = context.Careers
+                .Where(c => SeedCareers.Select(s => s.Name).Contains(c.Name))
+                .ToList();
 
-            foreach (var career in SeedCareers.Where(career => !existingCodes.Contains(career.Code)))
+            foreach (var seed in SeedCareers)
             {
-                context.Careers.Add(new Career
+                var existing = existingCareers.FirstOrDefault(c => c.Name == seed.Name);
+                if (existing != null)
                 {
-                    Name = career.Name,
-                    Code = career.Code,
-                    IsActive = true
-                });
+                    if (existing.Code != seed.Code)
+                        existing.Code = seed.Code;
+                }
+                else
+                {
+                    context.Careers.Add(new Career
+                    {
+                        Name = seed.Name,
+                        Code = seed.Code,
+                        IsActive = true
+                    });
+                }
             }
 
             context.SaveChanges();
@@ -215,19 +223,27 @@ namespace OneItb.Data
             if (fallbackCareerId == 0)
                 throw new InvalidOperationException("No careers are available for subject seeding.");
 
-            var existingCodes = context.Subjects
-                .Where(subject => SeedSubjects.Select(seed => seed.Code).Contains(subject.Code))
-                .Select(subject => subject.Code)
-                .ToHashSet();
+            var existingSubjects = context.Subjects
+                .Where(s => SeedSubjects.Select(seed => seed.Name).Contains(s.Name))
+                .ToList();
 
-            foreach (var subject in SeedSubjects.Where(subject => !existingCodes.Contains(subject.Code)))
+            foreach (var seed in SeedSubjects)
             {
-                context.Subjects.Add(new Subject
+                var existing = existingSubjects.FirstOrDefault(s => s.Name == seed.Name);
+                if (existing != null)
                 {
-                    Name = subject.Name,
-                    Code = subject.Code,
-                    CareerId = fallbackCareerId
-                });
+                    if (existing.Code != seed.Code)
+                        existing.Code = seed.Code;
+                }
+                else
+                {
+                    context.Subjects.Add(new Subject
+                    {
+                        Name = seed.Name,
+                        Code = seed.Code,
+                        CareerId = fallbackCareerId
+                    });
+                }
             }
 
             context.SaveChanges();
