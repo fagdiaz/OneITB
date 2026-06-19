@@ -31,7 +31,7 @@ namespace OneItb.Entities.Models
             }
         }
 
-        public string? AttachedFileUrl { get; set; }
+        public string? FileUrl { get; set; }
         public DateTime PublishDate { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;

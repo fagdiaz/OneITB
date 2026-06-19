@@ -10,6 +10,7 @@ namespace OneItb.Entities.Models
         public Guid UserId { get; set; }
         public Guid? ParentCommentId { get; set; }
         public string Content { get; set; } = string.Empty;
+        public string? FileUrl { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;

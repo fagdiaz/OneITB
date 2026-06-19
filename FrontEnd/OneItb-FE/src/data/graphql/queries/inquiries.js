@@ -6,7 +6,7 @@ export const GET_INQUIRIES = gql`
       id
       title
       content
-      attachedFileUrl
+      fileUrl
       publishDate
       isActive
       reportCount
@@ -35,6 +35,7 @@ export const GET_INQUIRIES = gql`
         userId
         parentCommentId
         content
+        fileUrl
         createdAt
         isActive
         reportCount

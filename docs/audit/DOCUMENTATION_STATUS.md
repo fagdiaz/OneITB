@@ -1,6 +1,6 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-18
+**Ultima verificacion**: 2026-06-19
 
 ## Documentos canonicos
 
@@ -19,6 +19,8 @@
 | `specs/107-chat-ux-refinement/` | Refinamiento de estado, cache y UX de chat | Completa y verificada |
 | `specs/118-end-to-end-subjects-module/` | Gestion academica de materias, carreras y correlatividades | Implementada; build y migracion verificados, runtime bloqueado por entorno |
 | `specs/119-superadmin-security/` | Proteccion de administradores y confirmacion reforzada de promociones | Implementada; builds verificados, runtime bloqueado por entorno |
+| `specs/121-file-upload-inquiries/` | Carga desacoplada de adjuntos educativos en publicaciones | Implementada; migracion y builds verificados, runtime backend bloqueado por entorno |
+| `specs/122-rich-media-comment-files/` | Rich media y adjuntos persistentes en comentarios | Implementada; migracion, builds y parser verificados, runtime backend bloqueado por entorno |
 
 ## Snapshots historicos
 
@@ -42,7 +44,12 @@ como fuente unica del estado actual:
 - JWT valida vigencia y CORS queda restringido a los origenes configurados.
 - La mensajeria privada persiste historial, autentica HTTP/WebSocket y entrega
   eventos aislados por usuario; el pub/sub actual es para una sola instancia.
-- Archivos educativos y recursos academicos siguen fuera del alcance completado.
+- La carga desacoplada de archivos educativos esta implementada con limite de
+  15 MB, URL persistida y archivos estaticos. Publicaciones y comentarios
+  comparten el flujo; imagenes, documentos y YouTube tienen representacion
+  enriquecida. Falta repetir el flujo autenticado end-to-end cuando el backend
+  local pueda iniciar.
+- Recursos academicos siguen fuera del alcance completado.
 - El arbol npm reporta vulnerabilidades heredadas que requieren una actualizacion
   de dependencias separada y controlada.
 

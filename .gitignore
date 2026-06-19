@@ -93,6 +93,10 @@ TestResults/
 *.coverage
 *.coverlet
 
+# Runtime uploads
+API Graphql/OneITB/wwwroot/uploads/*
+!API Graphql/OneITB/wwwroot/uploads/.gitkeep
+
 # ------------------------------------------
 # 4. Node / React / Frontend Specifics
 # ------------------------------------------

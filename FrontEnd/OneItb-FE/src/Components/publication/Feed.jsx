@@ -4,6 +4,9 @@ import { Link, useSearchParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { ReportModal } from '../moderation/ReportModal';
 import { CommentThread } from './CommentThread';
+import { MediaAttachment, YouTubeEmbed } from './MediaAttachment';
+import { parseYouTubeContent } from '../../utils/mediaParser';
+import { UPLOAD_ACCEPT, uploadAttachment } from '../../utils/uploadFile';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
@@ -56,7 +59,7 @@ const ParticipationBadges = ({ user }) => {
 };
 
 export const Feed = () => {
-  const { auth } = useAuth();
+  const { auth, token } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedCareer, setSelectedCareer] = useState('');
@@ -68,6 +71,7 @@ export const Feed = () => {
   const [feedback, setFeedback] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingComment, setIsUploadingComment] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
 
   const publicationCareerId = selectedCareer ? Number(selectedCareer) : null;
@@ -140,31 +144,17 @@ export const Feed = () => {
     event.preventDefault();
     if (!title.trim() || !content.trim() || !selectedSubject) return;
 
-    let attachedFileUrl = null;
+    let fileUrl = null;
     if (selectedFile) {
       setIsUploading(true);
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
       try {
-        const baseUrl = (import.meta.env.VITE_GRAPHQL_URL || 'https://localhost:44397/graphql').replace('/graphql', '');
-        const uploadResponse = await fetch(`${baseUrl}/api/files/upload`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-
-        if (!uploadResponse.ok) throw new Error('Error al subir el archivo.');
-        const data = await uploadResponse.json();
-        attachedFileUrl = data.url;
+        fileUrl = await uploadAttachment(selectedFile, token);
       } catch (error) {
         showFeedback('error', error.message);
-        setIsUploading(false);
         return;
+      } finally {
+        setIsUploading(false);
       }
-      setIsUploading(false);
     }
 
     try {
@@ -173,7 +163,7 @@ export const Feed = () => {
           subjectId: Number(selectedSubject),
           title: title.trim(),
           content: content.trim(),
-          attachedFileUrl,
+          fileUrl,
         },
       });
       await refetch();
@@ -197,13 +187,20 @@ export const Feed = () => {
     }
   };
 
-  const handleComment = async (inquiryId, parentCommentId, commentContent) => {
+  const handleComment = async (inquiryId, parentCommentId, commentContent, selectedCommentFile = null) => {
+    let fileUrl = null;
     try {
+      if (selectedCommentFile) {
+        setIsUploadingComment(true);
+        fileUrl = await uploadAttachment(selectedCommentFile, token);
+      }
+
       await addComment({
         variables: {
           inquiryId,
           parentCommentId,
           content: commentContent.trim(),
+          fileUrl,
         },
       });
       await refetch();
@@ -211,6 +208,8 @@ export const Feed = () => {
     } catch (error) {
       showFeedback('error', error.message);
       throw error;
+    } finally {
+      setIsUploadingComment(false);
     }
   };
 
@@ -316,12 +315,35 @@ export const Feed = () => {
           onChange={(event) => setContent(event.target.value)}
           className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
+            id="file-upload"
             type="file"
-            onChange={(event) => setSelectedFile(event.target.files[0])}
-            className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+            accept={UPLOAD_ACCEPT}
+            onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+            className="hidden"
           />
+          <label
+            htmlFor="file-upload"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+          >
+            <i className="fa-solid fa-paperclip" />
+            Adjuntar archivo
+          </label>
+          {selectedFile && (
+            <div className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-600">
+              <span className="max-w-64 truncate">{selectedFile.name}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedFile(null)}
+                aria-label="Quitar archivo adjunto"
+                className="text-slate-400 hover:text-red-600"
+              >
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+          )}
+          <span className="text-xs text-slate-400">Maximo 15 MB</span>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {mustSelectCareerForPost && (
@@ -355,7 +377,7 @@ export const Feed = () => {
             disabled={isPublishing || isUploading || !title.trim() || !content.trim() || !selectedSubject}
             className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {isPublishing || isUploading ? 'Publicando...' : 'Publicar'}
+            {isUploading ? 'Subiendo...' : isPublishing ? 'Publicando...' : 'Publicar'}
           </button>
         </div>
       </form>
@@ -374,6 +396,7 @@ export const Feed = () => {
         const threadOpen = Boolean(openThreads[post.id]);
         const roleStyle = getRoleStyle(post.user?.role);
         const isAdminPost = post.user?.role === 'Administrador';
+        const parsedContent = parseYouTubeContent(post.content);
 
         return (
           <article key={post.id} className={`flex flex-col gap-3 rounded-xl border p-4 shadow-sm ${
@@ -455,22 +478,15 @@ export const Feed = () => {
               ) : (
                 <>
                   <h2 className={`font-semibold ${isAdminPost ? 'text-blue-950' : 'text-slate-800'}`}>{post.title}</h2>
-                  <p className={`mt-1 text-sm leading-relaxed ${isAdminPost ? 'text-blue-900' : 'text-slate-700'}`}>{post.content}</p>
+                  {parsedContent.text && (
+                    <p className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed ${isAdminPost ? 'text-blue-900' : 'text-slate-700'}`}>
+                      {parsedContent.text}
+                    </p>
+                  )}
                 </>
               )}
-              {post.attachedFileUrl && (
-                <div className="mt-3">
-                  <a
-                    href={(import.meta.env.VITE_GRAPHQL_URL || 'https://localhost:44397/graphql').replace('/graphql', '') + `/api/files/preview/${post.attachedFileUrl.split('/').pop()}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100"
-                  >
-                    <i className="fa-solid fa-paperclip" />
-                    Ver archivo adjunto
-                  </a>
-                </div>
-              )}
+              {parsedContent.videoId && <div className="mt-3"><YouTubeEmbed videoId={parsedContent.videoId} /></div>}
+              {post.fileUrl && <div className="mt-3"><MediaAttachment fileUrl={post.fileUrl} /></div>}
             </div>
 
             <div className="flex items-center gap-4 border-t border-slate-100 pt-3">
@@ -514,9 +530,9 @@ export const Feed = () => {
             {threadOpen && (
               <CommentThread
                 comments={post.comments}
-                submitting={isCommenting}
-                onComment={(parentCommentId, commentContent) =>
-                  handleComment(post.id, parentCommentId, commentContent)
+                submitting={isCommenting || isUploadingComment}
+                onComment={(parentCommentId, commentContent, commentFile) =>
+                  handleComment(post.id, parentCommentId, commentContent, commentFile)
                 }
                 onReport={() => setReportTargetId(post.id)}
                 auth={auth}

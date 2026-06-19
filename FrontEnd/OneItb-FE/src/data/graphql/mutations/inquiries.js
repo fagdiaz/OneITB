@@ -1,25 +1,26 @@
 import { gql } from '@apollo/client';
 
 export const CREATE_INQUIRY = gql`
-  mutation CreateInquiry($subjectId: Int!, $title: String!, $content: String!, $attachedFileUrl: String) {
-    addInquiry(subjectId: $subjectId, title: $title, content: $content, attachedFileUrl: $attachedFileUrl) {
+  mutation CreateInquiry($subjectId: Int!, $title: String!, $content: String!, $fileUrl: String) {
+    addInquiry(subjectId: $subjectId, title: $title, content: $content, fileUrl: $fileUrl) {
       id
       title
       content
-      attachedFileUrl
+      fileUrl
       publishDate
     }
   }
 `;
 
 export const ADD_COMMENT = gql`
-  mutation AddComment($inquiryId: UUID!, $content: String!, $parentCommentId: UUID) {
-    addComment(inquiryId: $inquiryId, content: $content, parentCommentId: $parentCommentId) {
+  mutation AddComment($inquiryId: UUID!, $content: String!, $parentCommentId: UUID, $fileUrl: String) {
+    addComment(inquiryId: $inquiryId, content: $content, parentCommentId: $parentCommentId, fileUrl: $fileUrl) {
       id
       inquiryId
       userId
       parentCommentId
       content
+      fileUrl
       createdAt
     }
   }

@@ -1,8 +1,8 @@
 # Roadmap funcional - OneITB23
 
-## Estado global: 83%
+## Estado global: 88%
 
-Calculo: 20 tareas completadas de 24 tareas totales. El porcentaje se deriva
+Calculo: 21 tareas completadas de 24 tareas totales. El porcentaje se deriva
 exclusivamente de los checklists de este archivo.
 
 ## Modulo 1: Autenticacion y cuentas - 100%
@@ -20,17 +20,20 @@ exclusivamente de los checklists de este archivo.
 - [x] Datos de carrera/cursada implementados.
 - [x] Interfaz de perfil integrada.
 
-## Modulo 3: Publicaciones y comentarios - 80%
+## Modulo 3: Publicaciones y comentarios - 100%
 
 - [x] Entidades `Subject` e `Inquiry`.
 - [x] Estructura de comentarios existente.
 - [x] Creacion y lectura de publicaciones verificadas end-to-end.
-- [ ] Archivos educativos.
+- [x] Archivos educativos.
 - [x] Reacciones verificadas end-to-end.
 
-Estado tecnico: el feed permite publicar, reaccionar, comentar, responder y
-reportar. El seed administrado aporta 5 materias, 10 usuarios, 30 publicaciones,
-90 reacciones, 45 comentarios y 2 reportes sin duplicarse al reiniciar.
+Estado tecnico: el feed permite publicar, reaccionar, comentar, responder,
+reportar y adjuntar archivos educativos mediante una carga REST desacoplada y
+URLs persistidas en publicaciones y comentarios. La UI clasifica imagenes,
+PDF, presentaciones y documentos, y reconoce enlaces seguros de YouTube. El
+seed administrado aporta 5 materias, 10 usuarios, 30 publicaciones, 90
+reacciones, 45 comentarios y 2 reportes sin duplicarse al reiniciar.
 
 ## Modulo 4: Mensajeria privada - 100%
 
@@ -59,6 +62,6 @@ integrado con una interfaz reactiva, resolviendo fallos de UX previos.
 
 ## Prioridad vigente
 
-Completar archivos educativos del Modulo 3 antes de ampliar Recursos y
-seguimiento. Para escalar Mensajeria a multiples instancias se debe reemplazar
+Avanzar sobre Recursos y seguimiento. Para escalar Mensajeria a multiples
+instancias se debe reemplazar
 el pub/sub en memoria por un transporte distribuido.

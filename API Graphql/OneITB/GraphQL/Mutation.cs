@@ -240,7 +240,7 @@ namespace OneITB.GraphQL.Mutations
             int subjectId,
             string title,
             string content,
-            string? attachedFileUrl,
+            string? fileUrl,
             [Service] ISocialService socialService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -249,7 +249,7 @@ namespace OneITB.GraphQL.Mutations
                 subjectId,
                 title,
                 content,
-                attachedFileUrl);
+                fileUrl);
         }
 
         [Authorize]
@@ -257,6 +257,7 @@ namespace OneITB.GraphQL.Mutations
             Guid inquiryId,
             string content,
             Guid? parentCommentId,
+            string? fileUrl,
             [Service] ISocialService socialService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -264,7 +265,8 @@ namespace OneITB.GraphQL.Mutations
                 GetAuthenticatedUserId(httpContextAccessor),
                 inquiryId,
                 content,
-                parentCommentId);
+                parentCommentId,
+                fileUrl);
         }
 
         [Authorize]

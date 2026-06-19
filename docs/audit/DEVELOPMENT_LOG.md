@@ -5,6 +5,55 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-19] - Rich Media and Comment Files (Spec: 122-rich-media-comment-files)
+
+* **Objetivo**: enriquecer el muro con imagenes inline, videos de YouTube, tarjetas de documentos y adjuntos persistentes en comentarios y respuestas.
+* **Resultado**:
+  - Backend: `Comment.FileUrl` se agrego como columna nullable de 500 caracteres y `addComment` acepta el argumento opcional sin romper clientes existentes.
+  - Upload: la allowlist incorpora GIF y WebP y conserva JWT y limite de 15 MB.
+  - Rich media: un parser restringido a hosts oficiales de YouTube extrae el primer video valido sin inyectar HTML de usuario.
+  - UI: imagenes, PDF, presentaciones y documentos usan un componente compartido; comentarios y respuestas muestran versiones compactas.
+  - Estado: las cargas de comentarios preservan el draft ante errores y bloquean envios duplicados.
+* **Validaciones ejecutadas**:
+  - Backend Release y frontend Vite: compilacion exitosa con 0 errores.
+  - Migracion aplicada y modelo EF sin cambios pendientes.
+  - Parser: 12 casos de YouTube, hosts invalidos, extensiones y nombres aprobados.
+  - Navegador: control de adjuntos y formatos GIF/WebP inspeccionados.
+* **Runtime**: GraphQL, carga autenticada y persistencia tras recarga bloqueados por cifrado SQL Server y permisos de Windows Event Log durante el arranque local.
+* **Evidencia**: `specs/122-rich-media-comment-files/evidence.md`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Comment.cs`
+  - `API Graphql/Data/Migrations/20260619200051_AddFileUrlToComment.cs`
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `FrontEnd/OneItb-FE/src/utils/mediaParser.js`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaAttachment.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/CommentThread.jsx`
+
+## [2026-06-19] - File Upload Inquiries (Spec: 121-file-upload-inquiries)
+
+* **Objetivo**: completar CU-07 con una carga REST desacoplada, persistir la URL del adjunto en la publicacion y ofrecer el archivo desde el muro.
+* **Resultado**:
+  - Persistencia: `AttachedFileUrl` se normalizo a `FileUrl` mediante una migracion de renombrado que conserva los valores existentes.
+  - Backend: `POST /api/upload` exige JWT, limita archivos a 15 MB, valida extensiones educativas y almacena nombres GUID bajo `wwwroot/uploads`.
+  - GraphQL: `addInquiry` acepta `fileUrl` opcional y valida que sea una ruta interna de uploads.
+  - Frontend: el feed incorpora selector oculto, nombre del archivo, estados `Subiendo...`/`Publicando...`, bloqueo de doble envio y enlace estatico al adjunto.
+* **Validaciones ejecutadas**:
+  - Backend Release y frontend Vite: compilacion exitosa con 0 errores.
+  - Migracion aplicada y `has-pending-model-changes` sin cambios pendientes.
+  - Navegador: renderizado del control, formatos y limite de 15 MB verificados.
+* **Runtime**: carga autenticada y GraphQL en vivo bloqueados porque el backend local no llego a escuchar durante el arranque; no se declaran verificados.
+* **Evidencia**: `specs/121-file-upload-inquiries/evidence.md`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Inquiry.cs`
+  - `API Graphql/OneITB/Controllers/UploadController.cs`
+  - `API Graphql/Data/Migrations/20260619041019_AddFileUrlToInquiry.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/inquiries.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/mutations/inquiries.js`
+
 ## [2026-06-18] - Superadmin Security (Spec: 119-superadmin-security)
 
 * **Objetivo**: proteger cuentas administradoras existentes y exigir revalidacion de contraseña antes de promover otro usuario a Administrador.

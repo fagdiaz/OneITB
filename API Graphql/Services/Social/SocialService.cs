@@ -73,11 +73,13 @@ namespace Services.Social
                 .ThenByDescending(inquiry => inquiry.PublishDate);
         }
 
-        public async Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content, string? attachedFileUrl = null)
+        public async Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content, string? fileUrl = null)
         {
             await EnsureUserCanCreateContentAsync(userId, "publicar");
             string normalizedTitle = RequireText(title, 200, "El título");
             string normalizedContent = RequireText(content, 10000, "El contenido");
+
+            string? normalizedFileUrl = NormalizeFileUrl(fileUrl);
 
             if (!await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive))
                 throw new InvalidOperationException("El usuario autenticado no está disponible.");
@@ -92,7 +94,7 @@ namespace Services.Social
                 SubjectId = subjectId,
                 Title = normalizedTitle,
                 Content = normalizedContent,
-                AttachedFileUrl = attachedFileUrl,
+                FileUrl = normalizedFileUrl,
                 PublishDate = DateTime.UtcNow,
                 IsActive = true
             };
@@ -100,6 +102,22 @@ namespace Services.Social
             _context.Inquiries.Add(inquiry);
             await _context.SaveChangesAsync();
             return inquiry;
+        }
+
+        private static string? NormalizeFileUrl(string? fileUrl)
+        {
+            if (string.IsNullOrWhiteSpace(fileUrl))
+                return null;
+
+            string normalized = fileUrl.Trim();
+            if (normalized.Length > 500 ||
+                !normalized.StartsWith("/uploads/", StringComparison.Ordinal) ||
+                normalized.Contains("..", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("La URL del archivo adjunto no es valida.");
+            }
+
+            return normalized;
         }
 
         public async Task<Inquiry> EditInquiryAsync(Guid userId, bool canModerate, Guid inquiryId, string newTitle, string newContent)
@@ -167,10 +185,11 @@ namespace Services.Social
             return comment;
         }
 
-        public async Task<Comment> AddCommentAsync(Guid userId, Guid inquiryId, string content, Guid? parentCommentId)
+        public async Task<Comment> AddCommentAsync(Guid userId, Guid inquiryId, string content, Guid? parentCommentId, string? fileUrl = null)
         {
             await EnsureUserCanCreateContentAsync(userId, "comentar");
             string normalizedContent = RequireText(content, 1000, "El comentario");
+            string? normalizedFileUrl = NormalizeFileUrl(fileUrl);
 
             if (!await _context.Inquiries.AnyAsync(inquiry => inquiry.Id == inquiryId))
                 throw new InvalidOperationException("La publicación no existe.");
@@ -199,6 +218,7 @@ namespace Services.Social
                 UserId = userId,
                 ParentCommentId = parentCommentId,
                 Content = normalizedContent,
+                FileUrl = normalizedFileUrl,
                 CreatedAt = DateTime.UtcNow
             };
 

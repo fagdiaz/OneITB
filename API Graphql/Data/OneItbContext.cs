@@ -256,7 +256,7 @@ namespace OneItb.Data
                     .IsRequired()
                     .HasDefaultValue(true);
 
-                entity.Property(e => e.AttachedFileUrl)
+                entity.Property(e => e.FileUrl)
                     .HasMaxLength(500)
                     .IsUnicode(true);
 
@@ -286,6 +286,7 @@ namespace OneItb.Data
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.Property(e => e.Content).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.FileUrl).HasMaxLength(500).IsUnicode(true);
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
                 entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
                 entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);

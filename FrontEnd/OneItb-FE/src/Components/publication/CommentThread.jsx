@@ -1,22 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { MediaAttachment } from './MediaAttachment';
+import { UPLOAD_ACCEPT } from '../../utils/uploadFile';
 
 const buildCommentTree = (comments) => {
-  const nodes = new Map(
-    comments.map((comment) => [comment.id, { ...comment, replies: [] }])
-  );
+  const nodes = new Map(comments.map((comment) => [comment.id, { ...comment, replies: [] }]));
   const roots = [];
 
   nodes.forEach((comment) => {
-    const parent = comment.parentCommentId
-      ? nodes.get(comment.parentCommentId)
-      : null;
-
-    if (parent) {
-      parent.replies.push(comment);
-    } else {
-      roots.push(comment);
-    }
+    const parent = comment.parentCommentId ? nodes.get(comment.parentCommentId) : null;
+    if (parent) parent.replies.push(comment);
+    else roots.push(comment);
   });
 
   const sortByDate = (items) => {
@@ -36,19 +30,19 @@ const roleStyles = {
   Empleador: { name: 'text-fuchsia-700', badge: 'bg-fuchsia-50 text-fuchsia-600', label: 'empleador' },
 };
 
-const getRoleStyle = (role) => roleStyles[role] ?? { name: 'text-slate-700', badge: 'bg-slate-100 text-slate-500', label: role || 'usuario' };
+const getRoleStyle = (role) => roleStyles[role] ?? {
+  name: 'text-slate-700',
+  badge: 'bg-slate-100 text-slate-500',
+  label: role || 'usuario',
+};
 
-const getParticipationBadges = (user) => {
+const ParticipationBadges = ({ user }) => {
   const badges = [];
   if ((user?.totalPosts ?? 0) >= 10) badges.push({ icon: 'fa-pen-nib', label: 'Publicador' });
   if ((user?.totalComments ?? 0) >= 20) badges.push({ icon: 'fa-comments', label: 'Conversador' });
   if ((user?.totalLikesReceived ?? 0) >= 25) badges.push({ icon: 'fa-star', label: 'Valorado' });
-  return badges;
-};
-
-const ParticipationBadges = ({ user }) => {
-  const badges = getParticipationBadges(user);
   if (badges.length === 0) return null;
+
   return (
     <span className="ml-2 inline-flex items-center gap-1 align-middle">
       {badges.map((badge) => (
@@ -64,6 +58,34 @@ const ParticipationBadges = ({ user }) => {
   );
 };
 
+const AttachmentPicker = ({ file, onFileChange }) => (
+  <div className="flex min-w-0 flex-wrap items-center gap-2">
+    <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+      <input
+        type="file"
+        accept={UPLOAD_ACCEPT}
+        onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+        className="hidden"
+      />
+      <i className="fa-solid fa-paperclip" />
+      <span className="sr-only">Adjuntar archivo</span>
+    </label>
+    {file && (
+      <span className="flex min-w-0 items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-[11px] text-blue-700">
+        <span className="max-w-48 truncate" title={file.name}>{file.name}</span>
+        <button
+          type="button"
+          onClick={() => onFileChange(null)}
+          aria-label="Quitar archivo adjunto"
+          className="text-blue-400 hover:text-red-600"
+        >
+          <i className="fa-solid fa-xmark" />
+        </button>
+      </span>
+    )}
+  </div>
+);
+
 const CommentNode = ({
   comment,
   onReply,
@@ -77,6 +99,7 @@ const CommentNode = ({
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [reply, setReply] = useState('');
+  const [replyFile, setReplyFile] = useState(null);
   const [draftContent, setDraftContent] = useState(comment.content);
   const canManage = comment.userId === auth?.id || isModerator;
   const roleStyle = getRoleStyle(comment.user?.role);
@@ -85,9 +108,14 @@ const CommentNode = ({
   const submitReply = async (event) => {
     event.preventDefault();
     if (!reply.trim()) return;
-    await onReply(comment.id, reply);
-    setReply('');
-    setIsReplying(false);
+    try {
+      await onReply(comment.id, reply, replyFile);
+      setReply('');
+      setReplyFile(null);
+      setIsReplying(false);
+    } catch {
+      // Feed owns error feedback; preserve the draft for retry.
+    }
   };
 
   const submitEdit = async (event) => {
@@ -117,7 +145,8 @@ const CommentNode = ({
               </span>
             )}
             <time className="text-[11px] text-slate-400">
-              {new Date(comment.createdAt).toLocaleDateString('es-AR')} {new Date(comment.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+              {new Date(comment.createdAt).toLocaleDateString('es-AR')} {' '}
+              {new Date(comment.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
             </time>
             <button
               type="button"
@@ -129,6 +158,7 @@ const CommentNode = ({
             </button>
           </div>
         </div>
+
         {isEditing ? (
           <form onSubmit={submitEdit} className="mt-2 flex gap-2">
             <input
@@ -143,51 +173,39 @@ const CommentNode = ({
         ) : (
           <p className="mt-1 text-sm leading-relaxed text-slate-600">{comment.content}</p>
         )}
+
+        {comment.fileUrl && (
+          <div className="mt-2"><MediaAttachment fileUrl={comment.fileUrl} compact /></div>
+        )}
+
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => setIsReplying((current) => !current)}
-            className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
-          >
+          <button type="button" onClick={() => setIsReplying((current) => !current)} className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700">
             Responder
           </button>
           {canManage && (
             <>
-              <button
-                type="button"
-                onClick={() => setIsEditing((current) => !current)}
-                className="mt-2 text-xs font-medium text-slate-500 hover:text-slate-700"
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                onClick={() => onToggleComment(comment.id)}
-                className="mt-2 text-xs font-medium text-red-500 hover:text-red-600"
-              >
-                Eliminar
-              </button>
+              <button type="button" onClick={() => setIsEditing((current) => !current)} className="mt-2 text-xs font-medium text-slate-500 hover:text-slate-700">Editar</button>
+              <button type="button" onClick={() => onToggleComment(comment.id)} className="mt-2 text-xs font-medium text-red-500 hover:text-red-600">Eliminar</button>
             </>
           )}
         </div>
       </div>
 
       {isReplying && (
-        <form onSubmit={submitReply} className="mt-2 flex gap-2">
-          <input
-            value={reply}
-            onChange={(event) => setReply(event.target.value)}
-            maxLength={1000}
-            placeholder="Escribí una respuesta..."
-            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-          />
-          <button
-            type="submit"
-            disabled={submitting || !reply.trim()}
-            className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-          >
-            Enviar
-          </button>
+        <form onSubmit={submitReply} className="mt-2 space-y-2">
+          <div className="flex gap-2">
+            <input
+              value={reply}
+              onChange={(event) => setReply(event.target.value)}
+              maxLength={1000}
+              placeholder="Escribe una respuesta..."
+              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            />
+            <button type="submit" disabled={submitting || !reply.trim()} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+              {submitting ? 'Enviando...' : 'Enviar'}
+            </button>
+          </div>
+          <AttachmentPicker file={replyFile} onFileChange={setReplyFile} />
         </form>
       )}
 
@@ -223,32 +241,37 @@ export const CommentThread = ({
   onToggleComment,
 }) => {
   const [draft, setDraft] = useState('');
+  const [draftFile, setDraftFile] = useState(null);
   const tree = useMemo(() => buildCommentTree(comments), [comments]);
 
   const submitComment = async (event) => {
     event.preventDefault();
     if (!draft.trim()) return;
-    await onComment(null, draft);
-    setDraft('');
+    try {
+      await onComment(null, draft, draftFile);
+      setDraft('');
+      setDraftFile(null);
+    } catch {
+      // Feed owns error feedback; preserve the draft for retry.
+    }
   };
 
   return (
     <section className="space-y-3 border-t border-slate-100 pt-3">
-      <form onSubmit={submitComment} className="flex gap-2">
-        <input
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          maxLength={1000}
-          placeholder="Sumate a la conversación..."
-          className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-        />
-        <button
-          type="submit"
-          disabled={submitting || !draft.trim()}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-        >
-          Comentar
-        </button>
+      <form onSubmit={submitComment} className="space-y-2">
+        <div className="flex gap-2">
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            maxLength={1000}
+            placeholder="Sumate a la conversacion..."
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          />
+          <button type="submit" disabled={submitting || !draft.trim()} className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
+            {submitting ? 'Enviando...' : 'Comentar'}
+          </button>
+        </div>
+        <AttachmentPicker file={draftFile} onFileChange={setDraftFile} />
       </form>
 
       {tree.length > 0 ? (
@@ -268,7 +291,7 @@ export const CommentThread = ({
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-slate-400">Todavía no hay comentarios.</p>
+        <p className="text-xs text-slate-400">Todavia no hay comentarios.</p>
       )}
     </section>
   );
