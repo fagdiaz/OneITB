@@ -96,6 +96,8 @@ TestResults/
 # Runtime uploads
 API Graphql/OneITB/wwwroot/uploads/*
 !API Graphql/OneITB/wwwroot/uploads/.gitkeep
+API Graphql/OneITB/App_Data/DataProtection-Keys/*
+!API Graphql/OneITB/App_Data/DataProtection-Keys/.gitkeep
 
 # ------------------------------------------
 # 4. Node / React / Frontend Specifics
@@ -162,6 +164,9 @@ OneITB doc TEAMS/
 "70. Práctica Profesional - Plantilla de documento base (1) - Copia (1).docx"
 "Presentación de proyectos - Documento formal - Díaz, Francisco & Díaz, Leandro.docx"
 correcciones*.txt
+Errores.txt
+errores.txt
+Prompt.txt
 
 # ------------------------------------------
 # 7. AI Agents & Internal Workflow Tooling

@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.DataProtection;
 using GraphQL.GraphQL;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,17 +24,20 @@ using Services.Social;
 using Services.Messaging;
 using OneITB.GraphQL.Subscriptions;
 using OneItb.GraphQL.Authentication;
+using Services.LinkPreviews;
 
 namespace OneItb.GraphQL
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
         public IConfiguration Configuration { get; }
+        public IWebHostEnvironment Environment { get; }
         readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -40,6 +45,21 @@ namespace OneItb.GraphQL
         {
             services.AddControllers();
             services.AddHttpContextAccessor();
+            if (Environment.IsDevelopment())
+            {
+                var keyDirectory = new DirectoryInfo(Path.Combine(
+                    Environment.ContentRootPath,
+                    "App_Data",
+                    "DataProtection-Keys"));
+                keyDirectory.Create();
+
+                var dataProtectionBuilder = services.AddDataProtection()
+                    .PersistKeysToFileSystem(keyDirectory);
+                if (OperatingSystem.IsWindows())
+                {
+                    dataProtectionBuilder.ProtectKeysWithDpapi();
+                }
+            }
             services.AddCors(options =>
             {
                 options.AddPolicy(MyAllowSpecificOrigins,
@@ -47,8 +67,12 @@ namespace OneItb.GraphQL
                 {
                     string[] allowedOrigins = Configuration
                         .GetSection("Cors:AllowedOrigins")
-                        .Get<string[]>() ?? new[] { "http://localhost:5173", "https://localhost:5173" };
-                    builder.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+                        .Get<string[]>() ?? new[] { "http://localhost:5173", "https://localhost:5173", "http://127.0.0.1:5173", "https://127.0.0.1:5173" };
+                    builder
+                        .WithOrigins(allowedOrigins)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                        // Note: AllowCredentials() intentionally omitted — JWT is in Authorization header, not cookies.
                 });
             });
 
@@ -76,7 +100,7 @@ namespace OneItb.GraphQL
                 .AddInMemorySubscriptions()
                 .AddSocketSessionInterceptor<AuthenticationSocketSessionInterceptor>()
                 .AddType(new ObjectType<Account>(d => d.Field(f => f.PasswordHash).Ignore()))
-                .AddType(new ObjectType<User>(descriptor => 
+                .AddType(new ObjectType<User>(descriptor =>
                 {
                     descriptor.Field(f => f.Id).Name("id");
                     descriptor.Field(f => f.FirstName).Name("firstName");
@@ -160,6 +184,7 @@ namespace OneItb.GraphQL
             services.AddScoped<IMessagingService, MessagingService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
+            services.AddSingleton<ILinkPreviewService, LinkPreviewService>();
 
             services.AddAuthentication(options =>
             {
@@ -220,7 +245,7 @@ namespace OneItb.GraphQL
             var webSocketOptions = new WebSocketOptions();
             string[] allowedOrigins = Configuration
                 .GetSection("Cors:AllowedOrigins")
-                .Get<string[]>() ?? new[] { "http://localhost:5173", "https://localhost:5173" };
+                .Get<string[]>() ?? new[] { "http://localhost:5173", "https://localhost:5173", "http://127.0.0.1:5173", "https://127.0.0.1:5173" };
             foreach (string origin in allowedOrigins)
                 webSocketOptions.AllowedOrigins.Add(origin);
             app.UseWebSockets(webSocketOptions);

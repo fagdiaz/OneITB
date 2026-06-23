@@ -61,6 +61,14 @@ const wsLink = new GraphQLWsLink(graphQLWsClient);
 const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   if (!graphQLErrors?.length && !networkError) return;
 
+  const definition = getMainDefinition(operation.query);
+  const isSubscription = definition.kind === 'OperationDefinition'
+    && definition.operation === 'subscription';
+  const isExpectedPageShutdown = isSubscription
+    && networkError?.message === 'Socket closed'
+    && document.visibilityState === 'hidden';
+  if (isExpectedPageShutdown) return;
+
   console.error('GraphQL operation failed', JSON.stringify({
     operation: operation.operationName,
     graphQLErrors: graphQLErrors?.map(({ message, path }) => ({ message, path })),

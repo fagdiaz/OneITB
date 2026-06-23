@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useLazyQuery } from '@apollo/client';
+import { GET_LINK_PREVIEW } from '../../data/graphql/queries/linkPreview';
+import { MediaAttachment, YouTubeEmbed } from './MediaAttachment';
 
 const MediaComponent = ({ textContext, fileUrl, previewData }) => {
   const [fetchedPreview, setFetchedPreview] = useState(null);
+  const [loadLinkPreview] = useLazyQuery(GET_LINK_PREVIEW, { fetchPolicy: 'no-cache' });
 
   // 1. Detect YouTube
   const getYoutubeVideoId = (url) => {
@@ -24,75 +28,54 @@ const MediaComponent = ({ textContext, fileUrl, previewData }) => {
   useEffect(() => {
     // If there's a standard link (not youtube), no fileUrl, and no previewData passed in, fetch it dynamically.
     if (firstUrl && !youtubeId && !previewData && !fileUrl) {
-      const fetchMetadata = async () => {
+      let cancelled = false;
+      const fetchLinkPreview = async () => {
         try {
-          const res = await fetch(`/api/metadata?url=${encodeURIComponent(firstUrl)}`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}` // simple assumption, though API may just require auth cookie/header
-            }
-          });
-          const data = await res.json();
-          if (data && data.success) {
-            setFetchedPreview(data);
+          const result = await loadLinkPreview({ variables: { url: firstUrl } });
+          const preview = result.data?.linkPreview;
+          if (!cancelled) {
+            setFetchedPreview(preview?.success ? preview : null);
           }
-        } catch (error) {
-          console.error('Failed to fetch metadata', error);
+        } catch {
+          if (!cancelled) setFetchedPreview(null);
         }
       };
-      fetchMetadata();
+      fetchLinkPreview();
+      return () => {
+        cancelled = true;
+      };
     }
-  }, [firstUrl, youtubeId, previewData, fileUrl]);
+    setFetchedPreview(null);
+    return undefined;
+  }, [firstUrl, youtubeId, previewData, fileUrl, loadLinkPreview]);
 
   if (youtubeId) {
     return (
       <div className="mt-3">
-        <iframe
-          className="aspect-video w-full rounded-xl border-none"
-          src={`https://www.youtube.com/embed/${youtubeId}`}
-          title="YouTube video player"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
+        <YouTubeEmbed videoId={youtubeId} />
       </div>
     );
   }
 
   if (fileUrl) {
-    const isImage = fileUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-    if (isImage) {
-      return (
-        <div className="mt-3">
-          <img
-            src={fileUrl}
-            alt="Attachment"
-            className="w-full max-h-[500px] object-cover rounded-xl border border-slate-200"
-            loading="lazy"
-          />
-        </div>
-      );
-    } else {
-      const fileName = fileUrl.split('/').pop();
-      return (
-        <a
-          href={fileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors"
-        >
-          <div className="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg shrink-0">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-700 truncate">{fileName}</p>
-            <p className="text-xs text-slate-500 uppercase">{fileName.split('.').pop()}</p>
-          </div>
-        </a>
-      );
-    }
+    return (
+      <div className="mt-3">
+        <MediaAttachment fileUrl={fileUrl} />
+      </div>
+    );
   }
 
   const finalPreview = previewData || fetchedPreview;
   if (finalPreview && finalPreview.success) {
+    const isValidImage = (url) => {
+      if (!url) return false;
+      if (url.startsWith('data:')) {
+        return /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,/.test(url);
+      }
+      return true;
+    };
+    const showImage = isValidImage(finalPreview.imageUrl);
+
     return (
       <a
         href={finalPreview.originalUrl}
@@ -100,7 +83,7 @@ const MediaComponent = ({ textContext, fileUrl, previewData }) => {
         rel="noopener noreferrer"
         className="mt-3 block rounded-xl border border-slate-200 bg-slate-50 overflow-hidden hover:bg-slate-100 transition-colors"
       >
-        {finalPreview.imageUrl && (
+        {showImage ? (
           <div className="aspect-video w-full bg-slate-200">
             <img
               src={finalPreview.imageUrl}
@@ -108,6 +91,10 @@ const MediaComponent = ({ textContext, fileUrl, previewData }) => {
               className="w-full h-full object-cover"
               loading="lazy"
             />
+          </div>
+        ) : (
+          <div className="aspect-video w-full bg-slate-100 flex items-center justify-center">
+            <i className="fa-solid fa-link text-4xl text-slate-300" />
           </div>
         )}
         <div className="p-4">

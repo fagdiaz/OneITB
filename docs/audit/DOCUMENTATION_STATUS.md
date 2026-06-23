@@ -1,6 +1,6 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-19
+**Ultima verificacion**: 2026-06-23
 
 ## Fuentes canonicas
 
@@ -36,6 +36,10 @@
 | `specs/121-file-upload-inquiries/` | Implementada; migracion/build verificados, runtime reciente bloqueado |
 | `specs/122-rich-media-comment-files/` | Implementada; migracion/build/parser verificados, runtime reciente bloqueado |
 | `specs/123-link-preview/` | Implementada; endpoint/build verificados, runtime reciente bloqueado |
+| `specs/129-console-runtime-cleanup/` | Implementada; builds/schema/seguridad verificados, chat y preview publico pendientes en entorno normal |
+| `specs/130-presentation-runtime-baseline/` | Implementada; puerto/DataProtection/CORS/media estáticos verificados, feed autenticado bloqueado por SQL SSPI y certificado HTTPS |
+| `specs/131-media-embed-console-contract/` | Implementada; YouTube click-to-load y build frontend verificados, feed autenticado bloqueado por SQL SSPI y certificado HTTPS |
+| `specs/133-media-preview-stabilization/` | Implementada; miniaturas YouTube, resolucion de imagenes upload y builds verificados |
 
 ## Brechas vigentes
 
@@ -43,7 +47,9 @@
 - Faltan suites automatizadas de autenticacion, feed, GraphQL y componentes.
 - Pub/sub y almacenamiento de archivos sirven a una sola instancia.
 - Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
-- El entorno temporal de validacion reciente esta bloqueado por cifrado SQL Server y permisos de Windows Event Log.
+- El Event Log, cifrado local de Development, puerto Kestrel y DataProtection fueron corregidos; el entorno actual aun bloquea SQL SSPI y certificado HTTPS para la regresion autenticada completa.
 - El frontend conserva deuda de dependencias y tamano de bundle.
+- YouTube ya no monta iframes en el render inicial; los warnings residuales posteriores al click pertenecen al proveedor/navegador.
+- Las miniaturas de YouTube usan imagen estatica y los adjuntos de imagen se resuelven contra el backend antes de renderizar inline.
 
 Ante contradicciones, prevalecen codigo, esquema ejecutado y evidencia runtime. Los porcentajes se recalculan exclusivamente desde los checklists de `ROADMAP.md`.

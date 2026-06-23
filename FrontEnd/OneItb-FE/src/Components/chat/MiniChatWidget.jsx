@@ -171,6 +171,7 @@ export const MiniChatWidget = () => {
   }, [messages.length]);
 
   const { error: subscriptionError } = useSubscription(MESSAGE_RECEIVED, {
+    skip: !isOpen || !auth.id,
     onData: ({ data }) => {
       const message = data.data?.messageReceived;
       if (!message || !mountedRef.current) return;

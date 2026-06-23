@@ -5,6 +5,149 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-23] - Media Preview Stabilization (Spec: 133-media-preview-stabilization)
+
+* **Objetivo**: recuperar la calidad visual del rich media despues de la limpieza de consola, mostrando miniaturas de YouTube y corrigiendo imagenes adjuntas que aparecian como `Attachment`.
+* **Resultado**:
+  - Las tarjetas de YouTube muestran una miniatura estatica desde `i.ytimg.com` antes de cargar el reproductor.
+  - El iframe `youtube-nocookie.com` sigue montandose solo despues del click en reproducir.
+  - `MediaComponent` reutiliza `MediaAttachment` para los adjuntos, evitando URLs relativas rotas contra el origen de Vite.
+  - Las imagenes subidas ahora se resuelven contra `apiBaseUrl`; si fallan, degradan a una tarjeta de archivo util.
+* **Validaciones ejecutadas**:
+  - QA MEDIUM con builds backend/frontend: PASS.
+  - Frontend Vite: PASS, 332 modulos; persisten warnings existentes de chunk size y deprecacion `vite:react-babel`.
+  - Backend Release: PASS, 0 advertencias, 0 errores.
+  - Vite dev server sirve los modulos actualizados con miniatura `i.ytimg.com`, fallback `imageFailed` y render compartido `MediaAttachment`.
+* **Runtime pendiente**: feed autenticado con publicaciones reales no se declaro verificado desde esta sesion; depende del estado autenticado/backend del entorno del usuario.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaAttachment.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+  - `specs/133-media-preview-stabilization/evidence.md`
+
+## [2026-06-23] - Media Embed Console Contract (Spec: 131-media-embed-console-contract)
+
+* **Objetivo**: reducir los warnings masivos de consola provocados por iframes/scripts de YouTube sin ocultarlos localmente ni relajar politicas de seguridad.
+* **Resultado**:
+  - El render inicial de publicaciones y comentarios con enlaces de YouTube muestra una tarjeta local de reproduccion, sin montar el iframe del proveedor.
+  - El iframe `youtube-nocookie.com` se carga solo cuando el usuario presiona "Reproducir video".
+  - Se mantuvieron intactos los flujos de imagenes, documentos y previsualizaciones de enlaces.
+  - No se agregaron filtros de consola, `dangerouslySetInnerHTML`, cambios de CORS ni configuraciones locales de navegador.
+* **Validaciones ejecutadas**:
+  - QA MEDIUM con build frontend: PASS.
+  - Frontend Vite: PASS, 332 modulos; persisten warnings existentes de chunk size y deprecacion `vite:react-babel`.
+  - Backend Release: PASS, 0 errores; persisten 10 warnings nullable preexistentes en `Mutation.cs` y `Query.cs`.
+  - Busqueda estatica: queda un solo iframe de YouTube y esta protegido por estado `isPlaying` posterior al click.
+* **Runtime pendiente**: feed autenticado no se declaro verificado porque el entorno actual mantiene los bloqueos SQL SSPI y certificado HTTPS registrados en la spec 130. Los warnings de YouTube posteriores al click quedan documentados como comportamiento externo del proveedor/navegador.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaAttachment.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+  - `specs/131-media-embed-console-contract/evidence.md`
+
+
+## [2026-06-23] - Presentation Runtime Baseline (Spec: 130-presentation-runtime-baseline)
+
+* **Objetivo**: estabilizar el arranque y la consola para una presentacion reproducible, sin ocultar warnings desde DevTools, Vite ni filtros locales.
+* **Resultado**:
+  - Se clasificaron los hallazgos de `Errores.txt`: Vite/DevTools como tooling, fingerprinting y scripts minificados como navegador/terceros, cookies YouTube como proveedor externo, y Feature Policy de iframes como integracion app-owned.
+  - Se alineo el perfil `OneITB` del backend con `https://localhost:44397`, que ya era el default de Apollo/uploads y del runbook.
+  - Development DataProtection deja de depender del key ring del perfil de Windows y usa `App_Data/DataProtection-Keys` ignorado por git con proteccion DPAPI en Windows.
+  - Los embeds de YouTube usan `youtube-nocookie.com`, `referrerPolicy` estricto y ya no declaran permisos `allow` que Firefox reportaba como Feature Policy no soportada.
+  - No quedan referencias app-owned a `/api/metadata`, `/api/link-info`, `/api/link-preview`, `data:text/plain`, `mozPressure`, `mozInputSource` ni iframes `www.youtube.com/embed`.
+* **Validaciones ejecutadas**:
+  - Backend Release: PASS, 0 errores; persisten warnings nullability preexistentes fuera de esta spec.
+  - Frontend Vite: PASS, 330 modulos; persisten warnings de bundle/tooling.
+  - QA HIGH con builds: PASS.
+  - GraphQL HTTP temporal: `{"data":{"__typename":"Query"}}`.
+  - CORS preflight desde `http://localhost:5173`: `204` con origin, method y headers esperados.
+  - Vite dev sirvio `http://127.0.0.1:5173/` con HTTP 200.
+* **Runtime pendiente**: feed autenticado, chat abierto, uploads y media end-to-end no se declararon verificados porque el entorno actual bloquea SQL SSPI y no tiene certificado HTTPS dev confiable.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Properties/launchSettings.json`
+  - `API Graphql/OneITB/Startup.cs`
+  - `API Graphql/OneITB/appsettings.json`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaAttachment.jsx`
+  - `docs/audit/RUNBOOK_DEV.md`
+  - `specs/130-presentation-runtime-baseline/evidence.md`
+
+## [2026-06-19] - Console Runtime Cleanup and Secure Link Preview (Spec: 129-console-runtime-cleanup)
+
+* **Objetivo**: clasificar los errores reales de `errores.txt`, evitar suscripciones innecesarias al cargar el feed y corregir la arquitectura insegura de previsualizacion introducida por las specs 123-128.
+* **Resultado**:
+  - Los warnings de `Drz51...js`, `eval`, `Window.fullScreen` y fingerprinting se identificaron como codigo externo de Firefox/extensiones; no se ocultaron desde React.
+  - `MiniChatWidget` ya no abre `MessageReceived` mientras esta cerrado y Apollo no registra cierres esperados durante la descarga de pagina.
+  - La previsualizacion se movio del REST anonimo a `Query.linkPreview` autenticado, con limites de URL, puerto, DNS/IP, redirects, tiempo, contenido y tamano.
+  - El backend deja de usar Windows Event Log y mantiene `Encrypt=False` solo en configuracion Development; la base conserva cifrado estricto.
+* **Validaciones ejecutadas**:
+  - QA HIGH: PASS; backend Release 0 errores; frontend Vite 330 modulos.
+  - Schema real: `linkPreview` expuesto; acceso anonimo rechazado.
+  - Loopback, red privada, link-local, credenciales y puerto no permitido rechazados con `success: false`.
+  - Navegador limpio: no reprodujo los scripts ni warnings externos de `errores.txt`.
+* **Runtime pendiente**: chat autenticado y preview publico exitoso requieren repeticion en el entorno IDE normal; el entorno aislado bloquea SQL SSPI, certificado HTTPS y conectividad navegador-backend.
+* **Evidencia**: `specs/129-console-runtime-cleanup/evidence.md`.
+
+## [2026-06-19] - Link Preview Endpoint Anónimo (Spec: 128-link-preview-anonymous)
+
+* **Objetivo**: Convertir el endpoint de previsualización de enlaces en un recurso anónimo (`[AllowAnonymous]`) con ruta `api/link-preview`, eliminando la última causa de bloqueo por extensiones de privacidad.
+* **Causa raíz anterior**: El endpoint requería JWT (`[Authorize]`), lo que obligaba al frontend a incluir el header `Authorization` y activar CORS "credenciado", siendo inspeccionado y bloqueado por uBlock/AdBlock.
+* **Resultado**:
+  - `LinkInfoController.cs` eliminado.
+  - `LinkPreviewController.cs` creado: `[AllowAnonymous]`, ruta `api/link-preview`, protección SSRF (solo http/https).
+  - `Feed.jsx`: fetch simplificado a GET limpio sin headers ni `credentials`.
+  - `MediaComponent.jsx`: idem.
+* **Validaciones ejecutadas**:
+  - Backend: Compilación correcta — 0 Errores.
+  - Frontend: ✓ 329 módulos — 0 Errores.
+* **Archivos**:
+  - `API Graphql/OneITB/Controllers/LinkPreviewController.cs` (nuevo)
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+
+## [2026-06-19] - Link Preview AdBlocker Bypass (Spec: 127-link-preview-adblocker-bypass)
+
+* **Objetivo**: Refactorizar el sistema de previsualización de enlaces para que funcione con bloqueadores de anuncios activos (uBlock Origin, AdBlock Plus) en un navegador normal, sin requerir modo incógnito.
+* **Causa raíz**: La ruta `/api/metadata` coincide con patrones heurísticos de las blocklists de uBlock (EasyList/EasyPrivacy). Adicionalmente, `credentials: 'include'` forzaba el modo credenciado del protocolo CORS, elevando el perfil de la petición ante las extensiones de privacidad.
+* **Resultado**:
+  - `MetadataController.cs` eliminado y reemplazado por `LinkInfoController.cs` con ruta neutral `api/link-info`.
+  - `Startup.cs`: eliminado `.AllowCredentials()` (JWT viaja en `Authorization` header, no en cookie).
+  - `Feed.jsx` y `MediaComponent.jsx`: endpoint actualizado a `/api/link-info`, eliminado `credentials: 'include'`, errores silenciados sin romper UI.
+* **Validaciones ejecutadas**:
+  - Backend `dotnet build -c Release`: Compilación correcta — 0 Errores.
+  - Frontend `npm run build`: ✓ 329 módulos — 0 Errores.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Controllers/LinkInfoController.cs` (nuevo)
+  - `API Graphql/OneITB/Startup.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+
+## [2026-06-19] - CORS Deep Fix — AllowCredentials + fetch mode (Spec: 126-cors-deep-fix)
+
+* **Objetivo**: Resolver el bloqueo persistente de CORS al consumir `/api/metadata` desde el frontend. El navegador rechazaba las respuestas porque el frontend enviaba el header `Authorization` (petición "credenciada") pero el backend no respondía con `Access-Control-Allow-Credentials: true`.
+* **Causa raíz**:
+  - Backend: `AllowCredentials()` faltaba en la política CORS, por lo que .NET no emitía el header requerido.
+  - Frontend: el `fetch` no declaraba `mode: 'cors'` ni `credentials: 'include'`, y tampoco verificaba `res.ok` antes de parsear el JSON.
+* **Resultado**:
+  - `Startup.cs`: política `_myAllowSpecificOrigins` extendida con `.AllowCredentials()`.
+  - `Feed.jsx`: fetch actualizado con `mode: 'cors'`, `credentials: 'include'`, verificación de `res.ok` y fallback de token desde `localStorage`.
+* **Validaciones ejecutadas**:
+  - Backend `dotnet build -c Release`: Compilación correcta — 0 Errores.
+  - Frontend `npm run build`: ✓ 329 módulos — 0 Errores.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Startup.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+
+## [2026-06-19] - Error Log Fixes (Spec: 125-error-log-fixes)
+
+* **Objetivo**: Sanear `imageUrl` en el backend para evitar peticiones CORS bloqueadas a URIs de formato de texto (`data:text/plain`) y resolver advertencias de Feature Policy de iframes.
+* **Resultado**:
+  - Backend: `MetadataController.cs` descarta cualquier URL extraída que no comience explícitamente con `http://` o `https://`.
+  - Frontend: Se removieron características de hardware obsoletas/bloqueadas del atributo `allow` en el iframe de YouTube en `MediaComponent.jsx`.
+* **Validaciones ejecutadas**:
+  - Backend Release y frontend Vite: compilación exitosa con 0 errores.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Controllers/MetadataController.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+
 ## [2026-06-19] - Link Preview via Open Graph (Spec: 123-link-preview)
 
 * **Objetivo**: Implementar previsualizacion automatica de enlaces en tiempo real al redactar publicaciones y unificar el renderizado de medios.
@@ -333,7 +476,6 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
   - `FrontEnd/OneItb-FE/src/Components/admin/AdminDashboard.jsx`
 
----
 
 ## [2026-06-13] - Backend: Exposición del Autor de Inquiry (Spec: 098-feed-stabilization)
 
@@ -968,7 +1110,6 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `core-web/decisions_log.md` (Optimizado)
   - `docs/audit/DOCUMENTATION_STATUS.md` (Actualizado)
 
----
 
 ## [2026-05-30] - Implementación: Sincronización de Documentación y Unit of Work (Rama: 002-update-tech-docs)
 

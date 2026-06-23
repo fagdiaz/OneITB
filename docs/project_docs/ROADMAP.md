@@ -1,6 +1,6 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-06-19
+**Ultima revision**: 2026-06-23
 
 **Estado global**: 70% (53 de 76 items)
 
@@ -60,8 +60,8 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Prioridad de seguidos y exclusion de silenciados/bloqueados.
 - [x] [I] Upload desacoplado y `Inquiry.FileUrl`.
 - [x] [I] Adjuntos persistentes en comentarios y respuestas.
-- [x] [I] Imagenes inline, tarjetas de documentos y YouTube seguro.
-- [x] [I] Previsualizacion de enlaces via Open Graph en drafting y renderizado.
+- [x] [I] Imagenes inline con URL de backend, tarjetas de documentos y YouTube con miniatura previa y carga por click sobre `youtube-nocookie`.
+- [x] [I] Previsualizacion de enlaces via GraphQL autenticado con controles SSRF.
 - [ ] [B] Regresion end-to-end de uploads/rich media con backend local disponible.
 - [ ] [P] Limpieza de archivos huerfanos cuando GraphQL falla tras el upload.
 - [ ] [P] Paginacion o scroll incremental del feed.
@@ -112,14 +112,14 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [ ] [P] Pruebas de integracion GraphQL con SQL Server de prueba.
 - [ ] [P] Pipeline CI para build, tests y validacion de migraciones.
 - [ ] [P] Logging estructurado, metricas y trazabilidad de errores.
-- [ ] [B] Entorno local reproducible sin bloqueo de cifrado/Event Log.
+- [ ] [B] Entorno local reproducible sin bloqueo de SQL SSPI/certificado HTTPS.
 - [ ] [P] Actualizacion controlada de dependencias y division del bundle frontend.
 
 ## Prioridades
 
 ### P0 - Estabilizacion inmediata
 
-1. Resolver el arranque local SQL Server/Event Log.
+1. Revalidar el arranque normal: Event Log, cifrado Development, puerto Kestrel y DataProtection fueron corregidos; el entorno actual aun bloquea SQL SSPI y certificado HTTPS.
 2. Revalidar materias, superadmin, uploads y rich media end-to-end.
 3. Incorporar pruebas automatizadas de autenticacion y feed.
 

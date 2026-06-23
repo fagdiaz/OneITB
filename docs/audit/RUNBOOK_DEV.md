@@ -14,7 +14,7 @@
 ```powershell
 dotnet restore "API Graphql/OneITB/GraphQL.csproj"
 dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release
-dotnet run --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet run --project "API Graphql/OneITB/GraphQL.csproj" --launch-profile OneITB
 ```
 
 Endpoints locales esperados:
@@ -43,6 +43,13 @@ npm.cmd run dev
 ```
 
 El frontend usa `VITE_GRAPHQL_URL`; el valor local por defecto es `https://localhost:44397/graphql`.
+El perfil `OneITB` del backend escucha en el mismo puerto HTTPS para evitar diferencias entre `dotnet run`, Apollo y uploads.
+
+Si el certificado HTTPS local no esta instalado o confiado:
+
+```powershell
+dotnet dev-certs https --trust
+```
 
 ## Validacion por tipo de cambio
 

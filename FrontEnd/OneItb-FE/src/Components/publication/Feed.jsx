@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
+import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
 import { Link, useSearchParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { ReportModal } from '../moderation/ReportModal';
@@ -9,6 +9,7 @@ import { UPLOAD_ACCEPT, uploadAttachment } from '../../utils/uploadFile';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
+import { GET_LINK_PREVIEW } from '../../data/graphql/queries/linkPreview';
 import {
   ADD_COMMENT,
   CREATE_INQUIRY,
@@ -73,26 +74,34 @@ export const Feed = () => {
   const [isUploadingComment, setIsUploadingComment] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [linkPreviewData, setLinkPreviewData] = useState(null);
+  const [loadLinkPreview] = useLazyQuery(GET_LINK_PREVIEW, { fetchPolicy: 'no-cache' });
 
   useEffect(() => {
     const urlRegex = /(https?:\/\/[^\s]+)/;
     const match = content.match(urlRegex);
-    if (match) {
-      const url = match[0];
-      if (!url.includes('youtube.com') && !url.includes('youtu.be') && (!linkPreviewData || linkPreviewData.originalUrl !== url)) {
-        fetch(`/api/metadata?url=${encodeURIComponent(url)}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.success) setLinkPreviewData(data);
-          })
-          .catch(() => {});
-      }
-    } else {
+    const url = match?.[0];
+    if (!url || url.includes('youtube.com') || url.includes('youtu.be')) {
       setLinkPreviewData(null);
+      return undefined;
     }
-  }, [content, linkPreviewData, token]);
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await loadLinkPreview({ variables: { url } });
+        if (!cancelled) {
+          setLinkPreviewData(result.data?.linkPreview?.success ? result.data.linkPreview : null);
+        }
+      } catch {
+        if (!cancelled) setLinkPreviewData(null);
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [content, loadLinkPreview]);
 
   const publicationCareerId = selectedCareer ? Number(selectedCareer) : null;
   const searchTermParam = searchParams.get('q');
@@ -151,12 +160,6 @@ export const Feed = () => {
     document.addEventListener('mousedown', closeMenu);
     return () => document.removeEventListener('mousedown', closeMenu);
   }, []);
-
-  useEffect(() => {
-    if (inquiriesError) {
-      console.error('GraphQL Error fetching inquiries:', inquiriesError);
-    }
-  }, [inquiriesError]);
 
   const showFeedback = (type, message) => setFeedback({ type, message });
 

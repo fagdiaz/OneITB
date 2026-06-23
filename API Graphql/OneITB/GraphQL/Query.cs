@@ -11,7 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
+using Services.LinkPreviews;
 
 namespace GraphQL.GraphQL
 {
@@ -75,6 +77,15 @@ namespace GraphQL.GraphQL
         {
             Guid? currentUserId = TryGetAuthenticatedUserId(httpContextAccessor);
             return socialService.GetInquiries(currentUserId, searchTerm, careerId, subjectIds);
+        }
+
+        [Authorize]
+        public Task<LinkPreviewResult> GetLinkPreview(
+            string url,
+            [Service] ILinkPreviewService linkPreviewService,
+            CancellationToken cancellationToken)
+        {
+            return linkPreviewService.GetPreviewAsync(url, cancellationToken);
         }
 
         public async Task<PublicProfileSummary> GetPublicProfile(
