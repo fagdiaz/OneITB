@@ -18,12 +18,15 @@ Construir una red social educativa que permita:
 - Mantener perfiles academicos y profesionales.
 - Comunicarse mediante chat privado en tiempo real.
 - Moderar contenido y administrar la estructura institucional.
+- Proveer acceso móvil nativo continuo y en tiempo real.
 
 ## 1.4 Stack
 
 - Backend: .NET 8, HotChocolate GraphQL y EF Core 8.
-- Persistencia: SQL Server.
-- Frontend: React 18, Apollo Client, Vite 8 y Tailwind CSS 4.
+- Persistencia: SQL Server (Migrando a Azure SQL Free Tier).
+- Frontend Web: React 18, Apollo Client, Vite 8 y Tailwind CSS 4.
+- Frontend Móvil: React Native y Expo.
+- Despliegue e Infraestructura: Docker, Azure App Service F1, GitHub Actions y Cloudinary.
 
 ## 1.5 Estado
 

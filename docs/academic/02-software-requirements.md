@@ -23,6 +23,8 @@ Este entregable resume el alcance vigente. La fuente completa y versionada es [s
 - Rendimiento sin N+1 y con consultas acotadas.
 - UI responsiva construida con Tailwind CSS 4.
 - Trazabilidad mediante specs, evidencia, roadmap y development log.
+- Disponibilidad multiplataforma y consistencia de estado entre Web y ecosistema móvil (React Native).
+- Rendimiento y optimización de consumo de recursos bajo un entorno Cloud de capa gratuita (Azure App Service F1 / Azure SQL Free Tier / Docker).
 
 ## 2.3 Roles
 

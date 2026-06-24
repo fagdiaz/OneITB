@@ -6,13 +6,17 @@ La explicacion tecnica completa se mantiene en [architecture-and-design.md](../p
 
 ```mermaid
 flowchart LR
-    User[Usuario] --> React[React + Apollo]
-    React -->|HTTP GraphQL| API[HotChocolate]
+    User[Usuario] --> React[Web Client React]
+    User --> Mobile[Mobile Client React Native]
+    React -->|HTTP GraphQL| API[API HotChocolate / Docker]
+    Mobile -->|HTTP GraphQL| API
     React -->|WebSocket| API
+    Mobile -->|WebSocket| API
     React -->|multipart + JWT| Upload[UploadController]
+    Mobile -->|multipart + JWT| Upload
     API --> EF[EF Core]
-    EF --> SQL[(SQL Server)]
-    Upload --> Files[(wwwroot/uploads)]
+    EF --> SQL[(Azure SQL Free Tier)]
+    Upload --> Files[(Cloudinary)]
 ```
 
 ## 4.2 Dominio social y academico

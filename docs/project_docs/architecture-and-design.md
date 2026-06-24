@@ -8,10 +8,12 @@
 |---|---|
 | Backend | .NET 8 / ASP.NET Core |
 | API de negocio | HotChocolate GraphQL 14.2.0 |
-| Persistencia | Entity Framework Core 8.0.6 / SQL Server |
-| Frontend | React 18 / Apollo Client 3.7 / Vite 8 |
+| Persistencia | Entity Framework Core 8.0.6 / Azure SQL Free Tier |
+| Frontend Web | React 18 / Apollo Client 3.7 / Vite 8 |
+| Frontend Mobile | React Native / Expo |
 | UI | Tailwind CSS 4 / FontAwesome 6.6 |
 | Tiempo real | GraphQL Subscriptions sobre WebSocket |
+| Despliegue e Infra | Docker / Azure App Service F1 / Cloudinary / GitHub Actions |
 
 ## 2. Estructura fisica
 
@@ -23,12 +25,17 @@ API Graphql/
 `-- OneITB/       host ASP.NET Core, GraphQL y controladores REST
 
 FrontEnd/OneItb-FE/src/
-|-- Components/  vistas y componentes por dominio
+|-- Components/   vistas y componentes por dominio
 |-- context/      autenticacion
 |-- data/graphql/ operaciones Apollo
 |-- hooks/        hooks compartidos
 |-- router/       rutas publicas y privadas
 `-- utils/        parsing y utilidades sin estado
+
+Mobile/OneItb-App/src/
+|-- components/   componentes nativos y UI
+|-- navigation/   enrutamiento React Navigation
+`-- screens/      pantallas principales
 ```
 
 ## 3. Contratos de transporte
@@ -99,6 +106,7 @@ El historial se persiste en `Messages`. El envio publica un evento al topico pri
 ## 7. Estado y limites conocidos
 
 - El pub/sub de subscriptions esta en memoria y sirve a una sola instancia.
-- Los archivos se almacenan localmente; despliegues multiinstancia requieren almacenamiento compartido.
+- Los archivos se migrarán hacia Cloudinary para soportar entornos efímeros (Docker/Azure).
 - Recursos, notas e integracion SIU siguen planificados.
 - El arranque temporal usado por Codex puede fallar por cifrado SQL Server y permisos de Windows Event Log; las migraciones EF CLI y builds funcionan.
+- La convivencia del cliente Web y el Mobile Client (React Native) requiere asegurar un diseño de queries y fragments compartido para no duplicar lógica en el Apollo Cache.

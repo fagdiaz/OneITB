@@ -2,7 +2,7 @@
 
 **Ultima revision**: 2026-06-23
 
-**Estado global**: 70% (53 de 76 items)
+**Estado global**: 71% (54 de 76 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -100,7 +100,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [ ] [P] Adaptador o simulador desacoplado para SIU Guarani.
 - [ ] [P] Preferencias de notificacion por materia.
 
-## Modulo 8 - Calidad, operacion y escalabilidad: 42% (5/12)
+## Modulo 8 - Calidad, operacion y escalabilidad: 50% (6/12)
 
 - [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
 - [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
@@ -112,16 +112,15 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [ ] [P] Pruebas de integracion GraphQL con SQL Server de prueba.
 - [ ] [P] Pipeline CI para build, tests y validacion de migraciones.
 - [ ] [P] Logging estructurado, metricas y trazabilidad de errores.
-- [ ] [B] Entorno local reproducible sin bloqueo de SQL SSPI/certificado HTTPS.
+- [x] [V] Entorno local reproducible sin bloqueo de SQL SSPI/certificado HTTPS.
 - [ ] [P] Actualizacion controlada de dependencias y division del bundle frontend.
 
 ## Prioridades
 
 ### P0 - Estabilizacion inmediata
 
-1. Revalidar el arranque normal: Event Log, cifrado Development, puerto Kestrel y DataProtection fueron corregidos; el entorno actual aun bloquea SQL SSPI y certificado HTTPS.
-2. Revalidar materias, superadmin, uploads y rich media end-to-end.
-3. Incorporar pruebas automatizadas de autenticacion y feed.
+1. Revalidar materias, superadmin, uploads y rich media end-to-end sobre el backend local ya desbloqueado.
+2. Incorporar pruebas automatizadas de autenticacion y feed.
 
 ### P1 - Cierre del nucleo social
 
@@ -140,6 +139,23 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 1. Pub/sub distribuido.
 2. Almacenamiento compartido de archivos.
 3. CI, observabilidad y actualizacion de dependencias.
+
+### P4 - Contenedores y CI/CD
+
+1. Dockerización del entorno local y de producción.
+2. Integración y despliegue continuo con GitHub Actions.
+
+### P5 - Despliegue Cloud Gratuito
+
+1. Migración y despliegue del backend en Azure App Service F1.
+2. Migración y alojamiento de base de datos en Azure SQL Free Tier.
+3. Integración de Cloudinary para el alojamiento de imágenes y archivos estáticos.
+
+### P6 - Ecosistema Móvil
+
+1. Inicialización del proyecto móvil con React Native + Expo.
+2. Sincronización del estado y cache Apollo entre Web y Mobile.
+3. Compilación de APK y distribución en entornos de prueba.
 
 ## Definition of Done por feature
 
