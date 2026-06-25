@@ -39,5 +39,7 @@ namespace OneItb.Entities.Models
         public virtual ICollection<Inquiry> Inquiries { get; set; } = new List<Inquiry>();
         public virtual ICollection<Subject> Prerequisites { get; set; } = new List<Subject>();
         public virtual ICollection<Subject> RequiredBy { get; set; } = new List<Subject>();
+        public virtual ICollection<AcademicResource> AcademicResources { get; set; } = new List<AcademicResource>();
+        public virtual ICollection<AcademicProgress> AcademicProgressRecords { get; set; } = new List<AcademicProgress>();
     }
 }

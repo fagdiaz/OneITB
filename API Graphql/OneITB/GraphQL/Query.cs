@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Services.LinkPreviews;
 using Services.Social;
+using Services.Academic;
 
 namespace GraphQL.GraphQL
 {
@@ -165,6 +166,78 @@ namespace GraphQL.GraphQL
         }
 
         [Authorize]
+        public async Task<IReadOnlyList<AcademicResource>> GetAcademicResources(
+            int subjectId,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.GetAcademicResourcesAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    subjectId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<IReadOnlyList<AcademicProgress>> GetMyAcademicProgress(
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.GetMyAcademicProgressAsync(GetAuthenticatedUserId(httpContextAccessor));
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        public async Task<IReadOnlyList<AcademicProgress>> GetAcademicProgressForUser(
+            Guid userId,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.GetAcademicProgressForUserAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    userId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Administrador", "Profesor" })]
+        public async Task<IReadOnlyList<User>> GetAcademicStudents(
+            int subjectId,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.GetAcademicStudentsAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    subjectId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
         [UsePaging(MaxPageSize = 50, IncludeTotalCount = true)]
         public IQueryable<MessagingContact> GetMessagingContacts(
             [Service] IMessagingService messagingService,
@@ -249,6 +322,11 @@ namespace GraphQL.GraphQL
             string value = httpContextAccessor.HttpContext?.User
                 .FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(value, out Guid userId) ? userId : null;
+        }
+
+        private static string GetAuthenticatedRole(IHttpContextAccessor httpContextAccessor)
+        {
+            return httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
         }
     }
 }

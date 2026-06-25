@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using HotChocolate.Subscriptions;
 using OneITB.GraphQL.Subscriptions;
+using Services.Academic;
 
 namespace OneITB.GraphQL.Mutations
 {
@@ -503,6 +504,87 @@ namespace OneITB.GraphQL.Mutations
             return interaction;
         }
 
+        [Authorize(Roles = new[] { "Administrador", "Profesor" })]
+        public async Task<AcademicResource> AddAcademicResource(
+            int subjectId,
+            string title,
+            string description,
+            string fileUrl,
+            string externalUrl,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.AddAcademicResourceAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    subjectId,
+                    title,
+                    description,
+                    fileUrl,
+                    externalUrl);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Administrador", "Profesor" })]
+        public async Task<AcademicResource> ToggleAcademicResourceStatus(
+            Guid resourceId,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.ToggleAcademicResourceStatusAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    resourceId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Administrador", "Profesor" })]
+        public async Task<AcademicProgress> UpsertAcademicProgress(
+            Guid userId,
+            int subjectId,
+            decimal? score,
+            AcademicProgressStatus status,
+            string notes,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.UpsertAcademicProgressAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    userId,
+                    subjectId,
+                    score,
+                    status,
+                    notes);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
         [Authorize]
         public async Task<Message> SendMessage(
             Guid receiverId,
@@ -568,6 +650,11 @@ namespace OneITB.GraphQL.Mutations
         {
             string? role = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
             return role is "Administrador" or "Moderador";
+        }
+
+        private static string GetAuthenticatedRole(IHttpContextAccessor httpContextAccessor)
+        {
+            return httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
         }
 
         private static void ValidateSubjectYear(int? year)

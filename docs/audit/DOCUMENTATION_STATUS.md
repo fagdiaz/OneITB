@@ -1,13 +1,13 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-24
+**Ultima verificacion**: 2026-06-25
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 58/76 (76%) |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 62/76 (82%) |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
@@ -29,6 +29,7 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/136-academic-module/` | Recursos por materia y progreso/notas implementados; runtime GraphQL contra Docker SQL verificado |
 | `specs/099-social-admin-ecosystem/` | Feed social, seed y administracion verificados end-to-end |
 | `specs/104-realtime-private-messaging/` | Mensajeria persistente y tiempo real verificados |
 | `specs/118-end-to-end-subjects-module/` | Implementada; migracion/build verificados, runtime reciente bloqueado |
@@ -45,7 +46,7 @@
 
 ## Brechas vigentes
 
-- Recursos, notas, SIU y notificaciones academicas permanecen pendientes.
+- Busqueda/versionado de recursos, SIU y notificaciones academicas permanecen pendientes.
 - Faltan suites automatizadas de autenticacion, feed, GraphQL y componentes.
 - Pub/sub y almacenamiento de archivos sirven a una sola instancia.
 - Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.

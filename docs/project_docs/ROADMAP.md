@@ -1,8 +1,8 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-06-24
+**Ultima revision**: 2026-06-25
 
-**Estado global**: 76% (58 de 76 items)
+**Estado global**: 82% (62 de 76 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -37,7 +37,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Seguir, silenciar y bloquear usuarios.
 - [ ] [P] Controles de privacidad y gestion explicita de seguidores.
 
-## Modulo 3 - Carreras y materias: 86% (6/7)
+## Modulo 3 - Carreras y materias: 100% (7/7)
 
 - [x] [I] CRUD y estado activo de carreras.
 - [x] [I] Materias asociadas obligatoriamente a una carrera.
@@ -45,7 +45,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Correlatividades N:M con integridad restrictiva.
 - [x] [I] Inscripcion de usuarios a multiples carreras.
 - [x] [I] Selectores en cascada carrera-materia en feed y administracion.
-- [ ] [P] Progreso academico, cursadas y notas por usuario.
+- [x] [I] Progreso academico, cursadas y notas por usuario.
 
 ## Modulo 4 - Feed, comentarios y multimedia: 94% (16/17)
 
@@ -91,12 +91,12 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Auditoria persistente de acciones administrativas y de moderacion.
 - [ ] [P] Regresion runtime del panel tras cambios de materias y superadmin.
 
-## Modulo 7 - Recursos y seguimiento academico: 0% (0/6)
+## Modulo 7 - Recursos y seguimiento academico: 50% (3/6)
 
-- [ ] [P] Entidad y repositorio de recursos academicos independiente del feed.
-- [ ] [P] Permisos de recursos por carrera, materia y rol.
+- [x] [I] Entidad y repositorio de recursos academicos independiente del feed.
+- [x] [I] Permisos de recursos por carrera, materia y rol.
 - [ ] [P] Busqueda, categorias y versionado de recursos.
-- [ ] [P] Visualizacion de notas y progreso academico.
+- [x] [I] Visualizacion de notas y progreso academico.
 - [ ] [P] Adaptador o simulador desacoplado para SIU Guarani.
 - [ ] [P] Preferencias de notificacion por materia.
 
@@ -131,9 +131,9 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P2 - Alcance academico pendiente
 
-1. Recursos por materia.
-2. Progreso y notas.
-3. Adaptador SIU y preferencias de notificacion.
+1. Busqueda, categorias y versionado de recursos.
+2. Adaptador SIU desacoplado o simulador institucional.
+3. Preferencias de notificacion por materia.
 
 ### P3 - Escalabilidad y operacion
 

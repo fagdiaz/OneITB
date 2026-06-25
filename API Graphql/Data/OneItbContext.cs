@@ -21,6 +21,8 @@ namespace OneItb.Data
         public DbSet<Reaction> Reactions { get; set; } = null!;
         public DbSet<CommunityReport> CommunityReports { get; set; } = null!;
         public DbSet<ModerationAudit> ModerationAudits { get; set; } = null!;
+        public DbSet<AcademicResource> AcademicResources { get; set; } = null!;
+        public DbSet<AcademicProgress> AcademicProgressRecords { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
 
@@ -157,6 +159,82 @@ namespace OneItb.Data
                             join.HasKey(link => new { link.SubjectId, link.PrerequisiteId });
                             join.HasIndex(link => link.PrerequisiteId);
                         });
+            });
+
+            // ==========================================
+            // MAPEO: TABLA ACADEMIC_RESOURCES
+            // ==========================================
+            modelBuilder.Entity<AcademicResource>(entity =>
+            {
+                entity.ToTable("AcademicResources", "dbo", table =>
+                    table.HasCheckConstraint(
+                        "CK_AcademicResources_Content",
+                        "([FileUrl] IS NOT NULL AND LEN([FileUrl]) > 0) OR ([ExternalUrl] IS NOT NULL AND LEN([ExternalUrl]) > 0)"));
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.FileUrl).HasMaxLength(500).IsUnicode(true);
+                entity.Property(e => e.ExternalUrl).HasMaxLength(500).IsUnicode(true);
+                entity.Property(e => e.ResourceType).IsRequired().HasMaxLength(20).IsUnicode(false);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+                entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
+
+                entity.HasQueryFilter(e => e.IsActive);
+                entity.HasIndex(e => e.SubjectId);
+                entity.HasIndex(e => e.UploaderId);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => new { e.SubjectId, e.IsActive, e.CreatedAt });
+
+                entity.HasOne(e => e.Subject)
+                    .WithMany(subject => subject.AcademicResources)
+                    .HasForeignKey(e => e.SubjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Uploader)
+                    .WithMany(user => user.UploadedAcademicResources)
+                    .HasForeignKey(e => e.UploaderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA ACADEMIC_PROGRESS
+            // ==========================================
+            modelBuilder.Entity<AcademicProgress>(entity =>
+            {
+                entity.ToTable("AcademicProgress", "dbo", table =>
+                    table.HasCheckConstraint(
+                        "CK_AcademicProgress_Score",
+                        "[Score] IS NULL OR ([Score] >= 0 AND [Score] <= 10)"));
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Score).HasColumnType("decimal(5,2)");
+                entity.Property(e => e.Status).IsRequired().HasConversion<string>().HasMaxLength(20).IsUnicode(false);
+                entity.Property(e => e.Notes).HasMaxLength(1000);
+                entity.Property(e => e.UpdatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => new { e.UserId, e.SubjectId }).IsUnique();
+                entity.HasIndex(e => e.SubjectId);
+                entity.HasIndex(e => e.AssignedById);
+                entity.HasIndex(e => e.UpdatedAt);
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.AcademicProgressRecords)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Subject)
+                    .WithMany(subject => subject.AcademicProgressRecords)
+                    .HasForeignKey(e => e.SubjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.AssignedBy)
+                    .WithMany(user => user.AssignedAcademicProgressRecords)
+                    .HasForeignKey(e => e.AssignedById)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // ==========================================

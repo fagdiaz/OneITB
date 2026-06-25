@@ -27,6 +27,7 @@ using OneItb.GraphQL.Authentication;
 using Services.LinkPreviews;
 using Services.Uploads;
 using OneItb.GraphQL.Infrastructure;
+using Services.Academic;
 
 namespace OneItb.GraphQL
 {
@@ -183,6 +184,7 @@ namespace OneItb.GraphQL
             services.AddScoped<IEmployerAuthService, Services.Auth.EmployerAuthService>();
             services.AddScoped<IModerationService, Services.Moderation.ModerationService>();
             services.AddScoped<ISocialService, SocialService>();
+            services.AddScoped<IAcademicService, AcademicService>();
             services.AddScoped<IMessagingService, MessagingService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();

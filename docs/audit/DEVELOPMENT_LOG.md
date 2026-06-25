@@ -5,6 +5,36 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-25] - Academic Module (Spec: 136-academic-module)
+
+* **Objetivo**: implementar el modulo academico P2 con recursos por materia y progreso/notas por estudiante, respetando `DeleteBehavior.Restrict`, autorizacion por rol y consultas GraphQL sin N+1.
+* **Resultado**:
+  - Se agregaron las entidades `AcademicResource`, `AcademicProgress` y `AcademicProgressStatus`.
+  - Se mapearon FKs explicitas y restrictivas hacia `Subject`, usuario uploader, estudiante y usuario asignador; `AcademicProgress` queda unico por `(UserId, SubjectId)`.
+  - Se agrego `AcademicService` con reglas de acceso: Admin/Profesor gestionan recursos y progreso; estudiantes leen recursos de sus carreras y solo su propio progreso.
+  - Se expusieron queries/mutations GraphQL: `academicResources`, `academicStudents`, `myAcademicProgress`, `academicProgressForUser`, `addAcademicResource`, `toggleAcademicResourceStatus` y `upsertAcademicProgress`.
+  - Se agrego la pantalla React `AcademicDashboard` en `/academic`, con selector carrera/materia, carga de recursos y gestion de progreso para Admin/Profesor.
+  - Se genero y aplico la migracion `AddAcademicModule` contra SQL Server Docker.
+* **Validaciones ejecutadas**:
+  - `dotnet ef database update`: PASS contra Docker SQL.
+  - `dotnet ef migrations has-pending-model-changes --configuration Release --no-build`: PASS, sin cambios pendientes.
+  - Runtime GraphQL contra Docker SQL: login admin/estudiante, creacion/consulta/toggle de recurso, rechazo de creacion por estudiante, listado de estudiantes, upsert de progreso, lectura propia de progreso y rechazo de lectura admin-only por estudiante: PASS.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 errores; persisten warnings nullable preexistentes.
+  - `npm.cmd run build`: PASS; persisten warnings conocidos de Vite (`vite:react-babel` y chunk size).
+* **Estado**:
+  - Recursos por materia y progreso/notas quedan implementados y validados por contrato GraphQL/runtime.
+  - Queda pendiente verificacion visual en navegador y features academicas posteriores: busqueda/versionado de recursos, SIU y notificaciones por materia.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/AcademicResource.cs`
+  - `API Graphql/Entities/Models/AcademicProgress.cs`
+  - `API Graphql/Services/Academic/AcademicService.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx`
+  - `docs/project_docs/ROADMAP.md`
+  - `specs/136-academic-module/evidence.md`
+
 ## [2026-06-24] - Core Stabilization Sprint (Spec: 135-core-stabilization-sprint)
 
 * **Objetivo**: validar las specs pendientes tras el unblock runtime y cerrar P1 del nucleo social con paginacion de feed, limpieza de uploads huerfanos y auditoria persistente de moderacion.

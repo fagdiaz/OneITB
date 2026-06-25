@@ -57,5 +57,8 @@ namespace OneItb.Entities.Models
         public virtual ICollection<UserCareer> UserCareers { get; set; } = new List<UserCareer>();
         public virtual ICollection<UserInteraction> ObservedInteractions { get; set; } = new List<UserInteraction>();
         public virtual ICollection<UserInteraction> TargetedInteractions { get; set; } = new List<UserInteraction>();
+        public virtual ICollection<AcademicResource> UploadedAcademicResources { get; set; } = new List<AcademicResource>();
+        public virtual ICollection<AcademicProgress> AcademicProgressRecords { get; set; } = new List<AcademicProgress>();
+        public virtual ICollection<AcademicProgress> AssignedAcademicProgressRecords { get; set; } = new List<AcademicProgress>();
     }
 }
