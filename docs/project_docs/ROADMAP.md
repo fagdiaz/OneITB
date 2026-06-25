@@ -2,7 +2,7 @@
 
 **Ultima revision**: 2026-06-25
 
-**Estado global**: 82% (62 de 76 items)
+**Estado global**: 86% (65 de 76 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -91,23 +91,23 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Auditoria persistente de acciones administrativas y de moderacion.
 - [ ] [P] Regresion runtime del panel tras cambios de materias y superadmin.
 
-## Modulo 7 - Recursos y seguimiento academico: 50% (3/6)
+## Modulo 7 - Recursos y seguimiento academico: 83% (5/6)
 
 - [x] [I] Entidad y repositorio de recursos academicos independiente del feed.
 - [x] [I] Permisos de recursos por carrera, materia y rol.
 - [ ] [P] Busqueda, categorias y versionado de recursos.
 - [x] [I] Visualizacion de notas y progreso academico.
-- [ ] [P] Adaptador o simulador desacoplado para SIU Guarani.
-- [ ] [P] Preferencias de notificacion por materia.
+- [x] [I] Adaptador o simulador desacoplado para SIU Guarani.
+- [x] [I] Preferencias de notificacion por materia.
 
-## Modulo 8 - Calidad, operacion y escalabilidad: 50% (6/12)
+## Modulo 8 - Calidad, operacion y escalabilidad: 58% (7/12)
 
 - [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
 - [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
 - [x] [I] Builds Release/Vite y gates de migraciones documentados.
 - [x] [I] Documentacion consolidada y fuentes de verdad definidas.
 - [x] [I] Evidencia por spec y development log cronologico inverso.
-- [ ] [P] Pruebas unitarias del backend.
+- [x] [I] Base de pruebas unitarias del backend para servicios academicos y notificaciones.
 - [ ] [P] Pruebas de componentes y estado frontend.
 - [ ] [P] Pruebas de integracion GraphQL con SQL Server de prueba.
 - [ ] [P] Pipeline CI para build, tests y validacion de migraciones.
@@ -132,8 +132,6 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 ### P2 - Alcance academico pendiente
 
 1. Busqueda, categorias y versionado de recursos.
-2. Adaptador SIU desacoplado o simulador institucional.
-3. Preferencias de notificacion por materia.
 
 ### P3 - Escalabilidad y operacion
 

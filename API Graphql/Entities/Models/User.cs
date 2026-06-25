@@ -60,5 +60,7 @@ namespace OneItb.Entities.Models
         public virtual ICollection<AcademicResource> UploadedAcademicResources { get; set; } = new List<AcademicResource>();
         public virtual ICollection<AcademicProgress> AcademicProgressRecords { get; set; } = new List<AcademicProgress>();
         public virtual ICollection<AcademicProgress> AssignedAcademicProgressRecords { get; set; } = new List<AcademicProgress>();
+        public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public virtual ICollection<NotificationPreference> NotificationPreferences { get; set; } = new List<NotificationPreference>();
     }
 }

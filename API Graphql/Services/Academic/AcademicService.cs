@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
 using OneItb.Entities.Models;
+using Services.Notifications;
+using Services.Siu;
 
 namespace Services.Academic
 {
@@ -11,10 +13,17 @@ namespace Services.Academic
         private const string ResourceTypeMixed = "Mixed";
 
         private readonly OneItbContext _context;
+        private readonly INotificationService _notificationService;
+        private readonly ISiuIntegrationService _siuIntegrationService;
 
-        public AcademicService(OneItbContext context)
+        public AcademicService(
+            OneItbContext context,
+            INotificationService notificationService,
+            ISiuIntegrationService siuIntegrationService)
         {
             _context = context;
+            _notificationService = notificationService;
+            _siuIntegrationService = siuIntegrationService;
         }
 
         public async Task<IReadOnlyList<AcademicResource>> GetAcademicResourcesAsync(Guid actorUserId, string? actorRole, int subjectId)
@@ -40,7 +49,7 @@ namespace Services.Academic
         {
             EnsureCanManageAcademics(actorRole);
             await EnsureActiveUserAsync(actorUserId);
-            await LoadActiveSubjectAsync(subjectId);
+            Subject subject = await LoadActiveSubjectAsync(subjectId);
 
             string normalizedTitle = RequireText(title, 200, "El titulo");
             string? normalizedDescription = OptionalText(description, 1000, "La descripcion");
@@ -66,7 +75,16 @@ namespace Services.Academic
 
             _context.AcademicResources.Add(resource);
             await _context.SaveChangesAsync();
-            return await LoadResourceGraphAsync(resource.Id);
+
+            AcademicResource persisted = await LoadResourceGraphAsync(resource.Id);
+            Guid[] recipients = await GetAcademicAudienceAsync(subject.CareerId, actorUserId);
+            await _notificationService.CreateNotificationsAsync(
+                recipients,
+                NotificationType.AcademicResource,
+                $"Nuevo recurso en {subject.Name}: {persisted.Title}",
+                $"/academic?subjectId={subject.Id}");
+
+            return persisted;
         }
 
         public async Task<AcademicResource> ToggleAcademicResourceStatusAsync(Guid actorUserId, string? actorRole, Guid resourceId)
@@ -184,7 +202,144 @@ namespace Services.Academic
             }
 
             await _context.SaveChangesAsync();
-            return await LoadProgressGraphAsync(progress.Id);
+            AcademicProgress persisted = await LoadProgressGraphAsync(progress.Id);
+            await NotifyAcademicProgressAsync(userId, persisted.Subject.Name);
+            return persisted;
+        }
+
+        public async Task<SiuSyncResult> SyncSiuGradesAsync(Guid actorUserId, string? actorRole, int subjectId)
+        {
+            EnsureAdmin(actorRole);
+            await EnsureActiveUserAsync(actorUserId);
+            Subject subject = await LoadActiveSubjectAsync(subjectId);
+
+            IReadOnlyList<SiuGradeRecord> records = await _siuIntegrationService.GetGradesAsync(subjectId);
+            var skippedItems = new List<string>();
+
+            string[] emails = records
+                .Select(record => record.StudentEmail?.Trim())
+                .Where(email => !string.IsNullOrWhiteSpace(email))
+                .Select(email => email!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            List<Account> accounts = emails.Length == 0
+                ? new List<Account>()
+                : await _context.Accounts
+                    .Include(account => account.User)
+                    .Where(account => emails.Contains(account.Email))
+                    .ToListAsync();
+
+            var accountsByEmail = accounts
+                .GroupBy(account => account.Email, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+
+            Guid[] candidateUserIds = accounts
+                .Select(account => account.User.Id)
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToArray();
+
+            HashSet<Guid> eligibleUserIds = candidateUserIds.Length == 0
+                ? new HashSet<Guid>()
+                : (await _context.UserCareers
+                    .AsNoTracking()
+                    .Where(link => candidateUserIds.Contains(link.UserId) && link.CareerId == subject.CareerId)
+                    .Select(link => link.UserId)
+                    .ToListAsync())
+                    .ToHashSet();
+
+            Dictionary<Guid, AcademicProgress> progressByUserId = eligibleUserIds.Count == 0
+                ? new Dictionary<Guid, AcademicProgress>()
+                : await _context.AcademicProgressRecords
+                    .Where(progress => eligibleUserIds.Contains(progress.UserId) && progress.SubjectId == subjectId)
+                    .ToDictionaryAsync(progress => progress.UserId);
+
+            int created = 0;
+            int updated = 0;
+            var notificationUserIds = new HashSet<Guid>();
+
+            foreach (SiuGradeRecord record in records)
+            {
+                string email = record.StudentEmail?.Trim() ?? string.Empty;
+                if (email.Length == 0)
+                {
+                    skippedItems.Add("Registro sin email.");
+                    continue;
+                }
+
+                if (!accountsByEmail.TryGetValue(email, out Account? account))
+                {
+                    skippedItems.Add($"{email}: sin cuenta local.");
+                    continue;
+                }
+
+                User user = account.User;
+                if (!user.IsActive || !string.Equals(user.Role, "Estudiante", StringComparison.Ordinal))
+                {
+                    skippedItems.Add($"{email}: usuario inactivo o no estudiante.");
+                    continue;
+                }
+
+                if (!eligibleUserIds.Contains(user.Id))
+                {
+                    skippedItems.Add($"{email}: no pertenece a la carrera de {subject.Name}.");
+                    continue;
+                }
+
+                decimal? normalizedScore;
+                try
+                {
+                    normalizedScore = ValidateScore(record.Score);
+                }
+                catch (ArgumentException ex)
+                {
+                    skippedItems.Add($"{email}: {ex.Message}");
+                    continue;
+                }
+
+                string? normalizedNotes = OptionalText(record.Notes, 1000, "Las observaciones");
+
+                if (!progressByUserId.TryGetValue(user.Id, out AcademicProgress? progress))
+                {
+                    progress = new AcademicProgress
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id,
+                        SubjectId = subjectId,
+                        AssignedById = actorUserId
+                    };
+                    _context.AcademicProgressRecords.Add(progress);
+                    progressByUserId[user.Id] = progress;
+                    created++;
+                }
+                else
+                {
+                    updated++;
+                }
+
+                progress.Score = normalizedScore;
+                progress.Status = record.Status;
+                progress.Notes = normalizedNotes;
+                progress.UpdatedAt = DateTime.UtcNow;
+                progress.AssignedById = actorUserId;
+                notificationUserIds.Add(user.Id);
+            }
+
+            if (created + updated > 0)
+                await _context.SaveChangesAsync();
+
+            if (notificationUserIds.Count > 0)
+            {
+                await _notificationService.CreateNotificationsAsync(
+                    notificationUserIds,
+                    NotificationType.SiuSync,
+                    $"Tus notas de {subject.Name} fueron sincronizadas desde SIU Guarani.",
+                    $"/academic?subjectId={subject.Id}");
+            }
+
+            string message = $"Sincronizacion SIU finalizada: {created} altas, {updated} actualizaciones, {skippedItems.Count} omitidos.";
+            return new SiuSyncResult(subjectId, records.Count, created, updated, skippedItems.Count, message, skippedItems);
         }
 
         private IQueryable<AcademicResource> ResourceGraph(bool ignoreFilters = false)
@@ -249,6 +404,29 @@ namespace Services.Academic
             bool exists = await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive);
             if (!exists)
                 throw new InvalidOperationException("Usuario no encontrado o inactivo.");
+        }
+
+        private async Task<Guid[]> GetAcademicAudienceAsync(int careerId, Guid excludedUserId)
+        {
+            return await _context.UserCareers
+                .AsNoTracking()
+                .Where(link =>
+                    link.CareerId == careerId &&
+                    link.UserId != excludedUserId &&
+                    link.User.IsActive &&
+                    link.User.Role == "Estudiante")
+                .Select(link => link.UserId)
+                .Distinct()
+                .ToArrayAsync();
+        }
+
+        private async Task NotifyAcademicProgressAsync(Guid userId, string subjectName)
+        {
+            await _notificationService.CreateNotificationsAsync(
+                new[] { userId },
+                NotificationType.AcademicProgress,
+                $"Se actualizo tu progreso academico en {subjectName}.",
+                "/academic");
         }
 
         private static void EnsureCanManageAcademics(string? role)

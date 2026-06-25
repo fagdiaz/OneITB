@@ -8,6 +8,7 @@ using HotChocolate.Subscriptions;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Http;
 using OneItb.Entities.Models;
+using Services.Notifications;
 
 namespace OneITB.GraphQL.Subscriptions
 {
@@ -33,5 +34,21 @@ namespace OneITB.GraphQL.Subscriptions
         [Authorize]
         [Subscribe(With = nameof(SubscribeToMessageReceived))]
         public Message MessageReceived([EventMessage] Message message) => message;
+
+        public async ValueTask<ISourceStream<Notification>> SubscribeToNotificationReceived(
+            [Service] ITopicEventReceiver receiver,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            string value = httpContextAccessor.HttpContext?.User
+                .FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(value, out Guid userId))
+                throw new GraphQLException("No se pudo identificar al usuario autenticado.");
+
+            return await receiver.SubscribeAsync<Notification>(NotificationTopics.ForUser(userId));
+        }
+
+        [Authorize]
+        [Subscribe(With = nameof(SubscribeToNotificationReceived))]
+        public Notification NotificationReceived([EventMessage] Notification notification) => notification;
     }
 }

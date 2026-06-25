@@ -83,3 +83,17 @@ export const UPSERT_ACADEMIC_PROGRESS = gql`
     }
   }
 `;
+
+export const SYNC_SIU_GRADES = gql`
+  mutation SyncSiuGrades($subjectId: Int!) {
+    syncSiuGrades(subjectId: $subjectId) {
+      subjectId
+      processed
+      created
+      updated
+      skipped
+      message
+      skippedItems
+    }
+  }
+`;

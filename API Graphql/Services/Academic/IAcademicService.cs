@@ -1,4 +1,5 @@
 using OneItb.Entities.Models;
+using Services.Siu;
 
 namespace Services.Academic
 {
@@ -11,5 +12,6 @@ namespace Services.Academic
         Task<IReadOnlyList<AcademicProgress>> GetAcademicProgressForUserAsync(Guid actorUserId, string? actorRole, Guid userId);
         Task<IReadOnlyList<User>> GetAcademicStudentsAsync(Guid actorUserId, string? actorRole, int subjectId);
         Task<AcademicProgress> UpsertAcademicProgressAsync(Guid actorUserId, string? actorRole, Guid userId, int subjectId, decimal? score, AcademicProgressStatus status, string? notes);
+        Task<SiuSyncResult> SyncSiuGradesAsync(Guid actorUserId, string? actorRole, int subjectId);
     }
 }

@@ -28,6 +28,8 @@ using Services.LinkPreviews;
 using Services.Uploads;
 using OneItb.GraphQL.Infrastructure;
 using Services.Academic;
+using Services.Notifications;
+using Services.Siu;
 
 namespace OneItb.GraphQL
 {
@@ -185,6 +187,8 @@ namespace OneItb.GraphQL
             services.AddScoped<IModerationService, Services.Moderation.ModerationService>();
             services.AddScoped<ISocialService, SocialService>();
             services.AddScoped<IAcademicService, AcademicService>();
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<ISiuIntegrationService, MockSiuIntegrationService>();
             services.AddScoped<IMessagingService, MessagingService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();

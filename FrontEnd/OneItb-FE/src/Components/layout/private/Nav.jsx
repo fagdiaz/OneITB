@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import useAuth from '../../../hooks/useAuth'
+import { NotificationBell } from '../../notifications/NotificationBell'
 
 /**
  * Nav — REFACTOR 037 / 040
- * 
+ *
  * Full Tailwind rewrite.
  * Conditionally renders auth dropdown if logged in, or Login/Register buttons if not.
  */
@@ -109,6 +110,8 @@ export const Nav = () => {
             <span className="hidden sm:block text-sm font-medium text-slate-300">
               Hola, <span className="text-white font-semibold">{auth.username || 'Usuario'}</span>
             </span>
+
+            <NotificationBell />
 
             {/* Avatar + dropdown trigger */}
             <div className="relative" ref={dropdownRef}>

@@ -18,6 +18,8 @@ using Microsoft.Extensions.Logging;
 using HotChocolate.Subscriptions;
 using OneITB.GraphQL.Subscriptions;
 using Services.Academic;
+using Services.Notifications;
+using Services.Siu;
 
 namespace OneITB.GraphQL.Mutations
 {
@@ -508,9 +510,9 @@ namespace OneITB.GraphQL.Mutations
         public async Task<AcademicResource> AddAcademicResource(
             int subjectId,
             string title,
-            string description,
-            string fileUrl,
-            string externalUrl,
+            string? description,
+            string? fileUrl,
+            string? externalUrl,
             [Service] IAcademicService academicService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -560,7 +562,7 @@ namespace OneITB.GraphQL.Mutations
             int subjectId,
             decimal? score,
             AcademicProgressStatus status,
-            string notes,
+            string? notes,
             [Service] IAcademicService academicService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -580,6 +582,83 @@ namespace OneITB.GraphQL.Mutations
                 throw new GraphQLException(ex.Message);
             }
             catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        public async Task<SiuSyncResult> SyncSiuGrades(
+            int subjectId,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.SyncSiuGradesAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    subjectId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<Notification> MarkNotificationRead(
+            Guid notificationId,
+            [Service] INotificationService notificationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await notificationService.MarkReadAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    notificationId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<int> MarkAllNotificationsRead(
+            [Service] INotificationService notificationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await notificationService.MarkAllReadAsync(
+                    GetAuthenticatedUserId(httpContextAccessor));
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<NotificationPreference> UpdateNotificationPreference(
+            NotificationType type,
+            bool isEnabled,
+            [Service] INotificationService notificationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await notificationService.UpdatePreferenceAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    type,
+                    isEnabled);
+            }
+            catch (InvalidOperationException ex)
             {
                 throw new GraphQLException(ex.Message);
             }

@@ -7,7 +7,7 @@
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 62/76 (82%) |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 65/76 (86%) |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
@@ -29,6 +29,8 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/138-p2-closure-qa/` | Diagramas Mermaid academicos actualizados; xUnit/Moq para `AcademicService` y `NotificationService` pasando 12/12 |
+| `specs/137-siu-notifications/` | SIU mock, upsert de notas, notificaciones persistentes, preferencias y subscription privada verificados contra Docker SQL |
 | `specs/136-academic-module/` | Recursos por materia y progreso/notas implementados; runtime GraphQL contra Docker SQL verificado |
 | `specs/099-social-admin-ecosystem/` | Feed social, seed y administracion verificados end-to-end |
 | `specs/104-realtime-private-messaging/` | Mensajeria persistente y tiempo real verificados |
@@ -46,8 +48,8 @@
 
 ## Brechas vigentes
 
-- Busqueda/versionado de recursos, SIU y notificaciones academicas permanecen pendientes.
-- Faltan suites automatizadas de autenticacion, feed, GraphQL y componentes.
+- Busqueda, categorias y versionado de recursos permanece pendiente en el modulo academico.
+- Faltan suites automatizadas de autenticacion, feed, GraphQL y componentes; la base backend ya cubre servicios academicos y notificaciones.
 - Pub/sub y almacenamiento de archivos sirven a una sola instancia.
 - Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
 - El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validar specs.

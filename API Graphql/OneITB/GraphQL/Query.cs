@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Services.LinkPreviews;
 using Services.Social;
 using Services.Academic;
+using Services.Notifications;
 
 namespace GraphQL.GraphQL
 {
@@ -230,6 +231,56 @@ namespace GraphQL.GraphQL
                     GetAuthenticatedUserId(httpContextAccessor),
                     GetAuthenticatedRole(httpContextAccessor),
                     subjectId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<IReadOnlyList<Notification>> GetMyNotifications(
+            int first,
+            [Service] INotificationService notificationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await notificationService.GetNotificationsAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    first);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<int> GetUnreadNotificationCount(
+            [Service] INotificationService notificationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await notificationService.GetUnreadCountAsync(
+                    GetAuthenticatedUserId(httpContextAccessor));
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<IReadOnlyList<NotificationPreference>> GetMyNotificationPreferences(
+            [Service] INotificationService notificationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await notificationService.GetPreferencesAsync(
+                    GetAuthenticatedUserId(httpContextAccessor));
             }
             catch (InvalidOperationException ex)
             {

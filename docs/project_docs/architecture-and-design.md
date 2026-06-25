@@ -41,7 +41,7 @@ Mobile/OneItb-App/src/
 ## 3. Contratos de transporte
 
 - `/graphql` por HTTP: queries y mutations de aplicacion.
-- `/graphql` por WebSocket: mensajes privados en tiempo real.
+- `/graphql` por WebSocket: mensajes privados y notificaciones academicas en tiempo real.
 - `POST /api/upload`: transferencia binaria autenticada y desacoplada, maximo 15 MB.
 - `/uploads/{file}`: lectura de archivos estaticos almacenados localmente.
 
@@ -60,6 +60,8 @@ erDiagram
     SUBJECT ||--o{ INQUIRY : classifies
     SUBJECT ||--o{ ACADEMIC_RESOURCE : provides
     SUBJECT ||--o{ ACADEMIC_PROGRESS : tracks
+    USER ||--o{ NOTIFICATION : receives
+    USER ||--o{ NOTIFICATION_PREFERENCE : configures
     INQUIRY ||--o{ COMMENT : contains
     COMMENT ||--o{ COMMENT : replies
     INQUIRY ||--o{ REACTION : receives
@@ -72,7 +74,7 @@ erDiagram
     USER ||--o{ MESSAGE : receives
 ```
 
-Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `ModerationAudit` y `MagicLink`.
+Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`, `NotificationPreference`, `ModerationAudit` y `MagicLink`.
 
 ## 5. Integridad y borrado
 
@@ -114,10 +116,16 @@ Los recursos academicos se consultan por materia mediante `academicResources(sub
 
 El progreso academico se persiste como un registro actual por estudiante y materia. Administradores y profesores asignan estado/nota mediante `upsertAcademicProgress`; el estudiante consulta solo su propio historial con `myAcademicProgress`, mientras que `academicProgressForUser` queda reservado a administradores.
 
+### Adaptador SIU y notificaciones academicas
+
+La integracion SIU usa un puerto `ISiuIntegrationService` para aislar la plataforma externa del dominio propio. La implementacion actual `MockSiuIntegrationService` devuelve calificaciones simuladas; `AcademicService.SyncSiuGradesAsync` consume esos registros y hace upsert idempotente en `AcademicProgress`, validando cuenta local, rol estudiante y pertenencia a la carrera de la materia. La mutacion `syncSiuGrades(subjectId)` esta restringida a administradores.
+
+Las notificaciones se persisten en `Notifications` y las preferencias por tipo en `NotificationPreferences`. `NotificationService` aplica preferencias por defecto habilitadas, guarda eventos academicos y publica en el topico privado `notification:{userId}`. El cliente web consume `notificationReceived` con Apollo WebSocket y expone una campanita global con lectura y preferencias.
+
 ## 7. Estado y limites conocidos
 
 - El pub/sub de subscriptions esta en memoria y sirve a una sola instancia.
 - Los archivos se migrarán hacia Cloudinary para soportar entornos efímeros (Docker/Azure).
-- Busqueda/versionado de recursos, integracion SIU y notificaciones por materia siguen planificados.
+- Busqueda, categorias y versionado de recursos siguen planificados.
 - El arranque temporal usado por Codex puede fallar por cifrado SQL Server y permisos de Windows Event Log; las migraciones EF CLI y builds funcionan.
 - La convivencia del cliente Web y el Mobile Client (React Native) requiere asegurar un diseño de queries y fragments compartido para no duplicar lógica en el Apollo Cache.

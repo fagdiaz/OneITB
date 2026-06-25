@@ -23,6 +23,8 @@ namespace OneItb.Data
         public DbSet<ModerationAudit> ModerationAudits { get; set; } = null!;
         public DbSet<AcademicResource> AcademicResources { get; set; } = null!;
         public DbSet<AcademicProgress> AcademicProgressRecords { get; set; } = null!;
+        public DbSet<Notification> Notifications { get; set; } = null!;
+        public DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
 
@@ -234,6 +236,51 @@ namespace OneItb.Data
                 entity.HasOne(e => e.AssignedBy)
                     .WithMany(user => user.AssignedAcademicProgressRecords)
                     .HasForeignKey(e => e.AssignedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA NOTIFICATIONS
+            // ==========================================
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.ToTable("Notifications", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Type).IsRequired().HasConversion<string>().HasMaxLength(40).IsUnicode(false);
+                entity.Property(e => e.Message).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.ActionUrl).HasMaxLength(300);
+                entity.Property(e => e.IsRead).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt });
+                entity.HasIndex(e => new { e.UserId, e.CreatedAt });
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.Notifications)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA NOTIFICATION_PREFERENCES
+            // ==========================================
+            modelBuilder.Entity<NotificationPreference>(entity =>
+            {
+                entity.ToTable("NotificationPreferences", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Type).IsRequired().HasConversion<string>().HasMaxLength(40).IsUnicode(false);
+                entity.Property(e => e.IsEnabled).IsRequired().HasDefaultValue(true);
+                entity.Property(e => e.UpdatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => new { e.UserId, e.Type }).IsUnique();
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.NotificationPreferences)
+                    .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

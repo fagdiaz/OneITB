@@ -11,6 +11,7 @@ import {
 } from '../../data/graphql/queries/academic';
 import {
   ADD_ACADEMIC_RESOURCE,
+  SYNC_SIU_GRADES,
   TOGGLE_ACADEMIC_RESOURCE_STATUS,
   UPSERT_ACADEMIC_PROGRESS,
 } from '../../data/graphql/mutations/academic';
@@ -60,6 +61,7 @@ export const AcademicDashboard = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [activeTab, setActiveTab] = useState('resources');
   const [feedback, setFeedback] = useState(null);
+  const [siuSyncResult, setSiuSyncResult] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [resourceForm, setResourceForm] = useState({
@@ -121,6 +123,7 @@ export const AcademicDashboard = () => {
   const [addAcademicResource, { loading: addingResource }] = useMutation(ADD_ACADEMIC_RESOURCE);
   const [toggleAcademicResourceStatus, { loading: togglingResource }] = useMutation(TOGGLE_ACADEMIC_RESOURCE_STATUS);
   const [upsertAcademicProgress, { loading: savingProgress }] = useMutation(UPSERT_ACADEMIC_PROGRESS);
+  const [syncSiuGrades, { loading: syncingSiu }] = useMutation(SYNC_SIU_GRADES);
 
   useEffect(() => {
     if (!selectedCareerId && careers.length === 1) {
@@ -135,6 +138,7 @@ export const AcademicDashboard = () => {
 
   useEffect(() => {
     setProgressForm((current) => ({ ...current, userId: '' }));
+    setSiuSyncResult(null);
   }, [selectedSubjectId]);
 
   const selectedSubject = useMemo(
@@ -231,6 +235,29 @@ export const AcademicDashboard = () => {
       }
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'No se pudo guardar el progreso.' });
+    }
+  };
+
+  const runSiuSync = async () => {
+    if (!selectedSubjectNumericId) {
+      setFeedback({ type: 'error', message: 'Selecciona una materia antes de sincronizar SIU.' });
+      return;
+    }
+
+    try {
+      setFeedback(null);
+      const { data } = await syncSiuGrades({
+        variables: { subjectId: selectedSubjectNumericId },
+      });
+      const result = data?.syncSiuGrades;
+      setSiuSyncResult(result ?? null);
+      await refetchMyProgress();
+      if (isAdmin && progressForm.userId) {
+        await refetchSelectedStudentProgress();
+      }
+      setFeedback({ type: 'success', message: result?.message ?? 'Sincronizacion SIU finalizada.' });
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.message || 'No se pudo sincronizar SIU.' });
     }
   };
 
@@ -500,6 +527,60 @@ export const AcademicDashboard = () => {
 
           {isManager && (
             <aside className="space-y-4">
+              {isAdmin && (
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-blue-500">Integracion SIU</p>
+                      <h2 className="mt-1 text-base font-bold text-slate-900">Sincronizar calificaciones</h2>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Ejecuta el adaptador mock para actualizar altas y cambios de notas de la materia seleccionada.
+                      </p>
+                    </div>
+                    <i className="fa-solid fa-arrows-rotate text-blue-500" />
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={!selectedSubjectId || syncingSiu}
+                    onClick={runSiuSync}
+                    className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {syncingSiu ? 'Sincronizando...' : 'Sincronizar SIU'}
+                  </button>
+
+                  {siuSyncResult && (
+                    <div className="mt-4 rounded-xl border border-blue-100 bg-white p-3 text-xs text-slate-600">
+                      <div className="grid grid-cols-4 gap-2 text-center">
+                        <div>
+                          <p className="font-bold text-slate-900">{siuSyncResult.processed}</p>
+                          <p>Procesados</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-emerald-600">{siuSyncResult.created}</p>
+                          <p>Altas</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-blue-600">{siuSyncResult.updated}</p>
+                          <p>Actualizados</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-amber-600">{siuSyncResult.skipped}</p>
+                          <p>Omitidos</p>
+                        </div>
+                      </div>
+                      {siuSyncResult.skippedItems?.length > 0 && (
+                        <ul className="mt-3 list-inside list-disc space-y-1 text-left">
+                          {siuSyncResult.skippedItems.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-base font-bold text-slate-900">Cargar progreso</h2>
                 <p className="mt-1 text-sm text-slate-500">

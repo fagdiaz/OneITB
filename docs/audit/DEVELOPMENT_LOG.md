@@ -5,6 +5,72 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-25] - P2 Closure QA and Design Diagrams (Spec: 138-p2-closure-qa)
+
+* **Objetivo**: cerrar la etapa P2 con documentacion arquitectonica formal y una primera base automatizada de pruebas unitarias para los servicios academicos y de notificaciones.
+* **Resultado**:
+  - Se reemplazo `docs/academic/04-design-diagrams.md` con diagramas Mermaid renderizables: ER completo, secuencia `syncSiuGrades` y arquitectura Pub/Sub de notificaciones.
+  - Se creo el proyecto xUnit `API Graphql/Tests/Services.Tests/Services.Tests.csproj` y se agrego a `API Graphql/OneITB/OneITB.sln`.
+  - Se agrego `ServiceTestData` con EF Core InMemory para pruebas unitarias sin Docker SQL ni secretos.
+  - `AcademicServiceTests` cubre autorizacion por rol, rechazo de estudiantes fuera de carrera, upsert de progreso, notificacion academica y sincronizacion SIU idempotente.
+  - `NotificationServiceTests` cubre preferencias por tipo, filtrado de usuarios inactivos, supresion por preferencia, scoping por propietario y tolerancia a fallos de `ITopicEventSender`.
+* **Validaciones ejecutadas**:
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 12/12.
+  - `dotnet test "API Graphql/OneITB/OneITB.sln" -c Release --no-restore`: PASS, 12/12.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS; persisten warnings conocidos de Vite (`vite:react-babel` y chunk size).
+  - `git diff --check`: PASS; solo avisos LF/CRLF de Windows.
+  - Busqueda de pendientes y secretos en archivos nuevos de tests/diagramas: PASS, sin coincidencias.
+* **Estado**:
+  - La deuda tecnica de pruebas backend queda iniciada e implementada para servicios academicos y notificaciones.
+  - Siguen pendientes suites automatizadas de autenticacion, feed, GraphQL de integracion y componentes frontend.
+* **Archivos principales**:
+  - `docs/academic/04-design-diagrams.md`
+  - `API Graphql/Tests/Services.Tests/Services.Tests.csproj`
+  - `API Graphql/Tests/Services.Tests/TestSupport/ServiceTestData.cs`
+  - `API Graphql/Tests/Services.Tests/Academic/AcademicServiceTests.cs`
+  - `API Graphql/Tests/Services.Tests/Notifications/NotificationServiceTests.cs`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/audit/DOCUMENTATION_STATUS.md`
+  - `specs/138-p2-closure-qa/evidence.md`
+
+## [2026-06-25] - SIU Sync and Notifications (Spec: 137-siu-notifications)
+
+* **Objetivo**: cerrar P2 academico agregando un adaptador desacoplado para SIU Guarani mock y un motor de notificaciones academicas persistentes con preferencias y entrega en tiempo real.
+* **Resultado**:
+  - Se agregaron las entidades `Notification`, `NotificationPreference` y `NotificationType`.
+  - Se mapearon FKs explicitas y restrictivas hacia `User`, con indices para lectura de campanita y preferencia unica por `(UserId, Type)`.
+  - Se agrego el puerto `ISiuIntegrationService` y la implementacion `MockSiuIntegrationService`.
+  - `AcademicService.SyncSiuGradesAsync` hace upsert idempotente en `AcademicProgress`, validando cuenta local, rol estudiante y pertenencia a carrera.
+  - Se expusieron GraphQL `syncSiuGrades`, `myNotifications`, `unreadNotificationCount`, `myNotificationPreferences`, `markNotificationRead`, `markAllNotificationsRead`, `updateNotificationPreference` y `notificationReceived`.
+  - `NotificationService` persiste eventos, respeta preferencias y publica al topic privado `notification:{userId}`.
+  - Se agrego una campanita global en React con Apollo `useSubscription`, lectura de notificaciones y preferencias por tipo.
+  - `AcademicDashboard` incluye el boton admin-only "Sincronizar SIU" con resumen de procesados, altas, actualizaciones y omitidos.
+  - Se genero y aplico la migracion `AddNotificationsAndSiuSync` contra SQL Server Docker.
+* **Validaciones ejecutadas**:
+  - `dotnet ef database update`: PASS contra Docker SQL.
+  - Runtime GraphQL HTTPS: login admin/estudiante, `syncSiuGrades`, rechazo de sync por estudiante, lectura y marcado de notificaciones, preferencias y supresion de `ACADEMIC_RESOURCE`: PASS.
+  - Runtime WebSocket `notificationReceived`: PASS; evento privado recibido por estudiante al crear recurso academico.
+  - `dotnet ef migrations has-pending-model-changes --configuration Release --no-build`: PASS, sin cambios pendientes.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 errores; persisten warnings nullable preexistentes.
+  - `npm.cmd run build`: PASS; persisten warnings conocidos de Vite (`vite:react-babel` y chunk size).
+  - `git diff --check`: PASS; solo avisos CRLF de Windows.
+  - Secret scan de archivos modificados/nuevos: PASS, sin coincidencias.
+* **Estado**:
+  - SIU mock y preferencias/notificaciones academicas quedan implementados y validados por contrato GraphQL/runtime.
+  - P2 academico queda pendiente solo en busqueda, categorias y versionado de recursos.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Notification.cs`
+  - `API Graphql/Entities/Models/NotificationPreference.cs`
+  - `API Graphql/Services/Siu/MockSiuIntegrationService.cs`
+  - `API Graphql/Services/Notifications/NotificationService.cs`
+  - `API Graphql/Services/Academic/AcademicService.cs`
+  - `API Graphql/OneITB/GraphQL/Subscription.cs`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/NotificationBell.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx`
+  - `docs/project_docs/ROADMAP.md`
+  - `specs/137-siu-notifications/evidence.md`
+
 ## [2026-06-25] - Academic Module (Spec: 136-academic-module)
 
 * **Objetivo**: implementar el modulo academico P2 con recursos por materia y progreso/notas por estudiante, respetando `DeleteBehavior.Restrict`, autorizacion por rol y consultas GraphQL sin N+1.
@@ -644,7 +710,7 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 ## [2026-06-13] - Bugfix/Feature: Mutación Plana y Formulario de Publicación (Rama: 091-build-flat-mutation)
 
 * **Objetivo**: Reconstruir el formulario de creación de consultas en el feed tras el rollback y conectarlo al backend asegurando el envío de variables planas para evitar el Error 400 documentado con HotChocolate.
-* **Descripción**: Se implementaron desde cero las sentencias de Apollo Client `GET_SUBJECTS` y `CREATE_INQUIRY` en archivos separados (queries y mutations). Se actualizaron los imports y el estado local en `Feed.jsx` para integrar el formulario de manera fluida antes de las tarjetas de publicaciones. La firma de la mutación envía exclusivamente escalares directos, transformando `subjectId` a entero (`parseInt`) por seguridad, y prescindiendo de envoltorios `input` o `payload`, garantizando compatibilidad 1:1 con la nueva estructura del Backend. 
+* **Descripción**: Se implementaron desde cero las sentencias de Apollo Client `GET_SUBJECTS` y `CREATE_INQUIRY` en archivos separados (queries y mutations). Se actualizaron los imports y el estado local en `Feed.jsx` para integrar el formulario de manera fluida antes de las tarjetas de publicaciones. La firma de la mutación envía exclusivamente escalares directos, transformando `subjectId` a entero (`parseInt`) por seguridad, y prescindiendo de envoltorios `input` o `payload`, garantizando compatibilidad 1:1 con la nueva estructura del Backend.
 * **Archivos Modificados**:
   - `FrontEnd/OneItb-FE/src/data/graphql/mutations/inquiries.js` (Nuevo)
   - `FrontEnd/OneItb-FE/src/data/graphql/queries/subjects.js` (Nuevo)
