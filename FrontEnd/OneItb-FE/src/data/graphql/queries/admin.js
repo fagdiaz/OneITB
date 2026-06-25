@@ -39,3 +39,39 @@ export const GET_COMMUNITY_REPORTS = gql`
     }
   }
 `;
+
+export const GET_MODERATION_AUDITS = gql`
+  query GetModerationAudits($first: Int!) {
+    moderationAudits(first: $first) {
+      id
+      action
+      summary
+      createdAt
+      actorUser {
+        id
+        firstName
+        lastName
+        role
+      }
+      targetUser {
+        id
+        firstName
+        lastName
+        role
+      }
+      targetInquiry {
+        id
+        title
+      }
+      targetComment {
+        id
+        content
+      }
+      targetReport {
+        id
+        status
+        reason
+      }
+    }
+  }
+`;

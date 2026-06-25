@@ -5,6 +5,7 @@ import { SubjectManagement } from './SubjectManagement';
 import { ModerationManagement } from './ModerationManagement';
 import { PublicationManagement } from './PublicationManagement';
 import { CommentManagement } from './CommentManagement';
+import { ModerationAuditManagement } from './ModerationAuditManagement';
 
 const tabs = [
   { id: 'users', label: 'Usuarios', icon: 'fa-users', component: UserManagement },
@@ -12,6 +13,7 @@ const tabs = [
   { id: 'publications', label: 'Publicaciones', icon: 'fa-newspaper', component: PublicationManagement },
   { id: 'comments', label: 'Comentarios', icon: 'fa-comments', component: CommentManagement },
   { id: 'moderation', label: 'Moderacion / Reportes', icon: 'fa-shield-halved', component: ModerationManagement },
+  { id: 'audit', label: 'Auditoria', icon: 'fa-clipboard-list', component: ModerationAuditManagement },
 ];
 
 export const AdminDashboard = () => {

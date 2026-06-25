@@ -25,6 +25,8 @@ using Services.Messaging;
 using OneITB.GraphQL.Subscriptions;
 using OneItb.GraphQL.Authentication;
 using Services.LinkPreviews;
+using Services.Uploads;
+using OneItb.GraphQL.Infrastructure;
 
 namespace OneItb.GraphQL
 {
@@ -184,7 +186,9 @@ namespace OneItb.GraphQL
             services.AddScoped<IMessagingService, MessagingService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
+            services.AddScoped<IUploadCleanupService, UploadCleanupService>();
             services.AddSingleton<ILinkPreviewService, LinkPreviewService>();
+            services.AddHostedService<UploadCleanupHostedService>();
 
             services.AddAuthentication(options =>
             {

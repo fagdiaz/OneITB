@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
+using System.Text;
 
 namespace Services.Social
 {
@@ -21,6 +22,7 @@ namespace Services.Social
                 .Include(inquiry => inquiry.User)
                 .ThenInclude(user => user.Account)
                 .Include(inquiry => inquiry.Subject)
+                .ThenInclude(subject => subject.Career)
                 .Include(inquiry => inquiry.Reactions)
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.User);
@@ -73,6 +75,39 @@ namespace Services.Social
                 .ThenByDescending(inquiry => inquiry.PublishDate);
         }
 
+        public async Task<InquiryPage> GetInquiriesPageAsync(
+            Guid? currentUserId,
+            string? searchTerm,
+            int? careerId,
+            int[]? subjectIds,
+            int first,
+            string? after)
+        {
+            int pageSize = Math.Clamp(first, 1, 25);
+            int offset = DecodeOffset(after);
+
+            IQueryable<Inquiry> query = GetInquiries(currentUserId, searchTerm, careerId, subjectIds);
+            int totalCount = await query.CountAsync();
+            List<Inquiry> pageItems = await query
+                .Skip(offset)
+                .Take(pageSize + 1)
+                .ToListAsync();
+
+            bool hasNextPage = pageItems.Count > pageSize;
+            if (hasNextPage)
+            {
+                pageItems.RemoveAt(pageItems.Count - 1);
+            }
+
+            return new InquiryPage
+            {
+                Items = pageItems,
+                HasNextPage = hasNextPage,
+                NextCursor = hasNextPage ? EncodeOffset(offset + pageItems.Count) : string.Empty,
+                TotalCount = totalCount
+            };
+        }
+
         public async Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content, string? fileUrl = null)
         {
             await EnsureUserCanCreateContentAsync(userId, "publicar");
@@ -101,7 +136,7 @@ namespace Services.Social
 
             _context.Inquiries.Add(inquiry);
             await _context.SaveChangesAsync();
-            return inquiry;
+            return await LoadInquiryGraphAsync(inquiry.Id);
         }
 
         private static string? NormalizeFileUrl(string? fileUrl)
@@ -118,6 +153,33 @@ namespace Services.Social
             }
 
             return normalized;
+        }
+
+        private static string EncodeOffset(int offset)
+        {
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes($"offset:{offset}"));
+        }
+
+        private static int DecodeOffset(string? cursor)
+        {
+            if (string.IsNullOrWhiteSpace(cursor))
+                return 0;
+
+            try
+            {
+                string decoded = Encoding.UTF8.GetString(Convert.FromBase64String(cursor));
+                if (!decoded.StartsWith("offset:", StringComparison.Ordinal))
+                    throw new FormatException();
+
+                if (!int.TryParse(decoded["offset:".Length..], out int offset) || offset < 0)
+                    throw new FormatException();
+
+                return offset;
+            }
+            catch (FormatException)
+            {
+                throw new InvalidOperationException("Cursor de paginacion invalido.");
+            }
         }
 
         public async Task<Inquiry> EditInquiryAsync(Guid userId, bool canModerate, Guid inquiryId, string newTitle, string newContent)
@@ -224,7 +286,7 @@ namespace Services.Social
 
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
-            return comment;
+            return await LoadCommentGraphAsync(comment.Id);
         }
 
         public async Task<ToggleReactionPayload> ToggleReactionAsync(Guid userId, Guid inquiryId)
@@ -283,6 +345,29 @@ namespace Services.Social
             if (normalized.Length > maxLength)
                 throw new ArgumentException($"{fieldName} no puede superar {maxLength} caracteres.");
             return normalized;
+        }
+
+        private async Task<Inquiry> LoadInquiryGraphAsync(Guid inquiryId)
+        {
+            return await _context.Inquiries
+                .AsNoTracking()
+                .Include(inquiry => inquiry.User)
+                .ThenInclude(user => user.Account)
+                .Include(inquiry => inquiry.Subject)
+                .ThenInclude(subject => subject.Career)
+                .Include(inquiry => inquiry.Reactions)
+                .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.User)
+                .SingleAsync(inquiry => inquiry.Id == inquiryId);
+        }
+
+        private async Task<Comment> LoadCommentGraphAsync(Guid commentId)
+        {
+            return await _context.Comments
+                .AsNoTracking()
+                .Include(comment => comment.User)
+                .Include(comment => comment.Inquiry)
+                .SingleAsync(comment => comment.Id == commentId);
         }
     }
 }

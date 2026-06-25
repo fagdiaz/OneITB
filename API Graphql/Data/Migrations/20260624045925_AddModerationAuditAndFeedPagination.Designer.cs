@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneItb.Data;
 
@@ -11,9 +12,11 @@ using OneItb.Data;
 namespace Data.Migrations
 {
     [DbContext(typeof(OneItbContext))]
-    partial class OneItbContextModelSnapshot : ModelSnapshot
+    [Migration("20260624045925_AddModerationAuditAndFeedPagination")]
+    partial class AddModerationAuditAndFeedPagination
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -5,6 +5,61 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-24] - Core Stabilization Sprint (Spec: 135-core-stabilization-sprint)
+
+* **Objetivo**: validar las specs pendientes tras el unblock runtime y cerrar P1 del nucleo social con paginacion de feed, limpieza de uploads huerfanos y auditoria persistente de moderacion.
+* **Resultado**:
+  - Se dockerizo la base local con SQL Server 2022 (`oneitb23-sql`) y se abandono LocalDB/SQLEXPRESS para validacion de specs.
+  - Se configuro `dotnet user-secrets` para la connection string local contra Docker sin commitear contrasenas.
+  - Se corrigio un bug runtime en `AddInquiry`/`AddComment`: HotChocolate recibia entidades sin grafo cargado y fallaba al resolver campos no-null (`subject`, `user`). El servicio social ahora recarga el grafo antes de retornar.
+  - Se corrigio un bug runtime en `inquiriesPage` con filtros: el feed paginado no incluia `Subject.Career` y fallaba cuando GraphQL solicitaba carrera de la materia.
+  - Se agrego `inquiriesPage` con paginacion acotada por cursor offset, conservando filtros de busqueda, carrera, materias y reglas sociales existentes.
+  - Se implemento cleanup de uploads huerfanos con servicio dedicado y `BackgroundService`, preservando archivos referenciados por `Inquiry.FileUrl` y `Comment.FileUrl`.
+  - Se agrego auditoria persistente de moderacion con entidad `ModerationAudit`, FKs restrictivas, servicio de registro, query admin-only y pestaña de auditoria en el panel admin.
+  - Se genero la migracion `AddModerationAuditAndFeedPagination`; el snapshot EF quedo sincronizado.
+* **Validaciones ejecutadas**:
+  - `docker compose up -d`: PASS; `oneitb23-sql` alcanzo estado healthy.
+  - `dotnet ef database update`: PASS contra SQL Server Docker.
+  - Runtime previo a P1: login admin, subjects, `addSubject`, proteccion admin, upload, `addInquiry(fileUrl)` y `addComment(fileUrl)` verificados; el bug de retorno GraphQL fue corregido y revalidado.
+  - Runtime final contra Docker SQL: `query { __typename }`, login admin, `POST /api/upload`, `addInquiry(fileUrl)`, `addComment(fileUrl)`, tres paginas de `inquiriesPage` sin duplicados, filtros por busqueda/carrera/materia, acciones de moderacion y `moderationAudits`: PASS.
+  - Cleanup de uploads: PASS; log de arranque `Scanned=9 Deleted=1 Preserved=8 Failed=0`; `.gitkeep` queda preservado aunque envejezca.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 errores; persisten 5 warnings nullable preexistentes en `Services`.
+  - `npm.cmd run build`: PASS; persisten warnings conocidos de chunk size y deprecacion `vite:react-babel`.
+  - `dotnet ef migrations has-pending-model-changes`: PASS, sin cambios pendientes.
+* **Estado**:
+  - P1 queda verificada contra Docker SQL.
+  - Queda pendiente la regresion visual del panel admin en navegador; no se declaro verificada desde esta spec.
+* **Archivos principales**:
+  - `docker-compose.yml`
+  - `.env.example`
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `API Graphql/Services/Social/InquiryPage.cs`
+  - `API Graphql/Services/Uploads/UploadCleanupService.cs`
+  - `API Graphql/Entities/Models/ModerationAudit.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/ModerationAuditManagement.jsx`
+  - `specs/135-core-stabilization-sprint/evidence.md`
+
+## [2026-06-23] - Local Backend Runtime Unblock (Spec: 134-local-backend-runtime-unblock)
+
+* **Objetivo**: destrabar el arranque local del backend corrigiendo la dependencia de SQL SSPI/SQLEXPRESS, certificados HTTPS de desarrollo y conflictos de runtime local.
+* **Resultado**:
+  - `appsettings.Development.json` usa LocalDB con `Encrypt=True;TrustServerCertificate=True`, sin contrasenas ni cambios en la configuracion default/produccion.
+  - Se limpio, recreo y confio el certificado HTTPS de desarrollo; el certificado `CN=localhost` quedo verificado hasta 2027-06-23.
+  - Se confirmo que `Program.cs` no registra Windows Event Log y conserva logging Console/Debug.
+  - Se identifico IIS Express como bloqueo local de DLLs/puerto y se libero para validar Kestrel.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 errores; persisten 16 warnings nullable preexistentes.
+  - `dotnet run --project "API Graphql/OneITB/GraphQL.csproj" --launch-profile OneITB`: Kestrel escucho en `https://localhost:44397` y `http://localhost:5000`.
+  - GraphQL HTTPS smoke test `query { __typename }`: HTTP 200, `{"data":{"__typename":"Query"}}`.
+  - `speckit-qa` con `-RunBuilds`: PASS.
+* **Archivos principales**:
+  - `API Graphql/OneITB/appsettings.Development.json`
+  - `docs/audit/RUNBOOK_DEV.md`
+  - `docs/project_docs/ROADMAP.md`
+  - `specs/134-local-backend-runtime-unblock/evidence.md`
+
 ## [2026-06-23] - Media Preview Stabilization (Spec: 133-media-preview-stabilization)
 
 * **Objetivo**: recuperar la calidad visual del rich media despues de la limpieza de consola, mostrando miniaturas de YouTube y corrigiendo imagenes adjuntas que aparecian como `Attachment`.

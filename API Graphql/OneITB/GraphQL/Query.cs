@@ -14,6 +14,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Services.LinkPreviews;
+using Services.Social;
 
 namespace GraphQL.GraphQL
 {
@@ -79,6 +80,32 @@ namespace GraphQL.GraphQL
             return socialService.GetInquiries(currentUserId, searchTerm, careerId, subjectIds);
         }
 
+        public async Task<InquiryPage> GetInquiriesPage(
+            string? searchTerm,
+            int? careerId,
+            int[]? subjectIds,
+            int first,
+            string? after,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                Guid? currentUserId = TryGetAuthenticatedUserId(httpContextAccessor);
+                return await socialService.GetInquiriesPageAsync(
+                    currentUserId,
+                    searchTerm,
+                    careerId,
+                    subjectIds,
+                    first,
+                    after);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
         [Authorize]
         public Task<LinkPreviewResult> GetLinkPreview(
             string url,
@@ -128,6 +155,13 @@ namespace GraphQL.GraphQL
         public IQueryable<CommunityReport> GetCommunityReports([Service] IModerationService moderationService)
         {
             return moderationService.GetCommunityReports();
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        [UseProjection]
+        public IQueryable<ModerationAudit> GetModerationAudits(int first, [Service] IModerationService moderationService)
+        {
+            return moderationService.GetModerationAudits(first);
         }
 
         [Authorize]

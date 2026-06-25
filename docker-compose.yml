@@ -1,0 +1,26 @@
+services:
+  oneitb-sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: oneitb23-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      SA_PASSWORD: "${ONEITB_SQL_SA_PASSWORD:?Set ONEITB_SQL_SA_PASSWORD in .env or your shell}"
+      MSSQL_SA_PASSWORD: "${ONEITB_SQL_SA_PASSWORD:?Set ONEITB_SQL_SA_PASSWORD in .env or your shell}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - oneitb23_sql_data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${SA_PASSWORD}\" -C -Q \"SELECT 1\" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$${SA_PASSWORD}\" -Q \"SELECT 1\" || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
+volumes:
+  oneitb23_sql_data:

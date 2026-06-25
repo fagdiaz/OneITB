@@ -1,15 +1,30 @@
 # Runbook de desarrollo - OneITB23
 
-**Ultima revision**: 2026-06-19
+**Ultima revision**: 2026-06-24
 
 ## Requisitos
 
 - .NET SDK 8.
-- SQL Server accesible con la cadena configurada.
+- Docker Desktop o Docker Engine con Compose para SQL Server local.
 - Node.js compatible con Vite 8.
 - Certificado HTTPS de desarrollo confiable.
 
 ## Backend
+
+Antes de levantar el backend por primera vez, iniciar SQL Server en Docker y configurar el secreto local de conexion:
+
+```powershell
+Copy-Item .env.example .env
+# Editar .env y definir ONEITB_SQL_SA_PASSWORD con un password fuerte local.
+docker compose up -d
+
+$password = ((Get-Content .env | Where-Object { $_ -like 'ONEITB_SQL_SA_PASSWORD=*' }) -replace '^ONEITB_SQL_SA_PASSWORD=', '')
+$connection = "Server=localhost,1433;Database=OneItb;User Id=sa;Password=$password;Encrypt=False;TrustServerCertificate=True;"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" $connection --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+`appsettings.Development.json` contiene un placeholder no usable. La cadena real de Development debe venir de `dotnet user-secrets` o de `ConnectionStrings__DefaultConnection`.
 
 ```powershell
 dotnet restore "API Graphql/OneITB/GraphQL.csproj"
@@ -48,7 +63,10 @@ El perfil `OneITB` del backend escucha en el mismo puerto HTTPS para evitar dife
 Si el certificado HTTPS local no esta instalado o confiado:
 
 ```powershell
+dotnet dev-certs https --check
+dotnet dev-certs https --clean
 dotnet dev-certs https --trust
+dotnet dev-certs https --check --trust
 ```
 
 ## Validacion por tipo de cambio
@@ -76,13 +94,75 @@ dotnet dev-certs https --trust
 
 ## Problemas locales conocidos
 
+### SQL Server Docker local
+
+El runtime local canonico usa SQL Server 2022 en Docker para evitar dependencias de Windows Auth, SPN, Kerberos, LocalDB y `SQLEXPRESS`.
+
+Comandos utiles:
+
+```powershell
+docker compose up -d
+docker compose ps
+docker inspect oneitb23-sql --format "{{json .State.Health}}"
+docker compose logs oneitb-sql --tail 80
+```
+
+La cadena local validada usa SQL Auth contra `localhost,1433` y vive en user-secrets:
+
+```powershell
+$password = ((Get-Content .env | Where-Object { $_ -like 'ONEITB_SQL_SA_PASSWORD=*' }) -replace '^ONEITB_SQL_SA_PASSWORD=', '')
+$connection = "Server=localhost,1433;Database=OneItb;User Id=sa;Password=$password;Encrypt=False;TrustServerCertificate=True;"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" $connection --project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+`Encrypt=False` esta permitido solo en Development contra el contenedor local. No copiar esta cadena a produccion.
+
 ### SQL Server exige cifrado
 
 Si aparece `The instance of SQL Server ... requires encryption`, revisar la cadena del entorno local y el certificado. `TrustServerCertificate=True` solo es aceptable en desarrollo controlado; no debe copiarse a produccion.
 
+Configuracion historica reemplazada: antes se intento usar LocalDB para evitar dependencia de SPN/Kerberos de `localhost\SQLEXPRESS`, pero ese camino queda descartado para validaciones de specs:
+
+Usar la cadena Docker documentada en la seccion anterior.
+
+Si `sqllocaldb create` devuelve exito pero `sqllocaldb info MSSQLLocalDB` sigue informando que la instancia automatica no existe, el runtime LocalDB del host esta dañado o bloqueado por Windows. En ese caso no marcar runtime como verificado; usar SQL Auth por `user-secrets` o reparar LocalDB fuera del repo.
+
+### SQL SSPI / Kerberos
+
+`Failed to generate SSPI context` no es un error de certificado TLS. Es un problema de Windows Integrated Security, Kerberos o SPN contra la instancia SQL configurada.
+
+Opciones locales permitidas:
+
+1. Usar Docker SQL con SQL Auth mediante `dotnet user-secrets` o variable de entorno `ConnectionStrings__DefaultConnection`.
+2. No commitear passwords.
+3. Evitar `localhost\SQLEXPRESS` con Windows Auth y LocalDB para validaciones de specs.
+
+Ejemplo de override local no versionado:
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=OneItb;User Id=sa;Password=<local-secret>;Encrypt=False;TrustServerCertificate=True;" --project "API Graphql/OneITB/GraphQL.csproj"
+```
+
 ### Windows Event Log deniega acceso
 
 El host puede ocultar el error original al intentar escribir en Event Log sin permisos. Para diagnostico local usar logging de consola/archivo o ejecutar con una configuracion que no registre en Event Log.
+
+El host actual limpia providers y registra Console/Debug en `Program.cs`; no registra Windows Event Log.
+
+### Puerto HTTPS ocupado por IIS Express
+
+Si `dotnet run` falla con `Failed to bind to address https://localhost:44397` o `SocketException (10013)`, revisar si IIS Express quedo activo desde Visual Studio:
+
+```powershell
+Get-Process iisexpress -ErrorAction SilentlyContinue
+```
+
+Cerrar solo IIS Express libera los binarios y el puerto local. Si Visual Studio mantiene archivos `Debug` bloqueados, validar con el build ya probado:
+
+```powershell
+dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release
+dotnet run --project "API Graphql/OneITB/GraphQL.csproj" --launch-profile OneITB -c Release --no-build
+```
 
 ## Criterio de evidencia
 

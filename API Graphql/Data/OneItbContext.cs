@@ -20,6 +20,7 @@ namespace OneItb.Data
         public DbSet<Comment> Comments { get; set; } = null!;
         public DbSet<Reaction> Reactions { get; set; } = null!;
         public DbSet<CommunityReport> CommunityReports { get; set; } = null!;
+        public DbSet<ModerationAudit> ModerationAudits { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
 
@@ -371,6 +372,52 @@ namespace OneItb.Data
             });
 
             // ==========================================
+            // MAPEO: TABLA MODERATION_AUDITS
+            // ==========================================
+            modelBuilder.Entity<ModerationAudit>(entity =>
+            {
+                entity.ToTable("ModerationAudits", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Action).IsRequired().HasMaxLength(80).IsUnicode(false);
+                entity.Property(e => e.Summary).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.ActorUserId);
+                entity.HasIndex(e => e.TargetUserId);
+                entity.HasIndex(e => e.TargetInquiryId);
+                entity.HasIndex(e => e.TargetCommentId);
+                entity.HasIndex(e => e.TargetReportId);
+
+                entity.HasOne(e => e.ActorUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ActorUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.TargetUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.TargetUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.TargetInquiry)
+                    .WithMany()
+                    .HasForeignKey(e => e.TargetInquiryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.TargetComment)
+                    .WithMany()
+                    .HasForeignKey(e => e.TargetCommentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.TargetReport)
+                    .WithMany()
+                    .HasForeignKey(e => e.TargetReportId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
             // MAPEO: TABLA MESSAGES
             // ==========================================
             modelBuilder.Entity<Message>(entity =>
@@ -413,7 +460,7 @@ namespace OneItb.Data
                 entity.Property(e => e.Token).IsRequired().HasMaxLength(256);
                 entity.Property(e => e.ExpiresAt).IsRequired().HasColumnType("datetime2");
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
-                
+
                 entity.HasOne(e => e.Account)
                     .WithMany()
                     .HasForeignKey(e => e.AccountId)

@@ -8,7 +8,7 @@ import MediaComponent from './MediaComponent';
 import { UPLOAD_ACCEPT, uploadAttachment } from '../../utils/uploadFile';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
-import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
+import { GET_INQUIRIES_PAGE } from '../../data/graphql/queries/inquiries';
 import { GET_LINK_PREVIEW } from '../../data/graphql/queries/linkPreview';
 import {
   ADD_COMMENT,
@@ -113,6 +113,8 @@ export const Feed = () => {
     searchTerm: searchTermParam?.trim() || null,
     careerId: filterCareerId,
     subjectIds: subjectParam ? [Number(subjectParam)] : null,
+    first: 10,
+    after: null,
   };
 
   const { data: careersData } = useQuery(GET_CAREERS);
@@ -126,7 +128,8 @@ export const Feed = () => {
     loading: inquiriesLoading,
     error: inquiriesError,
     refetch,
-  } = useQuery(GET_INQUIRIES, {
+    fetchMore,
+  } = useQuery(GET_INQUIRIES_PAGE, {
     variables: inquiryVariables,
     fetchPolicy: 'cache-and-network',
   });
@@ -143,7 +146,8 @@ export const Feed = () => {
   const careers = careersData?.careers ?? [];
   const myCareers = myCareersData?.myCareers ?? [];
   const publicationSubjects = subjectsData?.subjects ?? [];
-  const posts = inquiriesData?.inquiries ?? [];
+  const feedPage = inquiriesData?.inquiriesPage;
+  const posts = feedPage?.items ?? [];
   const isModerator = auth.role === 'Administrador' || auth.role === 'Moderador';
   const canSelectCareerForPost = myCareers.length > 1;
   const publicationCareerOptions = auth.role === 'Administrador' ? careers : myCareers;
@@ -206,6 +210,39 @@ export const Feed = () => {
     try {
       await toggleReaction({ variables: { inquiryId } });
       await refetch();
+    } catch (error) {
+      showFeedback('error', error.message);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!feedPage?.hasNextPage || !feedPage.nextCursor) return;
+
+    try {
+      await fetchMore({
+        variables: {
+          ...inquiryVariables,
+          after: feedPage.nextCursor,
+        },
+        updateQuery: (previous, { fetchMoreResult }) => {
+          if (!fetchMoreResult?.inquiriesPage) return previous;
+          const existingItems = previous?.inquiriesPage?.items ?? [];
+          const incomingItems = fetchMoreResult.inquiriesPage.items ?? [];
+          const existingIds = new Set(existingItems.map((item) => item.id));
+          const mergedItems = [
+            ...existingItems,
+            ...incomingItems.filter((item) => !existingIds.has(item.id)),
+          ];
+
+          return {
+            ...previous,
+            inquiriesPage: {
+              ...fetchMoreResult.inquiriesPage,
+              items: mergedItems,
+            },
+          };
+        },
+      });
     } catch (error) {
       showFeedback('error', error.message);
     }
@@ -296,7 +333,7 @@ export const Feed = () => {
           <div className="h-7 w-1 rounded-full bg-blue-600" />
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-800">Muro academico</h1>
-            <p className="text-xs text-slate-500">{posts.length} publicaciones activas</p>
+            <p className="text-xs text-slate-500">{posts.length} de {feedPage?.totalCount ?? posts.length} publicaciones activas</p>
           </div>
         </div>
         <button
@@ -571,6 +608,17 @@ export const Feed = () => {
           </article>
         );
       })}
+
+      {feedPage?.hasNextPage && (
+        <button
+          type="button"
+          onClick={handleLoadMore}
+          disabled={inquiriesLoading}
+          className="self-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {inquiriesLoading ? 'Cargando...' : 'Cargar mas publicaciones'}
+        </button>
+      )}
 
       <ReportModal
         isOpen={Boolean(reportTargetId)}

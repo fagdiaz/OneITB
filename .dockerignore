@@ -1,0 +1,21 @@
+.git/
+.specify/
+.agents/
+specs/
+FrontEnd/OneItb-FE/node_modules/
+FrontEnd/OneItb-FE/dist/
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/build/
+API Graphql/OneITB/wwwroot/uploads/
+API Graphql/OneITB/App_Data/DataProtection-Keys/
+.env
+.env.*
+*.log
+*.pid
+*.user
+*.suo
+*.mdf
+*.ldf

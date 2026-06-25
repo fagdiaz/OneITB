@@ -68,15 +68,23 @@ namespace OneITB.GraphQL.Mutations
             string newRole,
             string? adminPassword,
             [Service] IUsersService usersService,
+            [Service] IModerationService moderationService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
             try
             {
-                return await usersService.UpdateUserRoleAsync(
-                    GetAuthenticatedUserId(httpContextAccessor),
+                Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
+                UserPayload payload = await usersService.UpdateUserRoleAsync(
+                    actorUserId,
                     userId,
                     newRole,
                     adminPassword);
+                await moderationService.RecordAuditAsync(
+                    actorUserId,
+                    "UpdateUserRole",
+                    $"Rol actualizado a {newRole}.",
+                    targetUserId: userId);
+                return payload;
             }
             catch (InvalidOperationException ex)
             {
@@ -85,11 +93,22 @@ namespace OneITB.GraphQL.Mutations
         }
 
         [Authorize(Roles = new[] { "Administrador" })]
-        public async Task<UserPayload> UpdateUserStatus(Guid userId, bool isActive, [Service] IUsersService usersService)
+        public async Task<UserPayload> UpdateUserStatus(
+            Guid userId,
+            bool isActive,
+            [Service] IUsersService usersService,
+            [Service] IModerationService moderationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
             try
             {
-                return await usersService.UpdateUserStatusAsync(userId, isActive);
+                UserPayload payload = await usersService.UpdateUserStatusAsync(userId, isActive);
+                await moderationService.RecordAuditAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    "UpdateUserStatus",
+                    isActive ? "Usuario activado." : "Usuario desactivado.",
+                    targetUserId: userId);
+                return payload;
             }
             catch (InvalidOperationException ex)
             {
@@ -98,9 +117,24 @@ namespace OneITB.GraphQL.Mutations
         }
 
         [Authorize(Roles = new[] { "Administrador", "Moderador" })]
-        public async Task<UserPayload> SilenceUser(Guid userId, int hours, [Service] IUsersService usersService)
+        public async Task<UserPayload> SilenceUser(
+            Guid userId,
+            int hours,
+            [Service] IUsersService usersService,
+            [Service] IModerationService moderationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
-            return await usersService.SilenceUserAsync(userId, hours);
+            UserPayload payload = await usersService.SilenceUserAsync(userId, hours);
+            if (payload.Success)
+            {
+                await moderationService.RecordAuditAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    "SilenceUser",
+                    $"Usuario silenciado por {hours} horas.",
+                    targetUserId: userId);
+            }
+
+            return payload;
         }
 
         public async Task<string> RequestMagicLink(string email, string cuit, [Service] IEmployerAuthService authService)
@@ -130,12 +164,20 @@ namespace OneITB.GraphQL.Mutations
         public async Task<CommunityReport> UpdateReportStatus(
             Guid reportId,
             string status,
-            [Service] OneItbContext context)
+            [Service] OneItbContext context,
+            [Service] IModerationService moderationService,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
             var report = await context.CommunityReports.FindAsync(reportId);
             if (report == null) throw new GraphQLException("Reporte no encontrado.");
             report.Status = status;
             await context.SaveChangesAsync();
+            await moderationService.RecordAuditAsync(
+                GetAuthenticatedUserId(httpContextAccessor),
+                "UpdateReportStatus",
+                $"Reporte actualizado a {status}.",
+                targetReportId: reportId,
+                targetInquiryId: report.InquiryId);
             return report;
         }
 
@@ -345,14 +387,22 @@ namespace OneITB.GraphQL.Mutations
         public async Task<Inquiry> ToggleInquiryStatus(
             Guid inquiryId,
             [Service] ISocialService socialService,
+            [Service] IModerationService moderationService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
             try
             {
-                return await socialService.ToggleInquiryStatusAsync(
-                    GetAuthenticatedUserId(httpContextAccessor),
+                Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
+                Inquiry inquiry = await socialService.ToggleInquiryStatusAsync(
+                    actorUserId,
                     CanModerate(httpContextAccessor),
                     inquiryId);
+                await moderationService.RecordAuditAsync(
+                    actorUserId,
+                    "ToggleInquiryStatus",
+                    inquiry.IsActive ? "Publicacion reactivada." : "Publicacion desactivada.",
+                    targetInquiryId: inquiryId);
+                return inquiry;
             }
             catch (InvalidOperationException ex)
             {
@@ -389,14 +439,23 @@ namespace OneITB.GraphQL.Mutations
         public async Task<Comment> ToggleCommentStatus(
             Guid commentId,
             [Service] ISocialService socialService,
+            [Service] IModerationService moderationService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
             try
             {
-                return await socialService.ToggleCommentStatusAsync(
-                    GetAuthenticatedUserId(httpContextAccessor),
+                Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
+                Comment comment = await socialService.ToggleCommentStatusAsync(
+                    actorUserId,
                     CanModerate(httpContextAccessor),
                     commentId);
+                await moderationService.RecordAuditAsync(
+                    actorUserId,
+                    "ToggleCommentStatus",
+                    comment.IsActive ? "Comentario reactivado." : "Comentario desactivado.",
+                    targetCommentId: commentId,
+                    targetInquiryId: comment.InquiryId);
+                return comment;
             }
             catch (InvalidOperationException ex)
             {

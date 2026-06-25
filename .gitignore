@@ -148,6 +148,7 @@ pnpm-debug.log*
 .env.production.local
 .env.staging.local
 *.env.*
+!.env.example
 
 # ------------------------------------------
 # 6. School / Internal Academic Documents

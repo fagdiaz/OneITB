@@ -1,13 +1,13 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-23
+**Ultima verificacion**: 2026-06-24
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 53/76 (70%) |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 58/76 (76%) |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
@@ -40,6 +40,8 @@
 | `specs/130-presentation-runtime-baseline/` | Implementada; puerto/DataProtection/CORS/media estáticos verificados, feed autenticado bloqueado por SQL SSPI y certificado HTTPS |
 | `specs/131-media-embed-console-contract/` | Implementada; YouTube click-to-load y build frontend verificados, feed autenticado bloqueado por SQL SSPI y certificado HTTPS |
 | `specs/133-media-preview-stabilization/` | Implementada; miniaturas YouTube, resolucion de imagenes upload y builds verificados |
+| `specs/134-local-backend-runtime-unblock/` | Implementada; backend local, HTTPS y GraphQL smoke test verificados |
+| `specs/135-core-stabilization-sprint/` | Paginacion feed, cleanup uploads, auditoria persistente y runtime local Docker SQL verificados end-to-end |
 
 ## Brechas vigentes
 
@@ -47,7 +49,8 @@
 - Faltan suites automatizadas de autenticacion, feed, GraphQL y componentes.
 - Pub/sub y almacenamiento de archivos sirven a una sola instancia.
 - Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
-- El Event Log, cifrado local de Development, puerto Kestrel y DataProtection fueron corregidos; el entorno actual aun bloquea SQL SSPI y certificado HTTPS para la regresion autenticada completa.
+- El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validar specs.
+- Falta verificacion visual en navegador del panel admin completo contra SQL Docker.
 - El frontend conserva deuda de dependencias y tamano de bundle.
 - YouTube ya no monta iframes en el render inicial; los warnings residuales posteriores al click pertenecen al proveedor/navegador.
 - Las miniaturas de YouTube usan imagen estatica y los adjuntos de imagen se resuelven contra el backend antes de renderizar inline.

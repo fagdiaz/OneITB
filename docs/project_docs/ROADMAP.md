@@ -1,8 +1,8 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-06-23
+**Ultima revision**: 2026-06-24
 
-**Estado global**: 71% (54 de 76 items)
+**Estado global**: 76% (58 de 76 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -47,7 +47,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Selectores en cascada carrera-materia en feed y administracion.
 - [ ] [P] Progreso academico, cursadas y notas por usuario.
 
-## Modulo 4 - Feed, comentarios y multimedia: 76% (13/17)
+## Modulo 4 - Feed, comentarios y multimedia: 94% (16/17)
 
 - [x] [V] `Inquiry` vinculada a autor y materia sin N+1.
 - [x] [V] Creacion, lectura, refetch y persistencia de publicaciones.
@@ -62,9 +62,9 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Adjuntos persistentes en comentarios y respuestas.
 - [x] [I] Imagenes inline con URL de backend, tarjetas de documentos y YouTube con miniatura previa y carga por click sobre `youtube-nocookie`.
 - [x] [I] Previsualizacion de enlaces via GraphQL autenticado con controles SSRF.
-- [ ] [B] Regresion end-to-end de uploads/rich media con backend local disponible.
-- [ ] [P] Limpieza de archivos huerfanos cuando GraphQL falla tras el upload.
-- [ ] [P] Paginacion o scroll incremental del feed.
+- [x] [V] Regresion end-to-end de uploads/rich media con backend local disponible.
+- [x] [V] Limpieza de archivos huerfanos cuando GraphQL falla tras el upload.
+- [x] [V] Paginacion o scroll incremental del feed.
 - [ ] [P] Pruebas automatizadas de publicaciones, comentarios y archivos.
 
 ## Modulo 5 - Mensajeria privada: 88% (7/8)
@@ -78,7 +78,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Integracion entre chat completo y widget sin updates cruzados.
 - [ ] [P] Reemplazar pub/sub en memoria por transporte distribuido.
 
-## Modulo 6 - Administracion y moderacion: 80% (8/10)
+## Modulo 6 - Administracion y moderacion: 90% (9/10)
 
 - [x] [I] Gestion de usuarios, roles y estado.
 - [x] [I] Proteccion de cuentas administradoras y promocion con password.
@@ -88,8 +88,8 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Silenciamiento temporal por moderadores.
 - [x] [I] Metricas, short IDs y jerarquia visual por rol.
 - [x] [V] Seed administrado e idempotente.
-- [ ] [P] Auditoria persistente de acciones administrativas y de moderacion.
-- [ ] [B] Regresion runtime del panel tras cambios de materias y superadmin.
+- [x] [V] Auditoria persistente de acciones administrativas y de moderacion.
+- [ ] [P] Regresion runtime del panel tras cambios de materias y superadmin.
 
 ## Modulo 7 - Recursos y seguimiento academico: 0% (0/6)
 
@@ -119,14 +119,15 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P0 - Estabilizacion inmediata
 
-1. Revalidar materias, superadmin, uploads y rich media end-to-end sobre el backend local ya desbloqueado.
-2. Incorporar pruebas automatizadas de autenticacion y feed.
+1. Incorporar pruebas automatizadas de autenticacion y feed.
+2. Verificar visualmente el panel admin completo en navegador contra SQL Docker.
+3. Mantener Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
 
 ### P1 - Cierre del nucleo social
 
-1. Paginar el feed.
-2. Limpiar uploads huerfanos.
-3. Agregar auditoria persistente de moderacion.
+1. Paginacion del feed: verificada en runtime contra Docker SQL.
+2. Limpieza de uploads huerfanos: verificada en runtime contra Docker SQL.
+3. Auditoria persistente de moderacion: verificada en runtime contra Docker SQL.
 
 ### P2 - Alcance academico pendiente
 
