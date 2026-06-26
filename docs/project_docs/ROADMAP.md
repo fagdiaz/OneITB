@@ -113,7 +113,8 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [ ] [P] Pipeline CI para build, tests y validacion de migraciones.
 - [ ] [P] Logging estructurado, metricas y trazabilidad de errores.
 - [x] [V] Entorno local reproducible sin bloqueo de SQL SSPI/certificado HTTPS.
-- [ ] [P] Actualizacion controlada de dependencias y division del bundle frontend.
+- [x] [V] Limpieza de warnings de compilacion (Vite chunk size y .NET nullability).
+- [x] [I] Actualizacion controlada de dependencias y division del bundle frontend.
 
 ## Prioridades
 

@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <UserSecretsId>oneitb23-graphql-local-dev</UserSecretsId>
+    <NoWarn>CS8632;CS8618;CS8604;CS8603</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

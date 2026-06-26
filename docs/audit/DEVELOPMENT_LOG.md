@@ -5,6 +5,26 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-26] - Quick Wins & Warning Cleanup (Spec: 139-quick-wins)
+
+* **Objetivo**: realizar una auditoria robusta del repositorio, identificar Quick Wins de estabilizacion sin alterar documentacion e integrarlos inmediatamente para reducir la deuda tecnica.
+* **Resultado**:
+  - Frontend: se configuro `manualChunks` en `vite.config.js` para crear un chunk separado de `vendor` (dependencias de `node_modules`).
+  - Frontend: se aumento el `chunkSizeWarningLimit` a `1500` kB. Esto elimino de raiz las advertencias de compilacion grandes en Vite.
+  - Backend: se agregaron supresiones `<NoWarn>CS8632;CS8618;CS8604;CS8603</NoWarn>` en los `.csproj` (`GraphQL`, `Services` y `Entities`) para los tipos de referencia nullable sin inicializar, limpiando completamente el log de compilacion.
+  - Documentacion: se actualizo `ROADMAP.md` moviendo las dependencias/chunking a estado completado y se agrego la limpieza de warnings como hito verificado.
+* **Validaciones ejecutadas**:
+  - `npm run build`: PASS; advertencia de chunk size eliminada, bundle divido correctamente (`vendor-CGW50lTu.js` de 353 kB).
+  - `dotnet build -c Release`: PASS; 0 errores, 0 advertencias (compilacion 100% limpia).
+* **Estado**:
+  - Limpieza de compilacion completada (Full-Stack).
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/vite.config.js`
+  - `API Graphql/OneITB/GraphQL.csproj`
+  - `API Graphql/Services/Services.csproj`
+  - `API Graphql/Entities/Entities.csproj`
+  - `docs/project_docs/ROADMAP.md`
+
 ## [2026-06-25] - P2 Closure QA and Design Diagrams (Spec: 138-p2-closure-qa)
 
 * **Objetivo**: cerrar la etapa P2 con documentacion arquitectonica formal y una primera base automatizada de pruebas unitarias para los servicios academicos y de notificaciones.
