@@ -60,8 +60,8 @@ namespace OneItb.GraphQL.Infrastructure
             try
             {
                 string webRoot = _environment.WebRootPath
-                    ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
-                string uploadsDirectory = Path.Combine(webRoot, "uploads");
+                    ?? System.IO.Path.Combine(_environment.ContentRootPath, "wwwroot");
+                string uploadsDirectory = System.IO.Path.Combine(webRoot, "uploads");
                 TimeSpan retention = TimeSpan.FromHours(Math.Clamp(options.RetentionHours, 1, 720));
 
                 using IServiceScope scope = _scopeFactory.CreateScope();

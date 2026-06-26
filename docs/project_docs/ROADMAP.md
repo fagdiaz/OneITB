@@ -1,6 +1,6 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-06-25
+**Ultima revision**: 2026-06-26
 
 **Estado global**: 86% (65 de 76 items)
 

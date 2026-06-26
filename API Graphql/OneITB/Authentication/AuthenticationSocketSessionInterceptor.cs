@@ -54,7 +54,7 @@ namespace OneItb.GraphQL.Authentication
             var payload = connectionInitMessage.As<Dictionary<string, string>>();
 
             if (payload is null ||
-                !payload.TryGetValue(AuthorizationPayloadKey, out string authorization) ||
+                !payload.TryGetValue(AuthorizationPayloadKey, out string? authorization) ||
                 string.IsNullOrWhiteSpace(authorization))
             {
                 return ConnectionStatus.Reject("Autenticación requerida.");
@@ -71,7 +71,7 @@ namespace OneItb.GraphQL.Authentication
             if (result.Principal is null)
                 return ConnectionStatus.Reject("Token inválido o vencido.");
 
-            string userIdValue = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            string? userIdValue = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userIdValue, out Guid userId))
                 return ConnectionStatus.Reject("Identidad inválida.");
 

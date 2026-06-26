@@ -43,17 +43,17 @@ namespace OneItb.Controllers
             if (file.Length > MaxFileSize)
                 return BadRequest(new { message = "El archivo supera el limite de 15 MB." });
 
-            string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            string extension = System.IO.Path.GetExtension(file.FileName)!.ToLowerInvariant();
             if (!AllowedExtensions.Contains(extension))
                 return BadRequest(new { message = "El tipo de archivo no esta permitido." });
 
             string webRoot = _environment.WebRootPath
-                ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
-            string uploadsDirectory = Path.Combine(webRoot, "uploads");
+                ?? System.IO.Path.Combine(_environment.ContentRootPath, "wwwroot");
+            string uploadsDirectory = System.IO.Path.Combine(webRoot, "uploads");
             Directory.CreateDirectory(uploadsDirectory);
 
             string storedFileName = $"{Guid.NewGuid():N}{extension}";
-            string physicalPath = Path.Combine(uploadsDirectory, storedFileName);
+            string physicalPath = System.IO.Path.Combine(uploadsDirectory, storedFileName);
 
             await using FileStream stream = new(
                 physicalPath,

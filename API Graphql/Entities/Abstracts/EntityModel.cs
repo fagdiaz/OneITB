@@ -8,7 +8,7 @@ namespace OneItb.Entities.Abstracts
 {
     public abstract class EntityModel<T>
     {
-        public T Id { get; set; }
+        public T Id { get; set; } = default!;
         public bool Disabled { get; set; } = false;
         public DateTime CreationDate { get; set; } = DateTime.Now;
         public DateTime ModificationDate { get; set; } = DateTime.Now;

@@ -5,6 +5,31 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-26] - Nullability Strict Fix (Spec: 140-nullability-strict-fix)
+
+* **Objetivo**: Revertir la supresión de advertencias `<NoWarn>` introducida en los quick wins, habilitar validación estricta de nullability (`<Nullable>enable</Nullable>`) y solucionar el problema real de raíz en el código fuente de C#.
+* **Resultado**:
+  - Se eliminaron las supresiones `<NoWarn>` en `Entities.csproj`, `Services.csproj` y `GraphQL.csproj`.
+  - Se habilitó `<Nullable>enable</Nullable>` explícitamente en el proyecto.
+  - Se corrigió `CS8618` en `EntityModel.cs` inicializando `Id = default!`.
+  - Se corrigieron `CS8604` en `AccountsService.cs` y `Startup.cs`.
+  - Se corrigieron múltiples retornos nulos `CS8603` en `UnitOfWork.cs`.
+  - Se resolvieron referencias ambiguas a `Path` causadas por implicit usings en `UploadController.cs` y `UploadCleanupHostedService.cs`.
+  - Se corrigieron advertencias de conversión nula `CS8600` en `Query.cs`, `Mutation.cs`, `Subscription.cs` y el Interceptor de WebSocket usando `string?`.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS; 0 errores, 0 advertencias (compilación 100% limpia sin supresiones).
+* **Estado**:
+  - Deuda técnica de nullability resuelta a nivel de código fuente, cumpliendo los estándares estrictos de .NET 8.
+* **Archivos principales**:
+  - `API Graphql/OneITB/GraphQL.csproj`
+  - `API Graphql/Services/Services.csproj`
+  - `API Graphql/Entities/Entities.csproj`
+  - `API Graphql/Entities/Abstracts/EntityModel.cs`
+  - `API Graphql/Services/Accounts/AccountsService.cs`
+  - `API Graphql/Services/Repositories/UnitOfWork.cs`
+  - `API Graphql/OneITB/Startup.cs`
+  - Múltiples archivos en `API Graphql/OneITB/GraphQL/`
+
 ## [2026-06-26] - Quick Wins & Warning Cleanup (Spec: 139-quick-wins)
 
 * **Objetivo**: realizar una auditoria robusta del repositorio, identificar Quick Wins de estabilizacion sin alterar documentacion e integrarlos inmediatamente para reducir la deuda tecnica.

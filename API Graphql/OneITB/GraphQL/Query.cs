@@ -361,7 +361,7 @@ namespace GraphQL.GraphQL
 
         private static Guid GetAuthenticatedUserId(IHttpContextAccessor httpContextAccessor)
         {
-            string value = httpContextAccessor.HttpContext?.User
+            string? value = httpContextAccessor.HttpContext?.User
                 .FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(value, out Guid userId))
                 throw new GraphQLException("No se pudo identificar al usuario autenticado.");
@@ -370,12 +370,12 @@ namespace GraphQL.GraphQL
 
         private static Guid? TryGetAuthenticatedUserId(IHttpContextAccessor httpContextAccessor)
         {
-            string value = httpContextAccessor.HttpContext?.User
+            string? value = httpContextAccessor.HttpContext?.User
                 .FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(value, out Guid userId) ? userId : null;
         }
 
-        private static string GetAuthenticatedRole(IHttpContextAccessor httpContextAccessor)
+        private static string? GetAuthenticatedRole(IHttpContextAccessor httpContextAccessor)
         {
             return httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
         }

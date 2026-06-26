@@ -719,7 +719,7 @@ namespace OneITB.GraphQL.Mutations
 
         private static Guid GetAuthenticatedUserId(IHttpContextAccessor httpContextAccessor)
         {
-            string value = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string? value = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(value, out Guid userId))
                 throw new GraphQLException("No se pudo identificar al usuario autenticado.");
             return userId;
@@ -731,7 +731,7 @@ namespace OneITB.GraphQL.Mutations
             return role is "Administrador" or "Moderador";
         }
 
-        private static string GetAuthenticatedRole(IHttpContextAccessor httpContextAccessor)
+        private static string? GetAuthenticatedRole(IHttpContextAccessor httpContextAccessor)
         {
             return httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
         }

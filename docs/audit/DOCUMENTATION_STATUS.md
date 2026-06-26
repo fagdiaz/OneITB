@@ -1,6 +1,6 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-25
+**Ultima verificacion**: 2026-06-26
 
 ## Fuentes canonicas
 
@@ -29,6 +29,7 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/140-nullability-strict-fix/` | Implementada; backend build limpio (0 warnings) validado sin usar supresiones `<NoWarn>` |
 | `specs/138-p2-closure-qa/` | Diagramas Mermaid academicos actualizados; xUnit/Moq para `AcademicService` y `NotificationService` pasando 12/12 |
 | `specs/137-siu-notifications/` | SIU mock, upsert de notas, notificaciones persistentes, preferencias y subscription privada verificados contra Docker SQL |
 | `specs/136-academic-module/` | Recursos por materia y progreso/notas implementados; runtime GraphQL contra Docker SQL verificado |

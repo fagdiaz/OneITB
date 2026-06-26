@@ -23,7 +23,7 @@ namespace OneITB.GraphQL.Subscriptions
             [Service] ITopicEventReceiver receiver,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
-            string value = httpContextAccessor.HttpContext?.User
+            string? value = httpContextAccessor.HttpContext?.User
                 .FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(value, out Guid userId))
                 throw new GraphQLException("No se pudo identificar al usuario autenticado.");
@@ -39,7 +39,7 @@ namespace OneITB.GraphQL.Subscriptions
             [Service] ITopicEventReceiver receiver,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
-            string value = httpContextAccessor.HttpContext?.User
+            string? value = httpContextAccessor.HttpContext?.User
                 .FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(value, out Guid userId))
                 throw new GraphQLException("No se pudo identificar al usuario autenticado.");

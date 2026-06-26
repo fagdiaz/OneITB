@@ -31,21 +31,21 @@ namespace Services.Repositories
         {
             return _context.Users
                 .Include(u => u.Account)
-                .FirstOrDefault(u => u.Account.Email == email);
+                .FirstOrDefault(u => u.Account.Email == email)!;
         }
 
         public async Task<User> GetByEmailAsync(string email)
         {
-            return await _context.Users
+            return (await _context.Users
                 .Include(u => u.Account)
-                .FirstOrDefaultAsync(u => u.Account.Email == email);
+                .FirstOrDefaultAsync(u => u.Account.Email == email))!;
         }
 
         public User GetById(Guid id)
         {
             return _context.Users
                 .Include(u => u.Account)
-                .FirstOrDefault(u => u.Id == id);
+                .FirstOrDefault(u => u.Id == id)!;
         }
     }
 
@@ -62,7 +62,7 @@ namespace Services.Repositories
         {
             return _context.Accounts
                 .Include(a => a.User)
-                .FirstOrDefault(a => a.Id == id);
+                .FirstOrDefault(a => a.Id == id)!;
         }
     }
 

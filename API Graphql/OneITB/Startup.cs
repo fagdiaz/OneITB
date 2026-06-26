@@ -52,7 +52,7 @@ namespace OneItb.GraphQL
             services.AddHttpContextAccessor();
             if (Environment.IsDevelopment())
             {
-                var keyDirectory = new DirectoryInfo(Path.Combine(
+                var keyDirectory = new DirectoryInfo(System.IO.Path.Combine(
                     Environment.ContentRootPath,
                     "App_Data",
                     "DataProtection-Keys"));
@@ -218,9 +218,9 @@ namespace OneItb.GraphQL
                     {
                         if (context.HttpContext.Items.TryGetValue(
                                 AuthenticationSocketSessionInterceptor.WebSocketTokenKey,
-                                out object token))
+                                out object? token))
                         {
-                            context.Token = token as string;
+                            context.Token = token?.ToString();
                         }
 
                         return Task.CompletedTask;
@@ -235,7 +235,7 @@ namespace OneItb.GraphQL
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = Configuration["Jwt:Issuer"],
                     ValidAudience = Configuration["Jwt:Issuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]!))
                 };
             });
 
