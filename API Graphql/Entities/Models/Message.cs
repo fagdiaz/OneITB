@@ -11,7 +11,7 @@ namespace OneItb.Entities.Models
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
         public bool IsRead { get; set; }
 
-        public virtual User Sender { get; set; } = null!;
-        public virtual User Receiver { get; set; } = null!;
+        public virtual User Sender { get; set; } = default!;
+        public virtual User Receiver { get; set; } = default!;
     }
 }

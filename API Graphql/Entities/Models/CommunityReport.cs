@@ -11,7 +11,7 @@ namespace OneItb.Entities.Models
         public string Status { get; set; } = "Pending";
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public virtual Inquiry Inquiry { get; set; } = null!;
-        public virtual User Reporter { get; set; } = null!;
+        public virtual Inquiry Inquiry { get; set; } = default!;
+        public virtual User Reporter { get; set; } = default!;
     }
 }

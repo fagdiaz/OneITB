@@ -53,7 +53,7 @@ namespace Services.Accounts
             return tokenHandler.WriteToken(token);
         }
 
-        public Account GetById(Guid id)
+        public Account? GetById(Guid id)
         {
             return _uow.Accounts.GetById(id);
         }

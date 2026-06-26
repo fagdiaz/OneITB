@@ -5,7 +5,7 @@ namespace OneItb.Entities.Models
         public int SubjectId { get; set; }
         public int PrerequisiteId { get; set; }
 
-        public virtual Subject Subject { get; set; } = null!;
-        public virtual Subject Prerequisite { get; set; } = null!;
+        public virtual Subject Subject { get; set; } = default!;
+        public virtual Subject Prerequisite { get; set; } = default!;
     }
 }

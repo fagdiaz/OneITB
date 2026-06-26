@@ -5,6 +5,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-26] - Spec 140: Strict Nullability Fix (Refactor Real)
+
+* **Objetivo**: Implementar la solución real a nivel arquitectónico para la deuda de nullability.
+* **Resultado**:
+  - Se modificaron las entidades de EF Core que contenían propiedades no nulables inicializadas con `null!`, reemplazándolas rigurosamente con `= default!`.
+  - Se refactorizaron las interfaces `IUnitOfWork`, `IUserRepository`, `IAccountRepository` y sus implementaciones para devolver los tipos anulables correctos (ej: `Task<User?>`, `Account?`) en los métodos que lógicamente pueden devolver nulo (`GetById`, `GetByEmail`).
+  - Se actualizaron las interfaces de servicios (`IUsersService`, `IAccountService`) para propagar correctamente la anulabilidad según el contrato, impactando `Query.cs` en GraphQL.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS; 0 errores, 0 advertencias (compilación 100% limpia sin hacer trampa).
+* **Estado**:
+  - Nullability resuelta estructuralmente mediante la propagación correcta de los tipos `?` y la limpieza de aserciones `!` inseguras.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/*.cs`
+  - `API Graphql/Services/Interfaces/IUnitOfWork.cs`
+  - `API Graphql/Services/Repositories/UnitOfWork.cs`
+  - `API Graphql/Services/Users/IUsersService.cs` y `UsersService.cs`
+  - `API Graphql/Services/Accounts/IAccountService.cs` y `AccountsService.cs`
+
 ## [2026-06-26] - Nullability Strict Fix (Spec: 140-nullability-strict-fix)
 
 * **Objetivo**: Revertir la supresión de advertencias `<NoWarn>` introducida en los quick wins, habilitar validación estricta de nullability (`<Nullable>enable</Nullable>`) y solucionar el problema real de raíz en el código fuente de C#.

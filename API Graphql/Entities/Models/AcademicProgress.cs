@@ -13,8 +13,8 @@ namespace OneItb.Entities.Models
         public string? Notes { get; set; }
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        public virtual User User { get; set; } = null!;
-        public virtual Subject Subject { get; set; } = null!;
-        public virtual User AssignedBy { get; set; } = null!;
+        public virtual User User { get; set; } = default!;
+        public virtual Subject Subject { get; set; } = default!;
+        public virtual User AssignedBy { get; set; } = default!;
     }
 }

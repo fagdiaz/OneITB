@@ -6,9 +6,9 @@ namespace OneItb.Entities.Models
 {
     public class User : EntityModel<Guid>
     {
-        private string _firstName = null!;
-        private string _lastName = null!;
-        private string _role = null!;
+        private string _firstName = default!;
+        private string _lastName = default!;
+        private string _role = default!;
 
         public string FirstName
         {
@@ -51,7 +51,7 @@ namespace OneItb.Entities.Models
         public DateTime? MutedUntil { get; set; }
         public bool IsActive { get; set; } = true;
 
-        public virtual Account Account { get; set; } = null!;
+        public virtual Account Account { get; set; } = default!;
         public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
         public virtual ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
         public virtual ICollection<UserCareer> UserCareers { get; set; } = new List<UserCareer>();

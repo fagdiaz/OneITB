@@ -6,8 +6,8 @@ namespace OneItb.Entities.Models
 {
     public class Subject : EntityModel<int>
     {
-        private string _name = null!;
-        private string _code = null!;
+        private string _name = default!;
+        private string _code = default!;
 
         public string Name
         {
@@ -35,7 +35,7 @@ namespace OneItb.Entities.Models
         public int? Year { get; set; }
         public bool IsActive { get; set; } = true;
 
-        public virtual Career Career { get; set; } = null!;
+        public virtual Career Career { get; set; } = default!;
         public virtual ICollection<Inquiry> Inquiries { get; set; } = new List<Inquiry>();
         public virtual ICollection<Subject> Prerequisites { get; set; } = new List<Subject>();
         public virtual ICollection<Subject> RequiredBy { get; set; } = new List<Subject>();

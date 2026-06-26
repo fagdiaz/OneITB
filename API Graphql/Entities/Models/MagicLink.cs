@@ -11,6 +11,6 @@ namespace OneItb.Entities.Models
         public bool IsUsed { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public virtual Account Account { get; set; } = null!;
+        public virtual Account Account { get; set; } = default!;
     }
 }

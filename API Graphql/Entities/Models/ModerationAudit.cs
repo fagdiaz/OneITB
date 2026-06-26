@@ -14,7 +14,7 @@ namespace OneItb.Entities.Models
         public string Summary { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public virtual User ActorUser { get; set; } = null!;
+        public virtual User ActorUser { get; set; } = default!;
         public virtual User? TargetUser { get; set; }
         public virtual Inquiry? TargetInquiry { get; set; }
         public virtual Comment? TargetComment { get; set; }

@@ -6,8 +6,8 @@ namespace OneItb.Entities.Models
 {
     public class Inquiry : EntityModel<Guid>
     {
-        private string _title = null!;
-        private string _content = null!;
+        private string _title = default!;
+        private string _content = default!;
 
         public string Title
         {
@@ -37,8 +37,8 @@ namespace OneItb.Entities.Models
         public bool IsActive { get; set; } = true;
         public Guid UserId { get; set; }
         public int SubjectId { get; set; }
-        public virtual User User { get; set; } = null!;
-        public virtual Subject Subject { get; set; } = null!;
+        public virtual User User { get; set; } = default!;
+        public virtual Subject Subject { get; set; } = default!;
         public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
         public virtual ICollection<CommunityReport> Reports { get; set; } = new List<CommunityReport>();

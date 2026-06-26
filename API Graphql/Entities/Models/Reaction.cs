@@ -9,8 +9,8 @@ namespace OneItb.Entities.Models
         public Guid UserId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public virtual Inquiry Inquiry { get; set; } = null!;
-        public virtual User User { get; set; } = null!;
+        public virtual Inquiry Inquiry { get; set; } = default!;
+        public virtual User User { get; set; } = default!;
     }
 }
 

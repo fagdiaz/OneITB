@@ -8,14 +8,14 @@ namespace OneITB.Core.Services.Interfaces
     {
         Task AddAsync(User user);
         IQueryable<User> GetAll();
-        User GetByEmail(string email);
-        Task<User> GetByEmailAsync(string email);
-        User GetById(Guid id);
+        User? GetByEmail(string email);
+        Task<User?> GetByEmailAsync(string email);
+        User? GetById(Guid id);
     }
 
     public interface IAccountRepository
     {
-        Account GetById(Guid id);
+        Account? GetById(Guid id);
     }
 
     public interface IMessageRepository

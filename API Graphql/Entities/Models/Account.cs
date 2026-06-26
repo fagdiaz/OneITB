@@ -6,8 +6,8 @@ namespace OneItb.Entities.Models
 {
     public class Account : EntityModel<Guid>
     {
-        private string _email = null!;
-        private string _passwordHash = null!;
+        private string _email = default!;
+        private string _passwordHash = default!;
         private DateTime _createdAt;
 
         private static readonly Regex EmailRegex = new Regex(
@@ -59,6 +59,6 @@ namespace OneItb.Entities.Models
             }
         }
 
-        public virtual User User { get; set; } = null!;
+        public virtual User User { get; set; } = default!;
     }
 }

@@ -147,12 +147,13 @@ namespace Services.Users
             return user;
         }
 
+
         public IQueryable<User> GetAllAsync()
         {
             return _uow.Users.GetAll();
         }
 
-        public User GetByEmail(string email)
+        public User? GetByEmail(string email)
         {
             return _uow.Users.GetByEmail(email);
         }
@@ -162,14 +163,14 @@ namespace Services.Users
             return "token_placeholder";
         }
 
-        public User GetById(Guid id)
+        public User? GetById(Guid id)
         {
             return _uow.Users.GetById(id);
         }
 
-        public User GetById(int id)
+        public User? GetById(int id)
         {
-            return null!;
+            return null;
         }
 
         private static bool IsAdministrator(User user)

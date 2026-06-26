@@ -17,7 +17,7 @@ namespace OneItb.Entities.Models
         public InteractionType Type { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public virtual User Observer { get; set; } = null!;
-        public virtual User Target { get; set; } = null!;
+        public virtual User Observer { get; set; } = default!;
+        public virtual User Target { get; set; } = default!;
     }
 }

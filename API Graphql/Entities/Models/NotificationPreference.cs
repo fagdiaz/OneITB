@@ -10,6 +10,6 @@ namespace OneItb.Entities.Models
         public bool IsEnabled { get; set; } = true;
         public DateTime UpdatedAt { get; set; }
 
-        public virtual User User { get; set; } = null!;
+        public virtual User User { get; set; } = default!;
     }
 }

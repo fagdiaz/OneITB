@@ -7,11 +7,11 @@ namespace OneItb.Entities.Models
     {
         public Guid UserId { get; set; }
         public NotificationType Type { get; set; }
-        public string Message { get; set; } = null!;
+        public string Message { get; set; } = default!;
         public string? ActionUrl { get; set; }
         public bool IsRead { get; set; }
         public DateTime CreatedAt { get; set; }
 
-        public virtual User User { get; set; } = null!;
+        public virtual User User { get; set; } = default!;
     }
 }

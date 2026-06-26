@@ -29,7 +29,7 @@ namespace GraphQL.GraphQL
             return usersService.GetAllAsync();
         }
 
-        public User GetUserById([Service] IUsersService usersService, Guid id)
+        public User? GetUserById([Service] IUsersService usersService, Guid id)
         {
             return usersService.GetById(id);
         }

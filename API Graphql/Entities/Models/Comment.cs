@@ -15,8 +15,8 @@ namespace OneItb.Entities.Models
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;
 
-        public virtual Inquiry Inquiry { get; set; } = null!;
-        public virtual User User { get; set; } = null!;
+        public virtual Inquiry Inquiry { get; set; } = default!;
+        public virtual User User { get; set; } = default!;
         public virtual Comment? ParentComment { get; set; }
         public virtual ICollection<Comment> Replies { get; set; } = new List<Comment>();
     }

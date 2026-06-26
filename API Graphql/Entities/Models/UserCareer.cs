@@ -7,7 +7,7 @@ namespace OneItb.Entities.Models
         public Guid UserId { get; set; }
         public int CareerId { get; set; }
 
-        public virtual User User { get; set; } = null!;
-        public virtual Career Career { get; set; } = null!;
+        public virtual User User { get; set; } = default!;
+        public virtual Career Career { get; set; } = default!;
     }
 }

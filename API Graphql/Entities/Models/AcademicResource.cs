@@ -16,7 +16,7 @@ namespace OneItb.Entities.Models
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;
 
-        public virtual Subject Subject { get; set; } = null!;
-        public virtual User Uploader { get; set; } = null!;
+        public virtual Subject Subject { get; set; } = default!;
+        public virtual User Uploader { get; set; } = default!;
     }
 }
