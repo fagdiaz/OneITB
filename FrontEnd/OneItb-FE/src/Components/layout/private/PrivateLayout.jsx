@@ -85,7 +85,9 @@ export const PrivateLayout = () => {
 
       {/* Mini Chat Widget (Módulo 4) */}
       {auth.id && !location.pathname.toLowerCase().startsWith('/chat') && (
-        <MiniChatWidget />
+        <div className="print:hidden">
+          <MiniChatWidget />
+        </div>
       )}
 
     </div>

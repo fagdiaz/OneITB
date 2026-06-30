@@ -13,6 +13,7 @@ export const GET_PUBLIC_PROFILE = gql`
       facebook
       instagram
       phone
+      avatarUrl
       cvExperiences {
         id
         company
@@ -62,6 +63,7 @@ export const GET_PUBLIC_PROFILE = gql`
       }
       careers
       totalPublications
+      totalComments
     }
   }
 `;

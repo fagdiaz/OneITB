@@ -5,7 +5,7 @@ import useAuth from '../../hooks/useAuth';
 import { ReportModal } from '../moderation/ReportModal';
 import { CommentThread } from './CommentThread';
 import MediaComponent from './MediaComponent';
-import { UPLOAD_ACCEPT, uploadAttachment } from '../../utils/uploadFile';
+import { UPLOAD_ACCEPT, apiBaseUrl, uploadAttachment } from '../../utils/uploadFile';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import { GET_INQUIRIES_PAGE } from '../../data/graphql/queries/inquiries';
@@ -31,6 +31,60 @@ const roleStyles = {
 };
 
 const getRoleStyle = (role) => roleStyles[role] ?? { name: 'text-slate-800', badge: 'bg-slate-100 text-slate-500', label: role || 'usuario' };
+
+const resolveAvatarUrl = (user) => {
+  if (user?.avatarUrl) {
+    if (/^https?:\/\//i.test(user.avatarUrl) || user.avatarUrl.startsWith('data:')) return user.avatarUrl;
+    if (user.avatarUrl.startsWith('/')) return `${apiBaseUrl}${user.avatarUrl}`;
+    return user.avatarUrl;
+  }
+  return null;
+};
+
+const failedAvatarUrls = new Set();
+
+const getInitials = (firstName, lastName) => {
+  const parts = [firstName, lastName].filter(Boolean);
+  return parts.map((p) => p[0]?.toUpperCase() ?? '').join('').slice(0, 2) || '?';
+};
+
+const UserAvatar = ({ user, size = 'md' }) => {
+  const avatarUrl = resolveAvatarUrl(user);
+  const [failed, setFailed] = React.useState(() => Boolean(avatarUrl && failedAvatarUrls.has(avatarUrl)));
+  const initials = getInitials(user?.firstName, user?.lastName);
+  const sizeClass = size === 'sm' ? 'h-8 w-8 text-xs' : 'h-10 w-10 text-sm';
+
+  React.useEffect(() => {
+    setFailed(Boolean(avatarUrl && failedAvatarUrls.has(avatarUrl)));
+  }, [avatarUrl]);
+
+  const handleAvatarError = () => {
+    if (avatarUrl) failedAvatarUrls.add(avatarUrl);
+    setFailed(true);
+  };
+
+  if (!avatarUrl || failed) {
+    return (
+      <span
+        className={`inline-flex shrink-0 items-center justify-center rounded-full border-2 border-white bg-slate-200 font-bold text-slate-600 shadow-sm ${sizeClass}`}
+        aria-label={`Avatar de ${user?.firstName ?? 'usuario'}`}
+      >
+        {initials}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={avatarUrl}
+      className={`shrink-0 rounded-full border-2 border-white object-cover shadow-sm ${sizeClass}`}
+      alt={`Avatar de ${user?.firstName ?? 'usuario'}`}
+      decoding="async"
+      loading="lazy"
+      onError={handleAvatarError}
+    />
+  );
+};
 
 const getParticipationBadges = (user) => {
   const badges = [];
@@ -469,11 +523,7 @@ export const Feed = () => {
           }`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(`${post.user?.firstName ?? ''} ${post.user?.lastName ?? ''}`)}&background=3b82f6&color=fff&size=80`}
-                  className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm"
-                  alt={`Avatar de ${post.user?.firstName ?? 'usuario'}`}
-                />
+                <UserAvatar user={post.user} />
                 <div>
                   <p className={`text-sm font-semibold ${roleStyle.name}`}>
                     <Link to={`/profile/${post.user?.id}`} className="hover:underline">
@@ -592,18 +642,35 @@ export const Feed = () => {
             </div>
 
             {threadOpen && (
-              <CommentThread
-                comments={post.comments}
-                submitting={isCommenting || isUploadingComment}
-                onComment={(parentCommentId, commentContent, commentFile) =>
-                  handleComment(post.id, parentCommentId, commentContent, commentFile)
-                }
-                onReport={() => setReportTargetId(post.id)}
-                auth={auth}
-                isModerator={isModerator}
-                onEditComment={handleEditComment}
-                onToggleComment={handleToggleComment}
-              />
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+                  <p className="text-xs font-semibold text-slate-500">
+                    <i className="fa-regular fa-comment mr-1.5" />
+                    {post.comments.length} {post.comments.length === 1 ? 'comentario' : 'comentarios'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setOpenThreads((current) => ({ ...current, [post.id]: false }))}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+                    aria-label="Cerrar hilo de comentarios"
+                  >
+                    <i className="fa-solid fa-xmark" />
+                    Cerrar
+                  </button>
+                </div>
+                <CommentThread
+                  comments={post.comments}
+                  submitting={isCommenting || isUploadingComment}
+                  onComment={(parentCommentId, commentContent, commentFile) =>
+                    handleComment(post.id, parentCommentId, commentContent, commentFile)
+                  }
+                  onReport={() => setReportTargetId(post.id)}
+                  auth={auth}
+                  isModerator={isModerator}
+                  onEditComment={handleEditComment}
+                  onToggleComment={handleToggleComment}
+                />
+              </div>
             )}
           </article>
         );

@@ -53,6 +53,8 @@ namespace OneITB.Core.Services.Interfaces
         string? Facebook,
         string? Instagram,
         string? Phone,
+        string? AvatarUrl,
+        IReadOnlyList<int>? CareerIds,
         IReadOnlyList<CvExperienceInput>? CvExperiences,
         IReadOnlyList<CvEducationInput>? CvEducations,
         IReadOnlyList<CvProjectInput>? CvProjects,
@@ -167,12 +169,14 @@ namespace OneITB.Core.Services.Interfaces
         string? Facebook,
         string? Instagram,
         string? Phone,
+        string? AvatarUrl,
         IReadOnlyList<CvExperienceDto> CvExperiences,
         IReadOnlyList<CvEducationDto> CvEducations,
         IReadOnlyList<CvProjectDto> CvProjects,
         IReadOnlyList<CvSkillDto> CvSkills,
         IReadOnlyList<CvLanguageDto> CvLanguages,
         IReadOnlyList<string> Careers,
-        int TotalPublications
+        int TotalPublications,
+        int TotalComments
     );
 }

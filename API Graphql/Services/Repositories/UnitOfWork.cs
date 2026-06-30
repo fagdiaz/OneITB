@@ -29,16 +29,18 @@ namespace Services.Repositories
 
         public User? GetByEmail(string email)
         {
+            string normalizedEmail = email.Trim().ToLowerInvariant();
             return _context.Users
                 .Include(u => u.Account)
-                .FirstOrDefault(u => u.Account.Email == email);
+                .FirstOrDefault(u => u.Account.Email.ToLower() == normalizedEmail);
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
+            string normalizedEmail = email.Trim().ToLowerInvariant();
             return await _context.Users
                 .Include(u => u.Account)
-                .FirstOrDefaultAsync(u => u.Account.Email == email);
+                .FirstOrDefaultAsync(u => u.Account.Email.ToLower() == normalizedEmail);
         }
 
         public User? GetById(Guid id)

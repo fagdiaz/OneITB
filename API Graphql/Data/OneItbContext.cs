@@ -101,6 +101,10 @@ namespace OneItb.Data
                 entity.Property(e => e.Phone)
                     .HasMaxLength(50);
 
+                entity.Property(e => e.AvatarUrl)
+                    .HasMaxLength(500)
+                    .IsUnicode(true);
+
                 entity.Property(e => e.MutedUntil)
                     .HasColumnType("datetime2");
 

@@ -315,7 +315,7 @@ export const MiniChatWidget = () => {
     <div className="fixed bottom-5 right-5 lg:right-80 z-50 flex flex-col items-end">
       {/* Widget Window */}
       {isOpen && (
-        <div className="mb-4 flex h-[500px] w-[90vw] md:w-[700px] flex-row overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200 origin-bottom-right transition-all">
+        <div className="mb-4 flex h-[500px] w-[90vw] origin-bottom-right flex-row overflow-hidden rounded-3xl border border-white/10 bg-slate-950/95 shadow-[0_24px_80px_rgba(2,6,23,0.50)] backdrop-blur-xl ring-1 ring-blue-400/10 transition-all md:w-[700px]">
           
           <ChatSidebar 
             socketStatus={socketStatus}
@@ -358,7 +358,7 @@ export const MiniChatWidget = () => {
       {/* Floating Toggle Button */}
       <button
         onClick={toggleWidget}
-        className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl shadow-blue-600/30 transition hover:scale-105 hover:bg-blue-700 active:scale-95"
+        className="group relative flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-600 text-white shadow-[0_18px_45px_rgba(37,99,235,0.35)] transition hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-[0_22px_55px_rgba(37,99,235,0.45)] active:scale-95"
         aria-label="Abrir chat"
       >
         <i className={`fa-solid fa-comment-dots text-xl transition duration-300 ${isOpen ? 'scale-0 opacity-0 absolute' : 'scale-100 opacity-100'}`}></i>

@@ -43,6 +43,8 @@ namespace GraphQL.GraphQL
             return await context.Users
                 .AsNoTracking()
                 .Include(user => user.Account)
+                .Include(user => user.UserCareers)
+                .ThenInclude(link => link.Career)
                 .Include(user => user.CvExperiences)
                 .Include(user => user.CvEducations)
                 .Include(user => user.CvProjects)
@@ -158,6 +160,10 @@ namespace GraphQL.GraphQL
                 .AsNoTracking()
                 .CountAsync(inquiry => inquiry.UserId == userId);
 
+            int totalComments = await context.Comments
+                .AsNoTracking()
+                .CountAsync(comment => comment.UserId == userId);
+
             return new PublicProfileSummary(
                 user.Id,
                 user.FirstName,
@@ -169,6 +175,7 @@ namespace GraphQL.GraphQL
                 user.Facebook,
                 user.Instagram,
                 user.Phone,
+                user.AvatarUrl,
                 MapExperiences(user.CvExperiences),
                 MapEducations(user.CvEducations),
                 MapProjects(user.CvProjects),
@@ -179,7 +186,8 @@ namespace GraphQL.GraphQL
                     .Select(link => link.Career.Name)
                     .OrderBy(name => name)
                     .ToArray(),
-                totalPublications);
+                totalPublications,
+                totalComments);
         }
 
         [Authorize(Roles = new[] { "Administrador", "Moderador" })]

@@ -142,7 +142,7 @@ export const NotificationBell = () => {
       <button
         type="button"
         onClick={handleOpen}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-transparent text-slate-300 transition-all duration-150 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/10 hover:text-white hover:shadow-[0_4px_14px_rgba(59,130,246,0.35)] focus:outline-none focus:ring-2 focus:ring-blue-300"
         aria-label="Notificaciones"
       >
         <i className="fa-regular fa-bell text-base" />
@@ -154,17 +154,17 @@ export const NotificationBell = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <div className="absolute right-0 top-[calc(100%+12px)] z-[80] w-[22rem] max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 text-slate-100 shadow-[0_24px_70px_rgba(15,23,42,0.45)] backdrop-blur-xl ring-1 ring-blue-400/10">
+          <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-4 py-3">
             <div>
-              <p className="text-sm font-bold text-slate-900">Notificaciones</p>
-              <p className="text-xs text-slate-500">{unreadCount} sin leer</p>
+              <p className="text-sm font-bold text-white">Notificaciones</p>
+              <p className="text-xs text-slate-400">{unreadCount} sin leer</p>
             </div>
             <button
               type="button"
               disabled={markingAllRead || unreadCount === 0}
               onClick={handleMarkAllRead}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-slate-300"
+              className="rounded-lg border border-transparent px-2 py-1 text-xs font-semibold text-blue-300 transition hover:border-blue-300/20 hover:bg-blue-400/10 hover:text-blue-100 disabled:cursor-not-allowed disabled:text-slate-600"
             >
               Marcar leidas
             </button>
@@ -172,34 +172,34 @@ export const NotificationBell = () => {
 
           <div className="max-h-80 overflow-y-auto">
             {actionError && (
-              <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600">
+              <div className="border-b border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-200">
                 {actionError}
               </div>
             )}
             {notificationsLoading ? (
-              <div className="px-4 py-6 text-center text-sm text-slate-500">Cargando...</div>
+              <div className="px-4 py-6 text-center text-sm text-slate-400">Cargando...</div>
             ) : notifications.length === 0 ? (
-              <div className="px-4 py-6 text-center text-sm text-slate-500">No tenes notificaciones.</div>
+              <div className="px-4 py-6 text-center text-sm text-slate-400">No tenes notificaciones.</div>
             ) : (
               notifications.map((notification) => {
                 const content = (
-                  <div className="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
+                  <div className="flex gap-3 px-4 py-3 transition hover:bg-white/[0.04]">
                     <span
                       className={`mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                        notification.isRead ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'
+                        notification.isRead ? 'bg-white/5 text-slate-500' : 'bg-blue-500/15 text-blue-200 ring-1 ring-blue-300/20'
                       }`}
                     >
                       <i className={notificationIcons[notification.type] ?? 'fa-regular fa-bell'} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-300">
                           {notificationLabels[notification.type] ?? notification.type}
                         </span>
                         {!notification.isRead && <span className="h-2 w-2 rounded-full bg-blue-500" />}
                       </span>
-                      <span className="mt-1 block text-sm font-medium text-slate-800">{notification.message}</span>
-                      <span className="mt-1 block text-xs text-slate-400">{formatNotificationDate(notification.createdAt)}</span>
+                      <span className="mt-1 block text-sm font-medium text-slate-100">{notification.message}</span>
+                      <span className="mt-1 block text-xs text-slate-500">{formatNotificationDate(notification.createdAt)}</span>
                     </span>
                   </div>
                 );
@@ -212,7 +212,7 @@ export const NotificationBell = () => {
                       handleMarkRead(notification.id);
                       setIsOpen(false);
                     }}
-                    className="block border-b border-slate-100 last:border-0"
+                    className="block border-b border-white/10 last:border-0"
                   >
                     {content}
                   </Link>
@@ -221,7 +221,7 @@ export const NotificationBell = () => {
                     key={notification.id}
                     type="button"
                     onClick={() => handleMarkRead(notification.id)}
-                    className="block w-full border-b border-slate-100 text-left last:border-0"
+                    className="block w-full border-b border-white/10 text-left last:border-0"
                   >
                     {content}
                   </button>
@@ -230,18 +230,18 @@ export const NotificationBell = () => {
             )}
           </div>
 
-          <div className="border-t border-slate-100 bg-slate-50 px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Preferencias</p>
+          <div className="border-t border-white/10 bg-white/[0.03] px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Preferencias</p>
             <div className="mt-2 grid gap-2">
               {preferences.map((preference) => (
-                <label key={preference.id} className="flex items-center justify-between text-xs text-slate-600">
+                <label key={preference.id} className="flex items-center justify-between text-xs text-slate-300">
                   <span>{notificationLabels[preference.type] ?? preference.type}</span>
                   <input
                     type="checkbox"
                     checked={preference.isEnabled}
                     disabled={updatingPreference}
                     onChange={(event) => handlePreferenceChange(preference.type, event.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-blue-500 focus:ring-blue-400"
                   />
                 </label>
               ))}

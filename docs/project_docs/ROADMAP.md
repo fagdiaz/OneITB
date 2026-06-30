@@ -1,6 +1,6 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-06-29
+**Ultima revision**: 2026-06-30
 
 **Estado global**: 87% (67 de 77 items)
 
@@ -29,9 +29,9 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 ## Modulo 2 - Perfiles e identidad social: 88% (7/8)
 
 - [x] [V] Perfil publico y perfil propio autenticado.
-- [x] [V] Edicion aislada del perfil y CV con persistencia relacional normalizada.
-- [x] [V] Biografia, contacto y redes sociales.
-- [x] [I] Asociacion de usuarios a multiples carreras.
+- [x] [V] Edicion aislada del perfil y CV con persistencia relacional normalizada, cancelacion limpia e impresion formal A4.
+- [x] [V] Biografia, avatar defensivo, contacto, metricas de aportes y redes sociales.
+- [x] [V] Asociacion de usuarios a multiples carreras desde perfil.
 - [x] [I] Resumen de publicaciones en perfil publico.
 - [x] [I] Roles diferenciados e insignias de participacion.
 - [x] [I] Seguir, silenciar y bloquear usuarios.

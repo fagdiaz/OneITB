@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using OneItb.Entities.Abstracts;
 
 namespace OneItb.Entities.Models
@@ -17,7 +18,7 @@ namespace OneItb.Entities.Models
             {
                 if (string.IsNullOrWhiteSpace(value))
                     throw new ArgumentException("El Nombre no puede ser nulo o vacío.", nameof(value));
-                _firstName = value;
+                _firstName = NormalizeToTitleCase(value);
             }
         }
 
@@ -28,7 +29,7 @@ namespace OneItb.Entities.Models
             {
                 if (string.IsNullOrWhiteSpace(value))
                     throw new ArgumentException("El Apellido no puede ser nulo o vacío.", nameof(value));
-                _lastName = value;
+                _lastName = NormalizeToTitleCase(value);
             }
         }
 
@@ -48,6 +49,7 @@ namespace OneItb.Entities.Models
         public string? Facebook { get; set; }
         public string? Instagram { get; set; }
         public string? Phone { get; set; }
+        public string? AvatarUrl { get; set; }
         public DateTime? MutedUntil { get; set; }
         public bool IsActive { get; set; } = true;
 
@@ -67,5 +69,11 @@ namespace OneItb.Entities.Models
         public virtual ICollection<UserCvProject> CvProjects { get; set; } = new List<UserCvProject>();
         public virtual ICollection<UserCvSkill> CvSkills { get; set; } = new List<UserCvSkill>();
         public virtual ICollection<UserCvLanguage> CvLanguages { get; set; } = new List<UserCvLanguage>();
+
+        private static string NormalizeToTitleCase(string value)
+        {
+            TextInfo textInfo = new CultureInfo("es-AR", false).TextInfo;
+            return textInfo.ToTitleCase(value.Trim().ToLowerInvariant());
+        }
     }
 }

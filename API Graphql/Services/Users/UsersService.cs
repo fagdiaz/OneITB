@@ -75,6 +75,7 @@ namespace Services.Users
                 .Include(item => item.CvProjects)
                 .Include(item => item.CvSkills)
                 .Include(item => item.CvLanguages)
+                .Include(item => item.UserCareers)
                 .SingleOrDefaultAsync(item => item.Id == input.Id);
 
             if (user == null)
@@ -87,7 +88,9 @@ namespace Services.Users
             user.Facebook = NormalizeOptional(input.Facebook, 200, "Facebook");
             user.Instagram = NormalizeOptional(input.Instagram, 200, "Instagram");
             user.Phone = NormalizeOptional(input.Phone, 50, "telefono");
+            user.AvatarUrl = NormalizeAvatarUrl(input.AvatarUrl);
 
+            ReplaceCareerLinks(user, input.CareerIds);
             ReplaceExperiences(user, input.CvExperiences);
             ReplaceEducations(user, input.CvEducations);
             ReplaceProjects(user, input.CvProjects);
@@ -200,6 +203,38 @@ namespace Services.Users
         private static bool IsAdministrator(User user)
         {
             return string.Equals(user.Role, "Administrador", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ReplaceCareerLinks(User user, IReadOnlyList<int>? careerIds)
+        {
+            if (careerIds == null) return;
+
+            int[] normalizedIds = careerIds
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray();
+
+            if (normalizedIds.Length == 0)
+            {
+                throw new InvalidOperationException("Selecciona al menos una carrera.");
+            }
+
+            List<int> activeCareerIds = _context.Careers
+                .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
+                .Select(career => career.Id)
+                .ToList();
+
+            if (activeCareerIds.Count != normalizedIds.Length)
+            {
+                throw new InvalidOperationException("Una o mas carreras seleccionadas no existen.");
+            }
+
+            _context.UserCareers.RemoveRange(user.UserCareers);
+            _context.UserCareers.AddRange(activeCareerIds.Select(careerId => new UserCareer
+            {
+                UserId = user.Id,
+                CareerId = careerId
+            }));
         }
 
         private void ReplaceExperiences(User user, IReadOnlyList<CvExperienceInput>? inputs)
@@ -344,6 +379,23 @@ namespace Services.Users
             if (normalized.Length > maxLength)
             {
                 throw new InvalidOperationException($"El campo {fieldName} supera el limite de {maxLength} caracteres.");
+            }
+
+            return normalized;
+        }
+
+        private static string? NormalizeAvatarUrl(string? avatarUrl)
+        {
+            string? normalized = NormalizeOptional(avatarUrl, 500, "avatar");
+            if (normalized == null)
+            {
+                return null;
+            }
+
+            if (!normalized.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase) &&
+                !Uri.TryCreate(normalized, UriKind.Absolute, out _))
+            {
+                throw new InvalidOperationException("La URL del avatar no es valida.");
             }
 
             return normalized;

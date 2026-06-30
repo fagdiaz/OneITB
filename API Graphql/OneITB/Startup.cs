@@ -129,6 +129,8 @@ namespace OneItb.GraphQL
                     descriptor.Field(f => f.Facebook).Name("facebook");
                     descriptor.Field(f => f.Instagram).Name("instagram");
                     descriptor.Field(f => f.Phone).Name("phone");
+                    descriptor.Field(f => f.AvatarUrl).Name("avatarUrl");
+                    descriptor.Field(f => f.UserCareers).Name("userCareers");
                     descriptor.Field(f => f.CvExperiences).Name("cvExperiences");
                     descriptor.Field(f => f.CvEducations).Name("cvEducations");
                     descriptor.Field(f => f.CvProjects).Name("cvProjects");

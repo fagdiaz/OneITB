@@ -5,6 +5,9 @@ import useAuth from '../../hooks/useAuth';
 import { GET_PUBLIC_PROFILE } from '../../data/graphql/queries/publicProfile';
 import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
 import { GET_MY_ACADEMIC_PROGRESS } from '../../data/graphql/queries/academic';
+import { apiBaseUrl } from '../../utils/uploadFile';
+import { CVPrintTemplate } from '../resume/CVPrintTemplate';
+import { CVData } from '../../types/resume';
 
 const roleStyles: Record<string, string> = {
   Administrador: 'bg-blue-50 text-blue-800 ring-blue-200',
@@ -51,6 +54,18 @@ const getInitials = (fullName: string) => {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('');
+};
+
+const resolveAssetUrl = (value?: string | null): string | null => {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value;
+  if (value.startsWith('/')) return `${apiBaseUrl}${value}`;
+  return value;
+};
+
+const pluralize = (count: number | null, singular: string, plural: string) => {
+  if (count === null) return plural;
+  return count === 1 ? singular : plural;
 };
 
 export const UserProfile = () => {
@@ -111,6 +126,9 @@ export const UserProfile = () => {
   }, [progressItems]);
 
   const highlightedProgress = progressItems.slice(0, 4);
+  const approvedSubjectsCount = isOwnProfile
+    ? progressItems.filter((item: any) => item.status === 'APPROVED').length
+    : null;
 
   if (loading) {
     return (
@@ -133,7 +151,8 @@ export const UserProfile = () => {
   const biography = profile.biography || 'Este perfil todavia no tiene una presentacion profesional cargada.';
   const careers = profile.careers ?? [];
   const roleClass = roleStyles[profile.role] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
-  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName)}&background=0f172a&color=fff&size=192`;
+  const avatarUrl = resolveAssetUrl(profile.avatarUrl) ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName)}&background=0f172a&color=fff&size=192`;
   const sortVisibleCvItems = (items?: any[]) =>
     [...(items ?? [])]
       .filter((item) => !item.hidden)
@@ -149,6 +168,71 @@ export const UserProfile = () => {
     cvProjects.length > 0 ||
     cvSkills.length > 0 ||
     cvLanguages.length > 0;
+  const totalPublications = profile.totalPublications ?? userPosts.length;
+  const totalComments = profile.totalComments ?? 0;
+  const communityContributions = totalPublications + totalComments;
+  const handleEditProfileNavigation = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  };
+  const printCvData: CVData = {
+    personalInfo: {
+      name: profile.fullName || 'Usuario OneITB',
+      title: profile.role && profile.role.toLowerCase() !== 'user' ? profile.role : 'Perfil academico',
+      email: isOwnProfile ? (auth?.email || '') : '',
+      phone: profile.phone || '',
+      location: careers.length > 0 ? careers.join(' / ') : 'Instituto Tecnico Beltran',
+      linkedin: profile.linkedIn || '',
+      github: '',
+      website:
+        normalizeExternalUrl(profile.facebook, 'facebook') ||
+        normalizeExternalUrl(profile.instagram, 'instagram') ||
+        '',
+      profileImage: avatarUrl,
+    },
+    summary: biography,
+    experience: cvExperiences.map((item: any) => ({
+      id: String(item.id),
+      company: item.company || '',
+      role: item.role || '',
+      startDate: item.startDate || '',
+      endDate: item.endDate || '',
+      location: item.location || '',
+      description: item.description || '',
+      hidden: Boolean(item.hidden),
+    })),
+    education: cvEducations.map((item: any) => ({
+      id: String(item.id),
+      institution: item.institution || '',
+      degree: item.degree || '',
+      startDate: item.startDate || '',
+      endDate: item.endDate || '',
+      location: item.location || '',
+      description: item.description || '',
+      hidden: Boolean(item.hidden),
+    })),
+    projects: cvProjects.map((item: any) => ({
+      id: String(item.id),
+      name: item.name || '',
+      role: item.role || '',
+      startDate: item.startDate || '',
+      endDate: item.endDate || '',
+      url: item.url || '',
+      description: item.description || '',
+      hidden: Boolean(item.hidden),
+    })),
+    skills: cvSkills.map((item: any) => ({
+      id: String(item.id),
+      name: item.name || '',
+      level: item.level || '',
+      hidden: Boolean(item.hidden),
+    })),
+    languages: cvLanguages.map((item: any) => ({
+      id: String(item.id),
+      name: item.name || '',
+      level: item.level || '',
+      hidden: Boolean(item.hidden),
+    })),
+  };
 
   const socialLinks = [
     {
@@ -175,13 +259,14 @@ export const UserProfile = () => {
   ].filter((item) => item.value && item.href);
 
   return (
-    <div className="min-h-full bg-slate-50">
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 px-6 py-8 text-white sm:px-8">
+    <div className="bg-slate-50 print:bg-white print:m-0 print:overflow-hidden">
+      <div className="print:hidden">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 print:max-w-full print:space-y-0 print:p-0 print:m-0 print:overflow-hidden">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm print:rounded-none print:border-0 print:shadow-none">
+          <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 px-6 py-8 text-white sm:px-8 print:bg-white print:text-slate-950 print:border-b print:border-slate-300 print:px-0 print:py-4">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-                <div className="relative h-36 w-36 shrink-0">
+                <div className="relative h-36 w-36 shrink-0 print:-ml-2">
                   <img
                     src={avatarUrl}
                     className="h-36 w-36 rounded-3xl border-4 border-white/20 object-cover shadow-2xl"
@@ -193,14 +278,16 @@ export const UserProfile = () => {
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-[0.32em] text-blue-200">Curriculum institucional</p>
-                  <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-5xl">{profile.fullName}</h1>
+                  <p className="text-xs font-bold uppercase tracking-[0.32em] text-blue-200 print:text-blue-700">Curriculum institucional</p>
+                  <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-5xl print:text-slate-950">{profile.fullName}</h1>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${roleClass}`}>
-                      {profile.role}
-                    </span>
+                    {profile.role && profile.role.toLowerCase() !== 'user' && (
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${roleClass}`}>
+                        {profile.role}
+                      </span>
+                    )}
                     {careers.slice(0, 2).map((career: string) => (
-                      <span key={career} className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100 ring-1 ring-white/15">
+                      <span key={career} className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100 ring-1 ring-white/15 print:bg-slate-100 print:text-slate-700 print:ring-slate-300">
                         {career}
                       </span>
                     ))}
@@ -209,43 +296,60 @@ export const UserProfile = () => {
               </div>
 
               {isOwnProfile && (
-                <Link
-                  to="/profile/edit"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-blue-50"
-                >
-                  <i className="fa-solid fa-pen-to-square" />
-                  Editar CV/Perfil
-                </Link>
+                <div className="flex items-center gap-3 print:hidden">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-white/20"
+                  >
+                    <i className="fa-solid fa-print" />
+                    Imprimir CV
+                  </button>
+                  <Link
+                    to="/profile/edit"
+                    onClick={handleEditProfileNavigation}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-blue-50"
+                  >
+                    <i className="fa-solid fa-pen-to-square" />
+                    Editar CV/Perfil
+                  </Link>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.5fr_0.9fr]">
+          <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.5fr_0.9fr] print:block print:p-0 print:gap-3">
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Perfil profesional</p>
               <p className="mt-3 text-base leading-8 text-slate-700">{biography}</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <p className="text-2xl font-black text-slate-950">{profile.totalPublications ?? userPosts.length}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Publicaciones</p>
+            <div className="grid gap-3 sm:grid-cols-2 print:grid-cols-2 print:gap-2">
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm print:shadow-none print:bg-transparent print:border-slate-300">
+                <p className="text-2xl font-black text-slate-950 print:text-black">{communityContributions || '—'}</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 print:text-slate-700">
+                  {pluralize(communityContributions, 'Aporte en la Comunidad', 'Aportes en la Comunidad')}
+                </p>
+                <p className="mt-1 text-[11px] font-medium text-slate-400">
+                  {totalPublications} {pluralize(totalPublications, 'Publicacion', 'Publicaciones')} · {totalComments} {pluralize(totalComments, 'Comentario', 'Comentarios')}
+                </p>
               </div>
-              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <p className="text-2xl font-black text-slate-950">{careers.length}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Carreras</p>
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <p className="text-2xl font-black text-slate-950">{activitySubjects.length}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Materias</p>
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm print:shadow-none print:bg-transparent print:border-slate-300">
+                <p className="text-2xl font-black text-slate-950 print:text-black">{approvedSubjectsCount ?? '—'}</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 print:text-slate-700">
+                  {pluralize(approvedSubjectsCount, 'Materia Aprobada', 'Materias Aprobadas')}
+                </p>
+                {!isOwnProfile && (
+                  <p className="mt-1 text-[11px] font-medium text-slate-400">Visible solo para el perfil propio.</p>
+                )}
               </div>
             </div>
           </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.4fr]">
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.4fr] print:block print:gap-4">
           <aside className="space-y-6">
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm print:rounded-none print:border-0 print:border-b print:p-0 print:pb-4 print:shadow-none">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Contacto y redes</p>
@@ -275,11 +379,16 @@ export const UserProfile = () => {
                     rel="noreferrer"
                     className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50"
                   >
-                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm ${item.color}`}>
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ${item.color}`}>
                       <i className={item.icon} />
                     </span>
-                    <span>{item.label}</span>
-                    <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-xs text-slate-400" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">{item.label}</span>
+                      <span className="block truncate text-xs font-normal text-slate-500 print:truncate-none print:whitespace-normal">
+                        {item.href}
+                      </span>
+                    </span>
+                    <i className="fa-solid fa-arrow-up-right-from-square ml-auto shrink-0 text-xs text-slate-400 print:hidden" />
                   </a>
                 ))}
 
@@ -374,7 +483,8 @@ export const UserProfile = () => {
                 {isOwnProfile && (
                   <Link
                     to="/profile/edit"
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-blue-100"
+                    onClick={handleEditProfileNavigation}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-blue-100 print:hidden"
                   >
                     <i className="fa-solid fa-file-pen" />
                     Editar CV
@@ -439,15 +549,20 @@ export const UserProfile = () => {
                             {item.role && <p className="mt-1 text-sm font-semibold text-blue-700">{item.role}</p>}
                             {item.description && <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>}
                             {item.url && (
-                              <a
-                                href={normalizeExternalUrl(item.url) ?? item.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-blue-700 hover:text-blue-900"
-                              >
-                                Ver proyecto
-                                <i className="fa-solid fa-arrow-up-right-from-square" />
-                              </a>
+                              <>
+                                <a
+                                  href={normalizeExternalUrl(item.url) ?? item.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-blue-700 hover:text-blue-900 print:hidden"
+                                >
+                                  Ver proyecto
+                                  <i className="fa-solid fa-arrow-up-right-from-square" />
+                                </a>
+                                <span className="mt-2 hidden text-xs text-slate-500 print:block">
+                                  {normalizeExternalUrl(item.url) ?? item.url}
+                                </span>
+                              </>
                             )}
                           </div>
                         ))}
@@ -493,7 +608,7 @@ export const UserProfile = () => {
             </section>
 
             {isOwnProfile && (
-              <section className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6 shadow-sm">
+              <section className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6 shadow-sm print:bg-white print:border-slate-200 print:shadow-none">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Vista privada</p>
@@ -540,7 +655,7 @@ export const UserProfile = () => {
               </section>
             )}
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm print:hidden">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Portfolio social</p>
@@ -550,7 +665,7 @@ export const UserProfile = () => {
                   <button
                     type="button"
                     onClick={() => setShowAllPosts((current) => !current)}
-                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 print:hidden"
                   >
                     {showAllPosts ? 'Ver menos' : 'Ver todas'}
                   </button>
@@ -562,7 +677,7 @@ export const UserProfile = () => {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {visiblePosts.map((post: any) => (
-                    <article key={post.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-5 transition hover:border-blue-200 hover:bg-blue-50/60">
+                    <article key={post.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-5 transition hover:border-blue-200 hover:bg-blue-50/60 print:break-inside-avoid print:bg-white print:border-slate-200">
                       <div className="flex items-center justify-between gap-3">
                         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-blue-700 ring-1 ring-blue-100">
                           {post.subject?.name || 'Publicacion'}
@@ -578,6 +693,10 @@ export const UserProfile = () => {
             </section>
           </main>
         </div>
+      </div>
+      </div>
+      <div className="pointer-events-none fixed left-[-10000px] top-0 block w-[210mm] bg-white opacity-0 print:static print:left-auto print:top-auto print:block print:w-full print:opacity-100 print:pointer-events-auto">
+        <CVPrintTemplate data={printCvData} activeTheme="navyInk" />
       </div>
     </div>
   );

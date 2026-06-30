@@ -101,6 +101,27 @@ export const MediaAttachment = ({ fileUrl, compact = false }) => {
     );
   }
 
+  if (type === 'image' && imageFailed) {
+    return (
+      <a
+        href={absoluteUrl}
+        target="_blank"
+        rel="noreferrer"
+        className={`flex items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 ${compact ? 'p-2' : 'p-3'} hover:border-blue-300 hover:bg-blue-50 transition`}
+        title="Abrir imagen en nueva pestaña"
+      >
+        <span className={`flex shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 ${compact ? 'h-9 w-9' : 'h-11 w-11'}`}>
+          <i className={`fa-solid fa-image-slash ${compact ? 'text-base' : 'text-xl'}`} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-slate-600" title={fileName}>{fileName}</p>
+          <p className="text-[11px] text-slate-400">Imagen no disponible · clic para intentar abrir</p>
+        </div>
+        <i className="fa-solid fa-arrow-up-right-from-square shrink-0 text-xs text-slate-400" />
+      </a>
+    );
+  }
+
   const style = fileStyles[type];
   return (
     <div className={`flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 ${compact ? 'p-2' : 'p-3'}`}>

@@ -15,6 +15,15 @@ export const GET_USER_PROFILE = gql`
       facebook
       instagram
       phone
+      avatarUrl
+      userCareers {
+        career {
+          id
+          name
+          code
+          isActive
+        }
+      }
       cvExperiences {
         id
         company

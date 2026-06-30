@@ -28,7 +28,7 @@ namespace OneItb.Entities.Models
                 if (!EmailRegex.IsMatch(cleanedEmail))
                     throw new ArgumentException("El formato del Email no cumple con la estructura requerida.", nameof(value));
 
-                _email = cleanedEmail;
+                _email = NormalizeDisplayEmail(cleanedEmail);
             }
         }
 
@@ -60,5 +60,13 @@ namespace OneItb.Entities.Models
         }
 
         public virtual User User { get; set; } = default!;
+
+        private static string NormalizeDisplayEmail(string email)
+        {
+            string normalized = email.Trim().ToLowerInvariant();
+            return normalized.Length == 0
+                ? normalized
+                : char.ToUpperInvariant(normalized[0]) + normalized[1..];
+        }
     }
 }

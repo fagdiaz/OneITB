@@ -26,21 +26,21 @@ export const ChatSidebar = ({
         key={contact.userId}
         type="button"
         onClick={() => handleSelectContact(contact.userId)}
-        className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${active ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'}`}
+        className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 ${active ? 'border-blue-300/20 bg-blue-500/15 text-white shadow-[0_10px_30px_rgba(37,99,235,0.16)]' : 'border-transparent text-slate-300 hover:-translate-y-0.5 hover:border-white/10 hover:bg-white/[0.05] hover:text-white'}`}
       >
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold ${active ? 'bg-white/20' : 'bg-blue-100 text-blue-700'}`}>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold ring-1 ${active ? 'bg-blue-400/20 text-blue-100 ring-blue-300/20' : 'bg-white/5 text-blue-200 ring-white/10 group-hover:ring-blue-300/20'}`}>
           {contact.firstName?.[0]}{contact.lastName?.[0]}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">
             {contact.firstName} {contact.lastName} {isNew && <span className="ml-1 text-[10px] uppercase tracking-wider text-emerald-500 font-bold">(Nuevo)</span>}
           </p>
-          <p className={`truncate text-xs ${active ? 'text-blue-100' : 'text-slate-500'}`}>
+          <p className={`truncate text-xs ${active ? 'text-blue-100' : 'text-slate-500 group-hover:text-slate-400'}`}>
             {preview ? `"${preview}"` : contact.role}
           </p>
         </div>
         {contact.unreadCount > 0 && !isNew && (
-          <span className={`min-w-6 rounded-full px-2 py-1 text-center text-xs font-bold ${active ? 'bg-white text-blue-700' : 'bg-blue-600 text-white'}`}>
+          <span className={`min-w-6 rounded-full px-2 py-1 text-center text-xs font-bold ${active ? 'bg-blue-100 text-blue-700' : 'bg-blue-500 text-white'}`}>
             {contact.unreadCount}
           </span>
         )}
@@ -49,28 +49,28 @@ export const ChatSidebar = ({
   };
 
   return (
-    <div className={`${selectedContactId ? 'hidden sm:flex' : 'flex'} w-full sm:w-72 flex-col border-r border-slate-200 bg-white`}>
-      <header className="flex items-center justify-between bg-blue-600 p-3 sm:p-4 text-white">
+    <div className={`${selectedContactId ? 'hidden sm:flex' : 'flex'} w-full flex-col border-r border-white/10 bg-slate-950/80 sm:w-72`}>
+      <header className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] p-3 text-white sm:p-4">
         <div>
           <h3 className="font-bold text-sm sm:text-base">Mensajes</h3>
-          <p className="text-[10px] sm:text-xs text-blue-100">
+          <p className="text-[10px] text-slate-400 sm:text-xs">
             {socketStatus === 'connected' ? 'En línea' : 'Reconectando...'}
           </p>
         </div>
-        <button onClick={toggleWidget} className="sm:hidden rounded-full p-1.5 text-white/80 hover:bg-white/20 transition">
+        <button onClick={toggleWidget} className="rounded-full p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white sm:hidden">
           <i className="fa-solid fa-xmark"></i>
         </button>
       </header>
       
-      <div className="border-b border-slate-100 p-2 sm:p-3">
+      <div className="border-b border-white/10 p-2 sm:p-3">
         <div className="relative">
-          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
           <input 
             type="text" 
             placeholder="Buscar usuarios..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 py-1.5 text-xs outline-none transition focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-100"
+            className="w-full rounded-2xl border border-white/10 bg-slate-900/80 py-1.5 pl-8 pr-3 text-xs text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-blue-300/30 focus:bg-slate-900 focus:ring-1 focus:ring-blue-500/20"
           />
         </div>
       </div>
@@ -85,7 +85,7 @@ export const ChatSidebar = ({
         <div className="space-y-3">
           {displayActive.length > 0 && (
             <div>
-              {searchTerm && <h4 className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Conversaciones</h4>}
+              {searchTerm && <h4 className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Conversaciones</h4>}
               <div className="space-y-0.5">
                 {displayActive.map(c => renderContactItem(c))}
               </div>
@@ -94,7 +94,7 @@ export const ChatSidebar = ({
 
           {searchTerm && displayNew.length > 0 && (
             <div>
-              <h4 className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Nuevos Usuarios</h4>
+              <h4 className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Nuevos Usuarios</h4>
               <div className="space-y-0.5">
                 {displayNew.map(c => renderContactItem(c, true))}
               </div>
@@ -103,7 +103,7 @@ export const ChatSidebar = ({
 
           {searchTerm && searchTerm.length >= 2 && (
             <div>
-              <h4 className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Mensajes</h4>
+              <h4 className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Mensajes</h4>
               {searchMessagesLoading ? (
                 <p className="px-2 text-[10px] text-slate-500">Buscando...</p>
               ) : searchedMessages.length > 0 ? (
@@ -114,9 +114,9 @@ export const ChatSidebar = ({
                       <button 
                         key={msg.id}
                         onClick={() => handleSelectContact(otherUser.id)}
-                        className={`w-full rounded-xl p-2 text-left transition ${selectedContactId === otherUser.id ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
+                        className={`w-full rounded-2xl border p-2 text-left transition ${selectedContactId === otherUser.id ? 'border-blue-300/20 bg-blue-500/10' : 'border-transparent hover:border-white/10 hover:bg-white/[0.05]'}`}
                       >
-                        <p className="text-xs font-semibold text-slate-700">{otherUser.firstName} {otherUser.lastName}</p>
+                        <p className="text-xs font-semibold text-slate-200">{otherUser.firstName} {otherUser.lastName}</p>
                         <p className="line-clamp-2 text-[11px] text-slate-500">"{msg.content}"</p>
                       </button>
                     );

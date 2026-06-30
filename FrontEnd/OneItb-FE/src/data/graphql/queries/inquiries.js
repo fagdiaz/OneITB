@@ -14,6 +14,7 @@ export const GET_INQUIRIES = gql`
         id
         firstName
         lastName
+        avatarUrl
         role
         totalPosts
         totalComments
@@ -43,6 +44,7 @@ export const GET_INQUIRIES = gql`
           id
           firstName
           lastName
+          avatarUrl
           role
           totalPosts
           totalComments
@@ -72,6 +74,7 @@ export const GET_INQUIRIES_PAGE = gql`
           id
           firstName
           lastName
+          avatarUrl
           role
           totalPosts
           totalComments
@@ -101,6 +104,7 @@ export const GET_INQUIRIES_PAGE = gql`
             id
             firstName
             lastName
+            avatarUrl
             role
             totalPosts
             totalComments

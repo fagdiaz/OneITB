@@ -5,6 +5,162 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-30] - Spec 152: Master Quality & Interconnectivity Fixes
+
+* **Objetivo**: consolidar la UX de perfil, feed, header e impresion de CV auditando rutas reales, eliminando archivos fantasma y corrigiendo los desajustes visibles detectados en regresion manual.
+* **Resultado**:
+  - Se audito el router real: `/profile` y `/profile/:id` usan `UserProfile.tsx`; `/profile/edit` usa `CvEditorProfile.tsx`.
+  - Se elimino `EditProfile.jsx`, que no estaba routeado ni importado y generaba confusion operativa.
+  - `PublicProfileSummary` y `GET_PUBLIC_PROFILE` ahora exponen `totalComments`; el perfil calcula "Aportes en la Comunidad" con publicaciones + comentarios reales.
+  - `CvEditorProfile.tsx` incorpora boton "Cancelar" junto a guardar y navega a `/profile` sin ejecutar mutaciones GraphQL.
+  - `Feed.jsx` cachea URLs de avatar fallidas y usa fallback de iniciales para evitar reintentos repetidos de imagenes corruptas.
+  - `CVPrintTemplate.tsx` se reemplazo por una plantilla A4 pura, sin controles de zoom ni contenedor interactivo, con safeguards print en `index.css`.
+  - `/profile/edit` ahora oculta formulario y preview interactivo en impresion y usa el mismo `CVPrintTemplate` formal que `/profile`.
+  - `Header.jsx` conserva el spotlight por CSS variables sin re-renders, permite dropdowns visibles con `overflow-visible` y queda oculto en impresion; `NotificationBell.jsx` y `Nav.jsx` tienen dropdowns dark/glass alineados al header.
+  - `/chat`, `MiniChatWidget`, `ChatSidebar` y `ChatWindow` adoptan el mismo sistema visual dark/glass sin tocar la logica de mensajeria, subscriptions ni cache Apollo.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 advertencias y 0 errores.
+  - `npm.cmd run build`: PASS, 339 modulos transformados, build en 845ms; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+* **Estado**:
+  - Implementado y verificado por builds backend/frontend. Validacion visual fina en navegador y vista previa de impresion queda recomendada antes de demo.
+* **Archivos principales**:
+  - `API Graphql/Services/DTOs.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/publicProfile.js`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/EditProfile.jsx` (eliminado)
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/resume/CVPrintTemplate.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/NotificationBell.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/PrivateChat.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/MiniChatWidget.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/ChatSidebar.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/ChatWindow.jsx`
+  - `FrontEnd/OneItb-FE/src/index.css`
+  - `specs/152-master-quality-interconnectivity-fixes/evidence.md`
+
+## [2026-06-30] - Spec 152: Header Spotlight Effect (superseded by Master Quality)
+
+* **Objetivo**: Implementar un efecto "Spotlight" interactivo en el Header principal y mejorar el relieve interactivo de los elementos de navegación en hover.
+* **Resultado**:
+  - **Header.jsx**: Tracker del cursor en el componente vía CSS custom properties (`--mouse-x`, `--mouse-y`) inyectadas dinámicamente con `requestAnimationFrame` sin generar re-renders de React. El "spotlight" se renderiza mediante un div superpuesto con `pointer-events-none` e interpolación radial de opacidad.
+  - **Nav.jsx**: Se migraron los estilos visuales a clases CSS de Tailwind (`hover:-translate-y-0.5`, `hover:shadow-lg`), eliminando toda la lógica JS de proximidad previamente agregada (Spec 151) para delegar todo el feedback visual puramente a transiciones fluidas de CSS.
+* **Validaciones ejecutadas**:
+  - Build base validado.
+  - Build final (`npm run build`): **PASS** ? 0 errores de compilación TypeScript.
+* **Archivos modificados**:
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+
+## [2026-06-30] - Spec 151: UX Fixes — Cancel, Avatar Fallback, Métricas, Print
+
+* **Objetivo**: 4 fixes de UX: botón Cancelar en editor, fallback de iniciales en avatares rotos del feed, pluralización correcta de métricas, y limpieza agresiva de estilos de impresión.
+* **Resultado**:
+  - **Cancelar** (`EditProfile.jsx`): Fila de 2 botones `flex-1` — "Cancelar" (borde gris, `navigate('/profile')` sin mutaciones) + "Guardar Cambios" (azul, unchanged).
+  - **Avatar fallback** (`Feed.jsx`): Nuevo componente `UserAvatar` con `onError` → muestra `<span>` con iniciales sobre fondo `bg-slate-200` cuando la URL falla o es nula. `resolveAvatarUrl` ya no cae al servicio externo de ui-avatars como default.
+  - **Métricas pluralizadas** (`UserProfile.tsx`): Labels dinámicos: "1 Publicación / N Publicaciones", "1 Carrera / N Carreras", "1 Materia / N Materias". Tarjetas con `print:shadow-none print:bg-transparent print:border-slate-300 print:text-black`.
+  - **Print cleanup** (`UserProfile.tsx`): `print:overflow-hidden` en contenedor raíz e inner wrapper para forzar una sola hoja; `print:-ml-2` en el avatar para alinear el bloque de datos; labels de métricas con `print:text-slate-700`.
+* **Validaciones ejecutadas**:
+  - Build base: **PASS** — `built in 651ms`.
+  - Build final: **PASS** — `built in 690ms`, 0 errores TypeScript.
+* **Archivos modificados**:
+  - `FrontEnd/OneItb-FE/src/Components/profile/EditProfile.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+
+## [2026-06-30] - Spec 150: UX & Print Polish
+
+* **Objetivo**: Cuatro correcciones de UX detectadas en auditoría: Portfolio Social visible en print, imágenes rotas sin fallback, falta de botón de cierre en comentarios, y métricas en cero sin contexto.
+* **Resultado**:
+  - **Portfolio Social**: `<section>` de "Publicaciones recientes" en `UserProfile.tsx` ahora tiene `print:hidden`; no aparece en el CV impreso.
+  - **Imagen rota**: `MediaAttachment.jsx` tiene un bloque explícito para `type === 'image' && imageFailed` que muestra ícono `fa-image-slash` + nombre de archivo + enlace accesible al original. Nunca se muestra el ícono roto del navegador.
+  - **Cerrar comentarios**: `Feed.jsx` envuelve el `<CommentThread>` en un `<div>` con barra de título que incluye botón "Cerrar" con ícono `fa-xmark`; permite colapsar el hilo sin usar el botón de la barra de acciones.
+  - **Métricas**: Publicaciones, Carreras y Materias en el header del perfil muestran `'—'` cuando el valor es 0, usando el patrón `value || '—'`.
+* **Validaciones ejecutadas**:
+  - Build base pre-cambio: **PASS** — `built in 585ms`.
+  - `npm.cmd run build` post-cambio: **PASS** — `built in 565ms`, 0 errores TypeScript.
+* **Archivos modificados**:
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaAttachment.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `specs/150-ux-print-polish/` (spec.md, plan.md, tasks.md, checklists/)
+
+## [2026-06-30] - CV Component Abstraction & UX Polish (Spec: 149-cv-component-abstraction-ux-polish)
+
+* **Objetivo**: corregir el flujo de impresion del CV para que `/profile` no imprima la interfaz web, sino el template formal A4 reutilizado desde la previsualizacion del editor.
+* **Resultado**:
+  - Se agrego `CVPrintTemplate.tsx` como componente reutilizable para el diseno formal de CV.
+  - `UserProfile.tsx` construye un `CVData` desde `publicProfile` usando avatar, biografia, contacto, carreras y secciones normalizadas del CV.
+  - Toda la interfaz web de `/profile` queda oculta en impresion con `print:hidden`.
+  - El template formal se monta fuera de pantalla en modo web y visible solo en impresion con `print:block`, por lo que `window.print()` captura exclusivamente el CV institucional sin cortar la medicion de paginas A4.
+  - Los accesos "Editar CV/Perfil" y "Editar CV" limpian el scroll antes de navegar, y `/profile/edit` fuerza scroll superior al montar.
+* **Validaciones ejecutadas**:
+  - `npm.cmd run build`: PASS; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+* **Estado**:
+  - Implementado y verificado por build frontend. Validacion visual fina en navegador queda recomendada antes de demo.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/resume/CVPrintTemplate.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `specs/149-cv-component-abstraction-ux-polish/evidence.md`
+
+## [2026-06-30] - Profile Data Binding Fixes (Spec: 148-profile-data-binding-fixes)
+
+* **Objetivo**: corregir persistencia real de avatar, asociacion editable de carreras desde `/profile/edit` y normalizacion de identidad para nombres, alias visual y email.
+* **Resultado**:
+  - Se agrego `User.AvatarUrl` con mapeo EF Core explicito `nvarchar(500)`.
+  - La migracion `AddAvatarUrlAndNormalizeIdentity` normaliza usuarios existentes (`FirstName`, `LastName`) y emails legacy con primer caracter visible en mayuscula.
+  - `User.FirstName` y `User.LastName` normalizan a Title Case en los setters para futuras escrituras.
+  - `Account.Email` queda validado, trimmeado y con primer caracter visible en mayuscula; los repositorios de login buscan email de forma case-insensitive.
+  - `UpdateProfileInput` acepta `avatarUrl` y `careerIds`; `UsersService.UpdateProfileAsync` persiste avatar y reemplaza links `UserCareer` en la misma operacion de guardado.
+  - `me`, `publicProfile` y usuarios del feed exponen `avatarUrl`.
+  - `CvEditorProfile.tsx` sube avatar por `POST /api/upload` con JWT, guarda la URL devuelta y permite seleccionar carreras activas con checkboxes.
+  - `UserProfile.tsx` y tarjetas del feed renderizan avatar persistido y caen al avatar generado solo si no existe URL.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 advertencias y 0 errores.
+  - `dotnet ef migrations add AddAvatarUrlAndNormalizeIdentity --configuration Release ...`: PASS.
+  - `dotnet ef database update --configuration Release ...`: PASS.
+  - `npm.cmd run build`: PASS; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+  - `specs/148-profile-data-binding-fixes/runtime-validation.ps1`: PASS; login admin, upload REST real, `updateProfile(avatarUrl, careerIds)`, lectura `me`, `publicProfile` y validacion de casing para `11111111@itbeltran.com.ar`.
+* **Estado**:
+  - Implementado y verificado end-to-end por migracion aplicada, build full-stack y runtime REST/GraphQL.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/User.cs`
+  - `API Graphql/Entities/Models/Account.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Data/Migrations/20260630023029_AddAvatarUrlAndNormalizeIdentity.cs`
+  - `API Graphql/Services/DTOs.cs`
+  - `API Graphql/Services/Repositories/UnitOfWork.cs`
+  - `API Graphql/Services/Users/UsersService.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/OneITB/Startup.cs`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/getUserProfile.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/publicProfile.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/inquiries.js`
+  - `specs/148-profile-data-binding-fixes/evidence.md`
+
+## [2026-06-29] - Spec 147 v2: Profile CV Print Styles (Polish ampliado)
+
+* **Objetivo**: Extender los fixes de @media print con mejoras visuales de pantalla: redes sociales con URL visible, botón Imprimir en perfil, ocultar rol de sistema, chat oculto en print, y fix de hoja en blanco.
+* **Resultado**:
+  - **Redes sociales**: cada ítem de contacto muestra `label + URL completa` en dos líneas (font-bold para el nombre, text-slate-500 para la URL). El ícono de enlace externo se oculta en print.
+  - **Botón Imprimir CV**: añadido junto a "Editar CV/Perfil" en el header del perfil (solo en perfil propio), ambos dentro de un wrapper `print:hidden`.
+  - **Rol genérico "User"**: se suprime con `profile.role.toLowerCase() !== 'user'`; solo roles institucionales (Estudiante, Profesor, etc.) se muestran.
+  - **MiniChatWidget**: envuelto en `<div className="print:hidden">` en `PrivateLayout.jsx`.
+  - **Blank page fix**: eliminado `min-h-full` del contenedor raíz; añadido `print:m-0 print:space-y-0` en el wrapper principal.
+* **Validaciones ejecutadas**:
+  - `npm.cmd run build` (Vite): **PASS** — `built in 555ms`, 0 errores TypeScript.
+* **Archivos modificados**:
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/PrivateLayout.jsx`
+  - `specs/147-profile-cv-print-styles/` (spec.md, tasks.md ampliados a v2)
+
 ## [2026-06-29] - Spec 146: Data Normalization (Nombres propios)
 
 * **Objetivo**: Interceptar cadenas de texto (nombres, roles, instituciones, etc.) en los servicios de Registro y Edición de Perfil para normalizarlas automáticamente a Title Case antes de persistir en Entity Framework Core.
