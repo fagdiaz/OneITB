@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using HotChocolate;
 using HotChocolate.Types;
@@ -51,10 +52,109 @@ namespace OneITB.Core.Services.Interfaces
         string? LinkedIn,
         string? Facebook,
         string? Instagram,
-        string? Phone
+        string? Phone,
+        IReadOnlyList<CvExperienceInput>? CvExperiences,
+        IReadOnlyList<CvEducationInput>? CvEducations,
+        IReadOnlyList<CvProjectInput>? CvProjects,
+        IReadOnlyList<CvSkillInput>? CvSkills,
+        IReadOnlyList<CvLanguageInput>? CvLanguages
     );
 
     public record UpdateProfilePayload(Guid Id, bool Success, string Message);
+
+    public record CvExperienceInput(
+        string? Company,
+        string? Role,
+        string? StartDate,
+        string? EndDate,
+        string? Location,
+        string? Description,
+        bool? Hidden
+    );
+
+    public record CvEducationInput(
+        string? Institution,
+        string? Degree,
+        string? StartDate,
+        string? EndDate,
+        string? Location,
+        string? Description,
+        bool? Hidden
+    );
+
+    public record CvProjectInput(
+        string? Name,
+        string? Role,
+        string? StartDate,
+        string? EndDate,
+        string? Url,
+        string? Description,
+        bool? Hidden
+    );
+
+    public record CvSkillInput(
+        string? Name,
+        string? Level,
+        bool? Hidden
+    );
+
+    public record CvLanguageInput(
+        string? Name,
+        string? Level,
+        bool? Hidden
+    );
+
+    public record CvExperienceDto(
+        Guid Id,
+        string Company,
+        string Role,
+        string? StartDate,
+        string? EndDate,
+        string? Location,
+        string? Description,
+        bool IsHidden,
+        int SortOrder
+    );
+
+    public record CvEducationDto(
+        Guid Id,
+        string Institution,
+        string Degree,
+        string? StartDate,
+        string? EndDate,
+        string? Location,
+        string? Description,
+        bool IsHidden,
+        int SortOrder
+    );
+
+    public record CvProjectDto(
+        Guid Id,
+        string Name,
+        string? Role,
+        string? StartDate,
+        string? EndDate,
+        string? Url,
+        string? Description,
+        bool IsHidden,
+        int SortOrder
+    );
+
+    public record CvSkillDto(
+        Guid Id,
+        string Name,
+        string? Level,
+        bool IsHidden,
+        int SortOrder
+    );
+
+    public record CvLanguageDto(
+        Guid Id,
+        string Name,
+        string? Level,
+        bool IsHidden,
+        int SortOrder
+    );
 
     public record PublicProfileSummary(
         Guid Id,
@@ -67,6 +167,11 @@ namespace OneITB.Core.Services.Interfaces
         string? Facebook,
         string? Instagram,
         string? Phone,
+        IReadOnlyList<CvExperienceDto> CvExperiences,
+        IReadOnlyList<CvEducationDto> CvEducations,
+        IReadOnlyList<CvProjectDto> CvProjects,
+        IReadOnlyList<CvSkillDto> CvSkills,
+        IReadOnlyList<CvLanguageDto> CvLanguages,
         IReadOnlyList<string> Careers,
         int TotalPublications
     );

@@ -29,7 +29,14 @@ export const Login = () => {
           password: form.password
         }
       };
+
       const { data } = await authenticateUser({ variables });
+
+      // Spec-143: Apollo resuelve el await con data=undefined cuando el backend
+      // devuelve graphQLErrors (ej: credenciales inválidas). El callback onError
+      // ya habrá capturado el mensaje — aquí hacemos early-return para no crashear.
+      if (!data?.login) return;
+
       const { token, username, isAuthenticated, id, role } = data.login;
 
       if (isAuthenticated) {
@@ -44,17 +51,24 @@ export const Login = () => {
         setLoginError('El backend rechazó las credenciales.');
       }
     } catch (err) {
-      console.error('Login failed', err.networkError?.result ?? err.graphQLErrors ?? err.message);
+      // Cubre fallos de red y casos donde Apollo sí relanza (errorPolicy distinta).
+      const gqlMessage = err.graphQLErrors?.map((e) => e.message).join(' ');
+      const netMessage = err.networkError?.result?.errors?.map((e) => e.message).join(' ');
+      console.error('Login failed', err.graphQLErrors ?? err.networkError ?? err.message);
       setSaved('error');
-      const backendMessage = err.networkError?.result?.errors
-        ?.map((item) => item.message)
-        .join(' ');
-      setLoginError(backendMessage || err.message || 'No se pudo completar el inicio de sesión.');
+      setLoginError(gqlMessage || netMessage || err.message || 'No se pudo completar el inicio de sesión.');
     }
   };
 
-  const [authenticateUser, { loading }] = useMutation(AUTHENTICATE_USER, {
+  const [authenticateUser, { loading, error: mutationError }] = useMutation(AUTHENTICATE_USER, {
     fetchPolicy: 'network-only',
+    onError: (err) => {
+      // onError garantiza captura aunque useMutation no re-lance en modo "errorPolicy: none"
+      const gqlMessage = err.graphQLErrors?.map((e) => e.message).join(' ');
+      const netMessage = err.networkError?.result?.errors?.map((e) => e.message).join(' ');
+      setSaved('error');
+      setLoginError(gqlMessage || netMessage || err.message || 'Usuario o contraseña incorrectos.');
+    },
   });
 
   return (

@@ -1,152 +1,584 @@
 import React, { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { GET_PUBLIC_PROFILE } from '../../data/graphql/queries/publicProfile';
 import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
+import { GET_MY_ACADEMIC_PROGRESS } from '../../data/graphql/queries/academic';
+
+const roleStyles: Record<string, string> = {
+  Administrador: 'bg-blue-50 text-blue-800 ring-blue-200',
+  Moderador: 'bg-violet-50 text-violet-800 ring-violet-200',
+  Profesor: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
+  Egresado: 'bg-amber-50 text-amber-800 ring-amber-200',
+  Estudiante: 'bg-sky-50 text-sky-800 ring-sky-200',
+};
+
+const statusLabels: Record<string, string> = {
+  APPROVED: 'Aprobadas',
+  REGULAR: 'Regulares',
+  IN_PROGRESS: 'En curso',
+  FREE: 'Libres',
+};
+
+const normalizeExternalUrl = (value?: string | null, provider?: 'linkedin' | 'instagram' | 'facebook') => {
+  const raw = value?.trim();
+  if (!raw) return null;
+
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const cleaned = raw.replace(/^@/, '').replace(/^\/+/, '');
+  if (cleaned.includes('.')) return `https://${cleaned}`;
+
+  if (provider === 'linkedin') return `https://www.linkedin.com/in/${cleaned}`;
+  if (provider === 'instagram') return `https://www.instagram.com/${cleaned}`;
+  if (provider === 'facebook') return `https://www.facebook.com/${cleaned}`;
+
+  return `https://${cleaned}`;
+};
+
+const formatDate = (value?: string | null) => {
+  if (!value) return 'Sin actividad reciente';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Sin actividad reciente';
+  return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }).format(parsed);
+};
+
+const getInitials = (fullName: string) => {
+  return fullName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+};
 
 export const UserProfile = () => {
   const { auth } = useAuth();
   const { id } = useParams();
-  const [showFullProfile, setShowFullProfile] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
 
   const targetUserId = id || auth.id;
+  const isOwnProfile = Boolean(auth?.id && targetUserId && String(auth.id).toLowerCase() === String(targetUserId).toLowerCase());
 
   const { data, loading, error } = useQuery(GET_PUBLIC_PROFILE, {
     variables: { userId: targetUserId },
     skip: !targetUserId,
     fetchPolicy: 'cache-and-network',
   });
+
   const { data: inquiriesData } = useQuery(GET_INQUIRIES, {
     variables: { searchTerm: null, careerId: null, subjectIds: null },
     skip: !auth.id,
     fetchPolicy: 'cache-and-network',
   });
 
+  const { data: progressData, error: progressError } = useQuery(GET_MY_ACADEMIC_PROGRESS, {
+    skip: !isOwnProfile,
+    fetchPolicy: 'cache-and-network',
+  });
+
   const profile = data?.publicProfile;
+
   const userPosts = useMemo(() => {
     const posts = inquiriesData?.inquiries ?? [];
-    return posts.filter((post: any) => post.user?.id === targetUserId);
+    if (!targetUserId) return [];
+    return posts
+      .filter((post: any) => post.user?.id === targetUserId)
+      .sort((left: any, right: any) => new Date(right.publishDate).getTime() - new Date(left.publishDate).getTime());
   }, [targetUserId, inquiriesData]);
-  const visiblePosts = showAllPosts ? userPosts : userPosts.slice(0, 3);
+
+  const visiblePosts = showAllPosts ? userPosts : userPosts.slice(0, 4);
+
+  const activitySubjects = useMemo(() => {
+    const names = userPosts
+      .map((post: any) => post.subject?.name)
+      .filter(Boolean);
+    return Array.from(new Set(names)).slice(0, 8);
+  }, [userPosts]);
+
+  const latestActivity = userPosts[0]?.publishDate;
+  const progressItems = progressData?.myAcademicProgress ?? [];
+
+  const academicMetrics = useMemo(() => {
+    return progressItems.reduce(
+      (acc: Record<string, number>, item: any) => {
+        acc[item.status] = (acc[item.status] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
+  }, [progressItems]);
+
+  const highlightedProgress = progressItems.slice(0, 4);
 
   if (loading) {
     return (
-      <div className="flex min-h-full items-center justify-center py-20 text-sm font-medium text-slate-500">
-        Cargando perfil...
+      <div className="flex min-h-full items-center justify-center py-20 text-sm font-semibold text-slate-500">
+        Cargando perfil profesional...
       </div>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-medium text-red-700">
           No se pudo cargar el perfil.
         </div>
       </div>
     );
   }
 
-  const biography = profile.biography || 'Este usuario todavia no cargo una biografia.';
+  const biography = profile.biography || 'Este perfil todavia no tiene una presentacion profesional cargada.';
+  const careers = profile.careers ?? [];
+  const roleClass = roleStyles[profile.role] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName)}&background=0f172a&color=fff&size=192`;
+  const sortVisibleCvItems = (items?: any[]) =>
+    [...(items ?? [])]
+      .filter((item) => !item.hidden)
+      .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0));
+  const cvExperiences = sortVisibleCvItems(profile.cvExperiences);
+  const cvEducations = sortVisibleCvItems(profile.cvEducations);
+  const cvProjects = sortVisibleCvItems(profile.cvProjects);
+  const cvSkills = sortVisibleCvItems(profile.cvSkills);
+  const cvLanguages = sortVisibleCvItems(profile.cvLanguages);
+  const hasExtendedCv =
+    cvExperiences.length > 0 ||
+    cvEducations.length > 0 ||
+    cvProjects.length > 0 ||
+    cvSkills.length > 0 ||
+    cvLanguages.length > 0;
+
+  const socialLinks = [
+    {
+      label: 'LinkedIn',
+      value: profile.linkedIn,
+      href: normalizeExternalUrl(profile.linkedIn, 'linkedin'),
+      icon: 'fa-brands fa-linkedin-in',
+      color: 'text-blue-700',
+    },
+    {
+      label: 'Instagram',
+      value: profile.instagram,
+      href: normalizeExternalUrl(profile.instagram, 'instagram'),
+      icon: 'fa-brands fa-instagram',
+      color: 'text-pink-600',
+    },
+    {
+      label: 'Facebook',
+      value: profile.facebook,
+      href: normalizeExternalUrl(profile.facebook, 'facebook'),
+      icon: 'fa-brands fa-facebook-f',
+      color: 'text-blue-600',
+    },
+  ].filter((item) => item.value && item.href);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5 px-4 py-8">
-      <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <img
-            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName)}&background=3b82f6&color=fff&size=128`}
-            className="h-24 w-24 rounded-2xl object-cover shadow-sm"
-            alt={`Avatar de ${profile.fullName}`}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">{profile.role}</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">{profile.fullName}</h1>
-            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-600">{biography}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(profile.careers || []).map((career: string) => (
-                <span key={career} className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                  {career}
-                </span>
-              ))}
+    <div className="min-h-full bg-slate-50">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 px-6 py-8 text-white sm:px-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
+                <div className="relative h-36 w-36 shrink-0">
+                  <img
+                    src={avatarUrl}
+                    className="h-36 w-36 rounded-3xl border-4 border-white/20 object-cover shadow-2xl"
+                    alt={`Avatar de ${profile.fullName}`}
+                  />
+                  <div className="absolute -bottom-3 -right-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg">
+                    {getInitials(profile.fullName)}
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[0.32em] text-blue-200">Curriculum institucional</p>
+                  <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-5xl">{profile.fullName}</h1>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${roleClass}`}>
+                      {profile.role}
+                    </span>
+                    {careers.slice(0, 2).map((career: string) => (
+                      <span key={career} className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100 ring-1 ring-white/15">
+                        {career}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {isOwnProfile && (
+                <Link
+                  to="/profile/edit"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-blue-50"
+                >
+                  <i className="fa-solid fa-pen-to-square" />
+                  Editar CV/Perfil
+                </Link>
+              )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowFullProfile(true)}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-          >
-            Ver mas...
-          </button>
-        </div>
-      </section>
 
-      <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">Ultimas publicaciones</h2>
-            <p className="text-xs text-slate-500">{userPosts.length} publicaciones activas</p>
-          </div>
-          {userPosts.length > 3 && (
-            <button
-              type="button"
-              onClick={() => setShowAllPosts((current) => !current)}
-              className="text-sm font-semibold text-blue-700 hover:text-blue-800"
-            >
-              {showAllPosts ? 'Ver menos' : 'Ver mas'}
-            </button>
-          )}
-        </div>
-
-        {visiblePosts.length === 0 ? (
-          <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Todavia no hay publicaciones para mostrar.</p>
-        ) : (
-          <div className="space-y-3">
-            {visiblePosts.map((post: any) => (
-              <article key={post.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                <p className="text-xs font-medium text-blue-700">{post.subject?.name}</p>
-                <h3 className="mt-1 font-semibold text-slate-900">{post.title}</h3>
-                <p className="mt-1 line-clamp-2 text-sm text-slate-600">{post.content}</p>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {showFullProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4">
-          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">{profile.fullName}</h2>
-                <p className="text-sm text-slate-500">{profile.role}</p>
-              </div>
-              <button type="button" onClick={() => setShowFullProfile(false)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">
-                <i className="fa-solid fa-xmark" />
-              </button>
+          <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.5fr_0.9fr]">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Perfil profesional</p>
+              <p className="mt-3 text-base leading-8 text-slate-700">{biography}</p>
             </div>
-            <dl className="mt-6 space-y-4 text-sm">
-              <div>
-                <dt className="font-semibold text-slate-900">Biografia</dt>
-                <dd className="mt-1 text-slate-600">{biography}</dd>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <p className="text-2xl font-black text-slate-950">{profile.totalPublications ?? userPosts.length}</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Publicaciones</p>
               </div>
-              <div>
-                <dt className="font-semibold text-slate-900">Contacto</dt>
-                <dd className="mt-1 text-slate-600">{profile.phone || 'Sin telefono cargado.'}</dd>
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <p className="text-2xl font-black text-slate-950">{careers.length}</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Carreras</p>
               </div>
-              <div>
-                <dt className="font-semibold text-slate-900">Redes</dt>
-                <dd className="mt-1 grid gap-1 text-slate-600">
-                  <span>LinkedIn: {profile.linkedIn || '-'}</span>
-                  <span>Instagram: {profile.instagram || '-'}</span>
-                  <span>Facebook: {profile.facebook || '-'}</span>
-                </dd>
+              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                <p className="text-2xl font-black text-slate-950">{activitySubjects.length}</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Materias</p>
               </div>
-            </dl>
+            </div>
           </div>
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.4fr]">
+          <aside className="space-y-6">
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Contacto y redes</p>
+                  <h2 className="mt-1 text-xl font-black text-slate-950">Canales profesionales</h2>
+                </div>
+                <i className="fa-solid fa-address-card text-2xl text-slate-300" />
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {profile.phone && (
+                  <a
+                    href={`tel:${profile.phone}`}
+                    className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50"
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
+                      <i className="fa-solid fa-phone" />
+                    </span>
+                    {profile.phone}
+                  </a>
+                )}
+
+                {socialLinks.map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.href ?? '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50"
+                  >
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm ${item.color}`}>
+                      <i className={item.icon} />
+                    </span>
+                    <span>{item.label}</span>
+                    <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-xs text-slate-400" />
+                  </a>
+                ))}
+
+                {!profile.phone && socialLinks.length === 0 && (
+                  <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Sin canales de contacto cargados.</p>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Identidad academica</p>
+              <h2 className="mt-1 text-xl font-black text-slate-950">Carreras</h2>
+              <div className="mt-5 space-y-3">
+                {careers.length === 0 ? (
+                  <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Sin carrera asociada.</p>
+                ) : (
+                  careers.map((career: string) => (
+                    <div key={career} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">
+                        {career
+                          .split(' ')
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((part) => part[0])
+                          .join('')}
+                      </span>
+                      <span className="text-sm font-bold text-slate-800">{career}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          </aside>
+
+          <main className="space-y-6">
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Educacion / Trayectoria</p>
+                  <h2 className="mt-1 text-2xl font-black text-slate-950">Recorrido academico</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Resumen publico basado en carreras y participacion por materia.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ultima actividad</p>
+                  <p className="text-sm font-bold text-slate-800">{formatDate(latestActivity)}</p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                  <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">Materias destacadas</h3>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {activitySubjects.length === 0 ? (
+                      <span className="text-sm text-slate-500">Sin actividad publica por materia.</span>
+                    ) : (
+                      activitySubjects.map((subject) => (
+                        <span key={subject} className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+                          {subject}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                  <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">Sintesis institucional</h3>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-xl bg-white p-3 ring-1 ring-slate-100">
+                      <p className="font-black text-slate-950">{careers.length || '-'}</p>
+                      <p className="text-xs text-slate-500">Carreras activas</p>
+                    </div>
+                    <div className="rounded-xl bg-white p-3 ring-1 ring-slate-100">
+                      <p className="font-black text-slate-950">{activitySubjects.length || '-'}</p>
+                      <p className="text-xs text-slate-500">Areas de actividad</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">CV extendido</p>
+                  <h2 className="mt-1 text-2xl font-black text-slate-950">Trayectoria profesional y academica</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Informacion estructurada del curriculum institucional del perfil.
+                  </p>
+                </div>
+                {isOwnProfile && (
+                  <Link
+                    to="/profile/edit"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-blue-100"
+                  >
+                    <i className="fa-solid fa-file-pen" />
+                    Editar CV
+                  </Link>
+                )}
+              </div>
+
+              {!hasExtendedCv ? (
+                <p className="mt-5 rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">
+                  Este perfil todavia no tiene experiencia, formacion o habilidades cargadas en el CV.
+                </p>
+              ) : (
+                <div className="mt-6 grid gap-5">
+                  {cvExperiences.length > 0 && (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                      <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">Experiencia</h3>
+                      <div className="mt-4 space-y-4">
+                        {cvExperiences.map((item) => (
+                          <div key={item.id} className="rounded-2xl bg-white p-4 ring-1 ring-slate-100">
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <p className="text-base font-black text-slate-950">{item.role}</p>
+                                <p className="text-sm font-semibold text-blue-700">{item.company}</p>
+                              </div>
+                              <p className="text-xs font-semibold text-slate-400">
+                                {[item.startDate, item.endDate].filter(Boolean).join(' - ')}
+                              </p>
+                            </div>
+                            {item.location && <p className="mt-2 text-xs font-semibold text-slate-500">{item.location}</p>}
+                            {item.description && <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {cvEducations.length > 0 && (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                      <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">Formacion</h3>
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        {cvEducations.map((item) => (
+                          <div key={item.id} className="rounded-2xl bg-white p-4 ring-1 ring-slate-100">
+                            <p className="text-base font-black text-slate-950">{item.degree}</p>
+                            <p className="mt-1 text-sm font-semibold text-blue-700">{item.institution}</p>
+                            <p className="mt-2 text-xs font-semibold text-slate-400">
+                              {[item.startDate, item.endDate].filter(Boolean).join(' - ')}
+                            </p>
+                            {item.description && <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {cvProjects.length > 0 && (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                      <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">Proyectos</h3>
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        {cvProjects.map((item) => (
+                          <div key={item.id} className="rounded-2xl bg-white p-4 ring-1 ring-slate-100">
+                            <p className="text-base font-black text-slate-950">{item.name}</p>
+                            {item.role && <p className="mt-1 text-sm font-semibold text-blue-700">{item.role}</p>}
+                            {item.description && <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>}
+                            {item.url && (
+                              <a
+                                href={normalizeExternalUrl(item.url) ?? item.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-blue-700 hover:text-blue-900"
+                              >
+                                Ver proyecto
+                                <i className="fa-solid fa-arrow-up-right-from-square" />
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(cvSkills.length > 0 || cvLanguages.length > 0) && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                        <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">Habilidades</h3>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {cvSkills.length === 0 ? (
+                            <span className="text-sm text-slate-500">Sin habilidades cargadas.</span>
+                          ) : (
+                            cvSkills.map((item) => (
+                              <span key={item.id} className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+                                {item.name}{item.level ? ` · ${item.level}` : ''}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                        <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">Idiomas</h3>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {cvLanguages.length === 0 ? (
+                            <span className="text-sm text-slate-500">Sin idiomas cargados.</span>
+                          ) : (
+                            cvLanguages.map((item) => (
+                              <span key={item.id} className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+                                {item.name}{item.level ? ` · ${item.level}` : ''}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
+            {isOwnProfile && (
+              <section className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Vista privada</p>
+                    <h2 className="mt-1 text-2xl font-black text-slate-950">Estado academico personal</h2>
+                    <p className="mt-2 text-sm text-slate-600">Solo visible cuando estas viendo tu propio perfil.</p>
+                  </div>
+                  <Link to="/academic" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800">
+                    <i className="fa-solid fa-chart-line" />
+                    Ver academico
+                  </Link>
+                </div>
+
+                {progressError ? (
+                  <p className="mt-5 rounded-2xl bg-white p-4 text-sm text-slate-600">
+                    No se pudo cargar el resumen academico privado en este momento.
+                  </p>
+                ) : progressItems.length === 0 ? (
+                  <p className="mt-5 rounded-2xl bg-white p-4 text-sm text-slate-600">
+                    Todavia no hay progreso academico registrado.
+                  </p>
+                ) : (
+                  <>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-4">
+                      {['APPROVED', 'REGULAR', 'IN_PROGRESS', 'FREE'].map((status) => (
+                        <div key={status} className="rounded-2xl bg-white p-4 ring-1 ring-blue-100">
+                          <p className="text-2xl font-black text-slate-950">{academicMetrics[status] ?? 0}</p>
+                          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{statusLabels[status]}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      {highlightedProgress.map((item: any) => (
+                        <div key={item.id} className="rounded-2xl bg-white p-4 ring-1 ring-blue-100">
+                          <p className="text-sm font-black text-slate-900">{item.subject?.name}</p>
+                          <p className="mt-1 text-xs font-semibold text-slate-500">
+                            {statusLabels[item.status] ?? item.status}
+                            {item.score !== null && item.score !== undefined ? ` · Nota ${item.score}` : ''}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Portfolio social</p>
+                  <h2 className="mt-1 text-2xl font-black text-slate-950">Publicaciones recientes</h2>
+                </div>
+                {userPosts.length > 4 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllPosts((current) => !current)}
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {showAllPosts ? 'Ver menos' : 'Ver todas'}
+                  </button>
+                )}
+              </div>
+
+              {visiblePosts.length === 0 ? (
+                <p className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">Todavia no hay publicaciones para mostrar.</p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {visiblePosts.map((post: any) => (
+                    <article key={post.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-5 transition hover:border-blue-200 hover:bg-blue-50/60">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-blue-700 ring-1 ring-blue-100">
+                          {post.subject?.name || 'Publicacion'}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-400">{formatDate(post.publishDate)}</span>
+                      </div>
+                      <h3 className="mt-4 text-lg font-black text-slate-950">{post.title}</h3>
+                      <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{post.content}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </main>
         </div>
-      )}
+      </div>
     </div>
   );
 };

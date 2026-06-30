@@ -34,6 +34,25 @@ namespace GraphQL.GraphQL
             return usersService.GetById(id);
         }
 
+        [Authorize]
+        public async Task<User> GetMe(
+            [Service] OneItbContext context,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            Guid userId = GetAuthenticatedUserId(httpContextAccessor);
+            return await context.Users
+                .AsNoTracking()
+                .Include(user => user.Account)
+                .Include(user => user.CvExperiences)
+                .Include(user => user.CvEducations)
+                .Include(user => user.CvProjects)
+                .Include(user => user.CvSkills)
+                .Include(user => user.CvLanguages)
+                .AsSplitQuery()
+                .SingleOrDefaultAsync(user => user.Id == userId && user.IsActive)
+                ?? throw new GraphQLException("Usuario no encontrado.");
+        }
+
         [UseProjection]
         public IQueryable<Career> GetCareers([Service] OneItbContext context)
         {
@@ -126,6 +145,12 @@ namespace GraphQL.GraphQL
                 .Include(item => item.Account)
                 .Include(item => item.UserCareers)
                 .ThenInclude(link => link.Career)
+                .Include(item => item.CvExperiences)
+                .Include(item => item.CvEducations)
+                .Include(item => item.CvProjects)
+                .Include(item => item.CvSkills)
+                .Include(item => item.CvLanguages)
+                .AsSplitQuery()
                 .SingleOrDefaultAsync(item => item.Id == userId && item.IsActive)
                 ?? throw new GraphQLException("Usuario no encontrado.");
 
@@ -144,6 +169,11 @@ namespace GraphQL.GraphQL
                 user.Facebook,
                 user.Instagram,
                 user.Phone,
+                MapExperiences(user.CvExperiences),
+                MapEducations(user.CvEducations),
+                MapProjects(user.CvProjects),
+                MapSkills(user.CvSkills),
+                MapLanguages(user.CvLanguages),
                 user.UserCareers
                     .Where(link => link.Career.IsActive)
                     .Select(link => link.Career.Name)
@@ -357,6 +387,83 @@ namespace GraphQL.GraphQL
             {
                 throw new GraphQLException(ex.Message);
             }
+        }
+
+        private static IReadOnlyList<CvExperienceDto> MapExperiences(IEnumerable<UserCvExperience> items)
+        {
+            return items
+                .OrderBy(item => item.SortOrder)
+                .Select(item => new CvExperienceDto(
+                    item.Id,
+                    item.Company,
+                    item.Role,
+                    item.StartDate,
+                    item.EndDate,
+                    item.Location,
+                    item.Description,
+                    item.IsHidden,
+                    item.SortOrder))
+                .ToArray();
+        }
+
+        private static IReadOnlyList<CvEducationDto> MapEducations(IEnumerable<UserCvEducation> items)
+        {
+            return items
+                .OrderBy(item => item.SortOrder)
+                .Select(item => new CvEducationDto(
+                    item.Id,
+                    item.Institution,
+                    item.Degree,
+                    item.StartDate,
+                    item.EndDate,
+                    item.Location,
+                    item.Description,
+                    item.IsHidden,
+                    item.SortOrder))
+                .ToArray();
+        }
+
+        private static IReadOnlyList<CvProjectDto> MapProjects(IEnumerable<UserCvProject> items)
+        {
+            return items
+                .OrderBy(item => item.SortOrder)
+                .Select(item => new CvProjectDto(
+                    item.Id,
+                    item.Name,
+                    item.Role,
+                    item.StartDate,
+                    item.EndDate,
+                    item.Url,
+                    item.Description,
+                    item.IsHidden,
+                    item.SortOrder))
+                .ToArray();
+        }
+
+        private static IReadOnlyList<CvSkillDto> MapSkills(IEnumerable<UserCvSkill> items)
+        {
+            return items
+                .OrderBy(item => item.SortOrder)
+                .Select(item => new CvSkillDto(
+                    item.Id,
+                    item.Name,
+                    item.Level,
+                    item.IsHidden,
+                    item.SortOrder))
+                .ToArray();
+        }
+
+        private static IReadOnlyList<CvLanguageDto> MapLanguages(IEnumerable<UserCvLanguage> items)
+        {
+            return items
+                .OrderBy(item => item.SortOrder)
+                .Select(item => new CvLanguageDto(
+                    item.Id,
+                    item.Name,
+                    item.Level,
+                    item.IsHidden,
+                    item.SortOrder))
+                .ToArray();
         }
 
         private static Guid GetAuthenticatedUserId(IHttpContextAccessor httpContextAccessor)

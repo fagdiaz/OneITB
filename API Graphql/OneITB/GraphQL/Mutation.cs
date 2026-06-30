@@ -56,13 +56,27 @@ namespace OneITB.GraphQL.Mutations
             return authResult;
         }
 
+        [Authorize]
         public async Task<UpdateProfilePayload> UpdateProfile(
             UpdateProfileInput input,
-            [Service] IUsersService usersService)
+            [Service] IUsersService usersService,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
-            var payload = await usersService.UpdateProfileAsync(input);
-            return payload;
+            Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
+            string? actorRole = GetAuthenticatedRole(httpContextAccessor);
+            if (input.Id != actorUserId && actorRole != "Administrador")
+                throw new GraphQLException("No se puede editar el perfil de otro usuario.");
+
+            try
+            {
+                var payload = await usersService.UpdateProfileAsync(input);
+                return payload;
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
         }
 
         [Authorize(Roles = new[] { "Administrador" })]

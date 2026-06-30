@@ -27,6 +27,11 @@ namespace OneItb.Data
         public DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
+        public DbSet<UserCvExperience> UserCvExperiences { get; set; } = null!;
+        public DbSet<UserCvEducation> UserCvEducations { get; set; } = null!;
+        public DbSet<UserCvProject> UserCvProjects { get; set; } = null!;
+        public DbSet<UserCvSkill> UserCvSkills { get; set; } = null!;
+        public DbSet<UserCvLanguage> UserCvLanguages { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,6 +108,116 @@ namespace OneItb.Data
                     .WithOne(a => a.User)
                     .HasForeignKey<User>(u => u.Id)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ==========================================
+            // MAPEO: TABLAS NORMALIZADAS DE CV
+            // ==========================================
+            modelBuilder.Entity<UserCvExperience>(entity =>
+            {
+                entity.ToTable("UserCvExperiences", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Company).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Role).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.StartDate).HasMaxLength(50);
+                entity.Property(e => e.EndDate).HasMaxLength(50);
+                entity.Property(e => e.Location).HasMaxLength(150);
+                entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.Property(e => e.IsHidden).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.SortOrder).IsRequired();
+
+                entity.HasIndex(e => new { e.UserId, e.SortOrder });
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.CvExperiences)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<UserCvEducation>(entity =>
+            {
+                entity.ToTable("UserCvEducations", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Institution).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Degree).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.StartDate).HasMaxLength(50);
+                entity.Property(e => e.EndDate).HasMaxLength(50);
+                entity.Property(e => e.Location).HasMaxLength(150);
+                entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.Property(e => e.IsHidden).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.SortOrder).IsRequired();
+
+                entity.HasIndex(e => new { e.UserId, e.SortOrder });
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.CvEducations)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<UserCvProject>(entity =>
+            {
+                entity.ToTable("UserCvProjects", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Role).HasMaxLength(200);
+                entity.Property(e => e.StartDate).HasMaxLength(50);
+                entity.Property(e => e.EndDate).HasMaxLength(50);
+                entity.Property(e => e.Url).HasMaxLength(300);
+                entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.Property(e => e.IsHidden).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.SortOrder).IsRequired();
+
+                entity.HasIndex(e => new { e.UserId, e.SortOrder });
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.CvProjects)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<UserCvSkill>(entity =>
+            {
+                entity.ToTable("UserCvSkills", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(120);
+                entity.Property(e => e.Level).HasMaxLength(80);
+                entity.Property(e => e.IsHidden).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.SortOrder).IsRequired();
+
+                entity.HasIndex(e => new { e.UserId, e.SortOrder });
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.CvSkills)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<UserCvLanguage>(entity =>
+            {
+                entity.ToTable("UserCvLanguages", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(120);
+                entity.Property(e => e.Level).HasMaxLength(80);
+                entity.Property(e => e.IsHidden).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.SortOrder).IsRequired();
+
+                entity.HasIndex(e => new { e.UserId, e.SortOrder });
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.CvLanguages)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // ==========================================

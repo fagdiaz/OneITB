@@ -1,8 +1,8 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-06-26
+**Ultima revision**: 2026-06-29
 
-**Estado global**: 86% (65 de 76 items)
+**Estado global**: 87% (67 de 77 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -29,8 +29,8 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 ## Modulo 2 - Perfiles e identidad social: 88% (7/8)
 
 - [x] [V] Perfil publico y perfil propio autenticado.
-- [x] [I] Edicion aislada del perfil y CV.
-- [x] [I] Biografia, contacto y redes sociales.
+- [x] [V] Edicion aislada del perfil y CV con persistencia relacional normalizada.
+- [x] [V] Biografia, contacto y redes sociales.
 - [x] [I] Asociacion de usuarios a multiples carreras.
 - [x] [I] Resumen de publicaciones en perfil publico.
 - [x] [I] Roles diferenciados e insignias de participacion.
@@ -100,7 +100,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Adaptador o simulador desacoplado para SIU Guarani.
 - [x] [I] Preferencias de notificacion por materia.
 
-## Modulo 8 - Calidad, operacion y escalabilidad: 58% (7/12)
+## Modulo 8 - Calidad, operacion y escalabilidad: 69% (9/13)
 
 - [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
 - [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.

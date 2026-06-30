@@ -1,6 +1,6 @@
 # Arquitectura y diseno de OneITB23
 
-**Ultima alineacion con codigo**: 2026-06-25
+**Ultima alineacion con codigo**: 2026-06-29
 
 ## 1. Stack vigente
 
@@ -52,6 +52,11 @@ Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/a
 ```mermaid
 erDiagram
     ACCOUNT ||--|| USER : credentials
+    USER ||--o{ USER_CV_EXPERIENCE : records
+    USER ||--o{ USER_CV_EDUCATION : records
+    USER ||--o{ USER_CV_PROJECT : records
+    USER ||--o{ USER_CV_SKILL : records
+    USER ||--o{ USER_CV_LANGUAGE : records
     USER ||--o{ USER_CAREER : enrolls
     CAREER ||--o{ USER_CAREER : contains
     CAREER ||--o{ SUBJECT : defines
@@ -74,7 +79,7 @@ erDiagram
     USER ||--o{ MESSAGE : receives
 ```
 
-Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`, `NotificationPreference`, `ModerationAudit` y `MagicLink`.
+Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`, `NotificationPreference`, `ModerationAudit`, `MagicLink`, `UserCvExperience`, `UserCvEducation`, `UserCvProject`, `UserCvSkill` y `UserCvLanguage`.
 
 ## 5. Integridad y borrado
 

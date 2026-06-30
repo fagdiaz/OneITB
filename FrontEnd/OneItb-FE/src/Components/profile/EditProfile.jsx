@@ -37,8 +37,8 @@ export const EditProfile = () => {
   const [saved, setSaved] = useState('not_sended');
 
   useEffect(() => {
-    if (data?.users) {
-      const activeUser = data.users.find(u => u.id === auth.id);
+    if (data?.me) {
+      const activeUser = data.me;
       if (activeUser) {
         setFormState({
           biography: activeUser.biography || '',
@@ -49,7 +49,7 @@ export const EditProfile = () => {
         });
       }
     }
-  }, [data, auth.id]);
+  }, [data]);
 
   useEffect(() => {
     if (myCareersData?.myCareers) {

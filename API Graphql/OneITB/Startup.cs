@@ -129,6 +129,11 @@ namespace OneItb.GraphQL
                     descriptor.Field(f => f.Facebook).Name("facebook");
                     descriptor.Field(f => f.Instagram).Name("instagram");
                     descriptor.Field(f => f.Phone).Name("phone");
+                    descriptor.Field(f => f.CvExperiences).Name("cvExperiences");
+                    descriptor.Field(f => f.CvEducations).Name("cvEducations");
+                    descriptor.Field(f => f.CvProjects).Name("cvProjects");
+                    descriptor.Field(f => f.CvSkills).Name("cvSkills");
+                    descriptor.Field(f => f.CvLanguages).Name("cvLanguages");
                     descriptor.Field(f => f.Role).Name("role");
                     descriptor.Field(f => f.MutedUntil).Name("mutedUntil");
                     descriptor.Field("totalPosts")
@@ -163,6 +168,31 @@ namespace OneItb.GraphQL
                             OneItbContext db = ctx.Service<OneItbContext>();
                             return await db.CommunityReports.IgnoreQueryFilters().CountAsync(report => report.Inquiry.UserId == user.Id);
                         });
+                }))
+                .AddType(new ObjectType<UserCvExperience>(descriptor =>
+                {
+                    descriptor.Field(f => f.User).Ignore();
+                    descriptor.Field(f => f.IsHidden).Name("isHidden");
+                }))
+                .AddType(new ObjectType<UserCvEducation>(descriptor =>
+                {
+                    descriptor.Field(f => f.User).Ignore();
+                    descriptor.Field(f => f.IsHidden).Name("isHidden");
+                }))
+                .AddType(new ObjectType<UserCvProject>(descriptor =>
+                {
+                    descriptor.Field(f => f.User).Ignore();
+                    descriptor.Field(f => f.IsHidden).Name("isHidden");
+                }))
+                .AddType(new ObjectType<UserCvSkill>(descriptor =>
+                {
+                    descriptor.Field(f => f.User).Ignore();
+                    descriptor.Field(f => f.IsHidden).Name("isHidden");
+                }))
+                .AddType(new ObjectType<UserCvLanguage>(descriptor =>
+                {
+                    descriptor.Field(f => f.User).Ignore();
+                    descriptor.Field(f => f.IsHidden).Name("isHidden");
                 }))
                 .AddType(new ObjectType<Inquiry>(descriptor =>
                 {

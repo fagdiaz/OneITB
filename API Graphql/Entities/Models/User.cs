@@ -62,5 +62,10 @@ namespace OneItb.Entities.Models
         public virtual ICollection<AcademicProgress> AssignedAcademicProgressRecords { get; set; } = new List<AcademicProgress>();
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public virtual ICollection<NotificationPreference> NotificationPreferences { get; set; } = new List<NotificationPreference>();
+        public virtual ICollection<UserCvExperience> CvExperiences { get; set; } = new List<UserCvExperience>();
+        public virtual ICollection<UserCvEducation> CvEducations { get; set; } = new List<UserCvEducation>();
+        public virtual ICollection<UserCvProject> CvProjects { get; set; } = new List<UserCvProject>();
+        public virtual ICollection<UserCvSkill> CvSkills { get; set; } = new List<UserCvSkill>();
+        public virtual ICollection<UserCvLanguage> CvLanguages { get; set; } = new List<UserCvLanguage>();
     }
 }

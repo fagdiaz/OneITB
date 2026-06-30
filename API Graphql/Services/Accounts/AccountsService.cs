@@ -8,6 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using HotChocolate;
 
 namespace Services.Accounts
 {
@@ -24,9 +25,10 @@ namespace Services.Accounts
 
         public async Task<AuthPayload> Login(LoginInput input)
         {
-            var user = await _uow.Users.GetByEmailAsync(input.Email);
+            var user = await _uow.Users.GetByEmailAsync(input.Email.ToLowerInvariant());
             if (user == null || !BCrypt.Net.BCrypt.Verify(input.Password, user.Account.PasswordHash))
-                throw new Exception("Credenciales inválidas.");
+                // GraphQLException serializa el mensaje en errors[] — Apollo lo lee como graphQLErrors.
+                throw new GraphQLException("Usuario o contraseña incorrectos.");
 
             string token = GenerateJwtToken(user);
             return new AuthPayload(token, user.FirstName, true, user.Id, user.Role);

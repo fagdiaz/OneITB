@@ -5,6 +5,169 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-06-29] - Spec 146: Data Normalization (Nombres propios)
+
+* **Objetivo**: Interceptar cadenas de texto (nombres, roles, instituciones, etc.) en los servicios de Registro y Edición de Perfil para normalizarlas automáticamente a Title Case antes de persistir en Entity Framework Core.
+* **Resultado**:
+  - Se agregaron helpers locales `NormalizeToTitleCase`, `NormalizeNameRequired` y `NormalizeNameOptional` en `UsersService.cs` usando `System.Globalization.CultureInfo`.
+  - En `RegisterAsync`, `FirstName` y `LastName` se interceptan y normalizan a Title Case. El `Email` ahora se fuerza a minúsculas (`ToLowerInvariant()`).
+  - En `AccountsService.cs`, el método `Login` también aplica `ToLowerInvariant()` al buscar la cuenta para evitar fallos de case sensitivity.
+  - En `UpdateProfileAsync`, al reemplazar secciones de CV, campos como `Company`, `Role`, `Institution`, `Degree` y `Name` aplican esta misma normalización.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: **PASS** — 0 errores, 0 advertencias.
+* **Estado**: Completado.
+* **Archivos modificados**:
+  - `API Graphql/Services/Users/UsersService.cs`
+
+## [2026-06-29] - Enterprise Profile CV Normalization (Spec: 146-enterprise-profile-cv-normalization)
+
+* **Objetivo**: reemplazar la persistencia MVP en `CvDataJson` por un esquema enterprise normalizado, manteniendo un unico flujo de edicion de perfil/CV y preservando los datos ya poblados.
+* **Resultado**:
+  - Se agregaron entidades relacionales `UserCvExperience`, `UserCvEducation`, `UserCvProject`, `UserCvSkill` y `UserCvLanguage`.
+  - `OneItbContext` mapea DbSets, FKs explicitas a `User`, indices `(UserId, SortOrder)` y `DeleteBehavior.Restrict`.
+  - `UpdateProfileInput` deja de aceptar `cvDataJson` y recibe colecciones tipadas para todas las secciones del CV.
+  - `UsersService.UpdateProfileAsync` guarda perfil basico y CV completo en una sola operacion, con limites por seccion y validacion de campos requeridos.
+  - `me` y `publicProfile` exponen colecciones CV normalizadas; `Startup.cs` elimina el campo runtime `cvDataJson`.
+  - `CvEditorProfile.tsx` inicializa y guarda desde colecciones GraphQL normalizadas, sin LocalStorage ni blob JSON paralelo.
+  - La migracion `NormalizeUserCvTables` transforma datos legacy de `Users.CvDataJson` con `OPENJSON` antes de eliminar la columna.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 advertencias y 0 errores.
+  - `dotnet ef migrations add NormalizeUserCvTables --configuration Release ...`: PASS.
+  - `dotnet ef database update --configuration Release ...`: PASS.
+  - `npm.cmd run build`: PASS; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+  - `specs/146-enterprise-profile-cv-normalization/runtime-validation.ps1`: PASS; login, `updateProfile` normalizado y lectura posterior de `me` y `publicProfile` contra backend temporal.
+* **Estado**:
+  - Implementado y verificado end-to-end por build, migracion aplicada y runtime GraphQL.
+  - La spec 145 queda supersedida para persistencia de CV; se conserva como evidencia historica de transicion.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/UserCvExperience.cs`
+  - `API Graphql/Entities/Models/UserCvEducation.cs`
+  - `API Graphql/Entities/Models/UserCvProject.cs`
+  - `API Graphql/Entities/Models/UserCvSkill.cs`
+  - `API Graphql/Entities/Models/UserCvLanguage.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Data/Migrations/20260629213531_NormalizeUserCvTables.cs`
+  - `API Graphql/Services/DTOs.cs`
+  - `API Graphql/Services/Users/UsersService.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/OneITB/Startup.cs`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/getUserProfile.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/publicProfile.js`
+  - `specs/146-enterprise-profile-cv-normalization/evidence.md`
+
+## [2026-06-29] - Full Profile & CV Schema Normalization (Spec: 145-profile-cv-schema-normalization)
+
+* **Objetivo**: eliminar la duplicacion entre Perfil Nativo y CV Builder en `/profile/edit`, persistiendo los datos extendidos del CV en SQL Server y guardando todo con una sola mutacion GraphQL.
+* **Resultado**:
+  - Se agrego `User.CvDataJson` con mapeo EF Core `nvarchar(max)` y migracion `AddUserCvDataJson`.
+  - `UpdateProfileInput`, `me`, `publicProfile` y el tipo GraphQL `User` exponen/aceptan `cvDataJson`.
+  - `UsersService.UpdateProfileAsync` valida tamano maximo y JSON valido antes de persistir el CV extendido.
+  - `CvEditorProfile.tsx` dejo de renderizar `PersonalForm`; ya no duplica foto, bio, telefono ni redes en el bloque inferior.
+  - El editor arma el preview desde una unica fuente: perfil canonico para datos personales y `cvDataJson` para experiencia, educacion, proyectos, habilidades e idiomas.
+  - El boton de guardado envia una sola mutacion `updateProfile` con perfil basico y CV extendido.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 advertencias y 0 errores.
+  - `dotnet ef migrations add AddUserCvDataJson --configuration Release ...`: PASS.
+  - `dotnet ef database update --configuration Release ...`: PASS.
+  - `npm.cmd run build`: PASS; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+  - `specs/145-profile-cv-schema-normalization/runtime-validation.ps1`: PASS; login seed, `updateProfile(cvDataJson)` y lectura posterior de `me.cvDataJson` contra backend temporal.
+* **Estado**:
+  - Implementado y verificado por build, migracion aplicada y runtime GraphQL.
+  - Queda pendiente solo inspeccion visual fina en navegador de la pantalla `/profile/edit`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/User.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Data/Migrations/20260629210533_AddUserCvDataJson.cs`
+  - `API Graphql/Services/DTOs.cs`
+  - `API Graphql/Services/Users/UsersService.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `API Graphql/OneITB/Startup.cs`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/getUserProfile.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/publicProfile.js`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/audit/DOCUMENTATION_STATUS.md`
+  - `specs/145-profile-cv-schema-normalization/evidence.md`
+
+## [2026-06-29] - Profile/CV Consolidation & Cleanup (Spec: 144-profile-cv-consolidation)
+
+* **Objetivo**: consolidar la edicion del perfil como CV Builder, corregir el fallo de autorizacion al abrir `Editar Perfil` y eliminar la carpeta temporal usada solo como referencia visual.
+* **Resultado**:
+  - Se agrego el query autenticado `me` para que usuarios no administradores consulten su propio perfil sin usar el listado administrativo `users`.
+  - `updateProfile` ahora requiere autenticacion y valida que el actor edite su propio perfil, salvo rol `Administrador`.
+  - `GET_USER_PROFILE`, `EditProfile.jsx` y `CvEditorProfile.tsx` consumen `me` en lugar de `users`.
+  - `CvEditorProfile.tsx` quedo como flujo canonico de CV Builder con guardado real de biografia, telefono y redes sociales.
+  - Se elimino `FrontEnd/OneItb-FE/src/_temp_cv_reference` y se removio la referencia documental en `types/resume.ts`.
+* **Validaciones ejecutadas**:
+  - `rg -n "_temp_cv_reference" "FrontEnd/OneItb-FE/src" --glob "!**/node_modules/**"`: PASS, sin referencias.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 advertencias y 0 errores.
+  - `npm.cmd run build`: PASS, Vite compilo 339 modulos. Persiste el warning conocido del plugin `vite:react-babel` sobre opcion `esbuild` deprecada.
+* **Estado**:
+  - Implementado y validado por build full-stack.
+  - Queda pendiente prueba runtime en navegador de `/profile/edit` contra backend local.
+* **Archivos principales**:
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/getUserProfile.js`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/EditProfile.jsx`
+  - `FrontEnd/OneItb-FE/src/types/resume.ts`
+  - `docs/audit/DOCUMENTATION_STATUS.md`
+  - `specs/144-profile-cv-consolidation/evidence.md`
+
+## [2026-06-29] - Login Error Handling (Spec: 143-login-error-handling)
+
+* **Causa raíz**: Cuando Apollo recibe una respuesta GraphQL con `errors[]`, el `await authenticateUser()` **resuelve** (no lanza) con `{ data: undefined }`. El código intentaba leer `data.login` sin verificar `data`, causando `TypeError: can't access property "login", data is undefined`.
+* **Fix**: Agrega un early-return defensivo `if (!data?.login) return;` inmediatamente después del `await`. En ese punto, el callback `onError` de `useMutation` ya habrá capturado el mensaje de error y actualizado el estado de la UI — el early-return simplemente evita el crash sin duplicar lógica.
+* **Validaciones ejecutadas**:
+  - `npm run build` (Vite): **PASS** — ✓ built in 558ms.
+* **Archivos modificados**:
+  - `FrontEnd/OneItb-FE/src/Components/user/Login.jsx`
+  - `specs/143-login-error-handling/evidence.md`
+
+## [2026-06-29] - Profile as a CV (Spec: 142-profile-as-cv)
+
+* **Objetivo**: elevar el Modulo 2 de perfiles para que el perfil publico y propio funcionen visualmente como un CV/portfolio institucional, manteniendo privacidad de edicion y datos academicos.
+* **Resultado**:
+  - `UserProfile.tsx` fue refactorizado con una cabecera hero institucional, avatar grande, nombre, rol, carreras y biografia como perfil profesional.
+  - Se agregaron tarjetas de contacto y redes con iconos FontAwesome para telefono, LinkedIn, Instagram y Facebook.
+  - Se agrego una seccion de Educacion/Trayectoria basada en carreras y materias derivadas de actividad publica.
+  - El boton `Editar CV/Perfil` se muestra solo cuando el usuario autenticado mira su propio perfil.
+  - El resumen privado de progreso academico usa `myAcademicProgress` solo en el perfil propio y no se carga para perfiles publicos de terceros.
+  - `publicProfile.js` ahora consume el contrato canonico `publicProfile(userId)` y solicita `careers` y `totalPublications`.
+* **Validaciones ejecutadas**:
+  - `npm.cmd run build`: PASS; Vite compilo 338 modulos. Persiste solo el warning conocido de `vite:react-babel`.
+  - `git diff --check`: PASS; solo avisos LF/CRLF de Windows.
+  - Scan focalizado de pendientes y secretos en archivos fuente modificados: PASS, sin coincidencias.
+* **Estado**:
+  - Implementado y validado por build frontend.
+  - Queda pendiente verificacion visual en navegador contra backend local.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/publicProfile.js`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/audit/DOCUMENTATION_STATUS.md`
+  - `specs/142-profile-as-cv/evidence.md`
+
+## [2026-06-29] - Auth UX Fixes (Spec: 141-auth-ux-fixes)
+
+* **Objetivo**: Corregir dos regresiones de UX en Módulo 1: (1) F5 en ruta protegida redirigía a `/login` porque `PrivateLayout` evaluaba `auth.id` antes de que `AuthContext` terminara de leer `localStorage`; (2) credenciales inválidas producían "Unexpected Execution Error" sin feedback al usuario.
+* **Resultado**:
+  - **Bug F5**: Agregado estado `isLoading` (inicializado en `true`) en `AuthContext`. El `useEffect` de hidratación lo pone en `false` al finalizar. `PrivateLayout` muestra un spinner a pantalla completa mientras `isLoading === true` y solo evalúa `auth.id` una vez que el token fue leído de `localStorage`.
+  - **Bug Login**: Cambiado `throw new Exception(...)` a `throw new GraphQLException(...)` en `AccountsService.Login`. HotChocolate ahora serializa el mensaje en `errors[]`. En el frontend, `Login.jsx` lee `err.graphQLErrors` con prioridad y se agregó `onError` en `useMutation` como segundo punto de captura.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: **PASS** — 0 errores.
+  - `npm run build` (Vite): **PASS** — ✓ built in 3.87s.
+* **Estado**: Implementado. Pendiente verificación en browser con backend local disponible.
+* **Archivos modificados**:
+  - `FrontEnd/OneItb-FE/src/context/AuthContext.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/PrivateLayout.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Login.jsx`
+  - `API Graphql/Services/Accounts/AccountsService.cs`
+  - `specs/141-auth-ux-fixes/evidence.md`
+
 ## [2026-06-26] - Spec 140: Strict Nullability Fix (Refactor Real)
 
 * **Objetivo**: Implementar la solución real a nivel arquitectónico para la deuda de nullability.

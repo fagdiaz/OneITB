@@ -1,5 +1,5 @@
 // resume.ts — Canonical CV type definitions
-// Aligned with _temp_cv_reference/cv-builder/src/types/resume.ts
+// Canonical profile/CV type definitions used by the OneITB profile module.
 // hidden is optional (boolean | undefined) to allow initialData without it.
 
 export interface PersonalInfo {

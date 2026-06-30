@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BCrypt.Net;
+using Microsoft.EntityFrameworkCore;
+using OneItb.Data;
 using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +13,13 @@ namespace Services.Users
 {
     public class UsersService : IUsersService
     {
+        private const int MaxLongTextLength = 2000;
+        private const int MaxExperienceRows = 50;
+        private const int MaxEducationRows = 50;
+        private const int MaxProjectRows = 50;
+        private const int MaxSkillRows = 100;
+        private const int MaxLanguageRows = 50;
+
         private static readonly string[] AllowedRoles =
         {
             "Estudiante",
@@ -22,10 +32,12 @@ namespace Services.Users
         };
 
         private readonly IUnitOfWork _uow;
+        private readonly OneItbContext _context;
 
-        public UsersService(IUnitOfWork uow)
+        public UsersService(IUnitOfWork uow, OneItbContext context)
         {
             _uow = uow;
+            _context = context;
         }
 
         public async Task<UserPayload> RegisterAsync(RegisterInput input)
@@ -36,7 +48,7 @@ namespace Services.Users
             var account = new Account
             {
                  Id = userId,
-                 Email = input.Email,
+                 Email = input.Email.ToLowerInvariant(),
                  PasswordHash = passwordHash,
                  CreatedAt = DateTime.UtcNow
             };
@@ -44,31 +56,43 @@ namespace Services.Users
             var user = new User 
             { 
                  Id = userId,
-                 FirstName = input.FirstName, 
-                 LastName = input.LastName, 
+                 FirstName = NormalizeToTitleCase(input.FirstName), 
+                 LastName = NormalizeToTitleCase(input.LastName), 
                  Role = "User",
                  Account = account
             };
 
             await _uow.Users.AddAsync(user);
             await _uow.CompleteAsync();
-
             return new UserPayload(user.Id, true, "Usuario registrado exitosamente en el sistema académico.");
         }
 
         public async Task<UpdateProfilePayload> UpdateProfileAsync(UpdateProfileInput input)
         {
-            var user = _uow.Users.GetById(input.Id);
+            var user = await _context.Users
+                .Include(item => item.CvExperiences)
+                .Include(item => item.CvEducations)
+                .Include(item => item.CvProjects)
+                .Include(item => item.CvSkills)
+                .Include(item => item.CvLanguages)
+                .SingleOrDefaultAsync(item => item.Id == input.Id);
+
             if (user == null)
             {
                 return new UpdateProfilePayload(input.Id, false, "Usuario no encontrado.");
             }
 
-            user.Biography = input.Biography;
-            user.LinkedIn = input.LinkedIn;
-            user.Facebook = input.Facebook;
-            user.Instagram = input.Instagram;
-            user.Phone = input.Phone;
+            user.Biography = NormalizeOptional(input.Biography, 500, "biografia");
+            user.LinkedIn = NormalizeOptional(input.LinkedIn, 200, "LinkedIn");
+            user.Facebook = NormalizeOptional(input.Facebook, 200, "Facebook");
+            user.Instagram = NormalizeOptional(input.Instagram, 200, "Instagram");
+            user.Phone = NormalizeOptional(input.Phone, 50, "telefono");
+
+            ReplaceExperiences(user, input.CvExperiences);
+            ReplaceEducations(user, input.CvEducations);
+            ReplaceProjects(user, input.CvProjects);
+            ReplaceSkills(user, input.CvSkills);
+            ReplaceLanguages(user, input.CvLanguages);
 
             await _uow.CompleteAsync();
 
@@ -176,6 +200,171 @@ namespace Services.Users
         private static bool IsAdministrator(User user)
         {
             return string.Equals(user.Role, "Administrador", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ReplaceExperiences(User user, IReadOnlyList<CvExperienceInput>? inputs)
+        {
+            if (inputs == null) return;
+            EnsureCount(inputs, MaxExperienceRows, "experiencias");
+
+            _context.UserCvExperiences.RemoveRange(user.CvExperiences);
+            foreach ((CvExperienceInput input, int index) in inputs.Select((input, index) => (input, index)))
+            {
+                _context.UserCvExperiences.Add(new UserCvExperience
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Company = NormalizeNameRequired(input.Company, 200, "empresa"),
+                    Role = NormalizeNameRequired(input.Role, 200, "rol"),
+                    StartDate = NormalizeOptional(input.StartDate, 50, "fecha de inicio"),
+                    EndDate = NormalizeOptional(input.EndDate, 50, "fecha de fin"),
+                    Location = NormalizeOptional(input.Location, 150, "ubicacion"),
+                    Description = NormalizeOptional(input.Description, MaxLongTextLength, "descripcion"),
+                    IsHidden = input.Hidden ?? false,
+                    SortOrder = index
+                });
+            }
+        }
+
+        private void ReplaceEducations(User user, IReadOnlyList<CvEducationInput>? inputs)
+        {
+            if (inputs == null) return;
+            EnsureCount(inputs, MaxEducationRows, "educacion");
+
+            _context.UserCvEducations.RemoveRange(user.CvEducations);
+            foreach ((CvEducationInput input, int index) in inputs.Select((input, index) => (input, index)))
+            {
+                _context.UserCvEducations.Add(new UserCvEducation
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Institution = NormalizeNameRequired(input.Institution, 200, "institucion"),
+                    Degree = NormalizeNameRequired(input.Degree, 200, "titulo"),
+                    StartDate = NormalizeOptional(input.StartDate, 50, "fecha de inicio"),
+                    EndDate = NormalizeOptional(input.EndDate, 50, "fecha de fin"),
+                    Location = NormalizeOptional(input.Location, 150, "ubicacion"),
+                    Description = NormalizeOptional(input.Description, MaxLongTextLength, "descripcion"),
+                    IsHidden = input.Hidden ?? false,
+                    SortOrder = index
+                });
+            }
+        }
+
+        private void ReplaceProjects(User user, IReadOnlyList<CvProjectInput>? inputs)
+        {
+            if (inputs == null) return;
+            EnsureCount(inputs, MaxProjectRows, "proyectos");
+
+            _context.UserCvProjects.RemoveRange(user.CvProjects);
+            foreach ((CvProjectInput input, int index) in inputs.Select((input, index) => (input, index)))
+            {
+                _context.UserCvProjects.Add(new UserCvProject
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Name = NormalizeNameRequired(input.Name, 200, "proyecto"),
+                    Role = NormalizeNameOptional(input.Role, 200, "rol") ?? string.Empty,
+                    StartDate = NormalizeOptional(input.StartDate, 50, "fecha de inicio"),
+                    EndDate = NormalizeOptional(input.EndDate, 50, "fecha de fin"),
+                    Url = NormalizeOptional(input.Url, 300, "URL"),
+                    Description = NormalizeOptional(input.Description, MaxLongTextLength, "descripcion"),
+                    IsHidden = input.Hidden ?? false,
+                    SortOrder = index
+                });
+            }
+        }
+
+        private void ReplaceSkills(User user, IReadOnlyList<CvSkillInput>? inputs)
+        {
+            if (inputs == null) return;
+            EnsureCount(inputs, MaxSkillRows, "habilidades");
+
+            _context.UserCvSkills.RemoveRange(user.CvSkills);
+            foreach ((CvSkillInput input, int index) in inputs.Select((input, index) => (input, index)))
+            {
+                _context.UserCvSkills.Add(new UserCvSkill
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Name = NormalizeNameRequired(input.Name, 120, "habilidad"),
+                    Level = NormalizeNameOptional(input.Level, 80, "nivel"),
+                    IsHidden = input.Hidden ?? false,
+                    SortOrder = index
+                });
+            }
+        }
+
+        private void ReplaceLanguages(User user, IReadOnlyList<CvLanguageInput>? inputs)
+        {
+            if (inputs == null) return;
+            EnsureCount(inputs, MaxLanguageRows, "idiomas");
+
+            _context.UserCvLanguages.RemoveRange(user.CvLanguages);
+            foreach ((CvLanguageInput input, int index) in inputs.Select((input, index) => (input, index)))
+            {
+                _context.UserCvLanguages.Add(new UserCvLanguage
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Name = NormalizeNameRequired(input.Name, 120, "idioma"),
+                    Level = NormalizeNameOptional(input.Level, 80, "nivel"),
+                    IsHidden = input.Hidden ?? false,
+                    SortOrder = index
+                });
+            }
+        }
+
+        private static void EnsureCount<T>(IReadOnlyList<T> inputs, int maxCount, string sectionName)
+        {
+            if (inputs.Count > maxCount)
+            {
+                throw new InvalidOperationException($"La seccion {sectionName} supera el limite permitido de {maxCount} registros.");
+            }
+        }
+
+        private static string NormalizeRequired(string? value, int maxLength, string fieldName)
+        {
+            string? normalized = NormalizeOptional(value, maxLength, fieldName);
+            if (normalized == null)
+            {
+                throw new InvalidOperationException($"El campo {fieldName} es obligatorio.");
+            }
+
+            return normalized;
+        }
+
+        private static string? NormalizeOptional(string? value, int maxLength, string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            string normalized = value.Trim();
+            if (normalized.Length > maxLength)
+            {
+                throw new InvalidOperationException($"El campo {fieldName} supera el limite de {maxLength} caracteres.");
+            }
+
+            return normalized;
+        }
+
+        private static string NormalizeNameRequired(string? value, int maxLength, string fieldName)
+        {
+            return NormalizeToTitleCase(NormalizeRequired(value, maxLength, fieldName));
+        }
+
+        private static string? NormalizeNameOptional(string? value, int maxLength, string fieldName)
+        {
+            string? normalized = NormalizeOptional(value, maxLength, fieldName);
+            return normalized != null ? NormalizeToTitleCase(normalized) : null;
+        }
+
+        private static string NormalizeToTitleCase(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return value;
+            var textInfo = new System.Globalization.CultureInfo("es-AR", false).TextInfo;
+            return textInfo.ToTitleCase(value.Trim().ToLower());
         }
     }
 }

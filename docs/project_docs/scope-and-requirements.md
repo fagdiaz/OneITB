@@ -1,6 +1,6 @@
 # Alcance y requerimientos de OneITB23
 
-**Ultima alineacion con codigo**: 2026-06-19
+**Ultima alineacion con codigo**: 2026-06-29
 
 ## 1. Objetivo
 
@@ -10,8 +10,8 @@ OneITB23 es una red social academica para estudiantes, profesores, egresados y a
 
 | Modulo | Estado | Evidencia principal |
 |---|---|---|
-| Autenticacion y cuentas | Verificado | `ROADMAP.md`, specs 038-039 y 099 |
-| Perfiles, carreras y CV | Implementado/verificado por etapas | specs 020, 035, 110, 114 |
+| Autenticacion y cuentas | Verificado | `ROADMAP.md`, specs 038-039, 099, 141, 143 |
+| Perfiles, carreras y CV | Implementado/verificado por etapas | specs 020, 035, 110, 114, 142-146 |
 | Materias y correlatividades | Implementado; runtime reciente bloqueado | spec 118 |
 | Feed, comentarios, reacciones y reportes | Verificado en flujo base | spec 099 |
 | Archivos y rich media | Implementado; runtime reciente bloqueado | specs 121-122 |

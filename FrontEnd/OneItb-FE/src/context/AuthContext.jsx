@@ -6,6 +6,9 @@ export const AuthProvider = ({ children }) => {
     const [auth, setAuth] = useState({});
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [token, setToken] = useState(null);
+    // isLoading: true mientras se hidrata la sesión desde localStorage.
+    // Evita que PrivateLayout redirija a /login antes de conocer el estado real.
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
@@ -15,6 +18,8 @@ export const AuthProvider = ({ children }) => {
             setToken(storedToken);
             setIsAuthenticated(true);
         }
+        // Hydration complete — allow route guards to evaluate.
+        setIsLoading(false);
     }, []);
 
     const login = (authToken, userObj) => {
@@ -34,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ auth, setAuth, isAuthenticated, token, login, logout }}>
+        <AuthContext.Provider value={{ auth, setAuth, isAuthenticated, isLoading, token, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
