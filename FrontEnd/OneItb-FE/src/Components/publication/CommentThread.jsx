@@ -60,7 +60,7 @@ const ParticipationBadges = ({ user }) => {
 
 const AttachmentPicker = ({ file, onFileChange }) => (
   <div className="flex min-w-0 flex-wrap items-center gap-2">
-    <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+    <label className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-400 dark:hover:border-blue-300/20 dark:hover:bg-blue-500/10 dark:hover:text-blue-200">
       <input
         type="file"
         accept={UPLOAD_ACCEPT}
@@ -71,7 +71,7 @@ const AttachmentPicker = ({ file, onFileChange }) => (
       <span className="sr-only">Adjuntar archivo</span>
     </label>
     {file && (
-      <span className="flex min-w-0 items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-[11px] text-blue-700">
+      <span className="flex min-w-0 items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-[11px] text-blue-700 dark:bg-blue-500/10 dark:text-blue-200">
         <span className="max-w-48 truncate" title={file.name}>{file.name}</span>
         <button
           type="button"
@@ -126,8 +126,8 @@ const CommentNode = ({
   };
 
   return (
-    <li className={`border-l-2 pl-3 ${isAdminComment ? 'border-blue-200' : 'border-slate-100'}`}>
-      <div className={`rounded-lg p-3 ${isAdminComment ? 'bg-blue-50/70 ring-1 ring-blue-100' : 'bg-slate-50'}`}>
+    <li className={`border-l-2 pl-3 ${isAdminComment ? 'border-blue-200 dark:border-blue-300/30' : 'border-slate-100 dark:border-white/10'}`}>
+      <div className={`rounded-lg p-3 ${isAdminComment ? 'bg-blue-50/70 ring-1 ring-blue-100 dark:bg-blue-500/10 dark:ring-blue-300/20' : 'bg-slate-50 dark:bg-slate-900/55 dark:ring-1 dark:ring-white/10'}`}>
         <div className="flex items-center justify-between gap-3">
           <span className={`text-xs font-semibold ${roleStyle.name}`}>
             <Link to={`/profile/${comment.user?.id}`} className="hover:underline">
@@ -165,13 +165,13 @@ const CommentNode = ({
               value={draftContent}
               onChange={(event) => setDraftContent(event.target.value)}
               maxLength={1000}
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
             <button type="submit" className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">Guardar</button>
             <button type="button" onClick={() => setIsEditing(false)} className="rounded-lg bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700">Cancelar</button>
           </form>
         ) : (
-          <p className="mt-1 text-sm leading-relaxed text-slate-600">{comment.content}</p>
+          <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{comment.content}</p>
         )}
 
         <MediaComponent textContext={comment.content} fileUrl={comment.fileUrl} />
@@ -197,7 +197,7 @@ const CommentNode = ({
               onChange={(event) => setReply(event.target.value)}
               maxLength={1000}
               placeholder="Escribe una respuesta..."
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
             <button type="submit" disabled={submitting || !reply.trim()} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
               {submitting ? 'Enviando...' : 'Enviar'}
@@ -255,7 +255,7 @@ export const CommentThread = ({
   };
 
   return (
-    <section className="space-y-3 border-t border-slate-100 pt-3">
+    <section className="space-y-3 border-t border-slate-100 pt-3 dark:border-white/10">
       <form onSubmit={submitComment} className="space-y-2">
         <div className="flex gap-2">
           <input
@@ -263,9 +263,9 @@ export const CommentThread = ({
             onChange={(event) => setDraft(event.target.value)}
             maxLength={1000}
             placeholder="Sumate a la conversacion..."
-            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
           />
-          <button type="submit" disabled={submitting || !draft.trim()} className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
+          <button type="submit" disabled={submitting || !draft.trim()} className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500">
             {submitting ? 'Enviando...' : 'Comentar'}
           </button>
         </div>

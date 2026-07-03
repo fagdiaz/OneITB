@@ -37,18 +37,18 @@ export const ModerationManagement = () => {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">Moderacion y reportes</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white">Moderacion y reportes</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {pendingReports.length} reportes pendientes, {historyReports.length} en historial.
           </p>
         </div>
         <div className="flex gap-2">
-          <div className="flex rounded-lg bg-slate-100 p-1">
+          <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-950/60">
             <button
               type="button"
               onClick={() => setView('pending')}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                view === 'pending' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                view === 'pending' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-100'
               }`}
             >
               Pendientes
@@ -57,22 +57,22 @@ export const ModerationManagement = () => {
               type="button"
               onClick={() => setView('history')}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                view === 'history' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                view === 'history' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-100'
               }`}
             >
               Historial
             </button>
           </div>
-          <button type="button" onClick={() => refetch()} className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100">
+          <button type="button" onClick={() => refetch()} className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15">
             Actualizar
           </button>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/70">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-400">
               <tr>
                 <th className="px-5 py-3">Publicacion</th>
                 <th className="px-5 py-3">Razon</th>
@@ -81,17 +81,17 @@ export const ModerationManagement = () => {
                 <th className="px-5 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/10">
               {(view === 'pending' ? pendingReports : historyReports).map((report) => (
                 <tr key={report.id}>
                   <td className="px-5 py-4">
-                    <p className="font-semibold text-slate-800">{report.inquiry?.title}</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">{report.inquiry?.title}</p>
                   </td>
                   <td className="px-5 py-4">
-                    <p className="text-sm text-slate-700">{report.reason}</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300">{report.reason}</p>
                   </td>
                   <td className="px-5 py-4">
-                    <p className="text-xs text-slate-800">{report.reporter?.firstName} {report.reporter?.lastName}</p>
+                    <p className="text-xs text-slate-800 dark:text-slate-200">{report.reporter?.firstName} {report.reporter?.lastName}</p>
                     <p className="text-[11px] text-slate-400">{new Date(report.createdAt).toLocaleDateString('es-AR')} {new Date(report.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
                   </td>
                   <td className="px-5 py-4">

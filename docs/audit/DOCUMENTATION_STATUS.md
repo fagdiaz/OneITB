@@ -1,13 +1,13 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-06-30
+**Ultima verificacion**: 2026-07-02
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 67/77 (87%) |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 68/78 (87%) |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
@@ -29,6 +29,12 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/158-masterization-navigation-search-cv-avatar/` | Masterizacion UX: navegacion activa estricta por ruta, notificaciones iluminadas al abrirse, busqueda global multi-filtro con materias por codigo/nombre, publicaciones por autor/comentarios con `careerIds`, resultados paginados de 15, contactos de CV semanticos y editor de avatar canvas compacto; builds backend/frontend verificados |
+| `specs/157-core-ux-session-header-constraints/` | Core UX/session/header constraints: active glow por `useLocation`, logo estatico, omni-search como popover, Light Mode por defecto anonimo/no-preferencia, toggles de password y expiracion JWT interceptada; build frontend verificado |
+| `specs/156-header-omni-search-print-stabilization/` | Header/omni-search/print estabilizados: logo estatico, overlay sin doble input, perfiles publicos buscables con query segura, filtros por carreras de `me`, avatar real hidratado y modal de impresion CV; builds backend/frontend verificados |
+| `specs/155-ux-master-polish-grid-layout/` | UX master polish: Header reordenado con buscador expansible, active glow por ruta, perfil en grid responsivo, WhatsApp link, `/profile/edit` con Tech Noir y CV print unificado; build frontend verificado |
+| `specs/154-ui-consistency-theme-polish/` | Pulido de consistencia UI: Header brand oscuro restaurado, glow homogéneo, widget de chat compacto, comentarios/academico/admin con Tech Noir y CV print limpio; build frontend verificado |
+| `specs/153-tech-noir-clean-tech-theming/` | Sistema visual Clean Tech / Tech Noir implementado con ThemeContext, bootstrap anti-FOUC, selector en Header y build frontend verificado |
 | `specs/152-master-quality-interconnectivity-fixes/` | Master quality fixes: rutas reales de perfil auditadas, archivo fantasma eliminado, metricas normalizadas, avatares defensivos, print A4 puro y spotlight header; builds backend/frontend verificados |
 | `specs/149-cv-component-abstraction-ux-polish/` | Impresion formal del CV desde `/profile` abstraida en template reutilizable; build frontend verificado |
 | `specs/148-profile-data-binding-fixes/` | Avatar persistente, carreras editables desde perfil y normalizacion de identidad verificados por migracion, build y runtime REST/GraphQL |

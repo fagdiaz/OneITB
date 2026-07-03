@@ -10,6 +10,7 @@ import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers'
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import { GET_INQUIRIES_PAGE } from '../../data/graphql/queries/inquiries';
 import { GET_LINK_PREVIEW } from '../../data/graphql/queries/linkPreview';
+import { SEARCH_PUBLIC_PROFILES } from '../../data/graphql/queries/searchPublicProfiles';
 import {
   ADD_COMMENT,
   CREATE_INQUIRY,
@@ -47,6 +48,20 @@ const getInitials = (firstName, lastName) => {
   const parts = [firstName, lastName].filter(Boolean);
   return parts.map((p) => p[0]?.toUpperCase() ?? '').join('').slice(0, 2) || '?';
 };
+
+const getNameInitials = (name = 'U') =>
+  name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'U';
+
+const parseIdList = (value) =>
+  (value || '')
+    .split(',')
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item > 0);
 
 const UserAvatar = ({ user, size = 'md' }) => {
   const avatarUrl = resolveAvatarUrl(user);
@@ -159,15 +174,32 @@ export const Feed = () => {
 
   const publicationCareerId = selectedCareer ? Number(selectedCareer) : null;
   const searchTermParam = searchParams.get('q');
+  const normalizedSearchTerm = searchTermParam?.trim() || '';
   const careerParam = searchParams.get('career');
+  const careersParam = searchParams.get('careers');
   const subjectParam = searchParams.get('subject');
+  const subjectsParam = searchParams.get('subjects');
 
-  const filterCareerId = careerParam ? Number(careerParam) : null;
+  const legacyCareerId = careerParam ? Number(careerParam) : null;
+  const filterCareerIds = parseIdList(careersParam);
+  const effectiveCareerIds = filterCareerIds.length > 0
+    ? filterCareerIds
+    : Number.isInteger(legacyCareerId)
+      ? [legacyCareerId]
+      : [];
+  const filterSubjectIds = parseIdList(subjectsParam);
+  const legacySubjectId = subjectParam ? Number(subjectParam) : null;
+  const effectiveSubjectIds = filterSubjectIds.length > 0
+    ? filterSubjectIds
+    : Number.isInteger(legacySubjectId)
+      ? [legacySubjectId]
+      : [];
   const inquiryVariables = {
-    searchTerm: searchTermParam?.trim() || null,
-    careerId: filterCareerId,
-    subjectIds: subjectParam ? [Number(subjectParam)] : null,
-    first: 10,
+    searchTerm: normalizedSearchTerm || null,
+    careerId: null,
+    careerIds: effectiveCareerIds.length > 0 ? effectiveCareerIds : null,
+    subjectIds: effectiveSubjectIds.length > 0 ? effectiveSubjectIds : null,
+    first: 15,
     after: null,
   };
 
@@ -175,6 +207,11 @@ export const Feed = () => {
   const { data: myCareersData } = useQuery(GET_MY_CAREERS);
   const { data: subjectsData, loading: subjectsLoading } = useQuery(GET_SUBJECTS, {
     variables: { careerId: publicationCareerId },
+  });
+  const { data: searchProfilesData, loading: searchProfilesLoading } = useQuery(SEARCH_PUBLIC_PROFILES, {
+    variables: { searchTerm: normalizedSearchTerm, first: 8 },
+    skip: normalizedSearchTerm.length < 2,
+    fetchPolicy: 'cache-and-network',
   });
 
   const {
@@ -200,8 +237,10 @@ export const Feed = () => {
   const careers = careersData?.careers ?? [];
   const myCareers = myCareersData?.myCareers ?? [];
   const publicationSubjects = subjectsData?.subjects ?? [];
+  const searchProfiles = searchProfilesData?.searchPublicProfiles ?? [];
   const feedPage = inquiriesData?.inquiriesPage;
   const posts = feedPage?.items ?? [];
+  const isSearchResultsView = normalizedSearchTerm.length > 0;
   const isModerator = auth.role === 'Administrador' || auth.role === 'Moderador';
   const canSelectCareerForPost = myCareers.length > 1;
   const publicationCareerOptions = auth.role === 'Administrador' ? careers : myCareers;
@@ -381,19 +420,19 @@ export const Feed = () => {
   };
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6 text-slate-900 dark:text-slate-100">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-7 w-1 rounded-full bg-blue-600" />
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-800">Muro academico</h1>
-            <p className="text-xs text-slate-500">{posts.length} de {feedPage?.totalCount ?? posts.length} publicaciones activas</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">Muro academico</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{posts.length} de {feedPage?.totalCount ?? posts.length} publicaciones activas</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => refetch()}
-          className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-100"
+          className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15"
         >
           Actualizar
         </button>
@@ -414,21 +453,21 @@ export const Feed = () => {
         </div>
       )}
 
-      <form onSubmit={handlePublish} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+      <form onSubmit={handlePublish} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.24)]">
         <input
           type="text"
           maxLength={200}
           placeholder="Titulo de tu consulta"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         <textarea
           maxLength={10000}
           placeholder="Que queres compartir con la comunidad?"
           value={content}
           onChange={(event) => setContent(event.target.value)}
-          className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         <div className="flex flex-wrap items-center gap-2">
           <input
@@ -473,7 +512,7 @@ export const Feed = () => {
                 setSelectedCareer(event.target.value);
                 setSelectedSubject('');
               }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200"
             >
               <option value="">Selecciona una carrera...</option>
               {publicationCareerOptions.map((career) => (
@@ -485,7 +524,7 @@ export const Feed = () => {
             value={selectedSubject}
             onChange={(event) => setSelectedSubject(event.target.value)}
             disabled={subjectsLoading || (mustSelectCareerForPost && !selectedCareer)}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200"
           >
             <option value="">Selecciona una materia...</option>
             {effectivePublicationSubjects.map((subject) => (
@@ -502,12 +541,101 @@ export const Feed = () => {
         </div>
       </form>
 
+      {isSearchResultsView && (
+        <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.24)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300">
+                Busqueda global
+              </p>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Resultados de Perfiles
+              </h2>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">
+              {normalizedSearchTerm}
+            </span>
+          </div>
+
+          {normalizedSearchTerm.length < 2 ? (
+            <p className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-300/20 dark:bg-amber-500/10 dark:text-amber-200">
+              Escribi al menos 2 caracteres para buscar perfiles.
+            </p>
+          ) : searchProfilesLoading ? (
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Buscando perfiles...</p>
+          ) : searchProfiles.length === 0 ? (
+            <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:bg-white/[0.04] dark:text-slate-400">
+              No se encontraron perfiles para esta busqueda.
+            </p>
+          ) : (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {searchProfiles.map((profile) => {
+                const avatarUrl = resolveAvatarUrl({ avatarUrl: profile.avatarUrl });
+                return (
+                  <Link
+                    key={profile.id}
+                    to={`/profile/${profile.id}`}
+                    className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 transition hover:border-blue-200 hover:bg-blue-50 dark:border-white/10 dark:bg-slate-950/60 dark:hover:border-blue-300/30 dark:hover:bg-blue-500/10"
+                  >
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={`Avatar de ${profile.fullName}`}
+                        className="h-10 w-10 rounded-full object-cover ring-1 ring-slate-200 dark:ring-white/10"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-black text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {getNameInitials(profile.fullName)}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">
+                        {profile.fullName}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
+                        {[profile.role, ...(profile.careers || []).slice(0, 2)].filter(Boolean).join(' - ')}
+                      </span>
+                    </span>
+                    <i className="fa-solid fa-arrow-right text-xs text-slate-400" />
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {isSearchResultsView && (
+        <section className="rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Publicaciones filtradas
+              </p>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Resultados de Publicaciones
+              </h2>
+            </div>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              {feedPage?.totalCount ?? posts.length} resultado{(feedPage?.totalCount ?? posts.length) === 1 ? '' : 's'}
+            </span>
+          </div>
+        </section>
+      )}
+
       {inquiriesLoading && posts.length === 0 && (
         <p className="py-6 text-center text-sm text-slate-500">Cargando publicaciones...</p>
       )}
       {inquiriesError && (
         <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           No se pudo cargar el muro: {inquiriesError.message}
+        </p>
+      )}
+
+      {!inquiriesLoading && !inquiriesError && posts.length === 0 && (
+        <p className="rounded-xl border border-slate-100 bg-white p-4 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-400">
+          {isSearchResultsView ? 'No se encontraron publicaciones para esta busqueda.' : 'Todavia no hay publicaciones activas.'}
         </p>
       )}
 
@@ -519,7 +647,7 @@ export const Feed = () => {
 
         return (
           <article key={post.id} className={`flex flex-col gap-3 rounded-xl border p-4 shadow-sm ${
-            isAdminPost ? 'border-blue-200 bg-blue-50/60' : 'border-slate-100 bg-white'
+            isAdminPost ? 'border-blue-200 bg-blue-50/60 dark:border-blue-300/20 dark:bg-blue-500/10' : 'border-slate-100 bg-white dark:border-white/10 dark:bg-slate-900/70'
           }`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -543,24 +671,24 @@ export const Feed = () => {
                 <button
                   type="button"
                   onClick={() => setOpenMenuId((current) => (current === post.id ? null : post.id))}
-                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-100"
                   aria-label="Abrir acciones de publicacion"
                 >
                   <i className="fa-solid fa-ellipsis-vertical text-sm" />
                 </button>
                 {openMenuId === post.id && (
-                <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-xl">
+                <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-xl dark:border-white/10 dark:bg-slate-950/95 dark:shadow-[0_20px_60px_rgba(2,6,23,0.45)]">
                   {post.user?.id === auth.id && (
                     <>
-                      <button type="button" onClick={() => { setEditingPost({ id: post.id, title: post.title, content: post.content }); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50">Editar</button>
+                      <button type="button" onClick={() => { setEditingPost({ id: post.id, title: post.title, content: post.content }); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Editar</button>
                       <button type="button" onClick={() => handleTogglePost(post.id)} className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50">Eliminar</button>
                     </>
                   )}
                   {post.user?.id !== auth.id && (
                     <>
-                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'FOLLOW')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50">Seguir autor</button>
-                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'MUTE')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50">Silenciar</button>
-                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'BLOCK')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50">Bloquear</button>
+                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'FOLLOW')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Seguir autor</button>
+                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'MUTE')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Silenciar</button>
+                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'BLOCK')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Bloquear</button>
                       <button type="button" onClick={() => { setReportTargetId(post.id); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50">Reportar</button>
                     </>
                   )}
@@ -592,9 +720,9 @@ export const Feed = () => {
                 </form>
               ) : (
                 <>
-                  <h2 className={`font-semibold ${isAdminPost ? 'text-blue-950' : 'text-slate-800'}`}>{post.title}</h2>
+                  <h2 className={`font-semibold ${isAdminPost ? 'text-blue-950 dark:text-blue-100' : 'text-slate-800 dark:text-slate-100'}`}>{post.title}</h2>
                   {post.content && (
-                    <p className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed ${isAdminPost ? 'text-blue-900' : 'text-slate-700'}`}>
+                    <p className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed ${isAdminPost ? 'text-blue-900 dark:text-blue-100/85' : 'text-slate-700 dark:text-slate-300'}`}>
                       {post.content}
                     </p>
                   )}
@@ -603,7 +731,7 @@ export const Feed = () => {
               <MediaComponent textContext={post.content} fileUrl={post.fileUrl} />
             </div>
 
-            <div className="flex items-center gap-4 border-t border-slate-100 pt-3">
+            <div className="flex items-center gap-4 border-t border-slate-100 pt-3 dark:border-white/10">
               <button
                 type="button"
                 disabled={isReacting}
@@ -643,15 +771,15 @@ export const Feed = () => {
 
             {threadOpen && (
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between border-t border-slate-100 pt-2">
-                  <p className="text-xs font-semibold text-slate-500">
+                <div className="flex items-center justify-between border-t border-slate-100 pt-2 dark:border-white/10">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <i className="fa-regular fa-comment mr-1.5" />
                     {post.comments.length} {post.comments.length === 1 ? 'comentario' : 'comentarios'}
                   </p>
                   <button
                     type="button"
                     onClick={() => setOpenThreads((current) => ({ ...current, [post.id]: false }))}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-100"
                     aria-label="Cerrar hilo de comentarios"
                   >
                     <i className="fa-solid fa-xmark" />
@@ -681,10 +809,16 @@ export const Feed = () => {
           type="button"
           onClick={handleLoadMore}
           disabled={inquiriesLoading}
-          className="self-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-300/20 dark:bg-slate-900/80 dark:text-blue-300 dark:hover:bg-blue-500/10"
         >
-          {inquiriesLoading ? 'Cargando...' : 'Cargar mas publicaciones'}
+          {inquiriesLoading ? 'Cargando...' : isSearchResultsView ? 'Buscar mas' : 'Cargar mas publicaciones'}
         </button>
+      )}
+
+      {isSearchResultsView && posts.length > 0 && !feedPage?.hasNextPage && (
+        <p className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-400">
+          No hay mas resultados.
+        </p>
       )}
 
       <ReportModal

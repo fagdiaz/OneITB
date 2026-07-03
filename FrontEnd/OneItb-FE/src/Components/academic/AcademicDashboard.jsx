@@ -262,11 +262,11 @@ export const AcademicDashboard = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-      <header className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900 dark:text-slate-100">
+      <header className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm dark:border-white/10 dark:bg-none dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.24)]">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-500">Modulo academico</p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">Recursos, materias y progreso</h1>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">
+        <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Recursos, materias y progreso</h1>
+        <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
           Consulta apuntes por materia y revisa el seguimiento academico. Profesores y administradores pueden cargar recursos y actualizar el progreso de estudiantes.
         </p>
       </header>
@@ -283,14 +283,14 @@ export const AcademicDashboard = () => {
         </div>
       )}
 
-      <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-2">
+      <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70 md:grid-cols-2">
         <label className="block">
           <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Carrera</span>
           <select
             value={selectedCareerId}
             onChange={(event) => setSelectedCareerId(event.target.value)}
             disabled={careersLoading}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200 dark:focus:ring-blue-500/20"
           >
             <option value="">{careersLoading ? 'Cargando carreras...' : 'Selecciona una carrera'}</option>
             {careers.map((career) => (
@@ -307,7 +307,7 @@ export const AcademicDashboard = () => {
             value={selectedSubjectId}
             onChange={(event) => setSelectedSubjectId(event.target.value)}
             disabled={!selectedCareerId || subjectsLoading}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200 dark:focus:ring-blue-500/20"
           >
             <option value="">{subjectsLoading ? 'Cargando materias...' : 'Selecciona una materia'}</option>
             {subjects.map((subject) => (
@@ -319,12 +319,12 @@ export const AcademicDashboard = () => {
         </label>
       </section>
 
-      <nav className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+      <nav className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
         <button
           type="button"
           onClick={() => setActiveTab('resources')}
           className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-            activeTab === 'resources' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'
+            activeTab === 'resources' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100'
           }`}
         >
           Recursos
@@ -333,7 +333,7 @@ export const AcademicDashboard = () => {
           type="button"
           onClick={() => setActiveTab('progress')}
           className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-            activeTab === 'progress' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'
+            activeTab === 'progress' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100'
           }`}
         >
           Progreso y notas
@@ -345,8 +345,8 @@ export const AcademicDashboard = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Recursos de la materia</h2>
-                <p className="text-sm text-slate-500">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recursos de la materia</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {selectedSubject ? `${selectedSubject.name} (${selectedSubject.code})` : 'Selecciona una materia para ver recursos.'}
                 </p>
               </div>
@@ -354,22 +354,22 @@ export const AcademicDashboard = () => {
             </div>
 
             {!selectedSubjectId ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-400">
                 Elegi carrera y materia para consultar apuntes, enlaces y archivos.
               </div>
             ) : resources.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-400">
                 No hay recursos activos para esta materia.
               </div>
             ) : (
               resources.map((resource) => {
                 const fileHref = resolveFileHref(resource.fileUrl);
                 return (
-                  <article key={resource.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <article key={resource.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.22)]">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-base font-bold text-slate-900">{resource.title}</h3>
+                          <h3 className="text-base font-bold text-slate-900 dark:text-white">{resource.title}</h3>
                           <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-600">
                             {resource.resourceType}
                           </span>
@@ -390,7 +390,7 @@ export const AcademicDashboard = () => {
                       )}
                     </div>
 
-                    {resource.description && <p className="mt-3 text-sm leading-6 text-slate-600">{resource.description}</p>}
+                    {resource.description && <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{resource.description}</p>}
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       {fileHref && (
@@ -423,9 +423,9 @@ export const AcademicDashboard = () => {
           </div>
 
           {isManager && (
-            <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900">Nuevo recurso</h2>
-              <p className="mt-1 text-sm text-slate-500">Publica material asociado a la materia seleccionada.</p>
+            <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Nuevo recurso</h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Publica material asociado a la materia seleccionada.</p>
 
               <form onSubmit={submitResource} className="mt-4 space-y-4">
                 <label className="block">
@@ -433,7 +433,7 @@ export const AcademicDashboard = () => {
                   <input
                     value={resourceForm.title}
                     onChange={(event) => setResourceForm((current) => ({ ...current, title: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
                     placeholder="Guia de ejercicios"
                   />
                 </label>
@@ -444,7 +444,7 @@ export const AcademicDashboard = () => {
                     rows={3}
                     value={resourceForm.description}
                     onChange={(event) => setResourceForm((current) => ({ ...current, description: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
                     placeholder="Material de apoyo para la unidad..."
                   />
                 </label>
@@ -454,7 +454,7 @@ export const AcademicDashboard = () => {
                   <input
                     value={resourceForm.externalUrl}
                     onChange={(event) => setResourceForm((current) => ({ ...current, externalUrl: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
                     placeholder="https://..."
                   />
                 </label>
@@ -485,22 +485,22 @@ export const AcademicDashboard = () => {
         <section className="grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Mi progreso academico</h2>
-              <p className="text-sm text-slate-500">Solo vos y los administradores pueden consultar tus notas.</p>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Mi progreso academico</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Solo vos y los administradores pueden consultar tus notas.</p>
             </div>
 
             {myProgressLoading ? (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Cargando progreso...</div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-400">Cargando progreso...</div>
             ) : filteredMyProgress.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-400">
                 No hay progreso registrado para la seleccion actual.
               </div>
             ) : (
               filteredMyProgress.map((item) => (
-                <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-bold text-slate-900">{item.subject?.name}</h3>
+                      <h3 className="font-bold text-slate-900 dark:text-white">{item.subject?.name}</h3>
                       <p className="text-xs text-slate-400">
                         {item.subject?.career?.name} - {item.subject?.code}
                       </p>
@@ -510,16 +510,16 @@ export const AcademicDashboard = () => {
                     </span>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-xl bg-slate-50 p-3">
+                    <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-950/50">
                       <p className="text-xs font-bold uppercase text-slate-400">Nota</p>
-                      <p className="text-lg font-bold text-slate-900">{formatScore(item.score)}</p>
+                      <p className="text-lg font-bold text-slate-900 dark:text-white">{formatScore(item.score)}</p>
                     </div>
-                    <div className="rounded-xl bg-slate-50 p-3 sm:col-span-2">
+                    <div className="rounded-xl bg-slate-50 p-3 sm:col-span-2 dark:bg-slate-950/50">
                       <p className="text-xs font-bold uppercase text-slate-400">Actualizado</p>
-                      <p className="text-sm font-semibold text-slate-700">{formatDate(item.updatedAt)}</p>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatDate(item.updatedAt)}</p>
                     </div>
                   </div>
-                  {item.notes && <p className="mt-3 text-sm text-slate-600">{item.notes}</p>}
+                  {item.notes && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{item.notes}</p>}
                 </article>
               ))
             )}
@@ -528,12 +528,12 @@ export const AcademicDashboard = () => {
           {isManager && (
             <aside className="space-y-4">
               {isAdmin && (
-                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5 shadow-sm">
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5 shadow-sm dark:border-blue-300/20 dark:bg-blue-500/10">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wide text-blue-500">Integracion SIU</p>
-                      <h2 className="mt-1 text-base font-bold text-slate-900">Sincronizar calificaciones</h2>
-                      <p className="mt-1 text-sm text-slate-600">
+                      <h2 className="mt-1 text-base font-bold text-slate-900 dark:text-white">Sincronizar calificaciones</h2>
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                         Ejecuta el adaptador mock para actualizar altas y cambios de notas de la materia seleccionada.
                       </p>
                     </div>
@@ -550,10 +550,10 @@ export const AcademicDashboard = () => {
                   </button>
 
                   {siuSyncResult && (
-                    <div className="mt-4 rounded-xl border border-blue-100 bg-white p-3 text-xs text-slate-600">
+                    <div className="mt-4 rounded-xl border border-blue-100 bg-white p-3 text-xs text-slate-600 dark:border-blue-300/20 dark:bg-slate-950/50 dark:text-slate-300">
                       <div className="grid grid-cols-4 gap-2 text-center">
                         <div>
-                          <p className="font-bold text-slate-900">{siuSyncResult.processed}</p>
+                          <p className="font-bold text-slate-900 dark:text-white">{siuSyncResult.processed}</p>
                           <p>Procesados</p>
                         </div>
                         <div>
@@ -581,9 +581,9 @@ export const AcademicDashboard = () => {
                 </div>
               )}
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-base font-bold text-slate-900">Cargar progreso</h2>
-                <p className="mt-1 text-sm text-slate-500">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Cargar progreso</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   Selecciona una materia y un estudiante de esa carrera.
                 </p>
 
@@ -594,7 +594,7 @@ export const AcademicDashboard = () => {
                       value={progressForm.userId}
                       onChange={(event) => setProgressForm((current) => ({ ...current, userId: event.target.value }))}
                       disabled={!selectedSubjectId || studentsLoading}
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200"
                     >
                       <option value="">{studentsLoading ? 'Cargando estudiantes...' : 'Selecciona un estudiante'}</option>
                       {students.map((student) => (
@@ -615,7 +615,7 @@ export const AcademicDashboard = () => {
                         step="0.01"
                         value={progressForm.score}
                         onChange={(event) => setProgressForm((current) => ({ ...current, score: event.target.value }))}
-                        className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100"
                         placeholder="0-10"
                       />
                     </label>
@@ -625,7 +625,7 @@ export const AcademicDashboard = () => {
                       <select
                         value={progressForm.status}
                         onChange={(event) => setProgressForm((current) => ({ ...current, status: event.target.value }))}
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100"
                       >
                         {progressStatuses.map((status) => (
                           <option key={status.value} value={status.value}>
@@ -642,7 +642,7 @@ export const AcademicDashboard = () => {
                       rows={3}
                       value={progressForm.notes}
                       onChange={(event) => setProgressForm((current) => ({ ...current, notes: event.target.value }))}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
                       placeholder="Comentarios academicos internos..."
                     />
                   </label>
@@ -658,15 +658,15 @@ export const AcademicDashboard = () => {
               </div>
 
               {isAdmin && progressForm.userId && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-900">Progreso del estudiante</h3>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Progreso del estudiante</h3>
                   {selectedStudentProgress.length === 0 ? (
                     <p className="mt-3 text-sm text-slate-500">Sin registros cargados.</p>
                   ) : (
                     <div className="mt-3 space-y-2">
                       {selectedStudentProgress.map((item) => (
-                        <div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm">
-                          <p className="font-semibold text-slate-800">{item.subject?.name}</p>
+                        <div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-950/50">
+                          <p className="font-semibold text-slate-800 dark:text-slate-200">{item.subject?.name}</p>
                           <p className="text-xs text-slate-500">
                             {statusLabels[item.status] ?? item.status} - {formatScore(item.score)}
                           </p>

@@ -314,16 +314,16 @@ export const PrivateChat = () => {
         key={contact.userId}
         type="button"
         onClick={() => handleSelectContact(contact.userId)}
-        className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 ${active ? 'border-blue-300/20 bg-blue-500/15 text-white shadow-[0_10px_30px_rgba(37,99,235,0.16)]' : 'border-transparent text-slate-300 hover:-translate-y-0.5 hover:border-white/10 hover:bg-white/[0.05] hover:text-white'}`}
+        className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 ${active ? 'border-blue-200 bg-blue-50 text-slate-950 shadow-[0_10px_30px_rgba(37,99,235,0.10)] dark:border-blue-300/20 dark:bg-blue-500/15 dark:text-white dark:shadow-[0_10px_30px_rgba(37,99,235,0.16)]' : 'border-transparent text-slate-600 hover:-translate-y-0.5 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:border-white/10 dark:hover:bg-white/[0.05] dark:hover:text-white'}`}
       >
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold ring-1 ${active ? 'bg-blue-400/20 text-blue-100 ring-blue-300/20' : 'bg-white/5 text-blue-200 ring-white/10 group-hover:ring-blue-300/20'}`}>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold ring-1 ${active ? 'bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-400/20 dark:text-blue-100 dark:ring-blue-300/20' : 'bg-slate-100 text-blue-700 ring-slate-200 group-hover:ring-blue-200 dark:bg-white/5 dark:text-blue-200 dark:ring-white/10 dark:group-hover:ring-blue-300/20'}`}>
           {contact.firstName?.[0]}{contact.lastName?.[0]}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">
             {contact.firstName} {contact.lastName} {isNew && <span className="ml-1 text-[10px] uppercase tracking-wider text-emerald-500 font-bold">(Nuevo)</span>}
           </p>
-          <p className={`truncate text-xs ${active ? 'text-blue-100' : 'text-slate-500 group-hover:text-slate-400'}`}>
+          <p className={`truncate text-xs ${active ? 'text-blue-700 dark:text-blue-100' : 'text-slate-500 dark:group-hover:text-slate-400'}`}>
             {preview ? `"${preview}"` : contact.role}
           </p>
         </div>
@@ -337,13 +337,13 @@ export const PrivateChat = () => {
   };
 
   return (
-    <section className="h-[calc(100vh-4rem)] bg-slate-950 p-3 text-slate-100 sm:p-5">
-      <div className="mx-auto flex h-full max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-slate-900/90 shadow-[0_24px_80px_rgba(2,6,23,0.45)] backdrop-blur-xl ring-1 ring-blue-400/10">
-        <aside className={`${selectedContactId ? 'hidden md:flex' : 'flex'} w-full flex-col border-r border-white/10 bg-slate-950/70 md:w-80`}>
-          <div className="border-b border-white/10 bg-white/[0.03] p-5">
+    <section className="h-[calc(100vh-4rem)] bg-slate-100 p-3 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:p-5">
+      <div className="mx-auto flex h-full max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur-xl ring-1 ring-slate-900/5 dark:border-white/10 dark:bg-slate-900/90 dark:shadow-[0_24px_80px_rgba(2,6,23,0.45)] dark:ring-blue-400/10">
+        <aside className={`${selectedContactId ? 'hidden md:flex' : 'flex'} w-full flex-col border-r border-slate-200 bg-white/70 dark:border-white/10 dark:bg-slate-950/70 md:w-80`}>
+          <div className="border-b border-slate-200 bg-slate-50/80 p-5 dark:border-white/10 dark:bg-white/[0.03]">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Módulo 4</p>
-            <h1 className="mt-1 text-2xl font-black text-white">Mensajes</h1>
-            <p className="mt-1 text-sm text-slate-400">Conversaciones privadas de la comunidad.</p>
+            <h1 className="mt-1 text-2xl font-black text-slate-950 dark:text-white">Mensajes</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Conversaciones privadas de la comunidad.</p>
             
             <div className="mt-4 relative">
               <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
@@ -352,7 +352,7 @@ export const PrivateChat = () => {
                 placeholder="Buscar usuarios o mensajes..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-slate-900/80 py-2 pl-10 pr-4 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-blue-300/30 focus:bg-slate-900 focus:ring-2 focus:ring-blue-500/15"
+                className="w-full rounded-2xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-300/30 dark:focus:bg-slate-900 dark:focus:ring-blue-500/15"
               />
             </div>
           </div>
@@ -423,36 +423,36 @@ export const PrivateChat = () => {
           </div>
         </aside>
 
-        <div className={`${selectedContactId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col bg-slate-900/50`}>
+        <div className={`${selectedContactId ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col bg-slate-50/70 dark:bg-slate-900/50`}>
           {!selectedContact ? (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-500/10 text-2xl text-blue-200 shadow-[0_16px_40px_rgba(37,99,235,0.16)]">
                 <i className="fa-regular fa-comment-dots" />
               </div>
-              <h2 className="mt-4 text-xl font-bold text-slate-900">Elegí una conversación</h2>
+              <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">Elegí una conversación</h2>
               <p className="mt-2 max-w-sm text-sm text-slate-400">
                 Seleccioná un usuario para consultar el historial y enviar mensajes privados.
               </p>
             </div>
           ) : (
             <>
-              <header className="flex items-center gap-3 border-b border-white/10 bg-white/[0.03] px-4 py-3 sm:px-6">
-                <button type="button" onClick={() => setSelectedContactId(null)} className="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white md:hidden" aria-label="Volver a contactos">
+              <header className="flex items-center gap-3 border-b border-slate-200 bg-white/80 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03] sm:px-6">
+                <button type="button" onClick={() => setSelectedContactId(null)} className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white md:hidden" aria-label="Volver a contactos">
                   <i className="fa-solid fa-arrow-left" />
                 </button>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/15 font-bold text-blue-100 ring-1 ring-blue-300/20">
                   {selectedContact.firstName?.[0]}{selectedContact.lastName?.[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate font-bold text-white">{selectedContact.firstName} {selectedContact.lastName}</h2>
-                  <p className="text-xs text-slate-400">{selectedContact.role}</p>
+                  <h2 className="truncate font-bold text-slate-950 dark:text-white">{selectedContact.firstName} {selectedContact.lastName}</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{selectedContact.role}</p>
                 </div>
                 <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${socketStatus === 'connected' ? 'border-emerald-300/20 bg-emerald-500/10 text-emerald-200' : 'border-amber-300/20 bg-amber-500/10 text-amber-200'}`}>
                   {socketStatus === 'connected' ? 'En línea' : 'Reconectando...'}
                 </span>
               </header>
 
-              <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.10),transparent_36%),linear-gradient(180deg,rgba(15,23,42,0.55),rgba(15,23,42,0.92))] px-4 py-5 sm:px-6">
+              <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.08),transparent_34%),linear-gradient(180deg,rgba(248,250,252,0.92),rgba(241,245,249,0.98))] px-4 py-5 dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.10),transparent_36%),linear-gradient(180deg,rgba(15,23,42,0.55),rgba(15,23,42,0.92))] sm:px-6">
                 {conversationData?.conversation?.pageInfo?.hasNextPage && (
                   <div className="mb-4 text-center">
                     <button type="button" onClick={loadOlderMessages} className="rounded-full border border-blue-300/20 bg-blue-500/10 px-3 py-1 text-sm font-semibold text-blue-200 hover:bg-blue-500/15">Cargar mensajes anteriores</button>
@@ -475,7 +475,7 @@ export const PrivateChat = () => {
                     const isOptimistic = message.id.startsWith('optimistic-');
                     return (
                       <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-lg sm:max-w-[70%] ${isOwn ? 'rounded-br-md bg-blue-600 text-white shadow-blue-950/20' : 'rounded-bl-md border border-white/10 bg-white/[0.06] text-slate-100 backdrop-blur'} ${isOptimistic ? 'opacity-70' : ''}`}>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-lg sm:max-w-[70%] ${isOwn ? 'rounded-br-md bg-blue-600 text-white shadow-blue-950/20' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100'} ${isOptimistic ? 'opacity-70' : ''}`}>
                           <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p>
                           <p className={`mt-1 text-right text-[11px] ${isOwn ? 'text-blue-100' : 'text-slate-500'}`}>
                             {formatTime(message.sentAt)}{isOptimistic ? ' · Enviando' : ''}
@@ -494,7 +494,7 @@ export const PrivateChat = () => {
                 </p>
               )}
 
-              <form onSubmit={handleSubmit} className="flex items-end gap-3 border-t border-white/10 bg-slate-950/80 p-3 sm:p-4">
+              <form onSubmit={handleSubmit} className="flex items-end gap-3 border-t border-slate-200 bg-white/90 p-3 dark:border-white/10 dark:bg-slate-950/80 sm:p-4">
                 <textarea
                   name="content"
                   value={form.content}
@@ -508,7 +508,7 @@ export const PrivateChat = () => {
                   maxLength={2000}
                   rows={1}
                   placeholder="Escribí un mensaje..."
-                  className="min-h-11 flex-1 resize-none rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-blue-300/30 focus:ring-2 focus:ring-blue-500/15"
+                  className="min-h-11 flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-300/30 dark:focus:ring-blue-500/15"
                 />
                 <button
                   type="submit"

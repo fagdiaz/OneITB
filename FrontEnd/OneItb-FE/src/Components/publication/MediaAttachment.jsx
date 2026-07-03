@@ -52,7 +52,7 @@ export const YouTubeEmbed = ({ videoId, compact = false }) => {
         <button
           type="button"
           onClick={() => setIsPlaying(true)}
-          className="mt-4 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-950"
+          className="mt-4 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-950 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
         >
           Reproducir video
         </button>
@@ -107,7 +107,7 @@ export const MediaAttachment = ({ fileUrl, compact = false }) => {
         href={absoluteUrl}
         target="_blank"
         rel="noreferrer"
-        className={`flex items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 ${compact ? 'p-2' : 'p-3'} hover:border-blue-300 hover:bg-blue-50 transition`}
+        className={`flex items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 ${compact ? 'p-2' : 'p-3'} transition hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-slate-900/60 dark:hover:border-blue-300/20 dark:hover:bg-blue-500/10`}
         title="Abrir imagen en nueva pestaña"
       >
         <span className={`flex shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 ${compact ? 'h-9 w-9' : 'h-11 w-11'}`}>
@@ -124,7 +124,7 @@ export const MediaAttachment = ({ fileUrl, compact = false }) => {
 
   const style = fileStyles[type];
   return (
-    <div className={`flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 ${compact ? 'p-2' : 'p-3'}`}>
+    <div className={`flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 ${compact ? 'p-2' : 'p-3'} dark:border-white/10 dark:bg-slate-900/60`}>
       <span className={`flex shrink-0 items-center justify-center rounded-lg ${style.iconClass} ${compact ? 'h-9 w-9' : 'h-11 w-11'}`}>
         <i className={`fa-solid ${style.icon} ${compact ? 'text-base' : 'text-xl'}`} />
       </span>
@@ -137,7 +137,7 @@ export const MediaAttachment = ({ fileUrl, compact = false }) => {
         target="_blank"
         rel="noreferrer"
         download
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 py-2 text-xs font-semibold text-blue-600 shadow-sm ring-1 ring-slate-200 hover:bg-blue-50"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 py-2 text-xs font-semibold text-blue-600 shadow-sm ring-1 ring-slate-200 hover:bg-blue-50 dark:bg-slate-950 dark:text-blue-300 dark:ring-white/10 dark:hover:bg-blue-500/10"
       >
         <i className="fa-solid fa-download" />
         {!compact && 'Descargar'}

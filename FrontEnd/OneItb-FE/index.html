@@ -12,6 +12,21 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (() => {
+        try {
+          const hasSession = Boolean(localStorage.getItem('token') && localStorage.getItem('user'));
+          const storedTheme = localStorage.getItem('oneitb-theme');
+          const theme = hasSession && (storedTheme === 'dark' || storedTheme === 'light')
+            ? storedTheme
+            : 'light';
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          document.documentElement.style.colorScheme = theme;
+        } catch {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

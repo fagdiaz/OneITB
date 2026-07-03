@@ -5,6 +5,185 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-02] - Spec 158: Masterization Navigation, Search, CV and Avatar
+
+* **Objetivo**: cerrar la masterizacion UX del Header, omni-search, resultados del feed, layout de contacto del CV y edicion avanzada de avatar, extendiendo la busqueda GraphQL de publicaciones de forma compatible.
+* **Resultado**:
+  - `Header.jsx`, `Nav.jsx`, `GlobalSearch.jsx` y `NotificationBell.jsx` eliminan estados visuales basados en `focus` para los controles principales; el glow persistente queda gobernado por `useLocation().pathname` y estado real de popover.
+  - `NotificationBell.jsx` aplica el mismo estado iluminado que el buscador mientras el panel de notificaciones esta abierto.
+  - `GlobalSearch.jsx` convierte filtros academicos en desplegables multi-seleccion, agrega busqueda de materias por codigo/nombre y deja el boton final como `Realizar busqueda`.
+  - `Query.cs`, `ISocialService.cs` y `SocialService.cs` agregan `careerIds` opcional y amplian `searchTerm` a titulo, contenido, materia, carrera, autor, email, comentarios y autor de comentarios.
+  - `Feed.jsx` particiona `/feed?q=...` en `Resultados de Perfiles` y `Resultados de Publicaciones`, usa 15 resultados por pagina, `Buscar mas` incremental y estado final `No hay mas resultados`.
+  - `CVPrintTemplate.tsx` ordena contactos/redes con criterio: primera fila celular/email y segunda fila redes, con fallback balanceado si falta una categoria.
+  - `AvatarEditorModal.jsx` agrega editor nativo compacto con canvas para zoom, rotacion, espejado, filtros, brillo, contraste, saturacion y vineta antes de subir el avatar.
+  - `CvEditorProfile.tsx` intercepta el archivo local con `FileReader` y solo sube el JPEG editado mediante el flujo autenticado `POST /api/upload`.
+  - `vite.config.js` evita cargar el plugin React Babel legacy durante `vite build`, removiendo el warning de `esbuild` deprecado sin silenciar logs.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, 0 errores y 0 warnings en la corrida final.
+* **Estado**:
+  - Implementado y verificado por builds backend/frontend. Queda recomendada validacion manual en navegador del editor de avatar y busqueda contra backend autenticado.
+* **Archivos principales**:
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/Services/Social/ISocialService.cs`
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `FrontEnd/OneItb-FE/vite.config.js`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/GlobalSearch.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/NotificationBell.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/AvatarEditorModal.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/resume/CVPrintTemplate.tsx`
+  - `specs/158-masterization-navigation-search-cv-avatar/evidence.md`
+
+## [2026-07-02] - Spec 157: Core UX, Session & Header Constraints
+
+* **Objetivo**: corregir restricciones finas de Header, buscador, tema por defecto, visibilidad de password y expiracion de sesion sin romper el grid de perfil ni los filtros automatizados ya estabilizados.
+* **Resultado**:
+  - `Header.jsx` deja `ONEITB` como enlace corporativo estatico a `/`, sin glow, ring ni elevacion.
+  - `Nav.jsx` aplica el glow activo desde `useLocation().pathname`, separando estado de ruta de `:focus`.
+  - `GlobalSearch.jsx` queda como popover anclado debajo del boton (`top-full mt-2`), sin tapar el Header ni empujar navegacion.
+  - `ThemeContext.jsx` e `index.html` fuerzan Light Mode cuando no hay sesion o no existe preferencia guardada, manteniendo persistencia en `localStorage` para usuarios autenticados.
+  - `Login.jsx` y `Register.jsx` agregan toggles de visibilidad de contraseña con iconos `fa-eye` / `fa-eye-slash`.
+  - `GraphqlProvider.js` intercepta errores 401/403 y codigos HotChocolate de autorizacion, limpia `token`/`user`, muestra "Tu sesión ha expirado" y redirige a `/login`.
+* **Validaciones ejecutadas**:
+  - `npm.cmd run build`: PASS, 341 modulos transformados, 0 errores de compilacion. Persisten warnings conocidos de tooling (`vite:react-babel` con `esbuild` deprecado y reporte de plugin timings).
+* **Estado**:
+  - Implementado y verificado por build frontend. Queda recomendada validacion manual en navegador de click-through del Header, expiracion de sesion y toggles de password.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/index.html`
+  - `FrontEnd/OneItb-FE/src/context/ThemeContext.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/GlobalSearch.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Login.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Register.jsx`
+  - `specs/157-core-ux-session-header-constraints/evidence.md`
+
+## [2026-06-30] - Spec 156: Header Omni-Search & CV Print Stabilization
+
+* **Objetivo**: estabilizar la jerarquia del Header, corregir la intercepcion de navegacion con el buscador abierto, consolidar el omni-search, hidratar el avatar real del usuario y centralizar la previsualizacion/impresion del CV desde `/profile`.
+* **Resultado**:
+  - `Header.jsx` deja el logo `ONEITB` como enlace de marca estatico, sin glow, ring ni elevacion de boton utilitario.
+  - `GlobalSearch.jsx` fue reescrito como overlay absoluto de un solo input, sin empujar la navegacion y sin duplicar campos de busqueda.
+  - El omni-search navega a publicaciones con filtros de feed y muestra resultados de perfiles publicos mediante un nuevo contrato GraphQL seguro.
+  - Los filtros academicos del buscador se derivan de `me.userCareers`; las materias mostradas corresponden a la carrera base del usuario o a la carrera seleccionada.
+  - `Nav.jsx` hidrata el avatar desde `me.avatarUrl`, resolviendo rutas `/uploads` contra el backend y conservando fallback por iniciales si la imagen falla.
+  - `UserProfile.tsx` reemplaza el print directo por un modal de previsualizacion que imprime exclusivamente `CVPrintTemplate` con paleta `graphite`, evitando tonos violetas residuales.
+  - `Query.cs` agrega `searchPublicProfiles(searchTerm, first)` y `DTOs.cs` agrega `PublicProfileSearchResult`, exponiendo solo datos publicos minimos.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, build caliente en 862ms, 0 errores; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+* **Estado**:
+  - Implementado y verificado por builds backend/frontend. Queda recomendada validacion manual en navegador de click-through del Header, busqueda de perfiles/publicaciones y preview de impresion antes de demo.
+* **Archivos principales**:
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/Services/DTOs.cs`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/searchPublicProfiles.js`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/GlobalSearch.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `specs/156-header-omni-search-print-stabilization/evidence.md`
+
+## [2026-06-30] - Spec 155: UX Master Polish & Grid Layout
+
+* **Objetivo**: pulir la experiencia visual final de Header, perfil, edicion de CV y flujo de impresion bajo el sistema Clean Tech / Tech Noir.
+* **Resultado**:
+  - `Header.jsx` reordena la barra como Logo -> Buscador -> espacio flexible -> navegacion/perfil, manteniendo el fondo brand oscuro.
+  - `GlobalSearch.jsx` pasa a ser un buscador expansible integrado al Header, con glow persistente cuando esta abierto o cuando `/feed` tiene parametros activos.
+  - `Nav.jsx` refuerza el estado activo por ruta con borde/ring/sombra azul persistente, sin depender solo de `:focus`.
+  - `UserProfile.tsx` optimiza el layout de tarjetas hacia dos columnas responsivas, separa los datos de contacto por fila y convierte el telefono en enlace de WhatsApp.
+  - `CvEditorProfile.tsx` recibe cobertura Tech Noir en pagina, paneles, campos y rail de previsualizacion, y deja de enviar el rol tecnico `user` al CV impreso.
+  - `CVPrintTemplate.tsx` imprime carreras como etiquetas institucionales y evita duplicarlas en la linea de contacto.
+* **Validaciones ejecutadas**:
+  - `npm.cmd run build`: PASS, 340 modulos transformados, build en 834ms; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+* **Estado**:
+  - Implementado y verificado por build frontend. Queda recomendada validacion visual manual de Header, dark mode en `/profile/edit` y preview de impresion antes de demo.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/GlobalSearch.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/resume/CVPrintTemplate.tsx`
+  - `specs/155-ux-master-polish-grid-layout/evidence.md`
+
+## [2026-06-30] - Spec 154: UI Consistency & Theme Polish
+
+* **Objetivo**: corregir inconsistencias detectadas tras Tech Noir: Header demasiado claro, glow desigual, widget de chat sobredimensionado, superficies claras residuales en modo oscuro y marcas institucionales en la impresion del CV.
+* **Resultado**:
+  - `Header.jsx` recupera fondo brand oscuro tambien en Clean Tech y mantiene `dark:bg-slate-950` para Tech Noir.
+  - `Nav.jsx`, `NotificationBell.jsx` y `GlobalSearch.jsx` comparten el mismo patron de hover/focus glow con borde translucido, ring azul y sombra azul sutil.
+  - `MiniChatWidget.jsx`, `ChatSidebar.jsx` y `ChatWindow.jsx` reducen dimensiones, padding y escala visual para una ventana flotante mas compacta.
+  - `CommentThread.jsx`, `MediaComponent.jsx` y `MediaAttachment.jsx` reducen brillo en comentarios y adjuntos bajo Tech Noir.
+  - `AcademicDashboard.jsx` ahora oscurece header, selectores, tabs, tarjetas de recursos/progreso, formularios y panel SIU.
+  - `AdminDashboard.jsx` y los paneles de usuarios, materias, publicaciones, comentarios, reportes, auditoria y modal de usuario recibieron variantes `dark:` en tablas, modales y tarjetas.
+  - `CVPrintTemplate.tsx` elimina el label "Curriculum institucional" y `UserProfile.tsx` deja de enviar el fallback "Perfil academico" al template impreso.
+* **Validaciones ejecutadas**:
+  - `npm.cmd run build`: PASS, 340 modulos transformados, build en 1.93s; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+* **Estado**:
+  - Implementado y verificado por build frontend. Queda recomendada validacion visual manual en navegador y preview de impresion antes de demo.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/GlobalSearch.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/NotificationBell.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/MiniChatWidget.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/ChatSidebar.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/ChatWindow.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/CommentThread.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaAttachment.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/AdminDashboard.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/UserManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/SubjectManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/PublicationManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/CommentManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/ModerationManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/ModerationAuditManagement.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/admin/EditUserModal.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/resume/CVPrintTemplate.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `specs/154-ui-consistency-theme-polish/evidence.md`
+
+## [2026-06-30] - Spec 153: Tech Noir & Clean Tech Theming System
+
+* **Objetivo**: formalizar el estilo tecnologico sobrio aprobado en un sistema integral de tema claro/oscuro persistente para la aplicacion web, evitando FOUC y preservando la impresion formal del CV.
+* **Resultado**:
+  - Se agrego `ThemeContext` con `light`/`dark`, persistencia en `localStorage` (`oneitb-theme`), deteccion inicial por `prefers-color-scheme` e inyeccion de la clase `dark` en `<html>`.
+  - `index.html` aplica el tema antes de montar React para evitar flash visual; `index.css` registra la variante class-based `dark` de Tailwind v4 y mantiene `@media print` forzado a blanco/negro.
+  - El menu real del avatar en `Nav.jsx` incorpora un switch Clean Tech / Tech Noir antes de "Salir".
+  - Header, dropdowns, notificaciones, layout privado, feed, perfil, chat completo, widget de chat y modal de reporte recibieron superficies dual-theme con `dark:`.
+  - No se modifico backend, GraphQL ni base de datos.
+* **Validaciones ejecutadas**:
+  - `npm.cmd run build`: PASS, 340 modulos transformados, build en 739ms; persiste solo el warning conocido de `vite:react-babel` sobre opcion `esbuild` deprecada.
+* **Estado**:
+  - Implementado y verificado por build frontend. Queda recomendada validacion visual manual de toggle, refresh y vista de impresion antes de demo.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/index.html`
+  - `FrontEnd/OneItb-FE/src/context/ThemeContext.jsx`
+  - `FrontEnd/OneItb-FE/src/index.css`
+  - `FrontEnd/OneItb-FE/src/main.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/NotificationBell.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/PrivateLayout.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/PrivateChat.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/MiniChatWidget.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/ChatSidebar.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/ChatWindow.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/moderation/ReportModal.jsx`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/audit/DOCUMENTATION_STATUS.md`
+  - `specs/153-tech-noir-clean-tech-theming/evidence.md`
+
 ## [2026-06-30] - Spec 152: Master Quality & Interconnectivity Fixes
 
 * **Objetivo**: consolidar la UX de perfil, feed, header e impresion de CV auditando rutas reales, eliminando archivos fantasma y corrigiendo los desajustes visibles detectados en regresion manual.

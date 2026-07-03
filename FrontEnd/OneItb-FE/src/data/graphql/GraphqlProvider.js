@@ -11,6 +11,7 @@ const wsUri = import.meta.env.VITE_GRAPHQL_WS_URL || httpUri.replace(/^http/, 'w
 
 let socketStatus = 'disconnected';
 const socketListeners = new Set();
+let sessionExpirationHandled = false;
 
 const publishSocketStatus = (status) => {
   socketStatus = status;
@@ -58,6 +59,35 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 const wsLink = new GraphQLWsLink(graphQLWsClient);
+const isAuthorizationFailure = (graphQLErrors, networkError) => {
+  const graphQLAuthFailure = graphQLErrors?.some((error) => {
+    const code = error?.extensions?.code;
+    const message = error?.message || '';
+    return code === 'AUTH_NOT_AUTHORIZED'
+      || code === 'AUTH_NOT_AUTHENTICATED'
+      || code === 'AUTH_NOT_AUTHENTICATED_ERROR'
+      || /not authorized|unauthorized|forbidden|jwt|token/i.test(message);
+  });
+
+  const statusCode = networkError?.statusCode || networkError?.response?.status;
+  return graphQLAuthFailure || statusCode === 401 || statusCode === 403;
+};
+
+const handleSessionExpired = () => {
+  const hadToken = Boolean(localStorage.getItem('token'));
+  if (!hadToken || sessionExpirationHandled) return;
+
+  sessionExpirationHandled = true;
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  sessionStorage.setItem('oneitb-session-expired', '1');
+  alert('Tu sesión ha expirado');
+
+  if (window.location.pathname !== '/login') {
+    window.location.assign('/login');
+  }
+};
+
 const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   if (!graphQLErrors?.length && !networkError) return;
 
@@ -68,6 +98,11 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
     && networkError?.message === 'Socket closed'
     && document.visibilityState === 'hidden';
   if (isExpectedPageShutdown) return;
+
+  if (isAuthorizationFailure(graphQLErrors, networkError)) {
+    handleSessionExpired();
+    return;
+  }
 
   console.error('GraphQL operation failed', JSON.stringify({
     operation: operation.operationName,

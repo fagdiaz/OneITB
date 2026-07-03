@@ -33,13 +33,13 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900 dark:text-slate-100">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Panel de administracion</h1>
-        <p className="mt-1 text-sm text-slate-500">Gestion operativa de la comunidad OneITB23.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Panel de administracion</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Gestion operativa de la comunidad OneITB23.</p>
       </header>
 
-      <nav className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2" aria-label="Secciones administrativas">
+      <nav className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-white/10 dark:bg-slate-900/70" aria-label="Secciones administrativas">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -48,7 +48,7 @@ export const AdminDashboard = () => {
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
               activeTab === tab.id
                 ? 'bg-slate-900 text-white'
-                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100'
             }`}
           >
             <i className={`fa-solid ${tab.icon}`} />

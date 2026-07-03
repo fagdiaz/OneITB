@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_INQUIRIES = gql`
-  query GetInquiries($searchTerm: String, $careerId: Int, $subjectIds: [Int!]) {
-    inquiries(searchTerm: $searchTerm, careerId: $careerId, subjectIds: $subjectIds) {
+  query GetInquiries($searchTerm: String, $careerId: Int, $careerIds: [Int!], $subjectIds: [Int!]) {
+    inquiries(searchTerm: $searchTerm, careerId: $careerId, careerIds: $careerIds, subjectIds: $subjectIds) {
       id
       title
       content
@@ -57,8 +57,8 @@ export const GET_INQUIRIES = gql`
 `;
 
 export const GET_INQUIRIES_PAGE = gql`
-  query GetInquiriesPage($searchTerm: String, $careerId: Int, $subjectIds: [Int!], $first: Int!, $after: String) {
-    inquiriesPage(searchTerm: $searchTerm, careerId: $careerId, subjectIds: $subjectIds, first: $first, after: $after) {
+  query GetInquiriesPage($searchTerm: String, $careerId: Int, $careerIds: [Int!], $subjectIds: [Int!], $first: Int!, $after: String) {
+    inquiriesPage(searchTerm: $searchTerm, careerId: $careerId, careerIds: $careerIds, subjectIds: $subjectIds, first: $first, after: $after) {
       hasNextPage
       nextCursor
       totalCount

@@ -111,8 +111,8 @@ export const SubjectManagement = () => {
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">Materias</h2>
-          <p className="text-sm text-slate-500">Catalogo academico, carrera, anio y correlatividades.</p>
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white">Materias</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Catalogo academico, carrera, anio y correlatividades.</p>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={openCreate} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
@@ -139,8 +139,8 @@ export const SubjectManagement = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-bold text-slate-800">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:border dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:[&_input]:border-white/10 dark:[&_input]:bg-slate-950/70 dark:[&_input]:text-slate-100 dark:[&_select]:border-white/10 dark:[&_select]:bg-slate-950/70 dark:[&_select]:text-slate-100 dark:[&_label]:text-slate-300">
+            <h3 className="mb-4 text-lg font-bold text-slate-800 dark:text-white">
               {editingSubject ? 'Editar Materia' : 'Nueva Materia'}
             </h3>
             <form onSubmit={submitSubject} className="space-y-4">
@@ -208,13 +208,13 @@ export const SubjectManagement = () => {
               <div>
                 <p className="mb-2 text-xs font-semibold text-slate-600">Correlatividades</p>
                 {!selectedCareerId ? (
-                  <p className="rounded-lg bg-slate-50 px-3 py-4 text-sm text-slate-400">Selecciona una carrera para listar materias disponibles.</p>
+                  <p className="rounded-lg bg-slate-50 px-3 py-4 text-sm text-slate-400 dark:bg-slate-950/50">Selecciona una carrera para listar materias disponibles.</p>
                 ) : prerequisiteOptions.length === 0 ? (
-                  <p className="rounded-lg bg-slate-50 px-3 py-4 text-sm text-slate-400">No hay otras materias activas en esta carrera.</p>
+                  <p className="rounded-lg bg-slate-50 px-3 py-4 text-sm text-slate-400 dark:bg-slate-950/50">No hay otras materias activas en esta carrera.</p>
                 ) : (
-                  <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-slate-200 p-2">
+                  <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-slate-200 p-2 dark:border-white/10 dark:bg-slate-950/40">
                     {prerequisiteOptions.map((subject) => (
-                      <label key={subject.id} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                      <label key={subject.id} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/10">
                         <input
                           type="checkbox"
                           checked={formData.prerequisiteIds.includes(Number(subject.id))}
@@ -230,7 +230,7 @@ export const SubjectManagement = () => {
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={closeForm} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                <button type="button" onClick={closeForm} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-white/10">
                   Cancelar
                 </button>
                 <button
@@ -246,10 +246,10 @@ export const SubjectManagement = () => {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/70">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-400">
               <tr>
                 <th className="px-5 py-3">Codigo</th>
                 <th className="px-5 py-3">Nombre</th>
@@ -259,18 +259,18 @@ export const SubjectManagement = () => {
                 <th className="px-5 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/10">
               {subjects.map((subject) => (
                 <tr key={subject.id}>
                   <td className="px-5 py-4">
                     <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-bold text-blue-600">{subject.code}</span>
                   </td>
                   <td className="px-5 py-4">
-                    <p className={'font-semibold ' + (subject.isActive ? 'text-slate-800' : 'text-slate-400 line-through')}>{subject.name}</p>
+                    <p className={'font-semibold ' + (subject.isActive ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 line-through')}>{subject.name}</p>
                   </td>
-                  <td className="px-5 py-4 text-slate-600">{subject.career?.name ?? '-'}</td>
-                  <td className="px-5 py-4 text-slate-600">{subject.year ?? '-'}</td>
-                  <td className="max-w-xs px-5 py-4 text-slate-600">
+                  <td className="px-5 py-4 text-slate-600 dark:text-slate-300">{subject.career?.name ?? '-'}</td>
+                  <td className="px-5 py-4 text-slate-600 dark:text-slate-300">{subject.year ?? '-'}</td>
+                  <td className="max-w-xs px-5 py-4 text-slate-600 dark:text-slate-300">
                     {(subject.prerequisites ?? []).length > 0
                       ? subject.prerequisites.map((item) => item.name).join(', ')
                       : 'Sin correlativas'}

@@ -14,6 +14,7 @@ import { ProjectsForm } from '../editor/ProjectsForm';
 import { SkillsLanguagesForm } from '../editor/SkillsLanguagesForm';
 import { ResumePreview } from '../resume/ResumePreview';
 import { CVPrintTemplate } from '../resume/CVPrintTemplate';
+import { AvatarEditorModal } from './AvatarEditorModal';
 
 type AccentTheme = 'graphite' | 'deepTeal' | 'navyInk' | 'mutedOlive';
 
@@ -165,6 +166,9 @@ export const CvEditorProfile = () => {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'error'>('idle');
   const [selectedCareerIds, setSelectedCareerIds] = useState<number[]>([]);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarEditorSource, setAvatarEditorSource] = useState<string | null>(null);
+  const [avatarEditorFileName, setAvatarEditorFileName] = useState('');
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
   const resumeRef = useRef<HTMLDivElement>(null);
 
   const { data: gqlData, loading: profileLoading } = useQuery(GET_USER_PROFILE, {
@@ -211,25 +215,52 @@ export const CvEditorProfile = () => {
     setProfileForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setUploadStatus('error');
+      setSaveStatus('error');
+      event.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        setAvatarPreview(reader.result);
+        setAvatarEditorSource(reader.result);
+        setAvatarEditorFileName(file.name);
+        setAvatarEditorOpen(true);
+        setUploadStatus('idle');
+        setSaveStatus('idle');
       }
     };
+    reader.onerror = () => {
+      setUploadStatus('error');
+      setSaveStatus('error');
+    };
     reader.readAsDataURL(file);
+    event.target.value = '';
+  };
 
+  const handleAvatarEditorClose = () => {
+    if (uploadStatus === 'uploading') return;
+    setAvatarEditorOpen(false);
+    setAvatarEditorSource(null);
+    setAvatarEditorFileName('');
+  };
+
+  const handleAvatarEditorSave = async (editedFile: File) => {
     try {
       setUploadStatus('uploading');
       setSaveStatus('idle');
-      const fileUrl = await uploadAttachment(file, token);
+      const fileUrl = await uploadAttachment(editedFile, token);
       setProfileForm((current) => ({ ...current, avatarUrl: fileUrl || '' }));
       setAvatarPreview(fileUrl);
       setUploadStatus('idle');
+      setAvatarEditorOpen(false);
+      setAvatarEditorSource(null);
+      setAvatarEditorFileName('');
     } catch {
       setUploadStatus('error');
       setSaveStatus('error');
@@ -281,8 +312,13 @@ export const CvEditorProfile = () => {
   };
 
   const displayName = gqlData?.me?.fullName || auth?.fullName || auth?.username || 'Usuario OneITB';
-  const displayRole = gqlData?.me?.role || auth?.role || 'Perfil academico';
+  const rawDisplayRole = gqlData?.me?.role || auth?.role || '';
+  const displayRole = rawDisplayRole.toLowerCase() === 'user' ? '' : rawDisplayRole;
   const displayEmail = gqlData?.me?.email || auth?.email || 'usuario@itbeltran.com.ar';
+  const selectedCareerNames = (careersData?.careers ?? [])
+    .filter((career: any) => selectedCareerIds.includes(career.id))
+    .map((career: any) => career.name)
+    .filter(Boolean);
 
   const previewData: CVData = {
     personalInfo: {
@@ -290,7 +326,7 @@ export const CvEditorProfile = () => {
       title: displayRole,
       email: displayEmail,
       phone: profileForm.phone,
-      location: 'Buenos Aires, Argentina',
+      location: selectedCareerNames.join(' / '),
       linkedin: profileForm.linkedIn,
       github: '',
       website: '',
@@ -301,20 +337,20 @@ export const CvEditorProfile = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 font-sans print:block print:min-h-0 print:bg-white">
+    <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100 dark:[&_input]:border-white/10 dark:[&_input]:bg-slate-950/80 dark:[&_input]:text-slate-100 dark:[&_input]:placeholder:text-slate-500 dark:[&_textarea]:border-white/10 dark:[&_textarea]:bg-slate-950/80 dark:[&_textarea]:text-slate-100 dark:[&_textarea]:placeholder:text-slate-500 dark:[&_select]:border-white/10 dark:[&_select]:bg-slate-950/80 dark:[&_select]:text-slate-100 dark:[&_label]:text-slate-200 print:block print:min-h-0 print:bg-white print:text-black">
       <main className="grid h-[calc(100vh-56px)] flex-1 grid-cols-1 overflow-hidden lg:grid-cols-2 print:block print:h-auto print:overflow-visible">
-        <section className="no-print space-y-6 overflow-y-auto p-4 md:p-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <section className="no-print space-y-6 overflow-y-auto p-4 md:p-6 dark:bg-slate-950">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-white/10">
             <div>
-              <h1 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <h1 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-blue-200">
                 Edicion del Curriculum
               </h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Perfil y CV extendido guardados como una unica estructura institucional.
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 rounded border border-slate-200/80 bg-white px-1.5 py-0.5 shadow-sm">
+              <div className="flex items-center gap-1.5 rounded border border-slate-200/80 bg-white px-1.5 py-0.5 shadow-sm dark:border-white/10 dark:bg-slate-900">
                 {[
                   ['graphite', 'bg-slate-500'],
                   ['deepTeal', 'bg-teal-800'],
@@ -344,10 +380,10 @@ export const CvEditorProfile = () => {
             </div>
           </div>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_45px_rgba(2,6,23,0.35)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
-                <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-900 text-white shadow-sm">
+                <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-900 text-white shadow-sm dark:ring-1 dark:ring-white/10">
                   {avatarPreview ? (
                     <img src={resolveAssetUrl(avatarPreview)} alt="Vista previa del avatar" className="h-full w-full object-cover" />
                   ) : (
@@ -357,9 +393,9 @@ export const CvEditorProfile = () => {
                   )}
                 </div>
                 <div>
-                  <p className="text-base font-semibold text-slate-900">{displayName}</p>
-                  <p className="text-sm text-slate-500">{displayRole}</p>
-                  <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700">
+                  <p className="text-base font-semibold text-slate-900 dark:text-white">{displayName}</p>
+                  {displayRole && <p className="text-sm text-slate-500 dark:text-slate-400">{displayRole}</p>}
+                  <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:text-slate-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-500/10 dark:hover:text-blue-200">
                     <i className="fa-solid fa-camera" />
                     {uploadStatus === 'uploading' ? 'Subiendo avatar...' : 'Subir avatar'}
                     <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
@@ -369,7 +405,7 @@ export const CvEditorProfile = () => {
                       No se pudo subir la imagen. Verifica sesion, formato y tamano.
                     </p>
                   ) : (
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
                       La imagen se guarda en el backend y queda asociada al perfil.
                     </p>
                   )}
@@ -382,7 +418,7 @@ export const CvEditorProfile = () => {
                   size="sm"
                   onClick={handleCancel}
                   disabled={savingProfile}
-                  className="!border-slate-200 !bg-white !text-slate-700 hover:!bg-slate-50 disabled:!cursor-not-allowed disabled:!opacity-60"
+                  className="!border-slate-200 !bg-white !text-slate-700 hover:!bg-slate-50 disabled:!cursor-not-allowed disabled:!opacity-60 dark:!border-white/10 dark:!bg-slate-900 dark:!text-slate-200 dark:hover:!bg-slate-800"
                 >
                   Cancelar
                 </Button>
@@ -399,36 +435,36 @@ export const CvEditorProfile = () => {
             </div>
 
             {saveStatus === 'saved' && (
-              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">
                 Perfil y CV actualizados correctamente.
               </div>
             )}
             {saveStatus === 'error' && (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-400/20 dark:bg-red-500/10 dark:text-red-200">
                 No se pudo guardar el perfil. Revisa tu sesion e intentalo nuevamente.
               </div>
             )}
 
             <div className="mt-5 grid gap-4">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950/60">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       Identidad academica
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                       Selecciona las carreras que deben verse en tu perfil institucional.
                     </p>
                   </div>
                   {careersLoading && (
-                    <span className="text-xs font-semibold text-slate-400">Cargando...</span>
+                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Cargando...</span>
                   )}
                 </div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   {(careersData?.careers ?? []).map((career: any) => (
                     <label
                       key={career.id}
-                      className="flex cursor-pointer items-start gap-3 rounded-xl border border-white bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50"
+                      className="flex cursor-pointer items-start gap-3 rounded-xl border border-white bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-blue-300/30 dark:hover:bg-blue-500/10"
                     >
                       <input
                         type="checkbox"
@@ -437,19 +473,19 @@ export const CvEditorProfile = () => {
                         className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-500"
                       />
                       <span>
-                        <span className="font-semibold text-slate-800">{career.name}</span>
-                        {career.code && <span className="ml-1 text-xs text-slate-400">({career.code})</span>}
+                        <span className="font-semibold text-slate-800 dark:text-slate-100">{career.name}</span>
+                        {career.code && <span className="ml-1 text-xs text-slate-400 dark:text-slate-500">({career.code})</span>}
                       </span>
                     </label>
                   ))}
                 </div>
                 {!careersLoading && (careersData?.careers ?? []).length === 0 && (
-                  <p className="mt-3 text-sm text-slate-500">No hay carreras activas disponibles.</p>
+                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No hay carreras activas disponibles.</p>
                 )}
               </div>
 
               <label className="grid gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Biografia profesional
                 </span>
                 <textarea
@@ -463,7 +499,7 @@ export const CvEditorProfile = () => {
               </label>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Telefono</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Telefono</span>
                   <input
                     name="phone"
                     value={profileForm.phone}
@@ -473,7 +509,7 @@ export const CvEditorProfile = () => {
                   />
                 </label>
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">LinkedIn</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">LinkedIn</span>
                   <input
                     name="linkedIn"
                     value={profileForm.linkedIn}
@@ -483,7 +519,7 @@ export const CvEditorProfile = () => {
                   />
                 </label>
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Instagram</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Instagram</span>
                   <input
                     name="instagram"
                     value={profileForm.instagram}
@@ -493,7 +529,7 @@ export const CvEditorProfile = () => {
                   />
                 </label>
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Facebook</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Facebook</span>
                   <input
                     name="facebook"
                     value={profileForm.facebook}
@@ -526,7 +562,7 @@ export const CvEditorProfile = () => {
           />
         </section>
 
-        <section className="no-print overflow-y-auto border-t border-slate-200 bg-slate-200/50 lg:border-l lg:border-t-0">
+        <section className="no-print overflow-y-auto border-t border-slate-200 bg-slate-200/50 dark:border-white/10 dark:bg-slate-900/60 lg:border-l lg:border-t-0">
           <ResumePreview ref={resumeRef} data={previewData} activeTheme={activeTheme} />
         </section>
 
@@ -534,6 +570,15 @@ export const CvEditorProfile = () => {
           <CVPrintTemplate data={previewData} activeTheme={activeTheme} />
         </section>
       </main>
+
+      <AvatarEditorModal
+        isOpen={avatarEditorOpen}
+        imageSrc={avatarEditorSource}
+        originalFileName={avatarEditorFileName}
+        onClose={handleAvatarEditorClose}
+        onSave={handleAvatarEditorSave}
+        saving={uploadStatus === 'uploading'}
+      />
     </div>
   );
 };

@@ -1,29 +1,106 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@apollo/client';
-import { useNavigate } from 'react-router-dom';
-import { GET_CAREERS } from '../../../data/graphql/queries/careers';
+import { useLocation, useNavigate } from 'react-router-dom';
+import useAuth from '../../../hooks/useAuth';
 import { GET_SUBJECTS } from '../../../data/graphql/queries/subjects';
+import { GET_USER_PROFILE } from '../../../data/graphql/queries/getUserProfile';
+import { GET_CAREERS } from '../../../data/graphql/queries/careers';
+import { SEARCH_PUBLIC_PROFILES } from '../../../data/graphql/queries/searchPublicProfiles';
+import { apiBaseUrl } from '../../../utils/uploadFile';
+
+const resolveAssetUrl = (value) => {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value;
+  if (value.startsWith('/')) return `${apiBaseUrl}${value}`;
+  return value;
+};
+
+const getInitials = (name = 'U') =>
+  name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'U';
+
+const toggleNumber = (items, id) =>
+  items.includes(id) ? items.filter((item) => item !== id) : [...items, id];
 
 export const GlobalSearch = () => {
+  const { auth } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCareerId, setSelectedCareerId] = useState(null);
-  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
+  const [selectedCareerIds, setSelectedCareerIds] = useState([]);
+  const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
   const searchRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const canSearchGlobally = auth?.role === 'Administrador' || auth?.role === 'Moderador';
 
-  const { data: careersData } = useQuery(GET_CAREERS);
-  const { data: subjectsData } = useQuery(GET_SUBJECTS, {
-    variables: { careerId: selectedCareerId },
-    skip: !selectedCareerId,
+  const { data: meData } = useQuery(GET_USER_PROFILE, {
+    skip: !auth?.id,
+    fetchPolicy: 'cache-first',
+  });
+  const { data: careersData } = useQuery(GET_CAREERS, {
+    skip: !auth?.id,
+    fetchPolicy: 'cache-first',
   });
 
-  const careers = careersData?.careers || [];
-  const subjects = subjectsData?.subjects || [];
+  const myCareers = useMemo(
+    () =>
+      (meData?.me?.userCareers ?? [])
+        .map((link) => link?.career)
+        .filter((career) => career?.id && career?.isActive !== false),
+    [meData],
+  );
+
+  const careerOptions = canSearchGlobally ? careersData?.careers ?? [] : myCareers;
+  const effectiveCareerIds = useMemo(
+    () =>
+      selectedCareerIds.length > 0
+        ? selectedCareerIds
+        : canSearchGlobally
+          ? []
+          : myCareers.map((career) => career.id),
+    [canSearchGlobally, myCareers, selectedCareerIds],
+  );
+  const subjectQueryCareerId = effectiveCareerIds.length === 1 ? effectiveCareerIds[0] : null;
+
+  const { data: subjectsData } = useQuery(GET_SUBJECTS, {
+    variables: { careerId: subjectQueryCareerId },
+    skip: !auth?.id,
+    fetchPolicy: 'cache-first',
+  });
+
+  const trimmedTerm = searchTerm.trim();
+  const { data: profilesData } = useQuery(SEARCH_PUBLIC_PROFILES, {
+    variables: { searchTerm: trimmedTerm, first: 5 },
+    skip: trimmedTerm.length < 2,
+    fetchPolicy: 'cache-and-network',
+  });
+
+  const subjects = useMemo(() => {
+    const allSubjects = subjectsData?.subjects || [];
+    if (effectiveCareerIds.length === 0) return allSubjects;
+    return allSubjects.filter((subject) => effectiveCareerIds.includes(subject.career?.id));
+  }, [effectiveCareerIds, subjectsData]);
+  const profileResults = profilesData?.searchPublicProfiles || [];
+  const matchingSubjects = useMemo(() => {
+    if (trimmedTerm.length < 2) return [];
+    const normalizedTerm = trimmedTerm.toLowerCase();
+    return subjects
+      .filter((subject) =>
+        [subject.code, subject.name]
+          .filter(Boolean)
+          .some((value) => value.toLowerCase().includes(normalizedTerm)),
+      )
+      .slice(0, 6);
+  }, [subjects, trimmedTerm]);
+  const activeSearch = isOpen || (location.pathname.startsWith('/feed') && Boolean(location.search));
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
@@ -31,123 +108,255 @@ export const GlobalSearch = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const params = new URLSearchParams();
-    if (searchTerm.trim()) params.append('q', searchTerm.trim());
-    if (selectedCareerId) params.append('career', selectedCareerId);
-    if (selectedSubjectId) params.append('subject', selectedSubjectId);
-    
+  useEffect(() => {
     setIsOpen(false);
-    navigate(`/feed?${params.toString()}`);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!careerOptions.length) return;
+    const validCareerIds = new Set(careerOptions.map((career) => career.id));
+    setSelectedCareerIds((current) => {
+      const next = current.filter((id) => validCareerIds.has(id));
+      return next.length === current.length ? current : next;
+    });
+  }, [careerOptions]);
+
+  useEffect(() => {
+    if (!subjects.length) {
+      setSelectedSubjectIds((current) => (current.length === 0 ? current : []));
+      return;
+    }
+    const validSubjectIds = new Set(subjects.map((subject) => subject.id));
+    setSelectedSubjectIds((current) => {
+      const next = current.filter((id) => validSubjectIds.has(id));
+      return next.length === current.length ? current : next;
+    });
+  }, [subjects]);
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (trimmedTerm) params.append('q', trimmedTerm);
+    if (effectiveCareerIds.length > 0) params.append('careers', effectiveCareerIds.join(','));
+    if (selectedSubjectIds.length > 0) params.append('subjects', selectedSubjectIds.join(','));
+
+    setIsOpen(false);
+    navigate(params.toString() ? `/feed?${params.toString()}` : '/feed');
   };
 
-  const handleCareerSelect = (id) => {
-    setSelectedCareerId(prev => prev === id ? null : id);
-    setSelectedSubjectId(null);
+  const handleProfileNavigate = (userId) => {
+    setIsOpen(false);
+    navigate(`/profile/${userId}`);
+  };
+
+  const handleCareerToggle = (careerId) => {
+    const currentEffective = selectedCareerIds.length > 0
+      ? selectedCareerIds
+      : canSearchGlobally
+        ? []
+        : careerOptions.map((career) => career.id);
+    const next = currentEffective.includes(careerId)
+      ? currentEffective.filter((id) => id !== careerId)
+      : [...currentEffective, careerId];
+
+    setSelectedCareerIds(next);
+    setSelectedSubjectIds([]);
   };
 
   const handleClear = () => {
     setSearchTerm('');
-    setSelectedCareerId(null);
-    setSelectedSubjectId(null);
+    setSelectedCareerIds([]);
+    setSelectedSubjectIds([]);
   };
 
   return (
-    <div className="relative" ref={searchRef}>
+    <div className="relative h-9 w-9 shrink-0" ref={searchRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className={[
+          'flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-200 ease-out',
+          'hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/10 hover:text-white',
+          'hover:shadow-[0_4px_14px_rgba(59,130,246,0.35),0_1px_4px_rgba(0,0,0,0.25)]',
+          activeSearch
+            ? 'border-blue-300/30 bg-white/10 text-white ring-1 ring-blue-300/20 shadow-[0_4px_14px_rgba(59,130,246,0.34)]'
+            : 'border-transparent bg-slate-800 text-slate-300',
+        ].join(' ')}
         aria-label="Buscar"
+        aria-expanded={isOpen}
       >
         <i className="fa-solid fa-search text-sm" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-12 w-[350px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 z-50">
-          <form onSubmit={handleSearch} className="flex flex-col gap-4">
-            <div className="relative">
-              <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="absolute left-0 top-full z-[70] mt-2 w-[min(420px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-slate-950/95 p-3 text-slate-100 shadow-[0_24px_70px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+          <form onSubmit={handleSearch} className="space-y-3">
+            <div className="flex h-10 items-center gap-2 rounded-full border border-blue-300/30 bg-white/10 px-3 ring-1 ring-blue-300/20">
+              <i className="fa-solid fa-search text-sm text-blue-200" />
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar publicaciones..."
-                className="w-full rounded-full bg-slate-50 border border-slate-200 py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Buscar publicaciones o perfiles..."
+                className="min-w-0 flex-1 bg-transparent text-sm font-medium text-white placeholder:text-slate-400 outline-none"
                 autoFocus
               />
-            </div>
-
-            <div>
-              <p className="text-xs font-bold uppercase text-slate-400 mb-2">Filtrar por Carrera</p>
-              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto scrollbar-hide">
-                {careers.map(career => (
-                  <button
-                    key={career.id}
-                    type="button"
-                    onClick={() => handleCareerSelect(career.id)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors flex items-center gap-1 ${
-                      selectedCareerId === career.id
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    <span>{career.name}</span>
-                    {career?.code && (
-                      <span className={selectedCareerId === career.id ? 'text-blue-200' : 'text-slate-400'}>({career.code})</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {selectedCareerId && (
-              <div>
-                <p className="text-xs font-bold uppercase text-slate-400 mb-2">Filtrar por Materia</p>
-                {subjects.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto scrollbar-hide">
-                    {subjects.map(subject => (
-                      <button
-                        key={subject.id}
-                        type="button"
-                        onClick={() => setSelectedSubjectId(prev => prev === subject.id ? null : subject.id)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors flex items-center gap-1 ${
-                          selectedSubjectId === subject.id
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                        }`}
-                      >
-                        <span>{subject.name}</span>
-                        {subject?.code && (
-                          <span className={selectedSubjectId === subject.id ? 'text-indigo-200' : 'text-indigo-400/70'}>({subject.code})</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 italic">No hay materias para esta carrera.</p>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2 mt-2">
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
-              >
-                Aplicar Filtros y Buscar
-              </button>
-              
-              {(searchTerm || selectedCareerId || selectedSubjectId) && (
+              {(searchTerm || selectedCareerIds.length > 0 || selectedSubjectIds.length > 0) && (
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="w-full rounded-xl bg-slate-100 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-200 transition-colors"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
+                  aria-label="Limpiar busqueda"
                 >
-                  Limpiar filtros
+                  <i className="fa-solid fa-xmark text-xs" />
                 </button>
               )}
             </div>
+
+            {careerOptions.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                <details>
+                  <summary className="cursor-pointer list-none text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                    Carreras ({effectiveCareerIds.length || (canSearchGlobally ? 'todas' : myCareers.length)})
+                  </summary>
+                  <div className="mt-2 grid max-h-32 gap-1.5 overflow-y-auto pr-1">
+                    {careerOptions.map((career) => (
+                      <label
+                        key={career.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={effectiveCareerIds.includes(career.id)}
+                          onChange={() => handleCareerToggle(career.id)}
+                          className="h-3.5 w-3.5 rounded border-white/20 bg-slate-900 text-blue-500"
+                        />
+                        <span className="min-w-0 truncate">
+                          {career.code ? `${career.code} - ${career.name}` : career.name}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            )}
+
+            {subjects.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                <details>
+                  <summary className="cursor-pointer list-none text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                    Materias ({selectedSubjectIds.length || 'todas'})
+                  </summary>
+                  <div className="mt-2 grid max-h-36 gap-1.5 overflow-y-auto pr-1">
+                    {subjects.map((subject) => (
+                      <label
+                        key={subject.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedSubjectIds.includes(subject.id)}
+                          onChange={() => setSelectedSubjectIds((current) => toggleNumber(current, subject.id))}
+                          className="h-3.5 w-3.5 rounded border-white/20 bg-slate-900 text-indigo-500"
+                        />
+                        <span className="min-w-0 truncate">
+                          {[subject.code, subject.name].filter(Boolean).join(' - ')}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            )}
+
+            {trimmedTerm.length >= 2 && matchingSubjects.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Materias
+                </p>
+                <div className="mt-2 grid gap-1.5">
+                  {matchingSubjects.map((subject) => (
+                    <button
+                      key={subject.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSubjectIds((current) =>
+                          current.includes(subject.id) ? current : [...current, subject.id],
+                        );
+                        if (subject.career?.id) {
+                          setSelectedCareerIds((current) =>
+                            current.includes(subject.career.id) ? current : [...current, subject.career.id],
+                          );
+                        }
+                      }}
+                      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs transition hover:bg-white/10"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-bold text-white">{subject.name}</span>
+                        <span className="block truncate text-slate-400">
+                          {[subject.code, subject.career?.name].filter(Boolean).join(' - ')}
+                        </span>
+                      </span>
+                      <i className="fa-solid fa-filter text-[10px] text-indigo-300" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {trimmedTerm.length >= 2 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Perfiles
+                </p>
+                <div className="mt-2 space-y-1.5">
+                  {profileResults.length === 0 ? (
+                    <p className="rounded-xl bg-white/[0.04] px-3 py-2 text-xs text-slate-500">
+                      Sin perfiles coincidentes.
+                    </p>
+                  ) : (
+                    profileResults.map((profile) => {
+                      const avatarUrl = resolveAssetUrl(profile.avatarUrl);
+                      return (
+                        <button
+                          key={profile.id}
+                          type="button"
+                          onClick={() => handleProfileNavigate(profile.id)}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
+                        >
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt={`Avatar de ${profile.fullName}`}
+                              className="h-9 w-9 rounded-full object-cover ring-1 ring-white/15"
+                            />
+                          ) : (
+                            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-xs font-black text-slate-200 ring-1 ring-white/10">
+                              {getInitials(profile.fullName)}
+                            </span>
+                          )}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-bold text-white">{profile.fullName}</span>
+                            <span className="block truncate text-xs text-slate-400">
+                              {[profile.role, ...(profile.careers || []).slice(0, 1)].filter(Boolean).join(' - ')}
+                            </span>
+                          </span>
+                          <i className="fa-solid fa-arrow-right text-xs text-slate-500" />
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
+            >
+              <i className="fa-solid fa-newspaper text-xs" />
+              Realizar busqueda
+            </button>
           </form>
         </div>
       )}

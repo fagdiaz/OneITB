@@ -81,7 +81,7 @@ const MediaComponent = ({ textContext, fileUrl, previewData }) => {
         href={finalPreview.originalUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-3 block rounded-xl border border-slate-200 bg-slate-50 overflow-hidden hover:bg-slate-100 transition-colors"
+        className="mt-3 block overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-slate-900/60 dark:hover:bg-slate-800/80"
       >
         {showImage ? (
           <div className="aspect-video w-full bg-slate-200">

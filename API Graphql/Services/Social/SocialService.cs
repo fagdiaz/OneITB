@@ -15,7 +15,7 @@ namespace Services.Social
             _context = context;
         }
 
-        public IQueryable<Inquiry> GetInquiries(Guid? currentUserId, string? searchTerm, int? careerId, int[]? subjectIds)
+        public IQueryable<Inquiry> GetInquiries(Guid? currentUserId, string? searchTerm, int? careerId, int[]? careerIds, int[]? subjectIds)
         {
             IQueryable<Inquiry> query = _context.Inquiries
                 .AsNoTracking()
@@ -37,13 +37,25 @@ namespace Services.Social
                     inquiry.Subject.Code.Contains(normalizedSearch) ||
                     inquiry.Subject.Career.Code.Contains(normalizedSearch) ||
                     inquiry.User.FirstName.Contains(normalizedSearch) ||
-                    inquiry.User.LastName.Contains(normalizedSearch));
+                    inquiry.User.LastName.Contains(normalizedSearch) ||
+                    (inquiry.User.FirstName + " " + inquiry.User.LastName).Contains(normalizedSearch) ||
+                    inquiry.User.Account.Email.Contains(normalizedSearch) ||
+                    inquiry.Comments.Any(comment =>
+                        comment.Content.Contains(normalizedSearch) ||
+                        comment.User.FirstName.Contains(normalizedSearch) ||
+                        comment.User.LastName.Contains(normalizedSearch) ||
+                        (comment.User.FirstName + " " + comment.User.LastName).Contains(normalizedSearch)));
             }
 
-            if (careerId.HasValue)
+            int[] normalizedCareerIds = careerIds is { Length: > 0 }
+                ? careerIds.Distinct().ToArray()
+                : careerId.HasValue
+                    ? new[] { careerId.Value }
+                    : Array.Empty<int>();
+
+            if (normalizedCareerIds.Length > 0)
             {
-                int selectedCareerId = careerId.Value;
-                query = query.Where(inquiry => inquiry.Subject.CareerId == selectedCareerId);
+                query = query.Where(inquiry => normalizedCareerIds.Contains(inquiry.Subject.CareerId));
             }
 
             if (subjectIds is { Length: > 0 })
@@ -69,8 +81,15 @@ namespace Services.Social
                     interaction.Type == InteractionType.Follow)
                 .Select(interaction => interaction.TargetId);
 
-            return query
-                .Where(inquiry => !excludedUsers.Contains(inquiry.UserId))
+            IQueryable<Inquiry> visibleQuery = query
+                .Where(inquiry => !excludedUsers.Contains(inquiry.UserId));
+
+            if (normalizedSearch.Length > 0)
+            {
+                return visibleQuery.OrderByDescending(inquiry => inquiry.PublishDate);
+            }
+
+            return visibleQuery
                 .OrderByDescending(inquiry => followedUsers.Contains(inquiry.UserId))
                 .ThenByDescending(inquiry => inquiry.PublishDate);
         }
@@ -79,6 +98,7 @@ namespace Services.Social
             Guid? currentUserId,
             string? searchTerm,
             int? careerId,
+            int[]? careerIds,
             int[]? subjectIds,
             int first,
             string? after)
@@ -86,7 +106,7 @@ namespace Services.Social
             int pageSize = Math.Clamp(first, 1, 25);
             int offset = DecodeOffset(after);
 
-            IQueryable<Inquiry> query = GetInquiries(currentUserId, searchTerm, careerId, subjectIds);
+            IQueryable<Inquiry> query = GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds);
             int totalCount = await query.CountAsync();
             List<Inquiry> pageItems = await query
                 .Skip(offset)

@@ -2,7 +2,7 @@
 
 **Ultima revision**: 2026-06-30
 
-**Estado global**: 87% (67 de 77 items)
+**Estado global**: 87% (68 de 78 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -100,7 +100,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Adaptador o simulador desacoplado para SIU Guarani.
 - [x] [I] Preferencias de notificacion por materia.
 
-## Modulo 8 - Calidad, operacion y escalabilidad: 69% (9/13)
+## Modulo 8 - Calidad, operacion y escalabilidad: 71% (10/14)
 
 - [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
 - [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
@@ -115,6 +115,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Entorno local reproducible sin bloqueo de SQL SSPI/certificado HTTPS.
 - [x] [V] Limpieza de warnings de compilacion (Vite chunk size y .NET nullability).
 - [x] [I] Actualizacion controlada de dependencias y division del bundle frontend.
+- [x] [I] Sistema visual Clean Tech / Tech Noir con tema persistente, selector en Header y superficies principales dual-theme.
 
 ## Prioridades
 

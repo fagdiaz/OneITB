@@ -95,17 +95,19 @@ namespace GraphQL.GraphQL
         public IQueryable<Inquiry> GetInquiries(
             string? searchTerm,
             int? careerId,
+            int[]? careerIds,
             int[]? subjectIds,
             [Service] ISocialService socialService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
             Guid? currentUserId = TryGetAuthenticatedUserId(httpContextAccessor);
-            return socialService.GetInquiries(currentUserId, searchTerm, careerId, subjectIds);
+            return socialService.GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds);
         }
 
         public async Task<InquiryPage> GetInquiriesPage(
             string? searchTerm,
             int? careerId,
+            int[]? careerIds,
             int[]? subjectIds,
             int first,
             string? after,
@@ -119,6 +121,7 @@ namespace GraphQL.GraphQL
                     currentUserId,
                     searchTerm,
                     careerId,
+                    careerIds,
                     subjectIds,
                     first,
                     after);
@@ -188,6 +191,48 @@ namespace GraphQL.GraphQL
                     .ToArray(),
                 totalPublications,
                 totalComments);
+        }
+
+        public async Task<IReadOnlyList<PublicProfileSearchResult>> SearchPublicProfiles(
+            string? searchTerm,
+            int first,
+            [Service] OneItbContext context)
+        {
+            string normalizedTerm = (searchTerm ?? string.Empty).Trim();
+            int take = Math.Clamp(first, 1, 8);
+
+            if (normalizedTerm.Length < 2)
+            {
+                return Array.Empty<PublicProfileSearchResult>();
+            }
+
+            List<User> users = await context.Users
+                .AsNoTracking()
+                .Include(user => user.UserCareers)
+                .ThenInclude(link => link.Career)
+                .Where(user => user.IsActive)
+                .Where(user =>
+                    (user.FirstName + " " + user.LastName).Contains(normalizedTerm) ||
+                    user.FirstName.Contains(normalizedTerm) ||
+                    user.LastName.Contains(normalizedTerm))
+                .OrderBy(user => user.FirstName)
+                .ThenBy(user => user.LastName)
+                .Take(take)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            return users
+                .Select(user => new PublicProfileSearchResult(
+                    user.Id,
+                    $"{user.FirstName} {user.LastName}".Trim(),
+                    user.Role,
+                    user.AvatarUrl,
+                    user.UserCareers
+                        .Where(link => link.Career.IsActive)
+                        .Select(link => link.Career.Name)
+                        .OrderBy(name => name)
+                        .ToArray()))
+                .ToArray();
         }
 
         [Authorize(Roles = new[] { "Administrador", "Moderador" })]

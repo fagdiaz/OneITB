@@ -13,6 +13,7 @@ export const Register = () => {
   const { form, changed } = useForm({});
   const [saved, setSaved] = useState('not_sended');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const saveUser = async (e) => {
     e.preventDefault();
@@ -107,7 +108,24 @@ export const Register = () => {
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="password" className={labelClass}>Contraseña</label>
-              <input id="password" type="password" name="password" onChange={changed} placeholder="Mínimo 8 caracteres" className={inputClass} />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  onChange={changed}
+                  placeholder="Mínimo 8 caracteres"
+                  className={`${inputClass} pr-11`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} />
+                </button>
+              </div>
             </div>
 
             <button

@@ -179,4 +179,12 @@ namespace OneITB.Core.Services.Interfaces
         int TotalPublications,
         int TotalComments
     );
+
+    public record PublicProfileSearchResult(
+        Guid Id,
+        string FullName,
+        string Role,
+        string? AvatarUrl,
+        IReadOnlyList<string> Careers
+    );
 }

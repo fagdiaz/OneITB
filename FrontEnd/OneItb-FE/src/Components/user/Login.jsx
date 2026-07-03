@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm } from '../../hooks/useForm'
 import { useMutation } from '@apollo/client'
 import { AUTHENTICATE_USER } from '../../data/graphql/mutations/authenticateUser'
@@ -16,8 +16,16 @@ export const Login = () => {
   const { form, changed } = useForm({});
   const [saved, setSaved] = useState('not_sended');
   const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (sessionStorage.getItem('oneitb-session-expired') !== '1') return;
+    sessionStorage.removeItem('oneitb-session-expired');
+    setSaved('error');
+    setLoginError('Tu sesión ha expirado');
+  }, []);
 
   const loginUser = async (e) => {
     e.preventDefault();
@@ -122,14 +130,24 @@ export const Login = () => {
               <label htmlFor="password" className="text-sm font-medium text-slate-700">
                 Contraseña
               </label>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                onChange={changed}
-                placeholder="••••••••"
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  onChange={changed}
+                  placeholder="••••••••"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-11 text-sm text-slate-800 placeholder-slate-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} />
+                </button>
+              </div>
             </div>
 
             <button

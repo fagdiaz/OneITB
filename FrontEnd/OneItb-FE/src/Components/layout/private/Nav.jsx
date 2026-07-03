@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { NavLink, Link } from 'react-router-dom'
+import { useQuery } from '@apollo/client'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 import useAuth from '../../../hooks/useAuth'
 import { NotificationBell } from '../../notifications/NotificationBell'
+import { useTheme } from '../../../context/ThemeContext'
+import { GET_USER_PROFILE } from '../../../data/graphql/queries/getUserProfile'
+import { apiBaseUrl } from '../../../utils/uploadFile'
 
 /**
  * Nav — REFACTOR 037 / 040 / Spotlight-hover
@@ -23,21 +27,32 @@ const NAV_BASE = [
   'transition-all duration-150 ease-out',
   'will-change-transform',
   'hover:-translate-y-0.5',
-  'hover:text-white',
-  'hover:border-white/15',
+  'hover:border-white/15 hover:bg-white/10 hover:text-white',
   'hover:shadow-[0_4px_14px_rgba(59,130,246,0.30),0_1px_4px_rgba(0,0,0,0.25)]',
 ].join(' ')
 
-const NAV_ACTIVE   = 'bg-white/15 text-white border-white/10'
+const NAV_ACTIVE = 'border-blue-300/30 bg-white/15 text-white ring-1 ring-blue-300/20 shadow-[0_4px_14px_rgba(59,130,246,0.34),0_1px_4px_rgba(0,0,0,0.25)]'
 const NAV_INACTIVE = 'text-slate-300'
 
-const navClass = ({ isActive }) =>
-  `${NAV_BASE} ${isActive ? NAV_ACTIVE : NAV_INACTIVE}`
+const resolveAssetUrl = (value) => {
+  if (!value) return null
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value
+  if (value.startsWith('/')) return `${apiBaseUrl}${value}`
+  return value
+}
 
 export const Nav = () => {
   const { auth } = useAuth()
+  const { theme, toggleTheme } = useTheme()
+  const location = useLocation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [avatarFailed, setAvatarFailed] = useState(false)
   const dropdownRef = useRef(null)
+  const isDark = theme === 'dark'
+  const { data: meData } = useQuery(GET_USER_PROFILE, {
+    skip: !auth?.id,
+    fetchPolicy: 'cache-first',
+  })
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -50,6 +65,23 @@ export const Nav = () => {
   }, [])
 
   const isAuthenticated = !!auth.id
+  const currentUser = meData?.me || auth
+  const currentName = currentUser.fullName || auth.fullName || auth.username || 'Usuario'
+  const resolvedAvatarUrl = resolveAssetUrl(currentUser.avatarUrl || auth.avatarUrl)
+  const fallbackAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=3b82f6&color=fff&size=80`
+  const avatarSrc = !avatarFailed && resolvedAvatarUrl ? resolvedAvatarUrl : fallbackAvatarUrl
+
+  useEffect(() => {
+    setAvatarFailed(false)
+  }, [resolvedAvatarUrl])
+
+  const isActivePath = (targetPath) => {
+    if (targetPath === '/') return location.pathname === '/'
+    return location.pathname === targetPath || location.pathname.startsWith(`${targetPath}/`)
+  }
+
+  const navClassFor = (targetPath) =>
+    `${NAV_BASE} ${isActivePath(targetPath) ? NAV_ACTIVE : NAV_INACTIVE}`
 
   return (
     <nav className="flex items-center gap-6">
@@ -59,7 +91,7 @@ export const Nav = () => {
         <li>
           <NavLink
             to={isAuthenticated ? '/feed' : '/'}
-            className={navClass}
+            className={navClassFor(isAuthenticated ? '/feed' : '/')}
           >
             <i className="fa-solid fa-house text-xs" />
             <span>Inicio</span>
@@ -68,7 +100,7 @@ export const Nav = () => {
 
         {isAuthenticated && (
           <li>
-            <NavLink to="/chat" className={navClass}>
+            <NavLink to="/chat" className={navClassFor('/chat')}>
               <i className="fa-regular fa-comment-dots text-xs" />
               <span>Mensajes</span>
             </NavLink>
@@ -77,7 +109,7 @@ export const Nav = () => {
 
         {isAuthenticated && (
           <li>
-            <NavLink to="/academic" className={navClass}>
+            <NavLink to="/academic" className={navClassFor('/academic')}>
               <i className="fa-solid fa-graduation-cap text-xs" />
               <span>Academico</span>
             </NavLink>
@@ -86,7 +118,7 @@ export const Nav = () => {
 
         {isAuthenticated && auth.role === 'Administrador' && (
           <li>
-            <NavLink to="/admin" className={navClass}>
+            <NavLink to="/admin" className={navClassFor('/admin')}>
               <i className="fa-solid fa-users-gear text-xs" />
               <span>Admin</span>
             </NavLink>
@@ -100,7 +132,7 @@ export const Nav = () => {
         {isAuthenticated ? (
           <>
             <span className="hidden sm:block text-sm font-medium text-slate-300">
-              Hola, <span className="text-white font-semibold">{auth.username || 'Usuario'}</span>
+              Hola, <span className="font-semibold text-white">{currentName}</span>
             </span>
 
             <NotificationBell />
@@ -111,17 +143,17 @@ export const Nav = () => {
                 type="button"
                 onClick={() => setDropdownOpen(prev => !prev)}
                 className={[
-                  'flex items-center gap-2 cursor-pointer focus:outline-none',
+                  'flex items-center gap-2 cursor-pointer',
                   'rounded-full border border-transparent px-0.5 py-0.5',
                   'transition-all duration-150',
-                  'hover:-translate-y-0.5 hover:border-white/20',
-                  'hover:shadow-[0_4px_14px_rgba(59,130,246,0.35)]',
+                  'hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_4px_14px_rgba(59,130,246,0.35)]',
                 ].join(' ')}
                 aria-label="Menú de usuario"
               >
                 <img
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.fullName || auth.username || 'U')}&background=3b82f6&color=fff&size=80`}
-                  className="w-9 h-9 rounded-full object-cover ring-2 ring-white/20 hover:ring-white/50 transition-all duration-200"
+                  src={avatarSrc}
+                  onError={() => setAvatarFailed(true)}
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-white/20 transition-all duration-200 hover:ring-white/50"
                   alt="Foto de perfil"
                 />
                 <i
@@ -132,12 +164,12 @@ export const Nav = () => {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute right-0 top-[calc(100%+12px)] z-[80] w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 py-1.5 text-slate-100 shadow-[0_24px_70px_rgba(15,23,42,0.45)] backdrop-blur-xl ring-1 ring-blue-400/10 list-none m-0 p-0">
+                <ul className="absolute right-0 top-[calc(100%+12px)] z-[80] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 py-1.5 text-slate-900 shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur-xl ring-1 ring-slate-900/5 list-none m-0 p-0 dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-100 dark:shadow-[0_24px_70px_rgba(15,23,42,0.45)] dark:ring-blue-400/10">
                   <li>
                     <NavLink
                       to="/profile"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/[0.05] hover:text-white"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-white/[0.05] dark:hover:text-white"
                     >
                       <i className="fa-solid fa-user w-4 text-blue-300" />
                       Mi Perfil
@@ -147,18 +179,35 @@ export const Nav = () => {
                     <NavLink
                       to="/profile/edit"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/[0.05] hover:text-white"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-white/[0.05] dark:hover:text-white"
                     >
                       <i className="fa-solid fa-pen-to-square w-4 text-blue-300" />
                       Editar Perfil
                     </NavLink>
                   </li>
-                  <li className="my-1 border-t border-white/10" />
+                  <li>
+                    <button
+                      type="button"
+                      onClick={toggleTheme}
+                      className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-white/[0.05] dark:hover:text-white"
+                    >
+                      <span className="flex items-center gap-3">
+                        <i className={`fa-solid ${isDark ? 'fa-moon' : 'fa-sun'} w-4 ${isDark ? 'text-blue-300' : 'text-amber-500'}`} />
+                        <span>{isDark ? 'Tech Noir' : 'Clean Tech'}</span>
+                      </span>
+                      <span className={`relative inline-flex h-6 w-11 items-center rounded-full border transition ${isDark ? 'border-blue-300/30 bg-blue-500/20' : 'border-amber-200 bg-amber-50'}`}>
+                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full shadow-sm transition ${isDark ? 'translate-x-5 bg-blue-300 text-slate-950' : 'translate-x-0.5 bg-white text-amber-500'}`}>
+                          <i className={`fa-solid ${isDark ? 'fa-moon' : 'fa-sun'} text-[10px]`} />
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                  <li className="my-1 border-t border-slate-200 dark:border-white/10" />
                   <li>
                     <NavLink
                       to="/logout"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-500/10 hover:text-red-100"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:text-red-700 dark:text-red-300 dark:hover:bg-red-500/10 dark:hover:text-red-100"
                     >
                       <i className="fa-solid fa-arrow-right-from-bracket w-4" />
                       Salir

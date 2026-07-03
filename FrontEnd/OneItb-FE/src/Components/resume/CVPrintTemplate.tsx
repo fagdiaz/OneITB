@@ -17,6 +17,50 @@ const THEMES: Record<AccentTheme, { accent: string; title: string; line: string 
 
 const visible = <T extends { hidden?: boolean }>(items: T[] = []) => items.filter((item) => !item.hidden);
 
+const balanceContactRows = (items: string[]) => {
+  if (items.length <= 1) return [items, []];
+
+  const firstCapacity = Math.ceil(items.length / 2);
+  const secondCapacity = Math.floor(items.length / 2);
+  const rows = [
+    { items: [] as Array<{ value: string; index: number; weight: number }>, weight: 0, capacity: firstCapacity },
+    { items: [] as Array<{ value: string; index: number; weight: number }>, weight: 0, capacity: secondCapacity },
+  ];
+
+  items
+    .map((value, index) => ({ value, index, weight: value.length }))
+    .sort((left, right) => right.weight - left.weight)
+    .forEach((item) => {
+      const [first, second] = rows;
+      const canUseFirst = first.items.length < first.capacity;
+      const canUseSecond = second.items.length < second.capacity;
+      const target =
+        canUseFirst && (!canUseSecond || first.weight <= second.weight)
+          ? first
+          : second;
+
+      target.items.push(item);
+      target.weight += item.weight;
+    });
+
+  return rows.map((row) =>
+    row.items
+      .sort((left, right) => left.index - right.index)
+      .map((item) => item.value),
+  );
+};
+
+const buildContactRows = (personalInfo: CVData['personalInfo']) => {
+  const directContact = [personalInfo.phone, personalInfo.email].filter(Boolean) as string[];
+  const socialContact = [personalInfo.linkedin, personalInfo.github, personalInfo.website].filter(Boolean) as string[];
+
+  if (directContact.length > 0 && socialContact.length > 0) {
+    return [directContact, socialContact];
+  }
+
+  return balanceContactRows([...directContact, ...socialContact]);
+};
+
 const SectionTitle = ({ children, theme }: { children: React.ReactNode; theme: { title: string; line: string } }) => (
   <div className="mb-2">
     <h2 className={`text-[10px] font-bold uppercase tracking-[0.22em] ${theme.title}`}>{children}</h2>
@@ -27,14 +71,11 @@ const SectionTitle = ({ children, theme }: { children: React.ReactNode; theme: {
 export const CVPrintTemplate = React.forwardRef<HTMLDivElement, CVPrintTemplateProps>(
   ({ data, activeTheme = 'navyInk' }, ref) => {
     const theme = THEMES[activeTheme];
-    const contacts = [
-      data.personalInfo.email,
-      data.personalInfo.phone,
-      data.personalInfo.location,
-      data.personalInfo.linkedin,
-      data.personalInfo.github,
-      data.personalInfo.website,
-    ].filter(Boolean);
+    const careerTags = (data.personalInfo.location || '')
+      .split('/')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const contactRows = buildContactRows(data.personalInfo);
     const experience = visible(data.experience).slice(0, 4);
     const education = visible(data.education).slice(0, 4);
     const projects = visible(data.projects).slice(0, 3);
@@ -47,17 +88,36 @@ export const CVPrintTemplate = React.forwardRef<HTMLDivElement, CVPrintTemplateP
 
         <header className="flex items-start justify-between gap-7 border-b border-slate-100 pb-4 pl-[6mm]">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">Curriculum institucional</p>
             <h1 className="mt-1 text-[25px] font-black leading-tight tracking-tight text-slate-950">
               {data.personalInfo.name || 'Usuario OneITB'}
             </h1>
-            <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              {data.personalInfo.title || 'Perfil academico'}
-            </p>
-            {contacts.length > 0 && (
-              <p className="mt-3 text-[10px] leading-relaxed text-slate-500">
-                {contacts.join('  ·  ')}
+            {data.personalInfo.title && (
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                {data.personalInfo.title}
               </p>
+            )}
+            {careerTags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {careerTags.map((career) => (
+                  <span
+                    key={career}
+                    className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white ${theme.accent}`}
+                  >
+                    {career}
+                  </span>
+                ))}
+              </div>
+            )}
+            {contactRows.some((row) => row.length > 0) && (
+              <div className="mt-3 space-y-1 text-[10px] leading-relaxed text-slate-500">
+                {contactRows.map((row, rowIndex) =>
+                  row.length > 0 ? (
+                    <p key={`contact-row-${rowIndex}`}>
+                      {row.join('  |  ')}
+                    </p>
+                  ) : null,
+                )}
+              </div>
             )}
           </div>
           {data.personalInfo.profileImage && (

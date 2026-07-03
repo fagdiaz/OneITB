@@ -315,7 +315,7 @@ export const MiniChatWidget = () => {
     <div className="fixed bottom-5 right-5 lg:right-80 z-50 flex flex-col items-end">
       {/* Widget Window */}
       {isOpen && (
-        <div className="mb-4 flex h-[500px] w-[90vw] origin-bottom-right flex-row overflow-hidden rounded-3xl border border-white/10 bg-slate-950/95 shadow-[0_24px_80px_rgba(2,6,23,0.50)] backdrop-blur-xl ring-1 ring-blue-400/10 transition-all md:w-[700px]">
+        <div className="mb-3 flex h-[420px] w-[88vw] origin-bottom-right flex-row overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur-xl ring-1 ring-slate-900/5 transition-all dark:border-white/10 dark:bg-slate-950/95 dark:shadow-[0_24px_70px_rgba(2,6,23,0.50)] dark:ring-blue-400/10 md:w-[560px]">
           
           <ChatSidebar 
             socketStatus={socketStatus}

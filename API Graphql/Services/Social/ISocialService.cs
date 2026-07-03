@@ -8,8 +8,8 @@ namespace OneITB.Core.Services.Interfaces
 {
     public interface ISocialService
     {
-        IQueryable<Inquiry> GetInquiries(Guid? currentUserId, string? searchTerm, int? careerId, int[]? subjectIds);
-        Task<InquiryPage> GetInquiriesPageAsync(Guid? currentUserId, string? searchTerm, int? careerId, int[]? subjectIds, int first, string? after);
+        IQueryable<Inquiry> GetInquiries(Guid? currentUserId, string? searchTerm, int? careerId, int[]? careerIds, int[]? subjectIds);
+        Task<InquiryPage> GetInquiriesPageAsync(Guid? currentUserId, string? searchTerm, int? careerId, int[]? careerIds, int[]? subjectIds, int first, string? after);
         Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content, string? fileUrl = null);
         Task<Comment> AddCommentAsync(Guid userId, Guid inquiryId, string content, Guid? parentCommentId, string? fileUrl = null);
         Task<ToggleReactionPayload> ToggleReactionAsync(Guid userId, Guid inquiryId);

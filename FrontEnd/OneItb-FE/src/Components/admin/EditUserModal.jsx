@@ -84,10 +84,10 @@ export const EditUserModal = ({ user, onClose, onFeedback, onRefetch }) => {
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl overflow-y-auto max-h-[90vh]"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:[&_input]:border-white/10 dark:[&_input]:bg-slate-950/70 dark:[&_input]:text-slate-100 dark:[&_select]:border-white/10 dark:[&_select]:bg-slate-950/70 dark:[&_select]:text-slate-100"
       >
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="text-xl font-bold text-slate-900">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
             Editar Usuario: {user.firstName} {user.lastName}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -104,7 +104,7 @@ export const EditUserModal = ({ user, onClose, onFeedback, onRefetch }) => {
           <div className="space-y-6">
             {/* Rol */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-slate-800">Cambiar Rol</h4>
+              <h4 className="font-semibold text-slate-800 dark:text-white">Cambiar Rol</h4>
               <div className="flex items-start gap-3">
                 <select
                   value={selectedRole}
@@ -152,14 +152,14 @@ export const EditUserModal = ({ user, onClose, onFeedback, onRefetch }) => {
               )}
             </div>
 
-            <hr className="border-slate-100" />
+            <hr className="border-slate-100 dark:border-white/10" />
 
             {/* Estado */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-slate-800">Estado de la cuenta</h4>
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h4 className="font-semibold text-slate-800 dark:text-white">Estado de la cuenta</h4>
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950/50">
                 <div>
-                  <p className="text-sm font-medium text-slate-800">
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                     {user.isActive ? 'Cuenta Activa' : 'Cuenta Suspendida'}
                   </p>
                   <p className="text-xs text-slate-500">
@@ -182,12 +182,12 @@ export const EditUserModal = ({ user, onClose, onFeedback, onRefetch }) => {
               </div>
             </div>
 
-            <hr className="border-slate-100" />
+            <hr className="border-slate-100 dark:border-white/10" />
 
             {/* Silenciar */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-slate-800">Moderar interacciones (Silenciar)</h4>
-              <p className="text-xs text-slate-500">
+              <h4 className="font-semibold text-slate-800 dark:text-white">Moderar interacciones (Silenciar)</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Evita que el usuario publique, comente o reaccione durante un período.
               </p>
               <div className="flex flex-wrap gap-2">

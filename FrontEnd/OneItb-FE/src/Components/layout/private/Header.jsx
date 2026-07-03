@@ -61,7 +61,7 @@ export const Header = () => {
       ref={headerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative isolate w-full overflow-visible bg-slate-900 sticky top-0 z-40 flex items-center justify-between h-14 px-4 shadow-md shrink-0 no-print print:hidden"
+      className="relative isolate w-full overflow-visible border-b border-white/10 bg-slate-900 text-white sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 px-4 shadow-md backdrop-blur-xl transition-colors dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-[0_14px_45px_rgba(2,6,23,0.45)] no-print print:hidden"
     >
       {/*
         pointer-events-none: no intercepta clicks ni hovers.
@@ -102,21 +102,20 @@ export const Header = () => {
 
       {/* ── BRAND ─────────────────────────────────────────────────── */}
       <Link
-        to="/feed"
+        to="/"
         className={[
-          'relative z-10 text-white font-extrabold text-lg tracking-tight',
-          'px-2 py-1 rounded-lg border border-transparent',
-          'transition-all duration-150 ease-out',
-          'hover:-translate-y-0.5 hover:border-white/15 hover:shadow-[0_4px_16px_rgba(59,130,246,0.35)]',
-          'hover:text-blue-300',
+          'relative z-10 shrink-0 rounded-lg px-2 py-1',
+          'text-lg font-extrabold tracking-tight text-white',
+          'transition-colors duration-150',
         ].join(' ')}
       >
         ONEITB
       </Link>
 
-      {/* ── NAV + SEARCH ──────────────────────────────────────────── */}
-      <div className="relative z-10 flex items-center gap-4">
+      {/* ── SEARCH + SPACER + NAV ─────────────────────────────────── */}
+      <div className="relative z-10 flex min-w-0 flex-1 items-center gap-3">
         <GlobalSearch />
+        <div className="min-w-4 flex-1" />
         <Nav />
       </div>
     </header>

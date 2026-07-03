@@ -9,9 +9,12 @@ import './index.css'
 
 import { GraphQLProvider } from './data/graphql/GraphqlProvider'
 import { ApolloProvider } from '@apollo/client'
+import { ThemeProvider } from './context/ThemeContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render( 
     <ApolloProvider client={new GraphQLProvider().apolloInstance}>
-        <App />  
+        <ThemeProvider>
+            <App />
+        </ThemeProvider>
     </ApolloProvider>
 )
