@@ -4,10 +4,10 @@ Red social academica full-stack para estudiantes, profesores, egresados y gestio
 
 ## Estado actual
 
-- Avance detallado: **69% (52/75 items)**.
-- Nucleo social, mensajeria y administracion: implementados por etapas.
-- Prioridad P0: recuperar runtime local y revalidar features recientes.
-- Recursos, notas, SIU y notificaciones academicas: pendientes.
+- Avance detallado: **94% (73/78 items)**.
+- Nucleo social, mensajeria, administracion y modulo academico: implementados por etapas.
+- Prioridad P0: cerrar regresion visual del panel admin y ampliar cobertura automatizada frontend/GraphQL SQL.
+- Recursos, notas, SIU mock y notificaciones academicas: implementados a nivel `[I]`; requieren regresion autenticada de navegador para elevarse a `[V]`.
 
 Consultar el [roadmap unico](docs/project_docs/ROADMAP.md) para estado, evidencia y prioridades.
 
@@ -23,11 +23,12 @@ Consultar el [roadmap unico](docs/project_docs/ROADMAP.md) para estado, evidenci
 ```text
 API Graphql/             backend, dominio, servicios y migraciones
 FrontEnd/OneItb-FE/      cliente React
-specs/                   especificaciones y evidencia por feature
 docs/academic/           entregables academicos resumidos
 docs/project_docs/       alcance, arquitectura y roadmap
 docs/audit/              runbook, estado, historial y auditoria consolidada
 ```
+
+Las carpetas de trabajo de agentes (`specs/`, `.specify/`, `.agents/`, `core-web/`) quedan fuera del repositorio profesional mediante `.gitignore`. La evidencia consolidada que debe viajar con el proyecto vive en `docs/`.
 
 ## Documentacion
 
@@ -39,15 +40,16 @@ docs/audit/              runbook, estado, historial y auditoria consolidada
 | [Runbook](docs/audit/RUNBOOK_DEV.md) | Ejecucion y validacion local |
 | [Estado documental](docs/audit/DOCUMENTATION_STATUS.md) | Fuentes canonicas y brechas |
 | [Development log](docs/audit/DEVELOPMENT_LOG.md) | Historial inverso de implementaciones |
-| [Auditorias historicas](docs/audit/HISTORICAL_AUDITS.md) | Resumen de auditorias supersedidas |
+| [Reporte final de auditoria](docs/audit/FINAL_AUDIT_REPORT.md) | Cierre tecnico vigente para evaluacion academica |
+| [Auditorias historicas](docs/audit/HISTORICAL_AUDITS.md) | Resumen de auditorias supersedidas; no reemplaza el reporte final |
 
 ## Flujo de trabajo
 
-1. Leer `AGENTS.md` y `.specify/memory/constitution.md`.
-2. Consultar `.specify/feature.json` y la feature activa.
-3. Implementar y registrar evidencia real.
-4. Ejecutar los gates aplicables del runbook.
-5. Actualizar roadmap, log y estado documental.
+1. Consultar `docs/project_docs/ROADMAP.md` como fuente unica de avance.
+2. Implementar y registrar evidencia real.
+3. Ejecutar los gates aplicables del runbook.
+4. Actualizar roadmap, log y estado documental.
+5. Mantener fuera del commit los artefactos locales de agentes, specs y logs temporales.
 
 Compilar es necesario, pero no demuestra que GraphQL, autenticacion, cache o persistencia funcionen.
 
@@ -55,6 +57,7 @@ Compilar es necesario, pero no demuestra que GraphQL, autenticacion, cache o per
 
 ```powershell
 dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release
+dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release
 dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
 ```
 

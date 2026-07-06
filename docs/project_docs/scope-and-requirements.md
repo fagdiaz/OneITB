@@ -1,6 +1,6 @@
 # Alcance y requerimientos de OneITB23
 
-**Ultima alineacion con codigo**: 2026-06-29
+**Ultima alineacion con codigo**: 2026-07-06
 
 ## 1. Objetivo
 
@@ -18,7 +18,7 @@ OneITB23 es una red social academica para estudiantes, profesores, egresados y a
 | Grafo social | Implementado | spec 110 |
 | Mensajeria privada | Verificado | specs 104, 106 y 107 |
 | Administracion y moderacion | Implementado/verificado por etapas | specs 099, 111, 117-119 |
-| Recursos, notas y SIU | Planificado | `ROADMAP.md` modulo 7 |
+| Recursos, notas y SIU | Implementado; requiere regresion autenticada de navegador para elevar a verificado | specs 136, 137, 164, 165 |
 
 ## 3. Requerimientos funcionales vigentes
 
@@ -56,13 +56,13 @@ OneITB23 es una red social academica para estudiantes, profesores, egresados y a
 - **RF-018**: Gestionar reportes, publicaciones y comentarios con permisos diferenciados.
 - **RF-019**: Permitir silenciamientos temporales y soft-delete; no borrar contenido social fisicamente.
 
-### Alcance planificado
+### Recursos academicos, SIU y notificaciones
 
 - **RF-020**: Repositorio academico independiente del feed.
 - **RF-021**: Visualizacion de notas e integracion o simulacion SIU Guarani.
 - **RF-022**: Preferencias de notificacion por materia.
 
-RF-020 a RF-022 son planificados y no deben presentarse como disponibles.
+RF-020 a RF-022 estan implementados a nivel backend/frontend y documentados en el roadmap como `[I]`. No deben presentarse como `[V]` hasta completar regresion autenticada en navegador del hub academico.
 
 ## 4. Roles
 
@@ -90,4 +90,4 @@ RF-020 a RF-022 son planificados y no deben presentarse como disponibles.
 - Videollamadas.
 - Almacenamiento distribuido de archivos.
 - Pub/sub distribuido para multiples instancias.
-- Integracion productiva con sistemas externos sin contrato disponible.
+- Integracion productiva con sistemas externos sin contrato disponible; la integracion SIU vigente es un adaptador mock desacoplado.

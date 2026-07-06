@@ -2,6 +2,7 @@ import React, { useRef, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Nav } from './Nav'
 import { GlobalSearch } from './GlobalSearch'
+import useAuth from '../../../hooks/useAuth'
 
 /**
  * Header — Spotlight Effect
@@ -19,9 +20,11 @@ import { GlobalSearch } from './GlobalSearch'
  * para "levantarse" cuando la linterna pasa por detrás.
  */
 export const Header = () => {
+  const { isAuthenticated, token } = useAuth()
   const headerRef = useRef(null)
   const spotlightRef = useRef(null)
   const rafRef = useRef(null)
+  const isLoggedIn = Boolean(isAuthenticated && token)
 
   // Inicializa las CSS vars para que el spotlight empiece invisible
   useEffect(() => {
@@ -114,7 +117,7 @@ export const Header = () => {
 
       {/* ── SEARCH + SPACER + NAV ─────────────────────────────────── */}
       <div className="relative z-10 flex min-w-0 flex-1 items-center gap-3">
-        <GlobalSearch />
+        {isLoggedIn && <GlobalSearch />}
         <div className="min-w-4 flex-1" />
         <Nav />
       </div>

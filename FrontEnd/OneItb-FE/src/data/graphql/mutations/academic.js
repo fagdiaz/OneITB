@@ -5,6 +5,8 @@ export const ADD_ACADEMIC_RESOURCE = gql`
     $subjectId: Int!
     $title: String!
     $description: String
+    $category: AcademicResourceCategory
+    $version: Int
     $fileUrl: String
     $externalUrl: String
   ) {
@@ -12,6 +14,8 @@ export const ADD_ACADEMIC_RESOURCE = gql`
       subjectId: $subjectId
       title: $title
       description: $description
+      category: $category
+      version: $version
       fileUrl: $fileUrl
       externalUrl: $externalUrl
     ) {
@@ -21,6 +25,8 @@ export const ADD_ACADEMIC_RESOURCE = gql`
       fileUrl
       externalUrl
       resourceType
+      category
+      version
       createdAt
       isActive
       uploader {
@@ -28,7 +34,78 @@ export const ADD_ACADEMIC_RESOURCE = gql`
         firstName
         lastName
         role
+        avatarUrl
       }
+      subject {
+        id
+        name
+        code
+        career {
+          id
+          name
+          code
+        }
+      }
+    }
+  }
+`;
+
+export const UPLOAD_ACADEMIC_RESOURCE = gql`
+  mutation UploadAcademicResource(
+    $subjectId: Int!
+    $title: String!
+    $description: String
+    $category: AcademicResourceCategory
+    $version: Int
+    $fileUrl: String
+    $externalUrl: String
+  ) {
+    uploadAcademicResource(
+      subjectId: $subjectId
+      title: $title
+      description: $description
+      category: $category
+      version: $version
+      fileUrl: $fileUrl
+      externalUrl: $externalUrl
+    ) {
+      id
+      title
+      description
+      fileUrl
+      externalUrl
+      resourceType
+      category
+      version
+      createdAt
+      isActive
+      uploader {
+        id
+        firstName
+        lastName
+        role
+        avatarUrl
+      }
+      subject {
+        id
+        name
+        code
+        career {
+          id
+          name
+          code
+        }
+      }
+    }
+  }
+`;
+
+export const DELETE_RESOURCE = gql`
+  mutation DeleteResource($resourceId: UUID!) {
+    deleteResource(resourceId: $resourceId) {
+      id
+      isActive
+      updatedAt
     }
   }
 `;

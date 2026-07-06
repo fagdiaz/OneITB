@@ -42,6 +42,7 @@ namespace Services.Messaging
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Role = user.Role,
+                    AvatarUrl = user.AvatarUrl,
                     LastMessageAt = user.SentMessages
                         .Where(message => message.ReceiverId == currentUserId)
                         .Select(message => (DateTime?)message.SentAt)

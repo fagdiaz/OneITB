@@ -93,13 +93,13 @@ internal static class ServiceTestData
         context.ChangeTracker.Clear();
     }
 
-    private static Account CreateAccount(User user, string email)
+    public static Account CreateAccount(User user, string email, string password = "Test1234!")
     {
         var account = new Account
         {
             Id = user.Id,
             Email = email,
-            PasswordHash = "$2a$11$" + new string('a', 53),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 4),
             CreatedAt = DateTime.UtcNow,
             User = user
         };
@@ -108,7 +108,7 @@ internal static class ServiceTestData
         return account;
     }
 
-    private static User CreateUser(Guid id, string firstName, string lastName, string role, bool isActive)
+    public static User CreateUser(Guid id, string firstName, string lastName, string role, bool isActive)
     {
         return new User
         {

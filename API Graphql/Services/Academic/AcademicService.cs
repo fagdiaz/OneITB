@@ -26,13 +26,35 @@ namespace Services.Academic
             _siuIntegrationService = siuIntegrationService;
         }
 
-        public async Task<IReadOnlyList<AcademicResource>> GetAcademicResourcesAsync(Guid actorUserId, string? actorRole, int subjectId)
+        public async Task<IReadOnlyList<AcademicResource>> GetAcademicResourcesAsync(
+            Guid actorUserId,
+            string? actorRole,
+            int subjectId,
+            string? searchTerm,
+            AcademicResourceCategory? category)
         {
             Subject subject = await LoadActiveSubjectAsync(subjectId);
             await EnsureCanViewSubjectAsync(actorUserId, actorRole, subject.CareerId);
 
-            return await ResourceGraph()
-                .Where(resource => resource.SubjectId == subjectId)
+            string? normalizedSearch = OptionalText(searchTerm, 120, "La busqueda");
+            IQueryable<AcademicResource> query = ResourceGraph()
+                .Where(resource => resource.SubjectId == subjectId);
+
+            if (category.HasValue)
+                query = query.Where(resource => resource.Category == category.Value);
+
+            if (normalizedSearch is not null)
+            {
+                query = query.Where(resource =>
+                    resource.Title.Contains(normalizedSearch) ||
+                    (resource.Description != null && resource.Description.Contains(normalizedSearch)) ||
+                    resource.Uploader.FirstName.Contains(normalizedSearch) ||
+                    resource.Uploader.LastName.Contains(normalizedSearch) ||
+                    resource.Subject.Name.Contains(normalizedSearch) ||
+                    resource.Subject.Code.Contains(normalizedSearch));
+            }
+
+            return await query
                 .OrderByDescending(resource => resource.CreatedAt)
                 .ThenBy(resource => resource.Title)
                 .ToListAsync();
@@ -44,15 +66,18 @@ namespace Services.Academic
             int subjectId,
             string title,
             string? description,
+            AcademicResourceCategory? category,
+            int? version,
             string? fileUrl,
             string? externalUrl)
         {
-            EnsureCanManageAcademics(actorRole);
             await EnsureActiveUserAsync(actorUserId);
             Subject subject = await LoadActiveSubjectAsync(subjectId);
+            await EnsureCanCreateResourceAsync(actorUserId, actorRole, subject.CareerId);
 
             string normalizedTitle = RequireText(title, 200, "El titulo");
             string? normalizedDescription = OptionalText(description, 1000, "La descripcion");
+            int normalizedVersion = NormalizeVersion(version);
             string? normalizedFileUrl = NormalizeFileUrl(fileUrl);
             string? normalizedExternalUrl = NormalizeExternalUrl(externalUrl);
 
@@ -69,6 +94,8 @@ namespace Services.Academic
                 FileUrl = normalizedFileUrl,
                 ExternalUrl = normalizedExternalUrl,
                 ResourceType = DetermineResourceType(normalizedFileUrl, normalizedExternalUrl),
+                Category = category ?? AcademicResourceCategory.Otro,
+                Version = normalizedVersion,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
@@ -85,6 +112,23 @@ namespace Services.Academic
                 $"/academic?subjectId={subject.Id}");
 
             return persisted;
+        }
+
+        public async Task<AcademicResource> DeleteResourceAsync(Guid actorUserId, string? actorRole, Guid resourceId)
+        {
+            await EnsureActiveUserAsync(actorUserId);
+
+            AcademicResource resource = await _context.AcademicResources
+                .IgnoreQueryFilters()
+                .SingleOrDefaultAsync(item => item.Id == resourceId)
+                ?? throw new InvalidOperationException("Recurso academico no encontrado.");
+
+            EnsureCanDeleteResource(actorUserId, actorRole, resource.UploaderId);
+
+            resource.IsActive = false;
+            resource.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return await LoadResourceGraphAsync(resource.Id, ignoreFilters: true);
         }
 
         public async Task<AcademicResource> ToggleAcademicResourceStatusAsync(Guid actorUserId, string? actorRole, Guid resourceId)
@@ -219,7 +263,7 @@ namespace Services.Academic
             string[] emails = records
                 .Select(record => record.StudentEmail?.Trim())
                 .Where(email => !string.IsNullOrWhiteSpace(email))
-                .Select(email => email!)
+                .Select(email => NormalizeEmailKey(email!))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
@@ -227,11 +271,11 @@ namespace Services.Academic
                 ? new List<Account>()
                 : await _context.Accounts
                     .Include(account => account.User)
-                    .Where(account => emails.Contains(account.Email))
+                    .Where(account => emails.Contains(account.Email.ToLower()))
                     .ToListAsync();
 
             var accountsByEmail = accounts
-                .GroupBy(account => account.Email, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(account => NormalizeEmailKey(account.Email), StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
 
             Guid[] candidateUserIds = accounts
@@ -268,7 +312,7 @@ namespace Services.Academic
                     continue;
                 }
 
-                if (!accountsByEmail.TryGetValue(email, out Account? account))
+                if (!accountsByEmail.TryGetValue(NormalizeEmailKey(email), out Account? account))
                 {
                     skippedItems.Add($"{email}: sin cuenta local.");
                     continue;
@@ -350,6 +394,7 @@ namespace Services.Academic
 
             return query
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(resource => resource.Subject)
                 .ThenInclude(subject => subject.Career)
                 .Include(resource => resource.Uploader);
@@ -359,6 +404,7 @@ namespace Services.Academic
         {
             return _context.AcademicProgressRecords
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(progress => progress.User)
                 .Include(progress => progress.AssignedBy)
                 .Include(progress => progress.Subject)
@@ -399,6 +445,17 @@ namespace Services.Academic
                 throw new InvalidOperationException("No tenes acceso a los recursos de esta materia.");
         }
 
+        private async Task EnsureCanCreateResourceAsync(Guid actorUserId, string? actorRole, int careerId)
+        {
+            if (CanManageAcademics(actorRole))
+                return;
+
+            bool belongsToCareer = await _context.UserCareers
+                .AnyAsync(link => link.UserId == actorUserId && link.CareerId == careerId);
+            if (!belongsToCareer)
+                throw new InvalidOperationException("No tenes permisos para publicar recursos en esta materia.");
+        }
+
         private async Task EnsureActiveUserAsync(Guid userId)
         {
             bool exists = await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive);
@@ -433,6 +490,14 @@ namespace Services.Academic
         {
             if (!CanManageAcademics(role))
                 throw new InvalidOperationException("No tenes permisos para gestionar contenido academico.");
+        }
+
+        private static void EnsureCanDeleteResource(Guid actorUserId, string? role, Guid uploaderId)
+        {
+            if (CanManageAcademics(role) || actorUserId == uploaderId)
+                return;
+
+            throw new InvalidOperationException("No tenes permisos para eliminar este recurso academico.");
         }
 
         private static void EnsureAdmin(string? role)
@@ -507,6 +572,19 @@ namespace Services.Academic
                 : fileUrl is not null
                     ? ResourceTypeFile
                     : ResourceTypeLink;
+        }
+
+        private static string NormalizeEmailKey(string email)
+        {
+            return email.Trim().ToLowerInvariant();
+        }
+
+        private static int NormalizeVersion(int? version)
+        {
+            int normalized = version.GetValueOrDefault(1);
+            if (normalized < 1)
+                throw new ArgumentException("La version del recurso debe ser mayor o igual a 1.");
+            return normalized;
         }
 
         private static decimal? ValidateScore(decimal? score)

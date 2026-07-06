@@ -130,6 +130,10 @@ namespace GraphQL.GraphQL
             {
                 throw new GraphQLException(ex.Message);
             }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
         }
 
         [Authorize]
@@ -143,7 +147,8 @@ namespace GraphQL.GraphQL
 
         public async Task<PublicProfileSummary> GetPublicProfile(
             Guid userId,
-            [Service] OneItbContext context)
+            [Service] OneItbContext context,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
             User user = await context.Users
                 .AsNoTracking()
@@ -159,13 +164,41 @@ namespace GraphQL.GraphQL
                 .SingleOrDefaultAsync(item => item.Id == userId && item.IsActive)
                 ?? throw new GraphQLException("Usuario no encontrado.");
 
-            int totalPublications = await context.Inquiries
+            IQueryable<Inquiry> publicationMetricsQuery = context.Inquiries
                 .AsNoTracking()
-                .CountAsync(inquiry => inquiry.UserId == userId);
+                .Where(inquiry => inquiry.UserId == userId);
 
-            int totalComments = await context.Comments
+            IQueryable<Comment> commentMetricsQuery = context.Comments
                 .AsNoTracking()
-                .CountAsync(comment => comment.UserId == userId);
+                .Where(comment => comment.UserId == userId);
+
+            Guid? viewerId = TryGetAuthenticatedUserId(httpContextAccessor);
+            if (!viewerId.HasValue)
+            {
+                publicationMetricsQuery = publicationMetricsQuery.Where(inquiry => false);
+                commentMetricsQuery = commentMetricsQuery.Where(comment => false);
+            }
+            else
+            {
+                bool hasGlobalCareerVisibility = await context.Users.AnyAsync(item =>
+                    item.Id == viewerId.Value &&
+                    (item.Role == "Administrador" || item.Role == "Moderador"));
+
+                if (!hasGlobalCareerVisibility)
+                {
+                    IQueryable<int> viewerCareerIds = context.UserCareers
+                        .Where(link => link.UserId == viewerId.Value && link.Career.IsActive)
+                        .Select(link => link.CareerId);
+
+                    publicationMetricsQuery = publicationMetricsQuery
+                        .Where(inquiry => viewerCareerIds.Contains(inquiry.Subject.CareerId));
+                    commentMetricsQuery = commentMetricsQuery
+                        .Where(comment => viewerCareerIds.Contains(comment.Inquiry.Subject.CareerId));
+                }
+            }
+
+            int totalPublications = await publicationMetricsQuery.CountAsync();
+            int totalComments = await commentMetricsQuery.CountAsync();
 
             return new PublicProfileSummary(
                 user.Id,
@@ -208,13 +241,15 @@ namespace GraphQL.GraphQL
 
             List<User> users = await context.Users
                 .AsNoTracking()
+                .Include(user => user.Account)
                 .Include(user => user.UserCareers)
                 .ThenInclude(link => link.Career)
                 .Where(user => user.IsActive)
                 .Where(user =>
                     (user.FirstName + " " + user.LastName).Contains(normalizedTerm) ||
                     user.FirstName.Contains(normalizedTerm) ||
-                    user.LastName.Contains(normalizedTerm))
+                    user.LastName.Contains(normalizedTerm) ||
+                    user.Account.Email.Contains(normalizedTerm))
                 .OrderBy(user => user.FirstName)
                 .ThenBy(user => user.LastName)
                 .Take(take)
@@ -252,6 +287,8 @@ namespace GraphQL.GraphQL
         [Authorize]
         public async Task<IReadOnlyList<AcademicResource>> GetAcademicResources(
             int subjectId,
+            string? searchTerm,
+            AcademicResourceCategory? category,
             [Service] IAcademicService academicService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -260,9 +297,42 @@ namespace GraphQL.GraphQL
                 return await academicService.GetAcademicResourcesAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
                     GetAuthenticatedRole(httpContextAccessor),
-                    subjectId);
+                    subjectId,
+                    searchTerm,
+                    category);
             }
             catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<IReadOnlyList<AcademicResource>> GetResourcesBySubject(
+            int subjectId,
+            string? searchTerm,
+            AcademicResourceCategory? category,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.GetAcademicResourcesAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    subjectId,
+                    searchTerm,
+                    category);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
             {
                 throw new GraphQLException(ex.Message);
             }

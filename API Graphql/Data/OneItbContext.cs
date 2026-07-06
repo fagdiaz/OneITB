@@ -287,10 +287,6 @@ namespace OneItb.Data
             // ==========================================
             modelBuilder.Entity<AcademicResource>(entity =>
             {
-                entity.ToTable("AcademicResources", "dbo", table =>
-                    table.HasCheckConstraint(
-                        "CK_AcademicResources_Content",
-                        "([FileUrl] IS NOT NULL AND LEN([FileUrl]) > 0) OR ([ExternalUrl] IS NOT NULL AND LEN([ExternalUrl]) > 0)"));
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
@@ -299,15 +295,32 @@ namespace OneItb.Data
                 entity.Property(e => e.FileUrl).HasMaxLength(500).IsUnicode(true);
                 entity.Property(e => e.ExternalUrl).HasMaxLength(500).IsUnicode(true);
                 entity.Property(e => e.ResourceType).IsRequired().HasMaxLength(20).IsUnicode(false);
+                entity.Property(e => e.Category)
+                    .IsRequired()
+                    .HasConversion<string>()
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasDefaultValue(AcademicResourceCategory.Otro);
+                entity.Property(e => e.Version).IsRequired().HasDefaultValue(1);
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
                 entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
                 entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
+                entity.ToTable("AcademicResources", "dbo", table =>
+                {
+                    table.HasCheckConstraint(
+                        "CK_AcademicResources_Content",
+                        "([FileUrl] IS NOT NULL AND LEN([FileUrl]) > 0) OR ([ExternalUrl] IS NOT NULL AND LEN([ExternalUrl]) > 0)");
+                    table.HasCheckConstraint(
+                        "CK_AcademicResources_Version",
+                        "[Version] >= 1");
+                });
 
                 entity.HasQueryFilter(e => e.IsActive);
                 entity.HasIndex(e => e.SubjectId);
                 entity.HasIndex(e => e.UploaderId);
                 entity.HasIndex(e => e.CreatedAt);
                 entity.HasIndex(e => new { e.SubjectId, e.IsActive, e.CreatedAt });
+                entity.HasIndex(e => new { e.SubjectId, e.Category, e.IsActive, e.CreatedAt });
 
                 entity.HasOne(e => e.Subject)
                     .WithMany(subject => subject.AcademicResources)

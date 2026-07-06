@@ -26,7 +26,7 @@ namespace Services.Accounts
         public async Task<AuthPayload> Login(LoginInput input)
         {
             var user = await _uow.Users.GetByEmailAsync(input.Email.ToLowerInvariant());
-            if (user == null || !BCrypt.Net.BCrypt.Verify(input.Password, user.Account.PasswordHash))
+            if (user == null || !user.IsActive || !BCrypt.Net.BCrypt.Verify(input.Password, user.Account.PasswordHash))
                 // GraphQLException serializa el mensaje en errors[] — Apollo lo lee como graphQLErrors.
                 throw new GraphQLException("Usuario o contraseña incorrectos.");
 

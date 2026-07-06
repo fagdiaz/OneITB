@@ -98,6 +98,7 @@ export const MiniChatWidget = () => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        avatarUrl: contactInfo?.avatarUrl || user.avatarUrl,
         unreadCount: contactInfo?.unreadCount || 0,
         lastMessageAt: contactInfo?.lastMessageAt || null,
         lastMessageContent: dto.lastMessage || contactInfo?.lastMessageContent || null,
@@ -235,6 +236,20 @@ export const MiniChatWidget = () => {
       content,
       sentAt: new Date().toISOString(),
       isRead: false,
+      sender: {
+        __typename: 'User',
+        id: auth.id,
+        firstName: auth.username || 'Yo',
+        lastName: '',
+        avatarUrl: auth.avatarUrl || null,
+      },
+      receiver: selectedContact ? {
+        __typename: 'User',
+        id: selectedContact.userId,
+        firstName: selectedContact.firstName,
+        lastName: selectedContact.lastName,
+        avatarUrl: selectedContact.avatarUrl || null,
+      } : null,
     };
 
     setForm({ content: '' });

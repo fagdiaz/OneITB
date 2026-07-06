@@ -31,6 +31,13 @@ namespace Services.Users
             "User"
         };
 
+        private static readonly string[] PublicRegistrationRoles =
+        {
+            "Estudiante",
+            "Profesor",
+            "Egresado"
+        };
+
         private readonly IUnitOfWork _uow;
         private readonly OneItbContext _context;
 
@@ -43,6 +50,8 @@ namespace Services.Users
         public async Task<UserPayload> RegisterAsync(RegisterInput input)
         {
             var userId = Guid.NewGuid();
+            string normalizedRole = NormalizePublicRegistrationRole(input.Role);
+            int[] activeCareerIds = GetActiveRegistrationCareerIds(input.CareerIds);
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
             
             var account = new Account
@@ -58,9 +67,18 @@ namespace Services.Users
                  Id = userId,
                  FirstName = NormalizeToTitleCase(input.FirstName), 
                  LastName = NormalizeToTitleCase(input.LastName), 
-                 Role = "User",
+                 Role = normalizedRole,
                  Account = account
             };
+
+            foreach (int careerId in activeCareerIds)
+            {
+                user.UserCareers.Add(new UserCareer
+                {
+                    UserId = userId,
+                    CareerId = careerId
+                });
+            }
 
             await _uow.Users.AddAsync(user);
             await _uow.CompleteAsync();
@@ -203,6 +221,46 @@ namespace Services.Users
         private static bool IsAdministrator(User user)
         {
             return string.Equals(user.Role, "Administrador", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizePublicRegistrationRole(string? role)
+        {
+            string normalized = role?.Trim() ?? string.Empty;
+            string? allowed = PublicRegistrationRoles
+                .FirstOrDefault(item => string.Equals(item, normalized, StringComparison.OrdinalIgnoreCase));
+
+            if (allowed == null)
+            {
+                throw new ArgumentException("Rol de registro no permitido.");
+            }
+
+            return allowed;
+        }
+
+        private int[] GetActiveRegistrationCareerIds(IReadOnlyList<int>? careerIds)
+        {
+            int[] normalizedIds = careerIds?
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray() ?? Array.Empty<int>();
+
+            if (normalizedIds.Length == 0)
+            {
+                throw new ArgumentException("Selecciona al menos una carrera.");
+            }
+
+            int[] activeCareerIds = _context.Careers
+                .AsNoTracking()
+                .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
+                .Select(career => career.Id)
+                .ToArray();
+
+            if (activeCareerIds.Length != normalizedIds.Length)
+            {
+                throw new ArgumentException("Una o mas carreras seleccionadas no existen.");
+            }
+
+            return activeCareerIds;
         }
 
         private void ReplaceCareerLinks(User user, IReadOnlyList<int>? careerIds)

@@ -9,7 +9,14 @@ const FILTER_PRESETS = [
   { id: 'warm', label: 'Calido', filter: 'saturate(1.08)', tint: 'rgba(251, 146, 60, 0.16)' },
 ];
 
+const CANVAS_SIZE = 720;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 3;
+const BASE_ZOOM = 2;
+
 const clampFilterValue = (value, base = 100) => Math.max(0, base + Number(value || 0));
+const normalizeZoom = (value) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Number(value) || 1));
+const getEffectiveZoom = (value) => BASE_ZOOM * normalizeZoom(value);
 
 const buildCanvasFilter = ({ preset, brightness, contrast, saturation }) => {
   const parts = [];
@@ -18,6 +25,17 @@ const buildCanvasFilter = ({ preset, brightness, contrast, saturation }) => {
   parts.push(`contrast(${clampFilterValue(contrast)}%)`);
   parts.push(`saturate(${clampFilterValue(saturation)}%)`);
   return parts.join(' ');
+};
+
+const getRotatedBounds = (image, degrees) => {
+  const radians = ((degrees % 180) * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(radians));
+  const sin = Math.abs(Math.sin(radians));
+
+  return {
+    width: (image.width * cos) + (image.height * sin),
+    height: (image.width * sin) + (image.height * cos),
+  };
 };
 
 const SliderControl = ({ label, min, max, step = 1, value, onChange }) => (
@@ -50,8 +68,11 @@ export const AvatarEditorModal = ({
 }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
+  const previewFrameRef = useRef(null);
+  const dragStateRef = useRef(null);
   const [activeTab, setActiveTab] = useState('crop');
-  const [zoom, setZoom] = useState(1.15);
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
   const [fineRotation, setFineRotation] = useState(0);
   const [flipH, setFlipH] = useState(false);
@@ -71,7 +92,8 @@ export const AvatarEditorModal = ({
 
   const resetControls = useCallback(() => {
     setActiveTab('crop');
-    setZoom(1.15);
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
     setRotation(0);
     setFineRotation(0);
     setFlipH(false);
@@ -84,12 +106,44 @@ export const AvatarEditorModal = ({
     setLoadError(false);
   }, []);
 
+  const getCoverScale = useCallback((image, candidateRotation) => {
+    const bounds = getRotatedBounds(image, candidateRotation);
+    return Math.max(CANVAS_SIZE / bounds.width, CANVAS_SIZE / bounds.height);
+  }, []);
+
+  const getRenderedBounds = useCallback((candidateZoom = zoom) => {
+    const image = imageRef.current;
+    if (!image) {
+      return { width: CANVAS_SIZE, height: CANVAS_SIZE };
+    }
+
+    const candidateRotation = rotation + fineRotation;
+    const bounds = getRotatedBounds(image, candidateRotation);
+    const scale = getCoverScale(image, candidateRotation) * getEffectiveZoom(candidateZoom);
+
+    return {
+      width: bounds.width * scale,
+      height: bounds.height * scale,
+    };
+  }, [fineRotation, getCoverScale, rotation, zoom]);
+
+  const clampOffset = useCallback((candidateOffset, candidateZoom = zoom) => {
+    const bounds = getRenderedBounds(candidateZoom);
+    const maxX = Math.max(0, (bounds.width - CANVAS_SIZE) / 2);
+    const maxY = Math.max(0, (bounds.height - CANVAS_SIZE) / 2);
+
+    return {
+      x: Math.max(-maxX, Math.min(maxX, candidateOffset.x)),
+      y: Math.max(-maxY, Math.min(maxY, candidateOffset.y)),
+    };
+  }, [getRenderedBounds, zoom]);
+
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
     if (!canvas || !image) return;
 
-    const size = 720;
+    const size = CANVAS_SIZE;
     canvas.width = size;
     canvas.height = size;
     const context = canvas.getContext('2d');
@@ -99,10 +153,11 @@ export const AvatarEditorModal = ({
     context.fillStyle = '#f8fafc';
     context.fillRect(0, 0, size, size);
     context.save();
-    context.translate(size / 2, size / 2);
+    context.translate(size / 2 + offset.x, size / 2 + offset.y);
     context.rotate(((rotation + fineRotation) * Math.PI) / 180);
 
-    const coverScale = Math.max(size / image.width, size / image.height) * zoom;
+    const candidateRotation = rotation + fineRotation;
+    const coverScale = getCoverScale(image, candidateRotation) * getEffectiveZoom(zoom);
     context.scale(flipH ? -coverScale : coverScale, flipV ? -coverScale : coverScale);
     context.filter = buildCanvasFilter({
       preset: selectedPreset,
@@ -130,7 +185,7 @@ export const AvatarEditorModal = ({
       context.fillStyle = gradient;
       context.fillRect(0, 0, size, size);
     }
-  }, [brightness, contrast, fineRotation, flipH, flipV, rotation, saturation, selectedPreset, vignette, zoom]);
+  }, [brightness, contrast, fineRotation, flipH, flipV, getCoverScale, offset.x, offset.y, rotation, saturation, selectedPreset, vignette, zoom]);
 
   useEffect(() => {
     if (!isOpen || !imageSrc) return undefined;
@@ -153,7 +208,58 @@ export const AvatarEditorModal = ({
     drawCanvas();
   }, [drawCanvas, imageVersion]);
 
+  useEffect(() => {
+    setOffset((current) => {
+      const next = clampOffset(current, zoom);
+      return next.x === current.x && next.y === current.y ? current : next;
+    });
+  }, [clampOffset, imageVersion, zoom]);
+
   if (!isOpen) return null;
+
+  const getCanvasScale = () => {
+    const rect = previewFrameRef.current?.getBoundingClientRect();
+    return rect?.width ? CANVAS_SIZE / rect.width : 1;
+  };
+
+  const handlePointerDown = (event) => {
+    if (saving || loadError) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startOffset: offset,
+      canvasScale: getCanvasScale(),
+    };
+  };
+
+  const handlePointerMove = (event) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const deltaX = (event.clientX - dragState.startX) * dragState.canvasScale;
+    const deltaY = (event.clientY - dragState.startY) * dragState.canvasScale;
+    setOffset(clampOffset({
+      x: dragState.startOffset.x + deltaX,
+      y: dragState.startOffset.y + deltaY,
+    }));
+  };
+
+  const handlePointerEnd = (event) => {
+    if (dragStateRef.current?.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    dragStateRef.current = null;
+  };
+
+  const handleZoomChange = (value) => {
+    const nextZoom = normalizeZoom(value);
+    setZoom(nextZoom);
+    setOffset((current) => clampOffset(current, nextZoom));
+  };
 
   const handleSave = () => {
     const canvas = canvasRef.current;
@@ -198,14 +304,21 @@ export const AvatarEditorModal = ({
           </div>
 
           <div className="mt-4 flex flex-1 items-center justify-center">
-            <div className="relative aspect-square w-full max-w-[315px] overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-2.5 shadow-inner dark:border-white/10 dark:bg-slate-950">
+            <div
+              ref={previewFrameRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerEnd}
+              onPointerCancel={handlePointerEnd}
+              onPointerLeave={handlePointerEnd}
+              className="relative aspect-square w-full max-w-[315px] touch-none select-none overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-2.5 shadow-inner dark:border-white/10 dark:bg-slate-950"
+            >
               <canvas
                 ref={canvasRef}
-                className="h-full w-full rounded-[1.25rem] object-cover"
+                className="h-full w-full cursor-grab rounded-[1.25rem] object-cover active:cursor-grabbing"
                 aria-label="Vista previa editada del avatar"
               />
               <div className="pointer-events-none absolute inset-2.5 rounded-[1.25rem] ring-1 ring-inset ring-white/40 dark:ring-white/10" />
-              <div className="pointer-events-none absolute inset-10 rounded-full border border-white/70 shadow-[0_0_0_999px_rgba(15,23,42,0.18)] dark:border-white/40 dark:shadow-[0_0_0_999px_rgba(2,6,23,0.42)]" />
               {loadError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/90 text-sm font-semibold text-red-600 dark:bg-slate-950/90 dark:text-red-300">
                   No se pudo cargar la imagen seleccionada.
@@ -258,7 +371,7 @@ export const AvatarEditorModal = ({
                     Espejo V
                   </button>
                 </div>
-                <SliderControl label="Zoom" min={1} max={3} step={0.05} value={zoom} onChange={setZoom} />
+                <SliderControl label="Zoom" min={MIN_ZOOM} max={MAX_ZOOM} step={0.05} value={zoom} onChange={handleZoomChange} />
                 <SliderControl label="Rotacion fina" min={-45} max={45} value={fineRotation} onChange={setFineRotation} />
               </>
             )}

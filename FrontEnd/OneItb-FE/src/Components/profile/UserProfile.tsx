@@ -89,7 +89,7 @@ export const UserProfile = () => {
   });
 
   const { data: inquiriesData } = useQuery(GET_INQUIRIES, {
-    variables: { searchTerm: null, careerId: null, subjectIds: null },
+    variables: { searchTerm: null, careerId: null, careerIds: null, subjectIds: null },
     skip: !auth.id,
     fetchPolicy: 'cache-and-network',
   });

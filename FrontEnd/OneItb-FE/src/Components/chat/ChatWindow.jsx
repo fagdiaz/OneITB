@@ -1,9 +1,41 @@
 import React from 'react';
+import { apiBaseUrl } from '../../utils/uploadFile';
 
 const formatTime = (value) => new Intl.DateTimeFormat('es-AR', {
   hour: '2-digit',
   minute: '2-digit',
 }).format(new Date(value));
+
+const resolveAssetUrl = (value) => {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value;
+  if (value.startsWith('/')) return `${apiBaseUrl}${value}`;
+  return value;
+};
+
+const getInitials = (firstName = '', lastName = '') =>
+  `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || 'U';
+
+const AvatarBadge = ({ person, className = 'h-8 w-8', fallbackClassName = '' }) => {
+  const avatarUrl = resolveAssetUrl(person?.avatarUrl);
+  const label = `${person?.firstName || ''} ${person?.lastName || ''}`.trim() || 'Usuario';
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={`Avatar de ${label}`}
+        className={`${className} shrink-0 rounded-full object-cover ring-1 ring-white/15`}
+      />
+    );
+  }
+
+  return (
+    <span className={`${className} flex shrink-0 items-center justify-center rounded-full font-bold ring-1 ${fallbackClassName || 'bg-blue-500/15 text-blue-100 ring-blue-300/20'}`}>
+      {getInitials(person?.firstName, person?.lastName)}
+    </span>
+  );
+};
 
 export const ChatWindow = ({
   selectedContact,
@@ -42,9 +74,7 @@ export const ChatWindow = ({
             <button type="button" onClick={handleBackToContacts} className="rounded-full p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white sm:hidden">
               <i className="fa-solid fa-arrow-left text-sm" />
             </button>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-sm font-bold text-blue-100 ring-1 ring-blue-300/20">
-              {selectedContact.firstName?.[0]}{selectedContact.lastName?.[0]}
-            </div>
+            <AvatarBadge person={selectedContact} className="h-8 w-8" />
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-sm font-bold leading-tight text-slate-950 dark:text-white">{selectedContact.firstName} {selectedContact.lastName}</h3>
               <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{selectedContact.role}</p>
@@ -69,7 +99,14 @@ export const ChatWindow = ({
                 const isOwn = message.senderId === auth.id;
                 const isOptimistic = message.id.startsWith('optimistic-');
                 return (
-                  <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                  <div key={message.id} className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                    {!isOwn && (
+                      <AvatarBadge
+                        person={message.sender || selectedContact}
+                        className="h-7 w-7"
+                        fallbackClassName="bg-slate-200 text-slate-700 ring-slate-300 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
+                      />
+                    )}
                     <div className={`max-w-[85%] rounded-2xl px-3 py-2 shadow-lg ${isOwn ? 'rounded-br-sm bg-blue-600 text-white shadow-blue-950/20' : 'rounded-bl-sm border border-slate-200 bg-white text-slate-800 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100'} ${isOptimistic ? 'opacity-70' : ''}`}>
                       <p className="whitespace-pre-wrap break-words text-[13px] leading-snug">{message.content}</p>
                       <p className={`mt-0.5 text-right text-[9px] ${isOwn ? 'text-blue-200' : 'text-slate-500'}`}>

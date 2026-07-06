@@ -1,8 +1,8 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-06-30
+**Ultima revision**: 2026-07-06
 
-**Estado global**: 87% (68 de 78 items)
+**Estado global**: 94% (73 de 78 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -15,7 +15,7 @@ Este archivo concentra avance funcional, estabilizacion, deuda tecnica y priorid
 
 Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre implementacion y verificacion.
 
-## Modulo 1 - Identidad, cuentas y seguridad: 88% (7/8)
+## Modulo 1 - Identidad, cuentas y seguridad: 100% (8/8)
 
 - [x] [V] Relacion 1:1 `Account`-`User` y passwords BCrypt `char(60)`.
 - [x] [V] Registro y login con JWT.
@@ -24,7 +24,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Sesion frontend normalizada sobre `token` y `user`.
 - [x] [V] Autorizacion por roles en operaciones sensibles.
 - [x] [I] Flujo Magic Link para empleadores.
-- [ ] [P] Suite automatizada de registro, login, expiracion y autorizacion.
+- [x] [I] Suite automatizada backend de registro, login, cuentas inactivas y autorizacion administrativa.
 
 ## Modulo 2 - Perfiles e identidad social: 88% (7/8)
 
@@ -47,7 +47,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Selectores en cascada carrera-materia en feed y administracion.
 - [x] [I] Progreso academico, cursadas y notas por usuario.
 
-## Modulo 4 - Feed, comentarios y multimedia: 94% (16/17)
+## Modulo 4 - Feed, comentarios y multimedia: 100% (17/17)
 
 - [x] [V] `Inquiry` vinculada a autor y materia sin N+1.
 - [x] [V] Creacion, lectura, refetch y persistencia de publicaciones.
@@ -65,7 +65,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Regresion end-to-end de uploads/rich media con backend local disponible.
 - [x] [V] Limpieza de archivos huerfanos cuando GraphQL falla tras el upload.
 - [x] [V] Paginacion o scroll incremental del feed.
-- [ ] [P] Pruebas automatizadas de publicaciones, comentarios y archivos.
+- [x] [I] Pruebas automatizadas backend de publicaciones, comentarios, archivos, busqueda, scoping y reacciones.
 
 ## Modulo 5 - Mensajeria privada: 88% (7/8)
 
@@ -91,27 +91,27 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Auditoria persistente de acciones administrativas y de moderacion.
 - [ ] [P] Regresion runtime del panel tras cambios de materias y superadmin.
 
-## Modulo 7 - Recursos y seguimiento academico: 83% (5/6)
+## Modulo 7 - Recursos y seguimiento academico: 100% (6/6)
 
 - [x] [I] Entidad y repositorio de recursos academicos independiente del feed.
 - [x] [I] Permisos de recursos por carrera, materia y rol.
-- [ ] [P] Busqueda, categorias y versionado de recursos.
+- [x] [I] Busqueda, categorias y versionado de recursos.
 - [x] [I] Visualizacion de notas y progreso academico.
 - [x] [I] Adaptador o simulador desacoplado para SIU Guarani.
 - [x] [I] Preferencias de notificacion por materia.
 
-## Modulo 8 - Calidad, operacion y escalabilidad: 71% (10/14)
+## Modulo 8 - Calidad, operacion y escalabilidad: 86% (12/14)
 
 - [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
 - [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
 - [x] [I] Builds Release/Vite y gates de migraciones documentados.
 - [x] [I] Documentacion consolidada y fuentes de verdad definidas.
 - [x] [I] Evidencia por spec y development log cronologico inverso.
-- [x] [I] Base de pruebas unitarias del backend para servicios academicos y notificaciones.
+- [x] [I] Base de pruebas unitarias del backend para servicios academicos, notificaciones, autenticacion y feed social.
 - [ ] [P] Pruebas de componentes y estado frontend.
 - [ ] [P] Pruebas de integracion GraphQL con SQL Server de prueba.
-- [ ] [P] Pipeline CI para build, tests y validacion de migraciones.
-- [ ] [P] Logging estructurado, metricas y trazabilidad de errores.
+- [x] [I] Pipeline CI para build, tests y validacion de modelo EF sin secretos versionados.
+- [x] [V] Logging estructurado, metricas basicas de request y trazabilidad de errores con correlation id.
 - [x] [V] Entorno local reproducible sin bloqueo de SQL SSPI/certificado HTTPS.
 - [x] [V] Limpieza de warnings de compilacion (Vite chunk size y .NET nullability).
 - [x] [I] Actualizacion controlada de dependencias y division del bundle frontend.
@@ -121,9 +121,9 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P0 - Estabilizacion inmediata
 
-1. Incorporar pruebas automatizadas de autenticacion y feed.
-2. Verificar visualmente el panel admin completo en navegador contra SQL Docker.
-3. Mantener Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
+1. Verificar visualmente el panel admin completo en navegador contra SQL Docker.
+2. Mantener Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
+3. Ampliar la cobertura automatizada hacia componentes frontend e integracion GraphQL SQL.
 
 ### P1 - Cierre del nucleo social
 
@@ -131,15 +131,15 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 2. Limpieza de uploads huerfanos: verificada en runtime contra Docker SQL.
 3. Auditoria persistente de moderacion: verificada en runtime contra Docker SQL.
 
-### P2 - Alcance academico pendiente
+### P2 - Alcance academico
 
-1. Busqueda, categorias y versionado de recursos.
+1. Cerrado a nivel de implementacion y hardening tecnico. El hub academico requiere regresion autenticada en navegador para elevar recursos a `[V]`.
 
 ### P3 - Escalabilidad y operacion
 
 1. Pub/sub distribuido.
 2. Almacenamiento compartido de archivos.
-3. CI, observabilidad y actualizacion de dependencias.
+3. Observabilidad avanzada, alertas y actualizacion de dependencias.
 
 ### P4 - Contenedores y CI/CD
 

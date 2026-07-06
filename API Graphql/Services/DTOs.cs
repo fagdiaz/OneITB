@@ -27,6 +27,10 @@ namespace OneITB.Core.Services.Interfaces
         [property: GraphQLType(typeof(NonNullType<StringType>))]
         string LastName,
 
+        string? Role,
+
+        IReadOnlyList<int>? CareerIds,
+
         string[]? EnrolledCareers
     );
 

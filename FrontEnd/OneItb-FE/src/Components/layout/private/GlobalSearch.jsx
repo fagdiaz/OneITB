@@ -27,34 +27,39 @@ const toggleNumber = (items, id) =>
   items.includes(id) ? items.filter((item) => item !== id) : [...items, id];
 
 export const GlobalSearch = () => {
-  const { auth } = useAuth();
+  const { auth, isAuthenticated, token, sessionVersion } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCareerIds, setSelectedCareerIds] = useState([]);
   const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
+  const [allSubjectsSelected, setAllSubjectsSelected] = useState(true);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const isLoggedIn = Boolean(isAuthenticated && token && auth?.id);
   const canSearchGlobally = auth?.role === 'Administrador' || auth?.role === 'Moderador';
 
   const { data: meData } = useQuery(GET_USER_PROFILE, {
-    skip: !auth?.id,
-    fetchPolicy: 'cache-first',
+    skip: !isLoggedIn,
+    fetchPolicy: 'cache-and-network',
+    nextFetchPolicy: 'cache-first',
   });
   const { data: careersData } = useQuery(GET_CAREERS, {
-    skip: !auth?.id,
+    skip: !isLoggedIn,
     fetchPolicy: 'cache-first',
   });
 
+  const sessionProfile = meData?.me?.id === auth?.id ? meData.me : null;
   const myCareers = useMemo(
     () =>
-      (meData?.me?.userCareers ?? [])
+      (sessionProfile?.userCareers ?? [])
         .map((link) => link?.career)
         .filter((career) => career?.id && career?.isActive !== false),
-    [meData],
+    [sessionProfile],
   );
 
   const careerOptions = canSearchGlobally ? careersData?.careers ?? [] : myCareers;
+  const shouldShowCareerFilter = canSearchGlobally || myCareers.length > 1;
   const effectiveCareerIds = useMemo(
     () =>
       selectedCareerIds.length > 0
@@ -68,14 +73,14 @@ export const GlobalSearch = () => {
 
   const { data: subjectsData } = useQuery(GET_SUBJECTS, {
     variables: { careerId: subjectQueryCareerId },
-    skip: !auth?.id,
+    skip: !isLoggedIn,
     fetchPolicy: 'cache-first',
   });
 
   const trimmedTerm = searchTerm.trim();
   const { data: profilesData } = useQuery(SEARCH_PUBLIC_PROFILES, {
     variables: { searchTerm: trimmedTerm, first: 5 },
-    skip: trimmedTerm.length < 2,
+    skip: !isLoggedIn || trimmedTerm.length < 2,
     fetchPolicy: 'cache-and-network',
   });
 
@@ -110,7 +115,7 @@ export const GlobalSearch = () => {
 
   useEffect(() => {
     setIsOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, sessionVersion]);
 
   useEffect(() => {
     if (!careerOptions.length) return;
@@ -124,6 +129,20 @@ export const GlobalSearch = () => {
   useEffect(() => {
     if (!subjects.length) {
       setSelectedSubjectIds((current) => (current.length === 0 ? current : []));
+      setAllSubjectsSelected(true);
+      return;
+    }
+    if (allSubjectsSelected) {
+      const visibleSubjectIds = subjects.map((subject) => subject.id);
+      setSelectedSubjectIds((current) => {
+        if (
+          current.length === visibleSubjectIds.length &&
+          current.every((id) => visibleSubjectIds.includes(id))
+        ) {
+          return current;
+        }
+        return visibleSubjectIds;
+      });
       return;
     }
     const validSubjectIds = new Set(subjects.map((subject) => subject.id));
@@ -131,14 +150,16 @@ export const GlobalSearch = () => {
       const next = current.filter((id) => validSubjectIds.has(id));
       return next.length === current.length ? current : next;
     });
-  }, [subjects]);
+  }, [allSubjectsSelected, subjects]);
 
   const handleSearch = (event) => {
     event.preventDefault();
     const params = new URLSearchParams();
     if (trimmedTerm) params.append('q', trimmedTerm);
     if (effectiveCareerIds.length > 0) params.append('careers', effectiveCareerIds.join(','));
-    if (selectedSubjectIds.length > 0) params.append('subjects', selectedSubjectIds.join(','));
+    if (!allSubjectsSelected && selectedSubjectIds.length > 0) {
+      params.append('subjects', selectedSubjectIds.join(','));
+    }
 
     setIsOpen(false);
     navigate(params.toString() ? `/feed?${params.toString()}` : '/feed');
@@ -161,13 +182,39 @@ export const GlobalSearch = () => {
 
     setSelectedCareerIds(next);
     setSelectedSubjectIds([]);
+    setAllSubjectsSelected(true);
   };
 
   const handleClear = () => {
     setSearchTerm('');
     setSelectedCareerIds([]);
     setSelectedSubjectIds([]);
+    setAllSubjectsSelected(true);
   };
+
+  const handleAllSubjectsToggle = () => {
+    if (allSubjectsSelected) {
+      setAllSubjectsSelected(false);
+      setSelectedSubjectIds([]);
+      return;
+    }
+
+    setAllSubjectsSelected(true);
+    setSelectedSubjectIds(subjects.map((subject) => subject.id));
+  };
+
+  const handleSubjectToggle = (subjectId) => {
+    if (allSubjectsSelected) {
+      setAllSubjectsSelected(false);
+      setSelectedSubjectIds(subjects.map((subject) => subject.id).filter((id) => id !== subjectId));
+      return;
+    }
+
+    setAllSubjectsSelected(false);
+    setSelectedSubjectIds((current) => toggleNumber(current, subjectId));
+  };
+
+  if (!isLoggedIn) return null;
 
   return (
     <div className="relative h-9 w-9 shrink-0" ref={searchRef}>
@@ -201,7 +248,7 @@ export const GlobalSearch = () => {
                 className="min-w-0 flex-1 bg-transparent text-sm font-medium text-white placeholder:text-slate-400 outline-none"
                 autoFocus
               />
-              {(searchTerm || selectedCareerIds.length > 0 || selectedSubjectIds.length > 0) && (
+              {(searchTerm || selectedCareerIds.length > 0 || !allSubjectsSelected) && (
                 <button
                   type="button"
                   onClick={handleClear}
@@ -213,7 +260,7 @@ export const GlobalSearch = () => {
               )}
             </div>
 
-            {careerOptions.length > 0 && (
+            {shouldShowCareerFilter && careerOptions.length > 0 && (
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
                 <details>
                   <summary className="cursor-pointer list-none text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
@@ -245,9 +292,19 @@ export const GlobalSearch = () => {
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
                 <details>
                   <summary className="cursor-pointer list-none text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                    Materias ({selectedSubjectIds.length || 'todas'})
+                    Materias ({allSubjectsSelected ? 'todas' : selectedSubjectIds.length})
                   </summary>
                   <div className="mt-2 grid max-h-36 gap-1.5 overflow-y-auto pr-1">
+                    <label className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-black text-blue-100 transition hover:bg-white/10">
+                      <input
+                        type="checkbox"
+                        checked={allSubjectsSelected}
+                        onChange={handleAllSubjectsToggle}
+                        className="h-3.5 w-3.5 rounded border-white/20 bg-slate-900 text-blue-500"
+                      />
+                      <span className="min-w-0 truncate">Todas</span>
+                    </label>
+                    <div className="h-px bg-white/10" />
                     {subjects.map((subject) => (
                       <label
                         key={subject.id}
@@ -255,8 +312,8 @@ export const GlobalSearch = () => {
                       >
                         <input
                           type="checkbox"
-                          checked={selectedSubjectIds.includes(subject.id)}
-                          onChange={() => setSelectedSubjectIds((current) => toggleNumber(current, subject.id))}
+                          checked={allSubjectsSelected || selectedSubjectIds.includes(subject.id)}
+                          onChange={() => handleSubjectToggle(subject.id)}
                           className="h-3.5 w-3.5 rounded border-white/20 bg-slate-900 text-indigo-500"
                         />
                         <span className="min-w-0 truncate">
@@ -281,8 +338,11 @@ export const GlobalSearch = () => {
                       type="button"
                       onClick={() => {
                         setSelectedSubjectIds((current) =>
-                          current.includes(subject.id) ? current : [...current, subject.id],
+                          allSubjectsSelected
+                            ? [subject.id]
+                            : current.includes(subject.id) ? current : [...current, subject.id],
                         );
+                        setAllSubjectsSelected(false);
                         if (subject.career?.id) {
                           setSelectedCareerIds((current) =>
                             current.includes(subject.career.id) ? current : [...current, subject.career.id],

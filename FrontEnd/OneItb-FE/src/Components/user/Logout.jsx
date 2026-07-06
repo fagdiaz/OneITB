@@ -3,16 +3,25 @@ import { useNavigate } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
 
 export const Logout = () => {
-
-  const {setAuth} = useAuth();
-  const navigate = useNavigate();
+  const { logout } = useAuth()
+  const navigate = useNavigate()
 
   useEffect(() => {
-    localStorage.clear();
-    setAuth({});
-    navigate("/login");
+    let cancelled = false
 
-  })
+    const closeSession = async () => {
+      await logout()
+      if (!cancelled) {
+        navigate('/login', { replace: true })
+      }
+    }
+
+    closeSession()
+
+    return () => {
+      cancelled = true
+    }
+  }, [logout, navigate])
 
   return (
     <h1>Cerrando sesión...</h1>

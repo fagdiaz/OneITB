@@ -18,6 +18,38 @@ import {
   formatTime,
   updateContactCache,
 } from './chatCache';
+import { apiBaseUrl } from '../../utils/uploadFile';
+
+const resolveAssetUrl = (value) => {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value;
+  if (value.startsWith('/')) return `${apiBaseUrl}${value}`;
+  return value;
+};
+
+const getInitials = (firstName = '', lastName = '') =>
+  `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || 'U';
+
+const AvatarBadge = ({ person, className = 'h-10 w-10', fallbackClassName = '' }) => {
+  const avatarUrl = resolveAssetUrl(person?.avatarUrl);
+  const label = `${person?.firstName || ''} ${person?.lastName || ''}`.trim() || 'Usuario';
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={`Avatar de ${label}`}
+        className={`${className} shrink-0 rounded-full object-cover ring-1 ring-white/15`}
+      />
+    );
+  }
+
+  return (
+    <span className={`${className} flex shrink-0 items-center justify-center rounded-full font-bold ring-1 ${fallbackClassName || 'bg-slate-100 text-blue-700 ring-slate-200 dark:bg-white/5 dark:text-blue-200 dark:ring-white/10'}`}>
+      {getInitials(person?.firstName, person?.lastName)}
+    </span>
+  );
+};
 
 export const PrivateChat = () => {
   const { auth } = useAuth();
@@ -92,6 +124,7 @@ export const PrivateChat = () => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        avatarUrl: contactInfo?.avatarUrl || user.avatarUrl,
         unreadCount: contactInfo?.unreadCount || 0,
         lastMessageAt: contactInfo?.lastMessageAt || null,
         lastMessageContent: dto.lastMessage || contactInfo?.lastMessageContent || null,
@@ -212,6 +245,20 @@ export const PrivateChat = () => {
       content,
       sentAt: new Date().toISOString(),
       isRead: false,
+      sender: {
+        __typename: 'User',
+        id: auth.id,
+        firstName: auth.username || 'Yo',
+        lastName: '',
+        avatarUrl: auth.avatarUrl || null,
+      },
+      receiver: selectedContact ? {
+        __typename: 'User',
+        id: selectedContact.userId,
+        firstName: selectedContact.firstName,
+        lastName: selectedContact.lastName,
+        avatarUrl: selectedContact.avatarUrl || null,
+      } : null,
     };
 
     setForm({ content: '' });
@@ -309,25 +356,28 @@ export const PrivateChat = () => {
   const renderContactItem = (contact, isNew = false) => {
     const active = contact.userId === selectedContactId;
     const preview = !isNew ? contact.lastMessageContent : null;
+    const unread = (contact.unreadCount || 0) > 0 && !isNew;
     return (
       <button
         key={contact.userId}
         type="button"
         onClick={() => handleSelectContact(contact.userId)}
-        className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 ${active ? 'border-blue-200 bg-blue-50 text-slate-950 shadow-[0_10px_30px_rgba(37,99,235,0.10)] dark:border-blue-300/20 dark:bg-blue-500/15 dark:text-white dark:shadow-[0_10px_30px_rgba(37,99,235,0.16)]' : 'border-transparent text-slate-600 hover:-translate-y-0.5 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:border-white/10 dark:hover:bg-white/[0.05] dark:hover:text-white'}`}
+        className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 ${active ? 'border-blue-200 bg-blue-50 text-slate-950 shadow-[0_10px_30px_rgba(37,99,235,0.10)] dark:border-blue-300/20 dark:bg-blue-500/15 dark:text-white dark:shadow-[0_10px_30px_rgba(37,99,235,0.16)]' : unread ? 'border-blue-200 bg-blue-50/80 text-slate-950 shadow-sm dark:border-blue-300/20 dark:bg-blue-500/10 dark:text-white' : 'border-transparent text-slate-600 hover:-translate-y-0.5 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:border-white/10 dark:hover:bg-white/[0.05] dark:hover:text-white'}`}
       >
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold ring-1 ${active ? 'bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-400/20 dark:text-blue-100 dark:ring-blue-300/20' : 'bg-slate-100 text-blue-700 ring-slate-200 group-hover:ring-blue-200 dark:bg-white/5 dark:text-blue-200 dark:ring-white/10 dark:group-hover:ring-blue-300/20'}`}>
-          {contact.firstName?.[0]}{contact.lastName?.[0]}
-        </div>
+        <AvatarBadge
+          person={contact}
+          className="h-11 w-11"
+          fallbackClassName={active || unread ? 'bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-400/20 dark:text-blue-100 dark:ring-blue-300/20' : 'bg-slate-100 text-blue-700 ring-slate-200 group-hover:ring-blue-200 dark:bg-white/5 dark:text-blue-200 dark:ring-white/10 dark:group-hover:ring-blue-300/20'}
+        />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">
+          <p className={`truncate ${unread ? 'font-black' : 'font-semibold'}`}>
             {contact.firstName} {contact.lastName} {isNew && <span className="ml-1 text-[10px] uppercase tracking-wider text-emerald-500 font-bold">(Nuevo)</span>}
           </p>
           <p className={`truncate text-xs ${active ? 'text-blue-700 dark:text-blue-100' : 'text-slate-500 dark:group-hover:text-slate-400'}`}>
             {preview ? `"${preview}"` : contact.role}
           </p>
         </div>
-        {contact.unreadCount > 0 && !isNew && (
+        {unread && (
           <span className={`min-w-6 rounded-full px-2 py-1 text-center text-xs font-bold ${active ? 'bg-blue-100 text-blue-700' : 'bg-blue-500 text-white'}`}>
             {contact.unreadCount}
           </span>
@@ -440,15 +490,17 @@ export const PrivateChat = () => {
                 <button type="button" onClick={() => setSelectedContactId(null)} className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white md:hidden" aria-label="Volver a contactos">
                   <i className="fa-solid fa-arrow-left" />
                 </button>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/15 font-bold text-blue-100 ring-1 ring-blue-300/20">
-                  {selectedContact.firstName?.[0]}{selectedContact.lastName?.[0]}
-                </div>
+                <AvatarBadge
+                  person={selectedContact}
+                  className="h-10 w-10"
+                  fallbackClassName="bg-blue-500/15 text-blue-100 ring-blue-300/20"
+                />
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate font-bold text-slate-950 dark:text-white">{selectedContact.firstName} {selectedContact.lastName}</h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{selectedContact.role}</p>
                 </div>
-                <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${socketStatus === 'connected' ? 'border-emerald-300/20 bg-emerald-500/10 text-emerald-200' : 'border-amber-300/20 bg-amber-500/10 text-amber-200'}`}>
-                  {socketStatus === 'connected' ? 'En línea' : 'Reconectando...'}
+                <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${socketStatus === 'connected' ? 'border-blue-300/20 bg-blue-500/10 text-blue-200' : 'border-amber-300/20 bg-amber-500/10 text-amber-200'}`}>
+                  {socketStatus === 'connected' ? 'Tiempo real activo' : 'Reconectando...'}
                 </span>
               </header>
 
@@ -474,7 +526,14 @@ export const PrivateChat = () => {
                     const isOwn = message.senderId === auth.id;
                     const isOptimistic = message.id.startsWith('optimistic-');
                     return (
-                      <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div key={message.id} className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                        {!isOwn && (
+                          <AvatarBadge
+                            person={message.sender || selectedContact}
+                            className="h-8 w-8"
+                            fallbackClassName="bg-slate-200 text-slate-700 ring-slate-300 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
+                          />
+                        )}
                         <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-lg sm:max-w-[70%] ${isOwn ? 'rounded-br-md bg-blue-600 text-white shadow-blue-950/20' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100'} ${isOptimistic ? 'opacity-70' : ''}`}>
                           <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p>
                           <p className={`mt-1 text-right text-[11px] ${isOwn ? 'text-blue-100' : 'text-slate-500'}`}>

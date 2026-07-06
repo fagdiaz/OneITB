@@ -1,6 +1,6 @@
 # Runbook de desarrollo - OneITB23
 
-**Ultima revision**: 2026-06-24
+**Ultima revision**: 2026-07-06
 
 ## Requisitos
 
@@ -70,6 +70,19 @@ dotnet dev-certs https --check --trust
 ```
 
 ## Validacion por tipo de cambio
+
+### Gates locales obligatorios
+
+```powershell
+dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore
+dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore
+Push-Location "FrontEnd/OneItb-FE"
+npm.cmd run build
+Pop-Location
+git diff --check
+```
+
+El workflow `.github/workflows/quality-gates.yml` ejecuta estos gates en CI y agrega una verificacion de modelo EF sin secretos versionados.
 
 ### Backend o GraphQL
 

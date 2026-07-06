@@ -525,6 +525,8 @@ namespace OneITB.GraphQL.Mutations
             int subjectId,
             string title,
             string? description,
+            AcademicResourceCategory? category,
+            int? version,
             string? fileUrl,
             string? externalUrl,
             [Service] IAcademicService academicService,
@@ -538,6 +540,8 @@ namespace OneITB.GraphQL.Mutations
                     subjectId,
                     title,
                     description,
+                    category,
+                    version,
                     fileUrl,
                     externalUrl);
             }
@@ -546,6 +550,60 @@ namespace OneITB.GraphQL.Mutations
                 throw new GraphQLException(ex.Message);
             }
             catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<AcademicResource> UploadAcademicResource(
+            int subjectId,
+            string title,
+            string? description,
+            AcademicResourceCategory? category,
+            int? version,
+            string? fileUrl,
+            string? externalUrl,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.AddAcademicResourceAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    subjectId,
+                    title,
+                    description,
+                    category,
+                    version,
+                    fileUrl,
+                    externalUrl);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<AcademicResource> DeleteResource(
+            Guid resourceId,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                return await academicService.DeleteResourceAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    resourceId);
+            }
+            catch (InvalidOperationException ex)
             {
                 throw new GraphQLException(ex.Message);
             }

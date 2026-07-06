@@ -1,6 +1,6 @@
 # Auditorias historicas consolidadas
 
-Este archivo resume auditorias y planes realizados entre el 2026-06-08 y el 2026-06-13. No representa el estado actual. Para avance y brechas vigentes consultar `docs/project_docs/ROADMAP.md`.
+Este archivo resume auditorias y planes realizados entre el 2026-06-08 y el 2026-06-13. No representa el estado actual ni reemplaza el reporte final. Para avance y brechas vigentes consultar `docs/project_docs/ROADMAP.md`; para el cierre tecnico actual consultar `docs/audit/FINAL_AUDIT_REPORT.md`.
 
 ## 2026-06-08 - Evaluacion academica
 

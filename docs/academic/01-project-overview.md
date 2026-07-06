@@ -18,16 +18,16 @@ Construir una red social educativa que permita:
 - Mantener perfiles academicos y profesionales.
 - Comunicarse mediante chat privado en tiempo real.
 - Moderar contenido y administrar la estructura institucional.
-- Proveer acceso móvil nativo continuo y en tiempo real.
+- Extender a futuro el acceso movil nativo continuo y en tiempo real.
 
 ## 1.4 Stack
 
 - Backend: .NET 8, HotChocolate GraphQL y EF Core 8.
 - Persistencia: SQL Server (Migrando a Azure SQL Free Tier).
 - Frontend Web: React 18, Apollo Client, Vite 8 y Tailwind CSS 4.
-- Frontend Móvil: React Native y Expo.
+- Frontend Movil: React Native y Expo planificado; no existe codigo mobile versionado.
 - Despliegue e Infraestructura: Docker, Azure App Service F1, GitHub Actions y Cloudinary.
 
 ## 1.5 Estado
 
-El estado verificable se mantiene en [ROADMAP.md](../project_docs/ROADMAP.md). Recursos, notas e integracion SIU continuan planificados.
+El estado verificable se mantiene en [ROADMAP.md](../project_docs/ROADMAP.md). Recursos academicos, notas, SIU mock y notificaciones estan implementados a nivel `[I]`; la regresion autenticada de navegador sigue pendiente para elevarlos a `[V]`.

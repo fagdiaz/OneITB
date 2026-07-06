@@ -11,6 +11,7 @@ namespace OneITB.Core.Services.Interfaces
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
         public DateTime? LastMessageAt { get; set; }
         public string LastMessageContent { get; set; } = string.Empty;
         public int UnreadCount { get; set; }

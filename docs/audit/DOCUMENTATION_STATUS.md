@@ -1,19 +1,18 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-07-02
+**Ultima verificacion**: 2026-07-06
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 68/78 (87%) |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 73/78 (94%) |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `.specify/memory/constitution.md` | Reglas superiores del proyecto | Vigente, v1.4.0 |
-| `AGENTS.md` | Reglas operativas para agentes | Vigente |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente |
 
 ## Documentacion complementaria
 
@@ -23,12 +22,23 @@
 | `docs/academic/02-software-requirements.md` | Resumen academico de requisitos |
 | `docs/academic/03-use-cases.md` | Casos de uso principales |
 | `docs/academic/04-design-diagrams.md` | Diagramas resumidos |
-| `docs/audit/HISTORICAL_AUDITS.md` | Auditorias supersedidas consolidadas |
+| `docs/audit/HISTORICAL_AUDITS.md` | Auditorias supersedidas consolidadas; no representa el estado actual |
+| `core-web/` | Paquete compacto de contexto para Gemini/external AI; no es fuente canonica |
+| `.specify/`, `.agents/`, `AGENTS.md`, `specs/` | Tooling local de agentes y evidencia granular; ignorado en el repo profesional |
 
 ## Evidencia reciente
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/167-production-readiness-hardening/` | Hardening de produccion: middleware de correlation id, logging estructurado de metodo/path/status/duracion, metricas GraphQL sociales con DataLoaders para evitar N+1, smoke runtime GraphQL HTTP 200 con `X-Correlation-ID`, metric smoke admin y backend tests 34/34; build host PASS con cache NuGet local y warnings `NU1900` por metadata de vulnerabilidades inaccesible |
+| `specs/166-roadmap-quality-closure/` | Cierre de calidad roadmap/docs: tests backend de auth/feed agregados y pasando 34/34, bug de login con usuario inactivo corregido, busqueda social normalizada, workflow `quality-gates.yml` agregado, workflows Azure actualizados a .NET/actions vigentes, README/project_docs/academic/runbook alineados; build frontend y `git diff --check` verificados, build final del host .NET bloqueado por NuGet/red tras intento de EF restore |
+| `specs/165-academic-hub-hardening/` | Cierre de brechas de Specs 163/164: upload academico convertido a modal, busqueda local instantanea por titulo, mutaciones de recursos con Apollo cache update, alias GraphQL `resourcesBySubject`, feed social con `AsSplitQuery` y respuestas anidadas; tests backend 16/16, backend Release, frontend build, schema smoke y `git diff --check` verificados |
+| `specs/164-academic-hub-resources/` | Hub academico de recursos implementado: `AcademicResource` agrega categoria/version, filtros GraphQL por materia/busqueda/categoria, `uploadAcademicResource`, `deleteResource` soft-delete, UI `/academic` con sidebar/filtros/grid/upload y migracion `AddAcademicResourceCategoryVersion`; tests backend 16/16, backend Release, frontend build, migracion aplicada y schema GraphQL temporal validados |
+| `specs/163-zero-debt-audit/` | Deuda tecnica acotada: Apollo agrega key policies para entidades principales y cache scope de `academicResources`, el servicio academico usa graph loading explicito con `AsSplitQuery`, Vite conserva vendor split y no se eliminaron dependencias sin evidencia fuerte; builds backend/frontend verificados |
+| `specs/162-session-boundary-header-fix/` | Bleed de sesion en Header corregido: `/logout` usa `AuthContext.logout()`, login/logout limpian Apollo en frontera de sesion, `Query.me` y notificaciones tienen policies de reemplazo, y Header/GlobalSearch/Profile Edit ignoran `me` si no coincide con `auth.id`; build frontend y checks estaticos verificados, QA manual usuario A -> usuario B pendiente |
+| `specs/161-session-cache-search-avatar-hardening/` | Session bleed mitigado con `clearStore()` en logout/expiracion, Apollo type policies para feed/mensajes, busqueda de perfiles por email, registro institucional/copy de contrasena y export de avatar 1:1 con preview; builds backend/frontend verificados, smoke GraphQL bloqueado por certificado HTTPS dev local ausente/vencido |
+| `specs/160-registration-avatar-chat-search-hardening/` | Registro con rol/carreras, retencion de avatar, canvas clamp, chat con avatares/no leidos/sin presencia falsa y filtros inteligentes implementados; builds backend/frontend verificados, runtime/browser QA pendiente |
+| `specs/159-auth-guard-search-scope-avatar-math/` | Guardias anonimos, selector `Todas`, scoping cross-career backend, metricas de perfil acotadas, contactos de CV unificados y editor de avatar con crop cuadrado/zoom 0.1/drag-to-pan; builds backend/frontend verificados |
 | `specs/158-masterization-navigation-search-cv-avatar/` | Masterizacion UX: navegacion activa estricta por ruta, notificaciones iluminadas al abrirse, busqueda global multi-filtro con materias por codigo/nombre, publicaciones por autor/comentarios con `careerIds`, resultados paginados de 15, contactos de CV semanticos y editor de avatar canvas compacto; builds backend/frontend verificados |
 | `specs/157-core-ux-session-header-constraints/` | Core UX/session/header constraints: active glow por `useLocation`, logo estatico, omni-search como popover, Light Mode por defecto anonimo/no-preferencia, toggles de password y expiracion JWT interceptada; build frontend verificado |
 | `specs/156-header-omni-search-print-stabilization/` | Header/omni-search/print estabilizados: logo estatico, overlay sin doble input, perfiles publicos buscables con query segura, filtros por carreras de `me`, avatar real hidratado y modal de impresion CV; builds backend/frontend verificados |
@@ -70,15 +80,16 @@
 
 ## Brechas vigentes
 
-- Busqueda, categorias y versionado de recursos permanece pendiente en el modulo academico.
-- Faltan suites automatizadas de autenticacion, feed, GraphQL y componentes; la base backend ya cubre servicios academicos y notificaciones.
+- Faltan pruebas de componentes frontend e integracion GraphQL con SQL Server de prueba; la base backend ya cubre servicios academicos, notificaciones, autenticacion, feed social y metric smoke GraphQL autenticado.
+- Falta regresion autenticada en navegador del hub academico para elevar busqueda/categorias/versionado/modal de recursos desde `[I]` a `[V]`.
 - Pub/sub y almacenamiento de archivos sirven a una sola instancia.
 - Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
 - El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validar specs.
 - Falta verificacion visual en navegador del panel admin completo contra SQL Docker.
 - Falta verificacion visual fina en navegador del perfil CV y `/profile/edit`; avatar, carreras y contrato GraphQL normalizado de guardado/lectura ya fueron verificados en runtime.
-- El frontend conserva deuda de dependencias y tamano de bundle.
+- El frontend conserva brecha de pruebas de componentes; la auditoria de dependencias no identifico una eliminacion segura durante la spec 163 y el vendor split de Vite permanece vigente.
 - YouTube ya no monta iframes en el render inicial; los warnings residuales posteriores al click pertenecen al proveedor/navegador.
 - Las miniaturas de YouTube usan imagen estatica y los adjuntos de imagen se resuelven contra el backend antes de renderizar inline.
+- La spec 167 recompilo el host con cache NuGet local y `RestoreIgnoreFailedSources`; persisten warnings `NU1900` porque la metadata de vulnerabilidades de nuget.org no es accesible desde este entorno.
 
 Ante contradicciones, prevalecen codigo, esquema ejecutado y evidencia runtime. Los porcentajes se recalculan exclusivamente desde los checklists de `ROADMAP.md`.

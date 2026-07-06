@@ -11,6 +11,121 @@ namespace Services.Tests.Academic;
 public sealed class AcademicServiceTests
 {
     [Fact]
+    public async Task GetAcademicResourcesAsync_FiltersByCategoryAndSearchWithinCareer()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        await SeedResourcesAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        IReadOnlyList<AcademicResource> resources = await service.GetAcademicResourcesAsync(
+            ServiceTestData.StudentUserId,
+            "Estudiante",
+            ServiceTestData.SubjectId,
+            "parcial",
+            AcademicResourceCategory.Examen);
+
+        AcademicResource resource = Assert.Single(resources);
+        Assert.Equal("Parcial resuelto", resource.Title);
+        Assert.Equal(AcademicResourceCategory.Examen, resource.Category);
+        Assert.Equal(2, resource.Version);
+        Assert.NotNull(resource.Subject?.Career);
+        Assert.NotNull(resource.Uploader);
+    }
+
+    [Fact]
+    public async Task GetAcademicResourcesAsync_RejectsStudentOutsideSubjectCareer()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        await SeedResourcesAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetAcademicResourcesAsync(
+                ServiceTestData.OtherStudentUserId,
+                "Estudiante",
+                ServiceTestData.SubjectId,
+                null,
+                null));
+
+        Assert.Contains("acceso", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AddAcademicResourceAsync_EnrolledStudentPersistsCategoryVersionAndNotifies()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        AcademicResource resource = await service.AddAcademicResourceAsync(
+            ServiceTestData.StudentUserId,
+            "Estudiante",
+            ServiceTestData.SubjectId,
+            "Guia de laboratorio",
+            "Practica de arrays",
+            AcademicResourceCategory.Apunte,
+            3,
+            "/uploads/guia.pdf",
+            null);
+
+        Assert.Equal(ServiceTestData.StudentUserId, resource.UploaderId);
+        Assert.Equal(AcademicResourceCategory.Apunte, resource.Category);
+        Assert.Equal(3, resource.Version);
+        Assert.Equal("File", resource.ResourceType);
+        Assert.True(resource.IsActive);
+        notifications.Verify(
+            service => service.CreateNotificationsAsync(
+                It.IsAny<IReadOnlyCollection<Guid>>(),
+                NotificationType.AcademicResource,
+                It.Is<string>(message => message.Contains("Guia de laboratorio", StringComparison.Ordinal)),
+                "/academic?subjectId=101"),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteResourceAsync_SoftDeletesResourceForUploader()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        AcademicResource resource = await service.AddAcademicResourceAsync(
+            ServiceTestData.StudentUserId,
+            "Estudiante",
+            ServiceTestData.SubjectId,
+            "Apunte a remover",
+            null,
+            AcademicResourceCategory.Otro,
+            1,
+            null,
+            "https://itbeltran.test/apunte");
+
+        AcademicResource deleted = await service.DeleteResourceAsync(
+            ServiceTestData.StudentUserId,
+            "Estudiante",
+            resource.Id);
+        IReadOnlyList<AcademicResource> visible = await service.GetAcademicResourcesAsync(
+            ServiceTestData.StudentUserId,
+            "Estudiante",
+            ServiceTestData.SubjectId,
+            null,
+            null);
+
+        Assert.False(deleted.IsActive);
+        Assert.Empty(visible);
+    }
+
+    [Fact]
     public async Task UpsertAcademicProgressAsync_RejectsStudentRoleBeforeSaving()
     {
         await using var context = ServiceTestData.CreateContext();
@@ -202,5 +317,41 @@ public sealed class AcademicServiceTests
             .ReturnsAsync(Array.Empty<Notification>());
 
         return notifications;
+    }
+
+    private static async Task SeedResourcesAsync(OneItb.Data.OneItbContext context)
+    {
+        context.AcademicResources.AddRange(
+            new AcademicResource
+            {
+                Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                SubjectId = ServiceTestData.SubjectId,
+                UploaderId = ServiceTestData.TeacherUserId,
+                Title = "Parcial resuelto",
+                Description = "Modelo de parcial con soluciones",
+                ExternalUrl = "https://itbeltran.test/parcial",
+                ResourceType = "Link",
+                Category = AcademicResourceCategory.Examen,
+                Version = 2,
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                IsActive = true
+            },
+            new AcademicResource
+            {
+                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                SubjectId = ServiceTestData.SubjectId,
+                UploaderId = ServiceTestData.TeacherUserId,
+                Title = "Libro base",
+                Description = "Bibliografia principal",
+                ExternalUrl = "https://itbeltran.test/libro",
+                ResourceType = "Link",
+                Category = AcademicResourceCategory.Libro,
+                Version = 1,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            });
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
     }
 }

@@ -5,8 +5,9 @@ namespace Services.Academic
 {
     public interface IAcademicService
     {
-        Task<IReadOnlyList<AcademicResource>> GetAcademicResourcesAsync(Guid actorUserId, string? actorRole, int subjectId);
-        Task<AcademicResource> AddAcademicResourceAsync(Guid actorUserId, string? actorRole, int subjectId, string title, string? description, string? fileUrl, string? externalUrl);
+        Task<IReadOnlyList<AcademicResource>> GetAcademicResourcesAsync(Guid actorUserId, string? actorRole, int subjectId, string? searchTerm, AcademicResourceCategory? category);
+        Task<AcademicResource> AddAcademicResourceAsync(Guid actorUserId, string? actorRole, int subjectId, string title, string? description, AcademicResourceCategory? category, int? version, string? fileUrl, string? externalUrl);
+        Task<AcademicResource> DeleteResourceAsync(Guid actorUserId, string? actorRole, Guid resourceId);
         Task<AcademicResource> ToggleAcademicResourceStatusAsync(Guid actorUserId, string? actorRole, Guid resourceId);
         Task<IReadOnlyList<AcademicProgress>> GetMyAcademicProgressAsync(Guid actorUserId);
         Task<IReadOnlyList<AcademicProgress>> GetAcademicProgressForUserAsync(Guid actorUserId, string? actorRole, Guid userId);

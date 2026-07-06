@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useForm } from '../../hooks/useForm'
 import { useMutation } from '@apollo/client'
 import { AUTHENTICATE_USER } from '../../data/graphql/mutations/authenticateUser'
-import { GraphQLProvider } from '../../data/graphql/GraphqlProvider'
 import useAuth from '../../hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 /**
  * Login — REFACTOR 037
@@ -16,9 +15,11 @@ export const Login = () => {
   const { form, changed } = useForm({});
   const [saved, setSaved] = useState('not_sended');
   const [loginError, setLoginError] = useState('');
+  const [registrationMessage, setRegistrationMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (sessionStorage.getItem('oneitb-session-expired') !== '1') return;
@@ -26,6 +27,14 @@ export const Login = () => {
     setSaved('error');
     setLoginError('Tu sesión ha expirado');
   }, []);
+
+  useEffect(() => {
+    const message = location.state?.registrationSuccess;
+    if (!message) return;
+    setRegistrationMessage(message);
+    setSaved('registered');
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.pathname, location.state, navigate]);
 
   const loginUser = async (e) => {
     e.preventDefault();
@@ -48,10 +57,8 @@ export const Login = () => {
       const { token, username, isAuthenticated, id, role } = data.login;
 
       if (isAuthenticated) {
-        GraphQLProvider.setToken(token);
         const userObj = { id, username, email: form.email, role };
-        GraphQLProvider.setUser(userObj);
-        login(token, userObj);
+        await login(token, userObj);
         setSaved('login');
         setTimeout(() => navigate('/feed'), 1000);
       } else {
@@ -100,6 +107,12 @@ export const Login = () => {
             <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium">
               <i className="fa-solid fa-circle-check" />
               Usuario identificado. Redirigiendo...
+            </div>
+          )}
+          {saved === 'registered' && (
+            <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium">
+              <i className="fa-solid fa-circle-check" />
+              {registrationMessage || 'Cuenta creada correctamente. Ya podes iniciar sesion.'}
             </div>
           )}
           {saved === 'error' && (

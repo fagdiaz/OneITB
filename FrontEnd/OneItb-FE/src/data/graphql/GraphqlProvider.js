@@ -12,6 +12,9 @@ const wsUri = import.meta.env.VITE_GRAPHQL_WS_URL || httpUri.replace(/^http/, 'w
 let socketStatus = 'disconnected';
 const socketListeners = new Set();
 let sessionExpirationHandled = false;
+let activeApolloClient = null;
+
+const clearActiveApolloStore = () => activeApolloClient?.clearStore?.() ?? Promise.resolve();
 
 const publishSocketStatus = (status) => {
   socketStatus = status;
@@ -80,6 +83,7 @@ const handleSessionExpired = () => {
   sessionExpirationHandled = true;
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  void clearActiveApolloStore();
   sessionStorage.setItem('oneitb-session-expired', '1');
   alert('Tu sesión ha expirado');
 
@@ -120,6 +124,8 @@ const transportLink = split(
   authLink.concat(httpLink),
 );
 
+const replaceIncoming = (_existing, incoming) => incoming;
+
 const createApolloClient = () => new ApolloClient({
   link: errorLink.concat(transportLink),
   cache: new InMemoryCache({
@@ -127,13 +133,86 @@ const createApolloClient = () => new ApolloClient({
       Message: {
         keyFields: ['id'],
       },
+      User: {
+        keyFields: ['id'],
+      },
+      Inquiry: {
+        keyFields: ['id'],
+      },
+      Comment: {
+        keyFields: ['id'],
+      },
+      Reaction: {
+        keyFields: ['id'],
+      },
+      AcademicResource: {
+        keyFields: ['id'],
+      },
+      AcademicProgress: {
+        keyFields: ['id'],
+      },
+      Subject: {
+        keyFields: ['id'],
+      },
+      Career: {
+        keyFields: ['id'],
+      },
+      Notification: {
+        keyFields: ['id'],
+      },
       Query: {
         fields: {
+          me: {
+            merge: replaceIncoming,
+          },
+          inquiries: {
+            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds'],
+            merge: replaceIncoming,
+          },
+          inquiriesPage: {
+            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds'],
+            merge: replaceIncoming,
+          },
           conversation: {
             keyArgs: ['otherUserId'],
+            merge: replaceIncoming,
           },
           messagingContacts: {
             keyArgs: false,
+            merge: replaceIncoming,
+          },
+          activeConversations: {
+            keyArgs: false,
+            merge: replaceIncoming,
+          },
+          searchMyMessages: {
+            keyArgs: ['searchTerm'],
+            merge: replaceIncoming,
+          },
+          myNotifications: {
+            keyArgs: ['first'],
+            merge: replaceIncoming,
+          },
+          unreadNotificationCount: {
+            merge: replaceIncoming,
+          },
+          myNotificationPreferences: {
+            merge: replaceIncoming,
+          },
+          academicResources: {
+            keyArgs: ['subjectId', 'searchTerm', 'category'],
+            merge: replaceIncoming,
+          },
+          resourcesBySubject: {
+            keyArgs: ['subjectId', 'searchTerm', 'category'],
+            merge: replaceIncoming,
+          },
+          myAcademicProgress: {
+            merge: replaceIncoming,
+          },
+          academicProgressForUser: {
+            keyArgs: ['userId'],
+            merge: replaceIncoming,
           },
         },
       },
@@ -144,6 +223,17 @@ const createApolloClient = () => new ApolloClient({
 export class GraphQLProvider extends GeneralDataProvider {
   constructor() {
     super();
-    this.apolloInstance = createApolloClient();
+    if (!activeApolloClient) {
+      activeApolloClient = createApolloClient();
+    }
+    this.apolloInstance = activeApolloClient;
+  }
+
+  static clearApolloStore() {
+    return clearActiveApolloStore();
+  }
+
+  static resetSessionExpirationGuard() {
+    sessionExpirationHandled = false;
   }
 }

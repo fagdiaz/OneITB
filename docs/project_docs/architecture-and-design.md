@@ -1,6 +1,6 @@
 # Arquitectura y diseno de OneITB23
 
-**Ultima alineacion con codigo**: 2026-06-29
+**Ultima alineacion con codigo**: 2026-07-06
 
 ## 1. Stack vigente
 
@@ -10,7 +10,7 @@
 | API de negocio | HotChocolate GraphQL 14.2.0 |
 | Persistencia | Entity Framework Core 8.0.6 / SQL Server 2022 Docker local / Azure SQL Free Tier objetivo |
 | Frontend Web | React 18 / Apollo Client 3.7 / Vite 8 |
-| Frontend Mobile | React Native / Expo |
+| Frontend Mobile | React Native / Expo planificado; no existe codigo mobile versionado |
 | UI | Tailwind CSS 4 / FontAwesome 6.6 |
 | Tiempo real | GraphQL Subscriptions sobre WebSocket |
 | Despliegue e Infra | Docker / Azure App Service F1 / Cloudinary / GitHub Actions |
@@ -32,10 +32,8 @@ FrontEnd/OneItb-FE/src/
 |-- router/       rutas publicas y privadas
 `-- utils/        parsing y utilidades sin estado
 
-Mobile/OneItb-App/src/
-|-- components/   componentes nativos y UI
-|-- navigation/   enrutamiento React Navigation
-`-- screens/      pantallas principales
+Mobile/OneItb-App/
+`-- planificado; no existe codigo versionado en el repositorio actual
 ```
 
 ## 3. Contratos de transporte
@@ -117,7 +115,7 @@ El historial se persiste en `Messages`. El envio publica un evento al topico pri
 
 ### Recursos y progreso academico
 
-Los recursos academicos se consultan por materia mediante `academicResources(subjectId)`. Administradores y profesores pueden cargar enlaces o URLs de archivos ya subidos por `/api/upload`; estudiantes solo leen recursos de materias asociadas a sus carreras.
+Los recursos academicos se consultan por materia mediante `academicResources(subjectId, searchTerm, category)` y el alias compatible `resourcesBySubject(subjectId, searchTerm, category)`. Los registros soportan categoria (`LIBRO`, `APUNTE`, `EXAMEN`, `OTRO`), versionado, enlaces externos o URLs de archivos ya subidos por `/api/upload`. Administradores, profesores y usuarios activos inscriptos en la carrera de la materia pueden cargar recursos; la lectura queda restringida por carrera salvo roles institucionales.
 
 El progreso academico se persiste como un registro actual por estudiante y materia. Administradores y profesores asignan estado/nota mediante `upsertAcademicProgress`; el estudiante consulta solo su propio historial con `myAcademicProgress`, mientras que `academicProgressForUser` queda reservado a administradores.
 
@@ -130,7 +128,7 @@ Las notificaciones se persisten en `Notifications` y las preferencias por tipo e
 ## 7. Estado y limites conocidos
 
 - El pub/sub de subscriptions esta en memoria y sirve a una sola instancia.
-- Los archivos se migrarán hacia Cloudinary para soportar entornos efímeros (Docker/Azure).
-- Busqueda, categorias y versionado de recursos siguen planificados.
-- El arranque temporal usado por Codex puede fallar por cifrado SQL Server y permisos de Windows Event Log; las migraciones EF CLI y builds funcionan.
-- La convivencia del cliente Web y el Mobile Client (React Native) requiere asegurar un diseño de queries y fragments compartido para no duplicar lógica en el Apollo Cache.
+- Los archivos se migraran hacia almacenamiento compartido, como Cloudinary, para soportar entornos efimeros o multiples instancias.
+- La regresion autenticada en navegador del hub academico sigue pendiente para elevar recursos academicos de `[I]` a `[V]`.
+- El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validacion de specs.
+- El cliente mobile React Native/Expo esta planificado, pero no existe codigo versionado; antes de implementarlo se debe definir queries/fragments compartidos con el cliente Web para no duplicar logica de Apollo Cache.

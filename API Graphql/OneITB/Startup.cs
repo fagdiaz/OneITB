@@ -140,35 +140,35 @@ namespace OneItb.GraphQL
                     descriptor.Field(f => f.MutedUntil).Name("mutedUntil");
                     descriptor.Field("totalPosts")
                         .Type<NonNullType<IntType>>()
-                        .Resolve(async ctx =>
+                        .Resolve(ctx =>
                         {
                             User user = ctx.Parent<User>();
-                            OneItbContext db = ctx.Service<OneItbContext>();
-                            return await db.Inquiries.IgnoreQueryFilters().CountAsync(inquiry => inquiry.UserId == user.Id);
+                            return ctx.DataLoader<UserPostCountDataLoader>()
+                                .LoadAsync(user.Id, ctx.RequestAborted);
                         });
                     descriptor.Field("totalComments")
                         .Type<NonNullType<IntType>>()
-                        .Resolve(async ctx =>
+                        .Resolve(ctx =>
                         {
                             User user = ctx.Parent<User>();
-                            OneItbContext db = ctx.Service<OneItbContext>();
-                            return await db.Comments.IgnoreQueryFilters().CountAsync(comment => comment.UserId == user.Id);
+                            return ctx.DataLoader<UserCommentCountDataLoader>()
+                                .LoadAsync(user.Id, ctx.RequestAborted);
                         });
                     descriptor.Field("totalLikesReceived")
                         .Type<NonNullType<IntType>>()
-                        .Resolve(async ctx =>
+                        .Resolve(ctx =>
                         {
                             User user = ctx.Parent<User>();
-                            OneItbContext db = ctx.Service<OneItbContext>();
-                            return await db.Reactions.IgnoreQueryFilters().CountAsync(reaction => reaction.Inquiry.UserId == user.Id);
+                            return ctx.DataLoader<UserLikesReceivedCountDataLoader>()
+                                .LoadAsync(user.Id, ctx.RequestAborted);
                         });
                     descriptor.Field("totalReportsReceived")
                         .Type<NonNullType<IntType>>()
-                        .Resolve(async ctx =>
+                        .Resolve(ctx =>
                         {
                             User user = ctx.Parent<User>();
-                            OneItbContext db = ctx.Service<OneItbContext>();
-                            return await db.CommunityReports.IgnoreQueryFilters().CountAsync(report => report.Inquiry.UserId == user.Id);
+                            return ctx.DataLoader<UserReportsReceivedCountDataLoader>()
+                                .LoadAsync(user.Id, ctx.RequestAborted);
                         });
                 }))
                 .AddType(new ObjectType<UserCvExperience>(descriptor =>
@@ -200,11 +200,11 @@ namespace OneItb.GraphQL
                 {
                     descriptor.Field("reportCount")
                         .Type<NonNullType<IntType>>()
-                        .Resolve(async ctx =>
+                        .Resolve(ctx =>
                         {
                             Inquiry inquiry = ctx.Parent<Inquiry>();
-                            OneItbContext db = ctx.Service<OneItbContext>();
-                            return await db.CommunityReports.IgnoreQueryFilters().CountAsync(report => report.InquiryId == inquiry.Id);
+                            return ctx.DataLoader<InquiryReportCountDataLoader>()
+                                .LoadAsync(inquiry.Id, ctx.RequestAborted);
                         });
                 }))
                 .AddType(new ObjectType<Comment>(descriptor =>
@@ -281,6 +281,7 @@ namespace OneItb.GraphQL
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseMiddleware<CorrelationIdMiddleware>();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
+import { useForm } from '../../hooks/useForm';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import {
@@ -10,9 +11,9 @@ import {
   GET_MY_ACADEMIC_PROGRESS,
 } from '../../data/graphql/queries/academic';
 import {
-  ADD_ACADEMIC_RESOURCE,
+  DELETE_RESOURCE,
   SYNC_SIU_GRADES,
-  TOGGLE_ACADEMIC_RESOURCE_STATUS,
+  UPLOAD_ACADEMIC_RESOURCE,
   UPSERT_ACADEMIC_PROGRESS,
 } from '../../data/graphql/mutations/academic';
 import { UPLOAD_ACCEPT, uploadAttachment, apiBaseUrl } from '../../utils/uploadFile';
@@ -29,6 +30,27 @@ const statusLabels = {
   REGULAR: 'Regular',
   APPROVED: 'Aprobado',
   FREE: 'Libre',
+};
+
+const resourceCategories = [
+  { value: '', label: 'Todas', icon: 'fa-layer-group' },
+  { value: 'LIBRO', label: 'Libro', icon: 'fa-book' },
+  { value: 'APUNTE', label: 'Apunte', icon: 'fa-file-lines' },
+  { value: 'EXAMEN', label: 'Examen', icon: 'fa-clipboard-check' },
+  { value: 'OTRO', label: 'Otro', icon: 'fa-folder-open' },
+];
+
+const resourceCategoryLabels = resourceCategories.reduce((acc, item) => {
+  if (item.value) acc[item.value] = item.label;
+  return acc;
+}, {});
+
+const emptyResourceForm = {
+  title: '',
+  description: '',
+  externalUrl: '',
+  category: 'APUNTE',
+  version: '1',
 };
 
 const isAcademicManagerRole = (role) => role === 'Administrador' || role === 'Profesor';
@@ -52,6 +74,19 @@ const formatScore = (score) => {
   return Number(score).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
+const getResourceIcon = (resource) => {
+  if (resource.fileUrl) {
+    const url = resource.fileUrl.toLowerCase();
+    if (url.endsWith('.pdf')) return 'fa-file-pdf';
+    if (/\.(doc|docx)$/i.test(url)) return 'fa-file-word';
+    if (/\.(ppt|pptx)$/i.test(url)) return 'fa-file-powerpoint';
+    if (/\.(xls|xlsx)$/i.test(url)) return 'fa-file-excel';
+    if (/\.(png|jpg|jpeg|gif|webp)$/i.test(url)) return 'fa-file-image';
+  }
+  if (resource.externalUrl && !resource.fileUrl) return 'fa-link';
+  return 'fa-file-lines';
+};
+
 export const AcademicDashboard = () => {
   const { auth, token } = useAuth();
   const isManager = isAcademicManagerRole(auth.role);
@@ -64,11 +99,14 @@ export const AcademicDashboard = () => {
   const [siuSyncResult, setSiuSyncResult] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [resourceForm, setResourceForm] = useState({
-    title: '',
-    description: '',
-    externalUrl: '',
-  });
+  const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
+  const [resourceSearch, setResourceSearch] = useState('');
+  const [resourceCategory, setResourceCategory] = useState('');
+  const {
+    form: resourceForm,
+    changed: changeResourceForm,
+    reset: resetResourceFormState,
+  } = useForm(emptyResourceForm);
   const [progressForm, setProgressForm] = useState({
     userId: '',
     score: '',
@@ -95,12 +133,26 @@ export const AcademicDashboard = () => {
   const subjects = subjectsData?.subjects ?? [];
 
   const selectedSubjectNumericId = selectedSubjectId ? Number(selectedSubjectId) : null;
-  const { data: resourcesData, loading: resourcesLoading, refetch: refetchResources } = useQuery(GET_ACADEMIC_RESOURCES, {
-    variables: { subjectId: selectedSubjectNumericId },
+  const normalizedResourceSearch = resourceSearch.trim();
+  const resourceQueryVariables = useMemo(
+    () => ({
+      subjectId: selectedSubjectNumericId,
+      searchTerm: null,
+      category: resourceCategory || null,
+    }),
+    [resourceCategory, selectedSubjectNumericId],
+  );
+  const { data: resourcesData, loading: resourcesLoading } = useQuery(GET_ACADEMIC_RESOURCES, {
+    variables: resourceQueryVariables,
     skip: !selectedSubjectNumericId,
     fetchPolicy: 'cache-and-network',
   });
   const resources = resourcesData?.academicResources ?? [];
+  const visibleResources = useMemo(() => {
+    if (!normalizedResourceSearch) return resources;
+    const normalizedTitleSearch = normalizedResourceSearch.toLocaleLowerCase('es-AR');
+    return resources.filter((resource) => (resource.title ?? '').toLocaleLowerCase('es-AR').includes(normalizedTitleSearch));
+  }, [normalizedResourceSearch, resources]);
 
   const { data: myProgressData, loading: myProgressLoading, refetch: refetchMyProgress } = useQuery(GET_MY_ACADEMIC_PROGRESS, {
     fetchPolicy: 'cache-and-network',
@@ -120,8 +172,8 @@ export const AcademicDashboard = () => {
   });
   const selectedStudentProgress = selectedStudentProgressData?.academicProgressForUser ?? [];
 
-  const [addAcademicResource, { loading: addingResource }] = useMutation(ADD_ACADEMIC_RESOURCE);
-  const [toggleAcademicResourceStatus, { loading: togglingResource }] = useMutation(TOGGLE_ACADEMIC_RESOURCE_STATUS);
+  const [uploadAcademicResource, { loading: addingResource }] = useMutation(UPLOAD_ACADEMIC_RESOURCE);
+  const [deleteResource, { loading: deletingResource }] = useMutation(DELETE_RESOURCE);
   const [upsertAcademicProgress, { loading: savingProgress }] = useMutation(UPSERT_ACADEMIC_PROGRESS);
   const [syncSiuGrades, { loading: syncingSiu }] = useMutation(SYNC_SIU_GRADES);
 
@@ -139,6 +191,8 @@ export const AcademicDashboard = () => {
   useEffect(() => {
     setProgressForm((current) => ({ ...current, userId: '' }));
     setSiuSyncResult(null);
+    setResourceSearch('');
+    setResourceCategory('');
   }, [selectedSubjectId]);
 
   const selectedSubject = useMemo(
@@ -152,8 +206,18 @@ export const AcademicDashboard = () => {
   }, [myProgress, selectedSubjectId]);
 
   const resetResourceForm = () => {
-    setResourceForm({ title: '', description: '', externalUrl: '' });
+    resetResourceFormState();
     setSelectedFile(null);
+  };
+
+  const openResourceModal = () => {
+    setFeedback(null);
+    setIsResourceModalOpen(true);
+  };
+
+  const closeResourceModal = () => {
+    setIsResourceModalOpen(false);
+    resetResourceForm();
   };
 
   const submitResource = async (event) => {
@@ -170,6 +234,11 @@ export const AcademicDashboard = () => {
       setFeedback({ type: 'error', message: 'Adjunta un archivo o agrega un enlace externo.' });
       return;
     }
+    const version = Number(resourceForm.version || 1);
+    if (!Number.isInteger(version) || version < 1) {
+      setFeedback({ type: 'error', message: 'La version debe ser un numero entero mayor o igual a 1.' });
+      return;
+    }
 
     try {
       setFeedback(null);
@@ -177,17 +246,37 @@ export const AcademicDashboard = () => {
       const fileUrl = selectedFile ? await uploadAttachment(selectedFile, token) : null;
       setIsUploading(false);
 
-      await addAcademicResource({
+      await uploadAcademicResource({
         variables: {
           subjectId: selectedSubjectNumericId,
           title: resourceForm.title.trim(),
           description: resourceForm.description.trim() || null,
+          category: resourceForm.category || 'OTRO',
+          version,
           fileUrl,
           externalUrl: resourceForm.externalUrl.trim() || null,
         },
+        update: (cache, { data }) => {
+          const created = data?.uploadAcademicResource;
+          if (!created) return;
+          if (resourceCategory && created.category !== resourceCategory) return;
+
+          cache.updateQuery(
+            {
+              query: GET_ACADEMIC_RESOURCES,
+              variables: resourceQueryVariables,
+            },
+            (current) => {
+              const currentResources = current?.academicResources ?? [];
+              if (currentResources.some((resource) => resource.id === created.id)) return current;
+              return {
+                academicResources: [created, ...currentResources],
+              };
+            },
+          );
+        },
       });
-      resetResourceForm();
-      await refetchResources();
+      closeResourceModal();
       setFeedback({ type: 'success', message: 'Recurso academico publicado.' });
     } catch (error) {
       setIsUploading(false);
@@ -195,11 +284,23 @@ export const AcademicDashboard = () => {
     }
   };
 
-  const toggleResource = async (resourceId) => {
+  const removeResource = async (resourceId) => {
     try {
-      await toggleAcademicResourceStatus({ variables: { resourceId } });
-      await refetchResources();
-      setFeedback({ type: 'success', message: 'Recurso actualizado.' });
+      await deleteResource({
+        variables: { resourceId },
+        update: (cache) => {
+          cache.updateQuery(
+            {
+              query: GET_ACADEMIC_RESOURCES,
+              variables: resourceQueryVariables,
+            },
+            (current) => ({
+              academicResources: (current?.academicResources ?? []).filter((resource) => resource.id !== resourceId),
+            }),
+          );
+        },
+      });
+      setFeedback({ type: 'success', message: 'Recurso eliminado del hub.' });
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'No se pudo actualizar el recurso.' });
     }
@@ -262,7 +363,7 @@ export const AcademicDashboard = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 text-slate-900 dark:text-slate-100">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 text-slate-900 dark:text-slate-100">
       <header className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm dark:border-white/10 dark:bg-none dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.24)]">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-500">Modulo academico</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Recursos, materias y progreso</h1>
@@ -341,16 +442,96 @@ export const AcademicDashboard = () => {
       </nav>
 
       {activeTab === 'resources' ? (
-        <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <section className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-500">Filtros</p>
+              <label className="mt-4 block">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Buscar por titulo</span>
+                <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-slate-950/70">
+                  <i className="fa-solid fa-magnifying-glass text-xs text-slate-400" />
+                  <input
+                    value={resourceSearch}
+                    onChange={(event) => setResourceSearch(event.target.value)}
+                    disabled={!selectedSubjectId}
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
+                    placeholder="Ej. parcial, guia, SQL"
+                  />
+                </div>
+              </label>
+
+              <label className="mt-4 block">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Categoria</span>
+                <select
+                  value={resourceCategory}
+                  onChange={(event) => setResourceCategory(event.target.value)}
+                  disabled={!selectedSubjectId}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                >
+                  {resourceCategories.map((category) => (
+                    <option key={category.value || 'all'} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs text-slate-500 dark:bg-slate-950/60 dark:text-slate-400">
+                <p className="font-bold uppercase tracking-wide text-slate-400">Scope</p>
+                <p className="mt-1">
+                  {selectedSubject
+                    ? `${selectedSubject.name} - ${selectedSubject.career?.name ?? 'Carrera'}`
+                    : 'Los recursos se habilitan al elegir una materia.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Materias</p>
+              <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
+                {subjects.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Selecciona una carrera.</p>
+                ) : (
+                  subjects.map((subject) => (
+                    <button
+                      key={subject.id}
+                      type="button"
+                      onClick={() => setSelectedSubjectId(String(subject.id))}
+                      className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition ${
+                        String(subject.id) === String(selectedSubjectId)
+                          ? 'border-blue-300 bg-blue-50 text-blue-800 shadow-sm dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/60 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-blue-400/30 dark:hover:bg-blue-500/10'
+                      }`}
+                    >
+                      <span className="block font-semibold">{subject.name}</span>
+                      <span className="text-xs text-slate-400">{subject.code}{subject.year ? ` - ${subject.year} anio` : ''}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </aside>
+
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recursos de la materia</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {selectedSubject ? `${selectedSubject.name} (${selectedSubject.code})` : 'Selecciona una materia para ver recursos.'}
                 </p>
               </div>
-              {resourcesLoading && <span className="text-xs font-semibold text-blue-500">Cargando...</span>}
+              <div className="flex items-center gap-2">
+                {resourcesLoading && <span className="text-xs font-semibold text-blue-500">Cargando...</span>}
+                <button
+                  type="button"
+                  disabled={!selectedSubjectId}
+                  onClick={openResourceModal}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400"
+                >
+                  <i className="fa-solid fa-plus" />
+                  Nuevo recurso
+                </button>
+              </div>
             </div>
 
             {!selectedSubjectId ? (
@@ -361,125 +542,79 @@ export const AcademicDashboard = () => {
               <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-400">
                 No hay recursos activos para esta materia.
               </div>
+            ) : visibleResources.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-400">
+                No hay recursos que coincidan con "{resourceSearch.trim()}".
+              </div>
             ) : (
-              resources.map((resource) => {
-                const fileHref = resolveFileHref(resource.fileUrl);
-                return (
-                  <article key={resource.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.22)]">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-base font-bold text-slate-900 dark:text-white">{resource.title}</h3>
-                          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-600">
-                            {resource.resourceType}
-                          </span>
+              <div className="grid gap-4 md:grid-cols-2">
+                {visibleResources.map((resource) => {
+                  const fileHref = resolveFileHref(resource.fileUrl);
+                  const canRemoveResource = isManager || String(resource.uploader?.id) === String(auth.id);
+                  return (
+                    <article key={resource.id} className="flex min-h-[260px] flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.22)]">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-200">
+                              <i className={`fa-solid ${getResourceIcon(resource)}`} />
+                            </span>
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">{resource.title}</h3>
+                            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-600 dark:bg-blue-500/10 dark:text-blue-200">
+                              {resourceCategoryLabels[resource.category] ?? resource.category ?? 'Otro'}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                              v{resource.version ?? 1}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Subido por {resource.uploader?.firstName} {resource.uploader?.lastName} - {formatDate(resource.createdAt)}
+                          </p>
                         </div>
-                        <p className="mt-1 text-xs text-slate-400">
-                          Subido por {resource.uploader?.firstName} {resource.uploader?.lastName} - {formatDate(resource.createdAt)}
-                        </p>
+                        {canRemoveResource && (
+                          <button
+                            type="button"
+                            disabled={deletingResource}
+                            onClick={() => removeResource(resource.id)}
+                            className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-400/20 dark:text-red-300 dark:hover:bg-red-500/10"
+                          >
+                            Eliminar
+                          </button>
+                        )}
                       </div>
-                      {isManager && (
-                        <button
-                          type="button"
-                          disabled={togglingResource}
-                          onClick={() => toggleResource(resource.id)}
-                          className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                        >
-                          Desactivar
-                        </button>
-                      )}
-                    </div>
 
-                    {resource.description && <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{resource.description}</p>}
+                      {resource.description && <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{resource.description}</p>}
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {fileHref && (
-                        <a
-                          href={fileHref}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
-                        >
-                          <i className="fa-solid fa-file-arrow-down" />
-                          Abrir archivo
-                        </a>
-                      )}
-                      {resource.externalUrl && (
-                        <a
-                          href={resource.externalUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-                        >
-                          <i className="fa-solid fa-arrow-up-right-from-square" />
-                          Abrir enlace
-                        </a>
-                      )}
-                    </div>
-                  </article>
-                );
-              })
+                      <div className="mt-auto flex flex-wrap gap-2 pt-4">
+                        {fileHref && (
+                          <a
+                            href={fileHref}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                          >
+                            <i className="fa-solid fa-file-arrow-down" />
+                            Abrir archivo
+                          </a>
+                        )}
+                        {resource.externalUrl && (
+                          <a
+                            href={resource.externalUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 dark:border-blue-300/20 dark:text-blue-200 dark:hover:bg-blue-500/10"
+                          >
+                            <i className="fa-solid fa-arrow-up-right-from-square" />
+                            Abrir enlace
+                          </a>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             )}
           </div>
-
-          {isManager && (
-            <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Nuevo recurso</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Publica material asociado a la materia seleccionada.</p>
-
-              <form onSubmit={submitResource} className="mt-4 space-y-4">
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Titulo</span>
-                  <input
-                    value={resourceForm.title}
-                    onChange={(event) => setResourceForm((current) => ({ ...current, title: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
-                    placeholder="Guia de ejercicios"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Descripcion</span>
-                  <textarea
-                    rows={3}
-                    value={resourceForm.description}
-                    onChange={(event) => setResourceForm((current) => ({ ...current, description: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
-                    placeholder="Material de apoyo para la unidad..."
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Enlace externo</span>
-                  <input
-                    value={resourceForm.externalUrl}
-                    onChange={(event) => setResourceForm((current) => ({ ...current, externalUrl: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
-                    placeholder="https://..."
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Archivo opcional</span>
-                  <input
-                    type="file"
-                    accept={UPLOAD_ACCEPT}
-                    onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-                    className="mt-2 w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  {selectedFile && <p className="mt-1 text-xs text-slate-500">{selectedFile.name}</p>}
-                </label>
-
-                <button
-                  type="submit"
-                  disabled={!selectedSubjectId || addingResource || isUploading}
-                  className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isUploading ? 'Subiendo...' : addingResource ? 'Guardando...' : 'Publicar recurso'}
-                </button>
-              </form>
-            </aside>
-          )}
         </section>
       ) : (
         <section className="grid gap-6 lg:grid-cols-[1fr_380px]">
@@ -679,6 +814,125 @@ export const AcademicDashboard = () => {
             </aside>
           )}
         </section>
+      )}
+
+      {isResourceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-white p-6 shadow-2xl dark:bg-slate-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-500">Hub academico</p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">Nuevo recurso</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  {selectedSubject ? `Publicando en ${selectedSubject.name} (${selectedSubject.code})` : 'Selecciona una materia antes de publicar.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeResourceModal}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
+                aria-label="Cerrar modal de recurso"
+              >
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+
+            <form onSubmit={submitResource} className="mt-6 space-y-4">
+              <label className="block">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Titulo</span>
+                <input
+                  name="title"
+                  value={resourceForm.title}
+                  onChange={changeResourceForm}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  placeholder="Guia de ejercicios"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Descripcion</span>
+                <textarea
+                  name="description"
+                  rows={3}
+                  value={resourceForm.description}
+                  onChange={changeResourceForm}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  placeholder="Material de apoyo para la unidad..."
+                />
+              </label>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Categoria</span>
+                  <select
+                    name="category"
+                    value={resourceForm.category}
+                    onChange={changeResourceForm}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    {resourceCategories.filter((category) => category.value).map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Version</span>
+                  <input
+                    name="version"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={resourceForm.version}
+                    onChange={changeResourceForm}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Enlace externo</span>
+                <input
+                  name="externalUrl"
+                  value={resourceForm.externalUrl}
+                  onChange={changeResourceForm}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  placeholder="https://..."
+                />
+              </label>
+
+              <label className="block rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/60">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Archivo opcional</span>
+                <input
+                  type="file"
+                  accept={UPLOAD_ACCEPT}
+                  onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+                  className="mt-2 w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-500/15 dark:file:text-blue-100"
+                />
+                {selectedFile && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{selectedFile.name}</p>}
+              </label>
+
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeResourceModal}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={!selectedSubjectId || addingResource || isUploading}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isUploading ? 'Subiendo...' : addingResource ? 'Guardando...' : 'Publicar recurso'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

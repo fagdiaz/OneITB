@@ -8,6 +8,18 @@ export const MESSAGE_FRAGMENT = gql`
     content
     sentAt
     isRead
+    sender {
+      id
+      firstName
+      lastName
+      avatarUrl
+    }
+    receiver {
+      id
+      firstName
+      lastName
+      avatarUrl
+    }
   }
 `;
 

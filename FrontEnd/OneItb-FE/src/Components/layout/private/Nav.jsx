@@ -5,6 +5,7 @@ import useAuth from '../../../hooks/useAuth'
 import { NotificationBell } from '../../notifications/NotificationBell'
 import { useTheme } from '../../../context/ThemeContext'
 import { GET_USER_PROFILE } from '../../../data/graphql/queries/getUserProfile'
+import { GET_MESSAGING_CONTACTS } from '../../../data/graphql/chat'
 import { apiBaseUrl } from '../../../utils/uploadFile'
 
 /**
@@ -42,16 +43,23 @@ const resolveAssetUrl = (value) => {
 }
 
 export const Nav = () => {
-  const { auth } = useAuth()
+  const { auth, isAuthenticated, token, sessionVersion } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const location = useLocation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [avatarFailed, setAvatarFailed] = useState(false)
   const dropdownRef = useRef(null)
   const isDark = theme === 'dark'
+  const isAuthenticatedUser = Boolean(isAuthenticated && token && auth?.id)
   const { data: meData } = useQuery(GET_USER_PROFILE, {
-    skip: !auth?.id,
-    fetchPolicy: 'cache-first',
+    skip: !isAuthenticatedUser,
+    fetchPolicy: 'cache-and-network',
+    nextFetchPolicy: 'cache-first',
+  })
+  const { data: messagingData } = useQuery(GET_MESSAGING_CONTACTS, {
+    variables: { first: 50 },
+    skip: !isAuthenticatedUser,
+    fetchPolicy: 'cache-and-network',
   })
 
   useEffect(() => {
@@ -64,16 +72,19 @@ export const Nav = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const isAuthenticated = !!auth.id
-  const currentUser = meData?.me || auth
+  const sessionProfile = meData?.me?.id === auth?.id ? meData.me : null
+  const currentUser = sessionProfile || auth
   const currentName = currentUser.fullName || auth.fullName || auth.username || 'Usuario'
   const resolvedAvatarUrl = resolveAssetUrl(currentUser.avatarUrl || auth.avatarUrl)
   const fallbackAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=3b82f6&color=fff&size=80`
   const avatarSrc = !avatarFailed && resolvedAvatarUrl ? resolvedAvatarUrl : fallbackAvatarUrl
+  const unreadMessageCount = (messagingData?.messagingContacts?.nodes || [])
+    .reduce((total, contact) => total + (contact.unreadCount || 0), 0)
 
   useEffect(() => {
     setAvatarFailed(false)
-  }, [resolvedAvatarUrl])
+    setDropdownOpen(false)
+  }, [auth?.id, resolvedAvatarUrl, sessionVersion])
 
   const isActivePath = (targetPath) => {
     if (targetPath === '/') return location.pathname === '/'
@@ -90,24 +101,29 @@ export const Nav = () => {
       <ul className="hidden md:flex items-center gap-1 list-none m-0 p-0">
         <li>
           <NavLink
-            to={isAuthenticated ? '/feed' : '/'}
-            className={navClassFor(isAuthenticated ? '/feed' : '/')}
+            to={isAuthenticatedUser ? '/feed' : '/'}
+            className={navClassFor(isAuthenticatedUser ? '/feed' : '/')}
           >
             <i className="fa-solid fa-house text-xs" />
             <span>Inicio</span>
           </NavLink>
         </li>
 
-        {isAuthenticated && (
+        {isAuthenticatedUser && (
           <li>
-            <NavLink to="/chat" className={navClassFor('/chat')}>
+            <NavLink to="/chat" className={`${navClassFor('/chat')} relative`}>
               <i className="fa-regular fa-comment-dots text-xs" />
               <span>Mensajes</span>
+              {unreadMessageCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white/60 bg-red-500 px-1 text-[10px] font-black leading-none text-white shadow-sm">
+                  {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                </span>
+              )}
             </NavLink>
           </li>
         )}
 
-        {isAuthenticated && (
+        {isAuthenticatedUser && (
           <li>
             <NavLink to="/academic" className={navClassFor('/academic')}>
               <i className="fa-solid fa-graduation-cap text-xs" />
@@ -116,7 +132,7 @@ export const Nav = () => {
           </li>
         )}
 
-        {isAuthenticated && auth.role === 'Administrador' && (
+        {isAuthenticatedUser && auth.role === 'Administrador' && (
           <li>
             <NavLink to="/admin" className={navClassFor('/admin')}>
               <i className="fa-solid fa-users-gear text-xs" />
@@ -129,7 +145,7 @@ export const Nav = () => {
       {/* ── Right side ─────────────────────────────────────────── */}
       <div className="flex items-center gap-4">
 
-        {isAuthenticated ? (
+        {isAuthenticatedUser ? (
           <>
             <span className="hidden sm:block text-sm font-medium text-slate-300">
               Hola, <span className="font-semibold text-white">{currentName}</span>

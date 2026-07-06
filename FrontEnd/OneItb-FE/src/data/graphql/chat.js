@@ -8,6 +8,7 @@ export const GET_MESSAGING_CONTACTS = gql`
         firstName
         lastName
         role
+        avatarUrl
         lastMessageAt
         lastMessageContent
         unreadCount
@@ -30,6 +31,18 @@ export const GET_CONVERSATION = gql`
         content
         sentAt
         isRead
+        sender {
+          id
+          firstName
+          lastName
+          avatarUrl
+        }
+        receiver {
+          id
+          firstName
+          lastName
+          avatarUrl
+        }
       }
       pageInfo {
         hasNextPage
@@ -48,6 +61,18 @@ export const SEND_MESSAGE = gql`
       content
       sentAt
       isRead
+      sender {
+        id
+        firstName
+        lastName
+        avatarUrl
+      }
+      receiver {
+        id
+        firstName
+        lastName
+        avatarUrl
+      }
     }
   }
 `;
@@ -70,6 +95,18 @@ export const MESSAGE_RECEIVED = gql`
       content
       sentAt
       isRead
+      sender {
+        id
+        firstName
+        lastName
+        avatarUrl
+      }
+      receiver {
+        id
+        firstName
+        lastName
+        avatarUrl
+      }
     }
   }
 `;
@@ -83,6 +120,7 @@ export const GET_ACTIVE_CONVERSATIONS = gql`
           firstName
           lastName
           role
+          avatarUrl
         }
         lastMessage
       }
@@ -107,11 +145,13 @@ export const SEARCH_MY_MESSAGES = gql`
           id
           firstName
           lastName
+          avatarUrl
         }
         receiver {
           id
           firstName
           lastName
+          avatarUrl
         }
       }
       pageInfo {

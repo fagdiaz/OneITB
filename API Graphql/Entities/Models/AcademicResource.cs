@@ -12,6 +12,8 @@ namespace OneItb.Entities.Models
         public string? FileUrl { get; set; }
         public string? ExternalUrl { get; set; }
         public string ResourceType { get; set; } = "File";
+        public AcademicResourceCategory Category { get; set; } = AcademicResourceCategory.Otro;
+        public int Version { get; set; } = 1;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;

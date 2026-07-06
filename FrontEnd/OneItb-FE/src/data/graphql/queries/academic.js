@@ -1,14 +1,16 @@
 import { gql } from '@apollo/client';
 
 export const GET_ACADEMIC_RESOURCES = gql`
-  query GetAcademicResources($subjectId: Int!) {
-    academicResources(subjectId: $subjectId) {
+  query GetAcademicResources($subjectId: Int!, $searchTerm: String, $category: AcademicResourceCategory) {
+    academicResources(subjectId: $subjectId, searchTerm: $searchTerm, category: $category) {
       id
       title
       description
       fileUrl
       externalUrl
       resourceType
+      category
+      version
       createdAt
       isActive
       subject {
@@ -26,6 +28,41 @@ export const GET_ACADEMIC_RESOURCES = gql`
         firstName
         lastName
         role
+        avatarUrl
+      }
+    }
+  }
+`;
+
+export const GET_RESOURCES_BY_SUBJECT = gql`
+  query GetResourcesBySubject($subjectId: Int!, $searchTerm: String, $category: AcademicResourceCategory) {
+    resourcesBySubject(subjectId: $subjectId, searchTerm: $searchTerm, category: $category) {
+      id
+      title
+      description
+      fileUrl
+      externalUrl
+      resourceType
+      category
+      version
+      createdAt
+      isActive
+      subject {
+        id
+        name
+        code
+        career {
+          id
+          name
+          code
+        }
+      }
+      uploader {
+        id
+        firstName
+        lastName
+        role
+        avatarUrl
       }
     }
   }

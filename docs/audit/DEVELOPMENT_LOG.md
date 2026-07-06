@@ -5,6 +5,264 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-06] - Spec 167: Production Readiness Hardening
+
+* **Objetivo**: avanzar el cierre de produccion sin deuda tecnica falsa, atacando trazabilidad operativa y rendimiento GraphQL en metricas sociales mientras se mantienen pendientes las brechas que requieren browser runtime o infraestructura distribuida.
+* **Resultado**:
+  - Se agrego `CorrelationIdMiddleware` para aceptar/generar `X-Correlation-ID`, devolverlo en la respuesta y registrar metodo, path, status, duracion y correlation id en logs estructurados.
+  - `Program.cs` usa `AddSimpleConsole` con salida de una linea para mejorar lectura operativa y compatibilidad con CI/log collectors.
+  - Los campos GraphQL `totalPosts`, `totalComments`, `totalLikesReceived`, `totalReportsReceived` y `reportCount` dejaron de ejecutar conteos por objeto padre y ahora usan DataLoaders con consultas agrupadas.
+  - Se agrego `docs/audit/FINAL_AUDIT_REPORT.md` como reporte adjuntable para auditoria academica, separando implementado, verificado y pendiente.
+  - `ROADMAP.md` sube a 94% (73/78): se promueve observabilidad/trazabilidad a `[V]`; no se promovieron pub/sub distribuido, pruebas frontend, integracion GraphQL SQL, privacidad/seguidores ni regresion visual admin.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release -p:RestoreIgnoreFailedSources=true`: PASS, 0 errores; warnings `NU1900` por metadata de vulnerabilidades inaccesible en nuget.org.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 34/34.
+  - Runtime GraphQL HTTP local contra Docker SQL: `{ __typename }` devuelve HTTP 200, body `{"data":{"__typename":"Query"}}`, header `X-Correlation-ID: audit-smoke-167` y log con el mismo correlation id.
+  - Runtime metric smoke autenticado: login admin PASS, `users` devuelve 53 usuarios con metricas y `inquiriesPage(first: 5)` devuelve 5 items sobre 154 con report counts y metricas de autor.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, build en 2.40s.
+  - `git diff --check`: PASS, exit code 0; solo warnings de conversion LF/CRLF.
+* **Estado**:
+  - Implementado y verificado para backend runtime local HTTP. HTTPS launch profile en `Start-Job` sigue dependiendo del store de certificado del host; `dotnet dev-certs --check --trust` confirma certificado confiable en la sesion principal.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Infrastructure/CorrelationIdMiddleware.cs`
+  - `API Graphql/OneITB/Infrastructure/GraphQLMetricsDataLoaders.cs`
+  - `API Graphql/OneITB/Program.cs`
+  - `API Graphql/OneITB/Startup.cs`
+  - `docs/audit/FINAL_AUDIT_REPORT.md`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/audit/DOCUMENTATION_STATUS.md`
+  - `specs/167-production-readiness-hardening/evidence.md`
+
+## [2026-07-06] - Spec 166: Roadmap Quality Closure
+
+* **Objetivo**: avanzar el roadmap sin deuda tecnica falsa, priorizando cobertura automatizada de autenticacion/feed, CI reproducible y documentacion canonica alineada al codigo real.
+* **Resultado**:
+  - Se agregaron tests backend de `UsersService` para registro con carreras, normalizacion, BCrypt, roles publicos permitidos, carreras obligatorias y proteccion de administradores.
+  - Se agregaron tests backend de `AccountsService` para login exitoso con JWT, password incorrecta y rechazo de usuarios inactivos.
+  - Se corrigio `AccountsService.Login` para bloquear usuarios inactivos antes de emitir token.
+  - Se agregaron tests backend de `SocialService` para scoping por carrera, autores bloqueados, busqueda por comentario/email, adjuntos seguros, comentarios anidados, reacciones y usuarios silenciados.
+  - Se normalizo la busqueda social a comparaciones lowercase para evitar diferencias por proveedor/collation.
+  - Se agrego `.github/workflows/quality-gates.yml` con gates de backend, frontend y modelo EF; el workflow de deploy backend se actualizo a .NET 8/actions vigentes.
+  - README, `scope-and-requirements.md`, `architecture-and-design.md`, docs academicos y runbook fueron alineados con el roadmap actual: recursos academicos/SIU/notificaciones estan implementados a nivel `[I]`, mobile/cloud/distribuido siguen planificados.
+  - `ROADMAP.md` sube a 92% (72/78): auth tests, feed tests y CI quedan en `[I]`; no se promovieron pruebas frontend, integracion GraphQL SQL, admin runtime, pub/sub distribuido ni storage compartido.
+* **Validaciones ejecutadas**:
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 34/34.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, build en 798ms.
+  - `git diff --check`: PASS, exit code 0.
+  - `dotnet ef migrations has-pending-model-changes ...`: BLOQUEADO por NU1301/NuGet en el entorno de ejecucion.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: BLOQUEADO despues del intento de restore EF porque `obj/project.assets.json` local quedo con errores NU1301; requiere restore con red habilitada.
+* **Estado**:
+  - Implementado con evidencia backend de servicios y frontend build. Quedan pendientes las validaciones bloqueadas por NuGet/red y las brechas explicitadas en roadmap.
+* **Archivos principales**:
+  - `API Graphql/Services/Accounts/AccountsService.cs`
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `API Graphql/Tests/Services.Tests/Auth/UsersServiceTests.cs`
+  - `API Graphql/Tests/Services.Tests/Auth/AccountsServiceTests.cs`
+  - `API Graphql/Tests/Services.Tests/Social/SocialServiceTests.cs`
+  - `.github/workflows/quality-gates.yml`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/project_docs/scope-and-requirements.md`
+  - `docs/project_docs/architecture-and-design.md`
+  - `docs/audit/RUNBOOK_DEV.md`
+  - `specs/166-roadmap-quality-closure/evidence.md`
+
+## [2026-07-06] - Spec 165: Academic Hub Hardening
+
+* **Objetivo**: cerrar la brecha pendiente de Specs 163/164 con una iteracion audit -> implementacion -> auditoria final sobre el hub academico y el grafo social.
+* **Resultado**:
+  - `/academic` reemplaza el panel lateral permanente por un modal de carga de recursos que conserva el flujo binario desacoplado `/api/upload` + metadata GraphQL.
+  - La busqueda de recursos por titulo ahora es local e instantanea con `useMemo`, dejando `searchTerm` disponible en GraphQL para consumidores API.
+  - `uploadAcademicResource` y `deleteResource` actualizan Apollo cache con `cache.updateQuery`, sin refetch amplio de la lista visible.
+  - Se agrego el alias GraphQL `resourcesBySubject(subjectId, searchTerm, category)` delegando al mismo servicio autorizado que `academicResources`.
+  - `SocialService.GetInquiries` y `LoadInquiryGraphAsync` usan `AsSplitQuery()` e incluyen explicitamente respuestas anidadas y autores de respuestas para reducir riesgo de N+1/explosion de includes.
+  - `useForm` usa actualizaciones funcionales de estado para evitar escrituras con estado viejo en formularios compartidos.
+* **Validaciones ejecutadas**:
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 16/16.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, build en 715ms.
+  - Smoke GraphQL temporal en `http://localhost:5444/graphql`: PASS, `Query` expone `academicResources` y `resourcesBySubject`.
+  - `git diff --check`: PASS, exit code 0.
+* **Estado**:
+  - Implementado y auditado. Queda pendiente regresion autenticada en navegador para elevar el hub academico de `[I]` a `[V]`.
+* **Archivos principales**:
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/academic.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js`
+  - `FrontEnd/OneItb-FE/src/hooks/useForm.jsx`
+  - `specs/165-academic-hub-hardening/evidence.md`
+
+## [2026-07-05] - Spec 164: Academic Hub Resources
+
+* **Objetivo**: cerrar el pendiente P2 del roadmap implementando busqueda, categorias y versionado de recursos academicos por materia, con autorizacion por carrera, upload desacoplado y UI Clean Tech / Tech Noir.
+* **Resultado**:
+  - `AcademicResource` ahora persiste `Category` (`OTRO`, `LIBRO`, `APUNTE`, `EXAMEN`) y `Version`, con mapeo EF Core explicito, constraint `Version >= 1`, indice por `SubjectId/Category/IsActive/CreatedAt` y FKs restrictivas existentes a `Subject` y `User`.
+  - `AcademicService` permite consultar recursos por `subjectId`, `searchTerm` y `category`, mantiene control de acceso por carrera y usa `AsNoTracking` + `AsSplitQuery` para materializar `Subject/Career/Uploader` sin N+1.
+  - `uploadAcademicResource` crea metadata luego del upload REST y permite publicar a administradores, profesores o usuarios activos inscriptos en la carrera de la materia; `deleteResource` realiza soft-delete y queda limitado a manager o autor.
+  - Se corrigio el matching SIU por email para comparar claves normalizadas, evitando fallos por la normalizacion visual de `Account.Email`.
+  - `/academic` ahora tiene sidebar de materias/filtros, busqueda, filtro por categoria, grid de tarjetas con iconos, version visible y formulario de carga con categoria/version usando `/api/upload`.
+  - Apollo actualiza queries/mutations academicas para `category`, `version`, `uploadAcademicResource` y `deleteResource`.
+  - Se genero y aplico la migracion `AddAcademicResourceCategoryVersion`.
+* **Validaciones ejecutadas**:
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 16/16.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, build en 3.77s.
+  - `dotnet ef migrations add AddAcademicResourceCategoryVersion --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS.
+  - `dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS.
+  - Smoke GraphQL temporal en `http://localhost:5443/graphql`: PASS para `{ __typename }` e introspeccion de `AcademicResource.category`, `AcademicResource.version` y enum `AcademicResourceCategory`.
+* **Estado**:
+  - Implementado con migracion aplicada y schema validado. Queda regresion autenticada en navegador para elevar el item del roadmap de `[I]` a `[V]`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/AcademicResource.cs`
+  - `API Graphql/Entities/Models/AcademicResourceCategory.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Services/Academic/AcademicService.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `API Graphql/Data/Migrations/20260706031445_AddAcademicResourceCategoryVersion.cs`
+  - `FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/queries/academic.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/mutations/academic.js`
+  - `specs/164-academic-hub-resources/evidence.md`
+
+## [2026-07-05] - Spec 163: Zero Debt Audit
+
+* **Objetivo**: reducir deuda tecnica observable sin refactors riesgosos: cache Apollo, N+1 academico, higiene de bundle y dependencias.
+* **Resultado**:
+  - `GraphqlProvider.js` incorpora `keyFields` para entidades principales (`User`, `Inquiry`, `Comment`, `Reaction`, `Message`, `AcademicResource`, `AcademicProgress`, `Subject`, `Career`, `Notification`) y policy scoped para `Query.academicResources` por `subjectId`, `searchTerm` y `category`.
+  - Se mantuvieron las policies de reemplazo de sesion, feed, mensajeria y notificaciones agregadas en specs previas.
+  - La auditoria de `AcademicService` dejo recursos y progreso con graph loading explicito y `AsSplitQuery` para evitar explosion de includes y riesgos N+1 en tarjetas academicas.
+  - `vite.config.js` ya tenia vendor split deterministico; no se eliminaron dependencias porque el set es minimo y `react-to-print` sigue asociado al flujo de CV.
+* **Validaciones ejecutadas**:
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 16/16.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS.
+* **Estado**:
+  - Implementado con deuda acotada. La eliminacion de componentes o dependencias queda fuera porque no hubo evidencia de codigo muerto seguro en esta pasada.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js`
+  - `FrontEnd/OneItb-FE/vite.config.js`
+  - `FrontEnd/OneItb-FE/package.json`
+  - `API Graphql/Services/Academic/AcademicService.cs`
+  - `specs/163-zero-debt-audit/evidence.md`
+
+## [2026-07-04] - Spec 162: Session Boundary and Header Identity Fix
+
+* **Objetivo**: corregir el bleed de sesion por el cual el Header podia mostrar datos del usuario anterior despues de cerrar sesion e iniciar con otra cuenta, e investigar superficies relacionadas.
+* **Resultado**:
+  - Se identifico la causa raiz: `Logout.jsx` no usaba `AuthContext.logout()`, sino `localStorage.clear()` y `setAuth({})`, dejando `isAuthenticated`, `token` y Apollo cache fuera del flujo canonico.
+  - `Logout.jsx` ahora ejecuta `logout()` y navega a `/login` con `replace: true`, sin borrar preferencias no relacionadas como el tema.
+  - `AuthContext.jsx` centraliza login/logout como operaciones asincronas de frontera de sesion: limpia Apollo antes de instalar una nueva sesion, remueve solo `token`/`user`, resetea helpers del provider y deja de exponer `setAuth`.
+  - `GraphqlProvider.js` agrega policies de reemplazo para `Query.me` y campos de notificaciones, y permite resetear el guard de expiracion al iniciar una nueva sesion.
+  - `Nav.jsx`, `GlobalSearch.jsx` y `CvEditorProfile.tsx` ignoran datos `me` si `me.id` no coincide con `auth.id`, evitando que cache anterior contamine Header, filtros academicos o edicion de perfil.
+  - La auditoria alcanzo tambien `SideBar` y `NotificationBell`: ambos quedan protegidos por la correccion central de `auth`/`isAuthenticated`.
+* **Validaciones ejecutadas**:
+  - `npm.cmd run build`: PASS, 341 modulos transformados, build en 704 ms.
+  - `rg -n "localStorage\.clear\(" FrontEnd/OneItb-FE/src`: PASS sin matches.
+  - `rg -n "setAuth\(" FrontEnd/OneItb-FE/src`: PASS, solo usos internos de `AuthContext.jsx`.
+  - `rg -n "meData\?\.me \|\||gqlData\?\.me \|\||localStorage\.clear\(|setAuth\}" ...`: PASS sin matches.
+  - `git diff --check`: PASS; solo avisos LF/CRLF de Windows.
+* **Estado**:
+  - Implementado y verificado por build frontend y checks estaticos. Queda recomendada prueba manual en navegador con cambio real usuario A -> logout -> usuario B cuando el entorno runtime este disponible.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/context/AuthContext.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Login.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Logout.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/GlobalSearch.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js`
+  - `specs/162-session-boundary-header-fix/evidence.md`
+
+## [2026-07-04] - Spec 161: Session Cache, Search and Avatar Hardening
+
+* **Objetivo**: cerrar riesgos criticos de session bleed en Apollo, warnings de cache por reemplazo de resultados, busqueda de perfiles por email institucional, copy de autenticacion, validacion de registro institucional y exactitud del export del editor de avatar.
+* **Resultado**:
+  - `GraphqlProvider.js` conserva una unica instancia activa de Apollo Client, expone `clearApolloStore()` y limpia la cache en expiracion de sesion.
+  - `AuthContext.jsx` ejecuta `GraphQLProvider.clearApolloStore()` en logout ademas de limpiar `token`, `user` y estado React.
+  - `GraphqlProvider.js` define policies explicitas de reemplazo para `inquiries`, `inquiriesPage`, `conversation`, `messagingContacts`, `activeConversations` y `searchMyMessages`, evitando warnings de perdida de cache y mezclas entre filtros.
+  - `Query.cs` extiende `searchPublicProfiles` para buscar tambien por `Account.Email`.
+  - `Register.jsx` mantiene rol de seleccion unica no administrativa, aplica regex institucional `@itbeltran.com.ar` y corrige labels/mensajes de contrasena con `ñ`.
+  - `AvatarEditorModal.jsx` elimina la mascara interna que no coincidia con el export, usa el canvas visible como recorte cuadrado final y conserva clamp de pan/zoom para evitar bordes vacios.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, build en 1.79s, 0 errores de compilacion.
+  - `git diff --check`: PASS; solo avisos LF/CRLF de Windows.
+  - `rg -n "Contrasena|contrasena|contrasenas" FrontEnd/OneItb-FE/src/Components/user`: PASS sin matches.
+* **Estado**:
+  - Implementado y verificado por builds backend/frontend. El smoke GraphQL runtime quedo bloqueado porque el certificado HTTPS de desarrollo local no existe o esta vencido; Kestrel no completo el arranque. No se marca runtime GraphQL como verificado en esta spec.
+* **Archivos principales**:
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js`
+  - `FrontEnd/OneItb-FE/src/context/AuthContext.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Register.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/AvatarEditorModal.jsx`
+  - `specs/161-session-cache-search-avatar-hardening/evidence.md`
+
+## [2026-07-04] - Spec 160: Registration, Avatar, Chat and Search Hardening
+
+* **Objetivo**: resolver bugs criticos de QA en registro, retencion de avatar, limites matematicos del editor canvas, mensajeria y filtros inteligentes sin expandir la arquitectura fuera de los contratos vigentes.
+* **Resultado**:
+  - `RegisterInput` y `UsersService.RegisterAsync` aceptan y validan `role` publico y `careerIds`, rechazando roles administrativos y creando links `UserCareer` al registrar.
+  - `Register.jsx` agrega confirmacion de contrasena, selector de rol no administrativo, selector de carreras desde GraphQL y redirect a `/login` con mensaje de exito.
+  - `Login.jsx` muestra feedback post-registro desde `location.state`.
+  - `CvEditorProfile.tsx` preserva `avatarUrl` persistido si el usuario guarda sin subir una nueva imagen.
+  - `AvatarEditorModal.jsx` calcula bounds rotados, clamp de zoom y clamp de pan para evitar bordes vacios en el canvas exportado.
+  - `MessagingContact`, `MessagingService`, `chat.js`, `Nav.jsx`, `PrivateChat.jsx`, `MiniChatWidget.jsx`, `ChatSidebar.jsx` y `ChatWindow.jsx` incorporan avatar de contactos/remitentes, badge de no leidos y jerarquia visual para conversaciones no leidas.
+  - Los textos falsos de presencia se reemplazan por estado de transporte donde corresponde.
+  - `GlobalSearch.jsx` oculta el filtro de carrera para usuarios normales de una sola carrera y normaliza el comportamiento visual/logico de `Todas` en materias.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, build en 607 ms, 0 errores de compilacion.
+* **Estado**:
+  - Implementado y verificado por builds backend/frontend. Queda pendiente QA manual en navegador y smoke GraphQL runtime antes de marcar estos flujos como `[V]`.
+* **Archivos principales**:
+  - `API Graphql/Services/DTOs.cs`
+  - `API Graphql/Services/Users/UsersService.cs`
+  - `API Graphql/Services/Messaging/IMessagingService.cs`
+  - `API Graphql/Services/Messaging/MessagingService.cs`
+  - `FrontEnd/OneItb-FE/src/Components/user/Register.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Login.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/GlobalSearch.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/AvatarEditorModal.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/PrivateChat.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/MiniChatWidget.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/ChatSidebar.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/ChatWindow.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/chatCache.js`
+  - `FrontEnd/OneItb-FE/src/data/graphql/chat.js`
+  - `specs/160-registration-avatar-chat-search-hardening/evidence.md`
+
+## [2026-07-03] - Spec 159: Auth Guard, Search Scope, CV Consistency and Avatar Math
+
+* **Objetivo**: cerrar el pulido de seguridad visual y reglas de negocio del Header/Omni-Search, aislar publicaciones por carreras del usuario, unificar la impresion del CV y corregir la matematica del editor de avatar.
+* **Resultado**:
+  - `Header.jsx` deja de montar `GlobalSearch` si no hay sesion autenticada y token vigente.
+  - `Nav.jsx` refuerza el `skip` de `GET_USER_PROFILE` para no solicitar avatar/perfil con usuarios anonimos o sesion sin token.
+  - `GlobalSearch.jsx` incorpora `Todas` como estado explicito de materias, con limpieza de materias especificas al activarlo y desactivacion automatica al seleccionar materias individuales.
+  - `SocialService.cs` aplica scoping backend por `UserCareer`: usuarios comunes solo reciben publicaciones de carreras propias, mientras `Administrador` y `Moderador` mantienen visibilidad global.
+  - `Query.cs` ajusta metricas de `publicProfile` para contar publicaciones y comentarios visibles segun la interseccion de carreras del visor.
+  - `CvEditorProfile.tsx` alinea los datos de contacto/redes con `UserProfile.tsx` para que `CVPrintTemplate` imprima el mismo bloque desde `/profile` y `/profile/edit`.
+  - `AvatarEditorModal.jsx` cambia la guia visual a recorte cuadrado, permite zoom minimo `0.1` e incorpora drag-to-pan aplicado al mismo pipeline de canvas que rotacion, espejado, filtros y vineta.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 warnings, 0 errores.
+  - `npm.cmd run build`: PASS, 341 modulos transformados, 0 errores de compilacion; persiste solo el aviso de tiempos del plugin `@tailwindcss/vite:generate:build`.
+* **Estado**:
+  - Implementado y verificado por builds backend/frontend. Queda recomendada validacion manual en navegador del scoping con usuarios multi-carrera y del drag-to-pan del avatar.
+* **Archivos principales**:
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/GlobalSearch.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/AvatarEditorModal.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx`
+  - `specs/159-auth-guard-search-scope-avatar-math/evidence.md`
+
 ## [2026-07-02] - Spec 158: Masterization Navigation, Search, CV and Avatar
 
 * **Objetivo**: cerrar la masterizacion UX del Header, omni-search, resultados del feed, layout de contacto del CV y edicion avanzada de avatar, extendiendo la busqueda GraphQL de publicaciones de forma compatible.

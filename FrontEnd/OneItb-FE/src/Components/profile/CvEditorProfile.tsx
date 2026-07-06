@@ -106,6 +106,22 @@ const resolveAssetUrl = (value?: string | null): string | undefined => {
   return value;
 };
 
+const normalizeExternalUrl = (value?: string | null, provider?: 'linkedin' | 'instagram' | 'facebook'): string => {
+  const raw = value?.trim();
+  if (!raw) return '';
+
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const cleaned = raw.replace(/^@/, '').replace(/^\/+/, '');
+  if (cleaned.includes('.')) return `https://${cleaned}`;
+
+  if (provider === 'linkedin') return `https://www.linkedin.com/in/${cleaned}`;
+  if (provider === 'instagram') return `https://www.instagram.com/${cleaned}`;
+  if (provider === 'facebook') return `https://www.facebook.com/${cleaned}`;
+
+  return `https://${cleaned}`;
+};
+
 const buildCvInput = (sections: CvSections) => ({
   cvExperiences: sections.experience
     .filter((item) => hasAnyValue([item.company, item.role, item.startDate, item.endDate, item.location, item.description]))
@@ -157,7 +173,7 @@ const buildCvInput = (sections: CvSections) => ({
 });
 
 export const CvEditorProfile = () => {
-  const { auth, token } = useAuth();
+  const { auth, token, sessionVersion } = useAuth();
   const navigate = useNavigate();
   const [cvSections, setCvSections] = useState<CvSections>(emptyCvSections);
   const [activeTheme, setActiveTheme] = useState<AccentTheme>('graphite');
@@ -185,7 +201,8 @@ export const CvEditorProfile = () => {
   }, []);
 
   useEffect(() => {
-    const activeUser = gqlData?.me || auth;
+    const sessionProfile = gqlData?.me?.id === auth?.id ? gqlData.me : null;
+    const activeUser = sessionProfile || auth;
     if (!activeUser) return;
 
     setProfileForm({
@@ -205,7 +222,7 @@ export const CvEditorProfile = () => {
         : [],
     );
     setCvSections(normalizeCvSections(activeUser));
-  }, [auth, gqlData]);
+  }, [auth, gqlData, sessionVersion]);
 
   const handleProfileChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -277,11 +294,15 @@ export const CvEditorProfile = () => {
   };
 
   const handleSaveProfile = async () => {
-    const userId = gqlData?.me?.id || auth?.id;
+    const sessionProfile = gqlData?.me?.id === auth?.id ? gqlData.me : null;
+    const userId = sessionProfile?.id || auth?.id;
     if (!userId) {
       setSaveStatus('error');
       return;
     }
+
+    const persistedAvatarUrl = sessionProfile?.avatarUrl || auth?.avatarUrl || '';
+    const effectiveAvatarUrl = profileForm.avatarUrl || avatarPreview || persistedAvatarUrl || null;
 
     try {
       const response = await updateProfile({
@@ -293,7 +314,7 @@ export const CvEditorProfile = () => {
             linkedIn: profileForm.linkedIn,
             facebook: profileForm.facebook,
             instagram: profileForm.instagram,
-            avatarUrl: profileForm.avatarUrl,
+            avatarUrl: effectiveAvatarUrl,
             careerIds: selectedCareerIds,
             ...buildCvInput(cvSections),
           },
@@ -311,10 +332,11 @@ export const CvEditorProfile = () => {
     navigate('/profile');
   };
 
-  const displayName = gqlData?.me?.fullName || auth?.fullName || auth?.username || 'Usuario OneITB';
-  const rawDisplayRole = gqlData?.me?.role || auth?.role || '';
+  const sessionProfile = gqlData?.me?.id === auth?.id ? gqlData.me : null;
+  const displayName = sessionProfile?.fullName || auth?.fullName || auth?.username || 'Usuario OneITB';
+  const rawDisplayRole = sessionProfile?.role || auth?.role || '';
   const displayRole = rawDisplayRole.toLowerCase() === 'user' ? '' : rawDisplayRole;
-  const displayEmail = gqlData?.me?.email || auth?.email || 'usuario@itbeltran.com.ar';
+  const displayEmail = sessionProfile?.email || auth?.email || 'usuario@itbeltran.com.ar';
   const selectedCareerNames = (careersData?.careers ?? [])
     .filter((career: any) => selectedCareerIds.includes(career.id))
     .map((career: any) => career.name)
@@ -329,7 +351,10 @@ export const CvEditorProfile = () => {
       location: selectedCareerNames.join(' / '),
       linkedin: profileForm.linkedIn,
       github: '',
-      website: '',
+      website:
+        normalizeExternalUrl(profileForm.facebook, 'facebook') ||
+        normalizeExternalUrl(profileForm.instagram, 'instagram') ||
+        '',
       profileImage: resolveAssetUrl(avatarPreview),
     },
     summary: profileForm.biography,

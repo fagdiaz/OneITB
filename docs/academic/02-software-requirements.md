@@ -15,6 +15,7 @@ Este entregable resume el alcance vigente. La fuente completa y versionada es [s
 | Chat | Conversaciones uno a uno, historial y WebSocket |
 | Moderacion | Reportes, soft-delete y silenciamiento temporal |
 | Administracion | Usuarios, roles, carreras, materias y contenido |
+| Academico | Recursos por materia, categorias/versionado, progreso, SIU mock y notificaciones |
 
 ## 2.2 Requerimientos no funcionales
 
@@ -23,7 +24,7 @@ Este entregable resume el alcance vigente. La fuente completa y versionada es [s
 - Rendimiento sin N+1 y con consultas acotadas.
 - UI responsiva construida con Tailwind CSS 4.
 - Trazabilidad mediante specs, evidencia, roadmap y development log.
-- Disponibilidad multiplataforma y consistencia de estado entre Web y ecosistema móvil (React Native).
+- Disponibilidad Web actual y extension futura hacia ecosistema movil React Native.
 - Rendimiento y optimización de consumo de recursos bajo un entorno Cloud de capa gratuita (Azure App Service F1 / Azure SQL Free Tier / Docker).
 
 ## 2.3 Roles
@@ -32,6 +33,7 @@ Este entregable resume el alcance vigente. La fuente completa y versionada es [s
 
 ## 2.4 Alcance pendiente
 
-- Recursos academicos independientes del feed.
-- Notas e integracion/simulacion SIU Guarani.
-- Preferencias de notificacion por materia.
+- Regresion autenticada en navegador del hub academico.
+- Pruebas automatizadas frontend de componentes y estado.
+- Pruebas de integracion GraphQL contra SQL Server de prueba.
+- Pub/sub distribuido, almacenamiento compartido de archivos, despliegue cloud y app movil.

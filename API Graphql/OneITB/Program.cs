@@ -39,7 +39,12 @@ namespace OneItb.GraphQL
                 .ConfigureLogging(logging =>
                 {
                     logging.ClearProviders();
-                    logging.AddConsole();
+                    logging.AddSimpleConsole(options =>
+                    {
+                        options.IncludeScopes = true;
+                        options.SingleLine = true;
+                        options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fff ";
+                    });
                     logging.AddDebug();
                 })
                 .ConfigureWebHostDefaults(webBuilder =>

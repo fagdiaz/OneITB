@@ -73,6 +73,9 @@ secrets.json
 *.opendb
 *.VC.db
 *.log
+*.trace
+*.dump
+*.dmp
 *.tlog
 *.cache
 *.dat
@@ -180,5 +183,19 @@ AGENTS.md
 GUIA_SPECKIT.md
 Circuito\ SPECKIT.txt
 specs/
+specs/**/runtime-*.ps1
+specs/**/*runtime*.log
+specs/**/*.pid
+specs/**/*.mjs
 test.py
 core-web/
+
+# Local scratch and AI handoff artifacts
+*.tmp
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+BACKUP_*.patch
+*_codex_*

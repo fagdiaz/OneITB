@@ -19,32 +19,37 @@ namespace Services.Social
         {
             IQueryable<Inquiry> query = _context.Inquiries
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(inquiry => inquiry.User)
                 .ThenInclude(user => user.Account)
                 .Include(inquiry => inquiry.Subject)
                 .ThenInclude(subject => subject.Career)
                 .Include(inquiry => inquiry.Reactions)
                 .Include(inquiry => inquiry.Comments)
-                .ThenInclude(comment => comment.User);
+                .ThenInclude(comment => comment.User)
+                .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.Replies)
+                .ThenInclude(reply => reply.User);
 
             string normalizedSearch = searchTerm?.Trim() ?? string.Empty;
             if (normalizedSearch.Length > 0)
             {
+                string normalizedSearchLower = normalizedSearch.ToLower();
                 query = query.Where(inquiry =>
-                    inquiry.Title.Contains(normalizedSearch) ||
-                    inquiry.Content.Contains(normalizedSearch) ||
-                    inquiry.Subject.Name.Contains(normalizedSearch) ||
-                    inquiry.Subject.Code.Contains(normalizedSearch) ||
-                    inquiry.Subject.Career.Code.Contains(normalizedSearch) ||
-                    inquiry.User.FirstName.Contains(normalizedSearch) ||
-                    inquiry.User.LastName.Contains(normalizedSearch) ||
-                    (inquiry.User.FirstName + " " + inquiry.User.LastName).Contains(normalizedSearch) ||
-                    inquiry.User.Account.Email.Contains(normalizedSearch) ||
+                    inquiry.Title.ToLower().Contains(normalizedSearchLower) ||
+                    inquiry.Content.ToLower().Contains(normalizedSearchLower) ||
+                    inquiry.Subject.Name.ToLower().Contains(normalizedSearchLower) ||
+                    inquiry.Subject.Code.ToLower().Contains(normalizedSearchLower) ||
+                    inquiry.Subject.Career.Code.ToLower().Contains(normalizedSearchLower) ||
+                    inquiry.User.FirstName.ToLower().Contains(normalizedSearchLower) ||
+                    inquiry.User.LastName.ToLower().Contains(normalizedSearchLower) ||
+                    (inquiry.User.FirstName + " " + inquiry.User.LastName).ToLower().Contains(normalizedSearchLower) ||
+                    inquiry.User.Account.Email.ToLower().Contains(normalizedSearchLower) ||
                     inquiry.Comments.Any(comment =>
-                        comment.Content.Contains(normalizedSearch) ||
-                        comment.User.FirstName.Contains(normalizedSearch) ||
-                        comment.User.LastName.Contains(normalizedSearch) ||
-                        (comment.User.FirstName + " " + comment.User.LastName).Contains(normalizedSearch)));
+                        comment.Content.ToLower().Contains(normalizedSearchLower) ||
+                        comment.User.FirstName.ToLower().Contains(normalizedSearchLower) ||
+                        comment.User.LastName.ToLower().Contains(normalizedSearchLower) ||
+                        (comment.User.FirstName + " " + comment.User.LastName).ToLower().Contains(normalizedSearchLower)));
             }
 
             int[] normalizedCareerIds = careerIds is { Length: > 0 }
@@ -65,10 +70,25 @@ namespace Services.Social
 
             if (!currentUserId.HasValue)
             {
-                return query.OrderByDescending(inquiry => inquiry.PublishDate);
+                return query
+                    .Where(inquiry => false)
+                    .OrderByDescending(inquiry => inquiry.PublishDate);
             }
 
             Guid observerId = currentUserId.Value;
+            bool hasGlobalCareerVisibility = _context.Users.Any(user =>
+                user.Id == observerId &&
+                (user.Role == "Administrador" || user.Role == "Moderador"));
+
+            if (!hasGlobalCareerVisibility)
+            {
+                IQueryable<int> observerCareerIds = _context.UserCareers
+                    .Where(link => link.UserId == observerId && link.Career.IsActive)
+                    .Select(link => link.CareerId);
+
+                query = query.Where(inquiry => observerCareerIds.Contains(inquiry.Subject.CareerId));
+            }
+
             IQueryable<Guid> excludedUsers = _context.UserInteractions
                 .Where(interaction =>
                     interaction.ObserverId == observerId &&
@@ -371,6 +391,7 @@ namespace Services.Social
         {
             return await _context.Inquiries
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(inquiry => inquiry.User)
                 .ThenInclude(user => user.Account)
                 .Include(inquiry => inquiry.Subject)
@@ -378,6 +399,9 @@ namespace Services.Social
                 .Include(inquiry => inquiry.Reactions)
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.User)
+                .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.Replies)
+                .ThenInclude(reply => reply.User)
                 .SingleAsync(inquiry => inquiry.Id == inquiryId);
         }
 
