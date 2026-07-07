@@ -4,10 +4,14 @@ Red social academica full-stack para estudiantes, profesores, egresados y gestio
 
 ## Estado actual
 
-- Avance detallado: **94% (73/78 items)**.
+- Avance detallado: **97% (87/90 items)**.
 - Nucleo social, mensajeria, administracion y modulo academico: implementados por etapas.
 - Prioridad P0: cerrar regresion visual del panel admin y ampliar cobertura automatizada frontend/GraphQL SQL.
 - Recursos, notas, SIU mock y notificaciones academicas: implementados a nivel `[I]`; requieren regresion autenticada de navegador para elevarse a `[V]`.
+- Over-delivery 2026-07-06: Audit Trail EF, constancias academicas, credenciales publicas aprobadas y toasts globales implementados; Google SSO queda bloqueado hasta tener credenciales OAuth institucionales reales.
+- Code Freeze 2026-07-06: Error Boundary global, filtro central de errores GraphQL y baselines de pruebas frontend/GraphQL implementados.
+- Cloud/DevOps 2026-07-07: Docker productivo API/Web, Redis Pub/Sub condicional, Cloudinary opcional, rate limiting, security headers y npm audit productivo en cero vulnerabilidades conocidas.
+- Security/Seeding 2026-07-07: profundidad maxima GraphQL, lockout de cuenta por fuerza bruta y seeding demo/productivo configurable sin secretos versionados.
 
 Consultar el [roadmap unico](docs/project_docs/ROADMAP.md) para estado, evidencia y prioridades.
 

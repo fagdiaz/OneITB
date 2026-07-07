@@ -22,7 +22,17 @@ namespace OneItb.GraphQL
                 try
                 {
                     var context = services.GetRequiredService<OneItb.Data.OneItbContext>();
-                    OneItb.Data.DbInitializer.Initialize(context);
+                    var configuration = services.GetRequiredService<IConfiguration>();
+                    var environment = services.GetRequiredService<IHostEnvironment>();
+                    string? demoPassword = configuration["Seed:DemoPassword"];
+
+                    if (string.IsNullOrWhiteSpace(demoPassword) && environment.IsDevelopment())
+                        demoPassword = "Test1234!";
+
+                    bool enableDemoData = configuration.GetValue("Seed:EnableDemoData", true);
+                    OneItb.Data.DbInitializer.Initialize(
+                        context,
+                        new OneItb.Data.DbSeedOptions(enableDemoData, demoPassword));
                 }
                 catch (Exception ex)
                 {

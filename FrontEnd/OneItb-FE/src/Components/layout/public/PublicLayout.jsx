@@ -1,11 +1,13 @@
 import React from 'react'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Header } from '../private/Header'
 import useAuth from '../../../hooks/useAuth'
 
 export const PublicLayout = () => {
 
   const {auth} = useAuth();
+  const location = useLocation();
+  const isPublicCertificateRoute = location.pathname.toLowerCase().startsWith('/certificate/');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -16,7 +18,7 @@ export const PublicLayout = () => {
         <main className="flex-1">
           {!auth.id ?
             <Outlet />
-            : <Navigate to="/feed" replace />
+            : isPublicCertificateRoute ? <Outlet /> : <Navigate to="/feed" replace />
           }
         </main>
         

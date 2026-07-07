@@ -191,4 +191,15 @@ namespace OneITB.Core.Services.Interfaces
         string? AvatarUrl,
         IReadOnlyList<string> Careers
     );
+
+    public record PublicCertificateDto(
+        Guid Id,
+        string StudentFullName,
+        string SubjectName,
+        string SubjectCode,
+        string CareerName,
+        decimal? Score,
+        string Status,
+        DateTime UpdatedAt
+    );
 }

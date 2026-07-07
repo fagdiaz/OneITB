@@ -5,6 +5,8 @@ using OneItb.Entities.Models;
 
 namespace OneItb.Data
 {
+    public sealed record DbSeedOptions(bool EnableDemoData = true, string? DemoPassword = null);
+
     public static class DbInitializer
     {
         public static readonly Guid AdminId = Guid.Parse("3f7b2c8a-9e1d-4f5b-8a6c-2d3e4f5a6b7c");
@@ -120,11 +122,20 @@ namespace OneItb.Data
             "Grupo de estudio para esta semana"
         };
 
-        public static void Initialize(OneItbContext context)
+        public static void Initialize(OneItbContext context, DbSeedOptions? options = null)
         {
             context.Database.Migrate();
 
-            SeedAccountsAndUsers(context);
+            DbSeedOptions seedOptions = options ?? new DbSeedOptions(
+                EnableDemoData: true,
+                DemoPassword: Environment.GetEnvironmentVariable("ONEITB_SEED_DEMO_PASSWORD"));
+
+            if (!seedOptions.EnableDemoData)
+                return;
+
+            string demoPassword = NormalizeDemoPassword(seedOptions.DemoPassword);
+
+            SeedAccountsAndUsers(context, demoPassword);
             SeedCareerData(context);
             SeedSubjectData(context);
             SeedAcademicLinks(context);
@@ -133,9 +144,9 @@ namespace OneItb.Data
             SeedMessagesData(context);
         }
 
-        private static void SeedAccountsAndUsers(OneItbContext context)
+        private static void SeedAccountsAndUsers(OneItbContext context, string demoPassword)
         {
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword("Test1234!");
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(demoPassword);
             var existingAccounts = context.Accounts
                 .Where(account => SeedUsers.Select(user => user.Id).Contains(account.Id))
                 .ToDictionary(account => account.Id);
@@ -149,12 +160,10 @@ namespace OneItb.Data
                         Id = seedUser.Id,
                         Email = seedUser.Email,
                         PasswordHash = passwordHash,
-                        CreatedAt = SeedStart
+                        CreatedAt = SeedStart,
+                        FailedLoginAttempts = 0,
+                        LockoutEnd = null
                     });
-                }
-                else if (!BCrypt.Net.BCrypt.Verify("Test1234!", account.PasswordHash))
-                {
-                    account.PasswordHash = passwordHash;
                 }
             }
 
@@ -608,6 +617,24 @@ namespace OneItb.Data
         {
             byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes($"oneitb23:{value}"));
             return new Guid(hash.AsSpan(0, 16));
+        }
+
+        private static string NormalizeDemoPassword(string? password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                throw new InvalidOperationException(
+                    "Seed:DemoPassword or ONEITB_SEED_DEMO_PASSWORD must be configured before seeding demo accounts.");
+            }
+
+            string normalized = password.Trim();
+            if (normalized.Length is < 8 or > 64)
+            {
+                throw new InvalidOperationException(
+                    "The demo seed password must contain between 8 and 64 characters.");
+            }
+
+            return normalized;
         }
 
         private sealed record SeedUser(

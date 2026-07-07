@@ -186,13 +186,22 @@ namespace Services.Social
 
             string normalized = fileUrl.Trim();
             if (normalized.Length > 500 ||
-                !normalized.StartsWith("/uploads/", StringComparison.Ordinal) ||
-                normalized.Contains("..", StringComparison.Ordinal))
+                normalized.Contains("..", StringComparison.Ordinal) ||
+                (!normalized.StartsWith("/uploads/", StringComparison.Ordinal) &&
+                 !IsAllowedCloudinaryUrl(normalized)))
             {
                 throw new InvalidOperationException("La URL del archivo adjunto no es valida.");
             }
 
             return normalized;
+        }
+
+        private static bool IsAllowedCloudinaryUrl(string value)
+        {
+            return Uri.TryCreate(value, UriKind.Absolute, out Uri? parsed) &&
+                parsed.Scheme == Uri.UriSchemeHttps &&
+                (parsed.Host.Equals("res.cloudinary.com", StringComparison.OrdinalIgnoreCase) ||
+                 parsed.Host.EndsWith(".cloudinary.com", StringComparison.OrdinalIgnoreCase));
         }
 
         private static string EncodeOffset(int offset)

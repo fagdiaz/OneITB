@@ -10,11 +10,14 @@ import './index.css'
 import { GraphQLProvider } from './data/graphql/GraphqlProvider'
 import { ApolloProvider } from '@apollo/client'
 import { ThemeProvider } from './context/ThemeContext'
+import { GlobalErrorBoundary } from './Components/layout/GlobalErrorBoundary'
 
 ReactDOM.createRoot(document.getElementById('root')).render( 
     <ApolloProvider client={new GraphQLProvider().apolloInstance}>
         <ThemeProvider>
-            <App />
+            <GlobalErrorBoundary>
+                <App />
+            </GlobalErrorBoundary>
         </ThemeProvider>
     </ApolloProvider>
 )

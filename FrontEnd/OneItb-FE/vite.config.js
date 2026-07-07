@@ -5,11 +5,16 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [
-    command === 'serve' ? react() : null,
+    react(),
     tailwindcss()
   ].filter(Boolean),
   define: {
     __DEV__: 'true'
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js'
   },
   build: {
     chunkSizeWarningLimit: 1500,

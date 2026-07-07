@@ -284,6 +284,65 @@ namespace GraphQL.GraphQL
             return moderationService.GetModerationAudits(first);
         }
 
+        [Authorize(Roles = new[] { "Administrador" })]
+        public IQueryable<AuditLog> GetAuditLogs(
+            int first,
+            string? entityName,
+            Guid? actorUserId,
+            [Service] OneItbContext context)
+        {
+            int take = Math.Clamp(first, 1, 200);
+            string? normalizedEntityName = string.IsNullOrWhiteSpace(entityName)
+                ? null
+                : entityName.Trim();
+
+            if (normalizedEntityName is { Length: > 120 })
+                throw new GraphQLException("El filtro de entidad no puede superar 120 caracteres.");
+
+            IQueryable<AuditLog> query = context.AuditLogs
+                .AsNoTracking()
+                .Include(log => log.ActorUser);
+
+            if (normalizedEntityName is not null)
+                query = query.Where(log => log.EntityName == normalizedEntityName);
+
+            if (actorUserId.HasValue)
+                query = query.Where(log => log.ActorUserId == actorUserId.Value);
+
+            return query
+                .OrderByDescending(log => log.CreatedAt)
+                .Take(take);
+        }
+
+        public async Task<PublicCertificateDto> GetPublicCertificate(
+            Guid id,
+            [Service] OneItbContext context)
+        {
+            AcademicProgress progress = await context.AcademicProgressRecords
+                .AsNoTracking()
+                .Include(item => item.User)
+                .Include(item => item.Subject)
+                .ThenInclude(subject => subject.Career)
+                .AsSplitQuery()
+                .SingleOrDefaultAsync(item =>
+                    item.Id == id &&
+                    item.Status == AcademicProgressStatus.Approved &&
+                    item.User.IsActive &&
+                    item.Subject.IsActive &&
+                    item.Subject.Career.IsActive)
+                ?? throw new GraphQLException("Certificado no encontrado o no disponible publicamente.");
+
+            return new PublicCertificateDto(
+                progress.Id,
+                $"{progress.User.FirstName} {progress.User.LastName}".Trim(),
+                progress.Subject.Name,
+                progress.Subject.Code,
+                progress.Subject.Career.Name,
+                progress.Score,
+                progress.Status.ToString(),
+                progress.UpdatedAt);
+        }
+
         [Authorize]
         public async Task<IReadOnlyList<AcademicResource>> GetAcademicResources(
             int subjectId,

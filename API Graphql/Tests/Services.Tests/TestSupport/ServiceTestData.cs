@@ -101,6 +101,8 @@ internal static class ServiceTestData
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 4),
             CreatedAt = DateTime.UtcNow,
+            FailedLoginAttempts = 0,
+            LockoutEnd = null,
             User = user
         };
 

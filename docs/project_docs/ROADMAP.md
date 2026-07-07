@@ -1,8 +1,8 @@
-# Roadmap unico de OneITB23
+﻿# Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-07-06
+**Ultima revision**: 2026-07-07
 
-**Estado global**: 94% (73 de 78 items)
+**Estado global**: 97% (87 de 90 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -15,7 +15,7 @@ Este archivo concentra avance funcional, estabilizacion, deuda tecnica y priorid
 
 Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre implementacion y verificacion.
 
-## Modulo 1 - Identidad, cuentas y seguridad: 100% (8/8)
+## Modulo 1 - Identidad, cuentas y seguridad: 100% (9/9)
 
 - [x] [V] Relacion 1:1 `Account`-`User` y passwords BCrypt `char(60)`.
 - [x] [V] Registro y login con JWT.
@@ -25,6 +25,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Autorizacion por roles en operaciones sensibles.
 - [x] [I] Flujo Magic Link para empleadores.
 - [x] [I] Suite automatizada backend de registro, login, cuentas inactivas y autorizacion administrativa.
+- [x] [I] Lockout persistente por cuenta ante fuerza bruta de login, con tests automatizados.
 
 ## Modulo 2 - Perfiles e identidad social: 88% (7/8)
 
@@ -67,7 +68,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Paginacion o scroll incremental del feed.
 - [x] [I] Pruebas automatizadas backend de publicaciones, comentarios, archivos, busqueda, scoping y reacciones.
 
-## Modulo 5 - Mensajeria privada: 88% (7/8)
+## Modulo 5 - Mensajeria privada: 100% (8/8)
 
 - [x] [V] Persistencia de mensajes uno a uno.
 - [x] [V] Contactos e historial paginados.
@@ -76,7 +77,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] UI optimista, deduplicacion y reconciliacion al reconectar.
 - [x] [V] Busqueda de contactos y mensajes.
 - [x] [I] Integracion entre chat completo y widget sin updates cruzados.
-- [ ] [P] Reemplazar pub/sub en memoria por transporte distribuido.
+- [x] [I] Reemplazar pub/sub en memoria por transporte distribuido Redis configurable.
 
 ## Modulo 6 - Administracion y moderacion: 90% (9/10)
 
@@ -100,7 +101,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Adaptador o simulador desacoplado para SIU Guarani.
 - [x] [I] Preferencias de notificacion por materia.
 
-## Modulo 8 - Calidad, operacion y escalabilidad: 86% (12/14)
+## Modulo 8 - Calidad, operacion y escalabilidad: 100% (20/20)
 
 - [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
 - [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
@@ -108,14 +109,28 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Documentacion consolidada y fuentes de verdad definidas.
 - [x] [I] Evidencia por spec y development log cronologico inverso.
 - [x] [I] Base de pruebas unitarias del backend para servicios academicos, notificaciones, autenticacion y feed social.
-- [ ] [P] Pruebas de componentes y estado frontend.
-- [ ] [P] Pruebas de integracion GraphQL con SQL Server de prueba.
+- [x] [I] Baseline de pruebas de componentes y estado frontend con Vitest y Testing Library.
+- [x] [I] Baseline de pruebas de integracion GraphQL con executor real de HotChocolate y EF Core de prueba.
 - [x] [I] Pipeline CI para build, tests y validacion de modelo EF sin secretos versionados.
 - [x] [V] Logging estructurado, metricas basicas de request y trazabilidad de errores con correlation id.
 - [x] [V] Entorno local reproducible sin bloqueo de SQL SSPI/certificado HTTPS.
 - [x] [V] Limpieza de warnings de compilacion (Vite chunk size y .NET nullability).
 - [x] [I] Actualizacion controlada de dependencias y division del bundle frontend.
 - [x] [I] Sistema visual Clean Tech / Tech Noir con tema persistente, selector en Header y superficies principales dual-theme.
+- [x] [I] Dockerizacion productiva multi-stage para API .NET y frontend Nginx con reverse proxy SPA/WebSocket.
+- [x] [I] Orquestacion productiva `docker-compose.prod.yml` con SQL Server, Redis, API y frontend sin secretos versionados.
+- [x] [I] Almacenamiento cloud opcional con Cloudinary y fallback local para `/api/upload`.
+- [x] [I] Hardening HTTP productivo con rate limiting por IP, healthcheck y security headers.
+- [x] [I] Hardening GraphQL anti-DoS con profundidad maxima y paging global configurable.
+- [x] [I] Seeding demo/productivo configurable, idempotente y sin reset de passwords existentes.
+
+## Modulo Extra - Caracteristicas de Alto Impacto (Efecto WOW): 80% (4/5)
+
+- [x] [I] Trazabilidad academica transversal mediante `AuditLog` y `SaveChangesInterceptor` de EF Core para entidades criticas.
+- [x] [I] Generacion de constancias y exportacion CSV/impresion formal desde el modulo academico.
+- [ ] [B] Integracion Single Sign-On con Google OAuth2; bloqueada hasta contar con Client ID/secret reales, dominios de callback aprobados y politica institucional.
+- [x] [I] Credenciales digitales publicas para progreso aprobado mediante ruta `/certificate/{id}` y query GraphQL publica limitada.
+- [x] [I] Toast notifications globales conectadas a GraphQL Subscriptions existentes.
 
 ## Prioridades
 
@@ -123,7 +138,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 1. Verificar visualmente el panel admin completo en navegador contra SQL Docker.
 2. Mantener Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
-3. Ampliar la cobertura automatizada hacia componentes frontend e integracion GraphQL SQL.
+3. Mantener y ampliar el baseline automatizado hacia SQL Server/Testcontainers y browser QA del panel admin.
 
 ### P1 - Cierre del nucleo social
 
@@ -137,26 +152,28 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P3 - Escalabilidad y operacion
 
-1. Pub/sub distribuido.
-2. Almacenamiento compartido de archivos.
-3. Observabilidad avanzada, alertas y actualizacion de dependencias.
+1. `[x] [I]` Pub/sub distribuido Redis, activado por `ConnectionStrings:Redis` y fallback InMemory local.
+2. `[x] [I]` Almacenamiento compartido opcional con Cloudinary, activado por `CloudinarySettings:Url` y fallback local.
+3. `[x] [I]` Hardening operativo: rate limiting, security headers, healthcheck y auditoria npm productiva en cero vulnerabilidades conocidas.
+4. `[x] [I]` Hardening GraphQL anti-DoS: profundidad maxima configurable y limites globales de paginacion.
+5. `[ ] [B]` SSO Google productivo con credenciales institucionales y callback URLs definitivas.
 
 ### P4 - Contenedores y CI/CD
 
-1. Dockerización del entorno local y de producción.
-2. Integración y despliegue continuo con GitHub Actions.
+1. `[x] [I]` Dockerizacion del entorno local y de produccion.
+2. `[x] [I]` Integracion y despliegue continuo con GitHub Actions.
 
 ### P5 - Despliegue Cloud Gratuito
 
-1. Migración y despliegue del backend en Azure App Service F1.
-2. Migración y alojamiento de base de datos en Azure SQL Free Tier.
-3. Integración de Cloudinary para el alojamiento de imágenes y archivos estáticos.
+1. `[ ] [P]` Migracion y despliegue del backend en Azure App Service F1.
+2. `[ ] [P]` Migracion y alojamiento de base de datos en Azure SQL Free Tier.
+3. `[x] [I]` Integracion de Cloudinary para el alojamiento de imagenes y archivos estaticos.
 
-### P6 - Ecosistema Móvil
+### P6 - Ecosistema MÃ³vil
 
-1. Inicialización del proyecto móvil con React Native + Expo.
-2. Sincronización del estado y cache Apollo entre Web y Mobile.
-3. Compilación de APK y distribución en entornos de prueba.
+1. InicializaciÃ³n del proyecto mÃ³vil con React Native + Expo.
+2. SincronizaciÃ³n del estado y cache Apollo entre Web y Mobile.
+3. CompilaciÃ³n de APK y distribuciÃ³n en entornos de prueba.
 
 ## Definition of Done por feature
 

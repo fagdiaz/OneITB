@@ -17,6 +17,7 @@ import {
   UPSERT_ACADEMIC_PROGRESS,
 } from '../../data/graphql/mutations/academic';
 import { UPLOAD_ACCEPT, uploadAttachment, apiBaseUrl } from '../../utils/uploadFile';
+import { CertificateExport } from './CertificateExport';
 
 const progressStatuses = [
   { value: 'IN_PROGRESS', label: 'En curso' },
@@ -623,6 +624,8 @@ export const AcademicDashboard = () => {
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Mi progreso academico</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">Solo vos y los administradores pueden consultar tus notas.</p>
             </div>
+
+            <CertificateExport progress={myProgress} loading={myProgressLoading} user={auth} />
 
             {myProgressLoading ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-400">Cargando progreso...</div>

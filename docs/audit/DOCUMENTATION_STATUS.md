@@ -1,13 +1,13 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-07-06
+**Ultima verificacion**: 2026-07-07
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 73/78 (94%) |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 87/90 (97%) |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
@@ -30,6 +30,10 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/171-production-security-and-seeding/` | Hardening final de seguridad/backend: profundidad maxima GraphQL configurable, paging global, lockout persistente por cuenta, migracion `AddAccountLockout`, seeding demo/productivo configurable sin reset de passwords existentes, backend build PASS, backend tests 38/38, EF sin cambios pendientes y compose productivo validado con `ONEITB_SEED_DEMO_PASSWORD` efimero |
+| `specs/170-cloud-devops-scalability/` | Preparacion cloud/devops: Dockerfiles multi-stage API/Web, `docker-compose.prod.yml` con SQL Server/Redis/API/Nginx, Redis Pub/Sub condicional con fallback InMemory, Cloudinary opcional con fallback local, rate limiting, security headers, healthcheck, npm audit productivo 0 vulnerabilidades, backend build PASS, backend tests 35/35, frontend tests 3/3, frontend build PASS, compose config/build PASS |
+| `specs/169-final-qa-and-hardening/` | Code Freeze hardening: `GraphQLErrorFilter` para sanitizar errores inesperados, `GlobalErrorBoundary` institucional, baseline Vitest/Testing Library para `CertificateExport` (3/3), baseline de integracion GraphQL con executor real HotChocolate + EF Core InMemory, workflow CI ejecuta tests frontend, backend tests 35/35, frontend build PASS; `npm audit --omit=dev` bloqueado por endpoint npm |
+| `specs/168-wow-production-polish/` | Over-delivery institucional: `AuditLog` + `AuditSaveChangesInterceptor`, migracion `AddAuditLogs` generada/aplicada, `auditLogs` admin-only, `publicCertificate` para progreso aprobado, export CSV/impresion de constancias en `/academic`, ruta publica `/certificate/:id` y toasts globales por `notificationReceived`; backend build, tests 34/34, frontend build y schema smoke HTTP verificados; SSO Google queda bloqueado por credenciales OAuth reales |
 | `specs/167-production-readiness-hardening/` | Hardening de produccion: middleware de correlation id, logging estructurado de metodo/path/status/duracion, metricas GraphQL sociales con DataLoaders para evitar N+1, smoke runtime GraphQL HTTP 200 con `X-Correlation-ID`, metric smoke admin y backend tests 34/34; build host PASS con cache NuGet local y warnings `NU1900` por metadata de vulnerabilidades inaccesible |
 | `specs/166-roadmap-quality-closure/` | Cierre de calidad roadmap/docs: tests backend de auth/feed agregados y pasando 34/34, bug de login con usuario inactivo corregido, busqueda social normalizada, workflow `quality-gates.yml` agregado, workflows Azure actualizados a .NET/actions vigentes, README/project_docs/academic/runbook alineados; build frontend y `git diff --check` verificados, build final del host .NET bloqueado por NuGet/red tras intento de EF restore |
 | `specs/165-academic-hub-hardening/` | Cierre de brechas de Specs 163/164: upload academico convertido a modal, busqueda local instantanea por titulo, mutaciones de recursos con Apollo cache update, alias GraphQL `resourcesBySubject`, feed social con `AsSplitQuery` y respuestas anidadas; tests backend 16/16, backend Release, frontend build, schema smoke y `git diff --check` verificados |
@@ -80,16 +84,18 @@
 
 ## Brechas vigentes
 
-- Faltan pruebas de componentes frontend e integracion GraphQL con SQL Server de prueba; la base backend ya cubre servicios academicos, notificaciones, autenticacion, feed social y metric smoke GraphQL autenticado.
+- Existen baselines de pruebas de componentes frontend y de integracion GraphQL con executor real; queda ampliar cobertura hacia regresion visual/browser y SQL Server/Testcontainers para CI avanzado.
 - Falta regresion autenticada en navegador del hub academico para elevar busqueda/categorias/versionado/modal de recursos desde `[I]` a `[V]`.
-- Pub/sub y almacenamiento de archivos sirven a una sola instancia.
+- Redis Pub/Sub y Cloudinary estan implementados de forma condicional; quedan pendientes smoke tests productivos con secretos reales para elevarlos a `[V]`.
 - Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
 - El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validar specs.
 - Falta verificacion visual en navegador del panel admin completo contra SQL Docker.
 - Falta verificacion visual fina en navegador del perfil CV y `/profile/edit`; avatar, carreras y contrato GraphQL normalizado de guardado/lectura ya fueron verificados en runtime.
-- El frontend conserva brecha de pruebas de componentes; la auditoria de dependencias no identifico una eliminacion segura durante la spec 163 y el vendor split de Vite permanece vigente.
+- El frontend ya cuenta con baseline Vitest/Testing Library; la auditoria de dependencias no identifico una eliminacion segura durante la spec 163 y el vendor split de Vite permanece vigente.
 - YouTube ya no monta iframes en el render inicial; los warnings residuales posteriores al click pertenecen al proveedor/navegador.
 - Las miniaturas de YouTube usan imagen estatica y los adjuntos de imagen se resuelven contra el backend antes de renderizar inline.
-- La spec 167 recompilo el host con cache NuGet local y `RestoreIgnoreFailedSources`; persisten warnings `NU1900` porque la metadata de vulnerabilidades de nuget.org no es accesible desde este entorno.
+- La spec 170 restauro dependencias con red, ejecuto npm audit productivo y dejo 0 vulnerabilidades conocidas en dependencias frontend runtime.
+- Google SSO productivo queda bloqueado hasta disponer de Client ID/secret, callbacks y aprobacion institucional. La ruta publica de certificados usa meta tags runtime; Open Graph perfecto para crawlers exige SSR o HTML renderizado desde backend.
+- Las brechas de fuerza bruta de login y DoS por profundidad GraphQL quedaron mitigadas por Spec 171; queda pendiente aplicar la migracion en cada entorno real con secretos definitivos antes de smoke runtime productivo.
 
 Ante contradicciones, prevalecen codigo, esquema ejecutado y evidencia runtime. Los porcentajes se recalculan exclusivamente desde los checklists de `ROADMAP.md`.

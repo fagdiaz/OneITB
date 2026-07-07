@@ -5,6 +5,140 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 171: Production Security & Seeding
+
+* **Objetivo**: cerrar brechas MVP vs produccion sin tocar React UI: limitar abuso GraphQL, mitigar fuerza bruta por cuenta y asegurar seeding demo/productivo sin secretos versionados.
+* **Resultado**:
+  - `Account` incorpora `FailedLoginAttempts` y `LockoutEnd` para lockout persistente.
+  - EF Core mapea defaults, columna nullable de bloqueo e indice unico sobre `Accounts.Email`.
+  - `AccountsService.Login` incrementa intentos fallidos, bloquea 15 minutos tras 5 fallos, rechaza login aun con password correcta durante bloqueo y resetea estado al autenticar correctamente.
+  - HotChocolate agrega `AddMaxExecutionDepthRule` configurable (`GraphQL:MaxExecutionDepth`, default 10) y paging global (`DefaultPageSize` 20, `MaxPageSize` 50).
+  - El seeder existente queda configurable por `DbSeedOptions`: preserva passwords ya existentes y exige `Seed:DemoPassword`/`ONEITB_SEED_DEMO_PASSWORD` para demo data productiva.
+  - `docker-compose.prod.yml` exige `ONEITB_SEED_DEMO_PASSWORD` y expone overrides de profundidad/paginacion sin hardcodear secretos.
+  - Se genero la migracion `AddAccountLockout`.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `dotnet ef migrations add AddAccountLockout --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 38/38.
+  - `dotnet ef migrations has-pending-model-changes --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS, sin cambios pendientes.
+  - `docker compose -f docker-compose.prod.yml config`: PASS con variables temporales de proceso.
+* **Estado**:
+  - Implementado y validado por build, tests, migracion EF y validacion estatica de compose. La aplicacion de la migracion sobre un entorno productivo real debe ejecutarse con secretos definitivos y ventana operativa controlada.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Account.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Data/DbInitializer.cs`
+  - `API Graphql/Data/Migrations/20260707211602_AddAccountLockout.cs`
+  - `API Graphql/Services/Accounts/AccountsService.cs`
+  - `API Graphql/Tests/Services.Tests/Auth/AccountsServiceTests.cs`
+  - `API Graphql/OneITB/Startup.cs`
+  - `API Graphql/OneITB/Program.cs`
+  - `docker-compose.prod.yml`
+  - `specs/171-production-security-and-seeding/evidence.md`
+
+## [2026-07-07] - Spec 170: Cloud, DevOps & Scalability
+
+* **Objetivo**: cerrar deuda P3/P4/P5 sin alterar logica de negocio durante Code Freeze: dockerizacion productiva, Pub/Sub distribuido, almacenamiento cloud opcional, rate limiting y security headers.
+* **Resultado**:
+  - Se agregaron Dockerfiles multi-stage para API .NET 8 y frontend React/Vite con runtime Nginx.
+  - Se agrego `docker-compose.prod.yml` con SQL Server 2022, Redis 7, API y frontend, sin secretos hardcodeados y con healthchecks.
+  - HotChocolate usa Redis Subscriptions cuando existe `ConnectionStrings:Redis` o `Redis:ConnectionString`; sin esa configuracion conserva `AddInMemorySubscriptions()`.
+  - `/api/upload` quedo desacoplado por `IFileStorageService`: usa disco local por defecto y Cloudinary por `CloudinarySettings:Url`.
+  - Se agrego hardening HTTP con rate limiting fixed-window por IP, `/health`, HSTS en produccion y headers `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`.
+  - El frontend ahora resuelve `/graphql` same-origin en build productivo, manteniendo `https://localhost:44397/graphql` en desarrollo.
+  - Se corrigieron vulnerabilidades npm productivas via `npm audit fix` (`react-router`/`graphql`) y el build Docker final queda con `npm ci` en 0 vulnerabilidades.
+  - `ROADMAP.md` sube a 97% (84/87): se cierra Pub/Sub distribuido y se agregan items de Dockerizacion, Cloudinary y hardening operativo.
+* **Validaciones ejecutadas**:
+  - `dotnet add "API Graphql/OneITB/GraphQL.csproj" package HotChocolate.Subscriptions.Redis --version 14.2.0`: PASS.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 35/35.
+  - `npm.cmd audit --omit=dev`: detecto vulnerabilidades productivas; `npm.cmd audit fix`: PASS, 0 vulnerabilidades.
+  - `npm.cmd test -- --run`: PASS, 1 archivo, 3 tests.
+  - `npm.cmd run build`: PASS, 349 modulos transformados, build en 1.25 s.
+  - `docker compose -f docker-compose.prod.yml config`: PASS con variables locales efimeras.
+  - `docker compose -f docker-compose.prod.yml build`: PASS; imagenes `oneitb23-api:prod` y `oneitb23-web:prod` construidas.
+* **Estado**:
+  - Implementado y validado por builds, tests, audit npm y build Docker. No se levantaron contenedores productivos completos contra migraciones/runtime porque la spec solicitaba preparacion cloud sin cambiar la experiencia local; el compose queda listo para ejecucion con secretos externos.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Dockerfile`
+  - `FrontEnd/OneItb-FE/Dockerfile`
+  - `FrontEnd/OneItb-FE/nginx.conf`
+  - `docker-compose.prod.yml`
+  - `.dockerignore`
+  - `API Graphql/OneITB/Startup.cs`
+  - `API Graphql/OneITB/Controllers/UploadController.cs`
+  - `API Graphql/OneITB/Services/Storage/*`
+  - `API Graphql/OneITB/Infrastructure/SecurityHeadersMiddleware.cs`
+  - `FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/audit/FINAL_AUDIT_REPORT.md`
+  - `specs/170-cloud-devops-scalability/evidence.md`
+
+## [2026-07-06] - Spec 169: Final QA & Hardening
+
+* **Objetivo**: entrar en Code Freeze previo a defensa academica, reduciendo riesgo de crash de UI y cerrando los baselines documentados de pruebas frontend y GraphQL sin cambiar funcionalidades.
+* **Resultado**:
+  - Se agrego `GraphQLErrorFilter` a HotChocolate para sanitizar excepciones inesperadas y evitar filtracion de detalles internos; las `GraphQLException` intencionales siguen entregando mensajes controlados al cliente.
+  - Se agrego `GlobalErrorBoundary.tsx` en la raiz de React con fallback institucional Clean Tech / Tech Noir, codigo de incidente y accion de recarga.
+  - Se instalo el stack minimo de tests frontend como devDependencies (`vitest`, Testing Library, `jsdom`) y se actualizo `@vitejs/plugin-react` a una version compatible con Vite 8 sin usar `--force`.
+  - Se agrego test de componente para `CertificateExport`, cubriendo estados de carga, vacio y final con acciones habilitadas.
+  - Se agrego test de integracion GraphQL para `publicCertificate` ejecutando el schema real de HotChocolate contra EF Core InMemory.
+  - `.github/workflows/quality-gates.yml` ahora ejecuta `npm test -- --run` antes del build frontend.
+  - `ROADMAP.md` sube a 95% (79/83): los baselines de pruebas frontend y GraphQL pasan a `[I]`.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release -p:RestoreIgnoreFailedSources=true`: PASS, 0 warnings, 0 errores.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 35/35.
+  - `npm.cmd test -- --run`: PASS, 1 archivo, 3 tests.
+  - `npm.cmd run build`: PASS, 346 modulos transformados, build en 1.21 s.
+  - `npm.cmd audit --omit=dev`: BLOQUEADO por error del endpoint de npm audit.
+* **Estado**:
+  - Implementado y validado por builds/tests. La suite GraphQL de esta spec usa EF Core InMemory como baseline permitido; una suite SQL Server/Testcontainers sigue siendo una mejora futura para CI avanzado.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Infrastructure/GraphQLErrorFilter.cs`
+  - `API Graphql/Tests/Services.Tests/GraphQL/PublicCertificateGraphQLTests.cs`
+  - `FrontEnd/OneItb-FE/src/Components/layout/GlobalErrorBoundary.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/academic/CertificateExport.test.jsx`
+  - `.github/workflows/quality-gates.yml`
+  - `FrontEnd/OneItb-FE/vite.config.js`
+  - `FrontEnd/OneItb-FE/package.json`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/audit/FINAL_AUDIT_REPORT.md`
+  - `specs/169-final-qa-and-hardening/evidence.md`
+
+## [2026-07-06] - Spec 168: WOW Production Polish
+
+* **Objetivo**: implementar over-delivery institucional sin deuda tecnica falsa: trazabilidad EF transversal, constancias academicas, credenciales publicas aprobadas y toasts globales, dejando Google SSO bloqueado por dependencias externas reales.
+* **Resultado**:
+  - Se agrego `AuditLog` con mapeo EF Core explicito, indices por fecha/actor/entidad y FK restrictiva a `User`.
+  - `AuditSaveChangesInterceptor` registra cambios de `User`, `AcademicProgress`, `AcademicResource`, `Inquiry` y `Comment` con actor JWT, correlation id, entidad, clave y snapshots JSON, excluyendo datos sensibles como `PasswordHash`.
+  - GraphQL expone `auditLogs(first, entityName, actorUserId)` solo para Administradores y `publicCertificate(id)` para progreso aprobado/activo.
+  - Se genero y aplico la migracion `AddAuditLogs`.
+  - `/academic` incorpora `CertificateExport` para descargar CSV e imprimir una constancia formal del progreso academico propio.
+  - Se agrego la ruta publica `/certificate/:id` con credencial institucional, estado aprobado, short id y enlace de compartir en LinkedIn.
+  - `NotificationProvider` escucha `notificationReceived` y muestra toasts globales deduplicados sin depender del dropdown de la campanita.
+  - `ROADMAP.md` se expande a 83 items y queda en 93% (77/83): cuatro items de alto impacto quedan `[I]`; Google SSO queda `[B]` por falta de credenciales OAuth institucionales reales.
+* **Validaciones ejecutadas**:
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release -p:RestoreIgnoreFailedSources=true`: PASS, 0 warnings, 0 errores.
+  - `dotnet ef migrations add AddAuditLogs --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS.
+  - `dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 34/34.
+  - `npm.cmd run build`: PASS, 345 modulos transformados, build final en 621 ms.
+  - Runtime GraphQL temporal en `http://localhost:5445/graphql`: PASS para `{ __typename }` e introspeccion de `auditLogs` y `publicCertificate`.
+* **Estado**:
+  - Implementado con migracion aplicada y schema validado. El launch profile HTTPS sigue bloqueado dentro de `Start-Job` por resolucion del certificado dev; se uso fallback HTTP temporal para schema smoke. Open Graph perfecto para LinkedIn requiere SSR/backend-rendered HTML.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/AuditLog.cs`
+  - `API Graphql/OneITB/Infrastructure/AuditSaveChangesInterceptor.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Data/Migrations/20260706180418_AddAuditLogs.cs`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `FrontEnd/OneItb-FE/src/Components/academic/CertificateExport.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/certificates/PublicCertificate.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/NotificationProvider.jsx`
+  - `docs/project_docs/ROADMAP.md`
+  - `docs/audit/DOCUMENTATION_STATUS.md`
+  - `specs/168-wow-production-polish/evidence.md`
+
 ## [2026-07-06] - Spec 167: Production Readiness Hardening
 
 * **Objetivo**: avanzar el cierre de produccion sin deuda tecnica falsa, atacando trazabilidad operativa y rendimiento GraphQL en metricas sociales mientras se mantienen pendientes las brechas que requieren browser runtime o infraestructura distribuida.

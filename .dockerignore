@@ -1,21 +1,27 @@
 .git/
-.specify/
 .agents/
+.codex/
+.specify/
 specs/
-FrontEnd/OneItb-FE/node_modules/
-FrontEnd/OneItb-FE/dist/
+core-web/
+
 **/bin/
 **/obj/
 **/node_modules/
 **/dist/
 **/build/
-API Graphql/OneITB/wwwroot/uploads/
-API Graphql/OneITB/App_Data/DataProtection-Keys/
+**/coverage/
+**/TestResults/
+
+API Graphql/OneITB/wwwroot/uploads/*
+API Graphql/OneITB/App_Data/DataProtection-Keys/*
+
 .env
 .env.*
 *.log
-*.pid
-*.user
-*.suo
-*.mdf
-*.ldf
+*.tmp
+*.bak
+*.orig
+*.rej
+Thumbs.db
+.DS_Store

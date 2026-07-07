@@ -1,14 +1,18 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.DataProtection;
 using GraphQL.GraphQL;
+using HotChocolate.Execution.Configuration;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +34,8 @@ using OneItb.GraphQL.Infrastructure;
 using Services.Academic;
 using Services.Notifications;
 using Services.Siu;
+using OneItb.GraphQL.Services.Storage;
+using StackExchange.Redis;
 
 namespace OneItb.GraphQL
 {
@@ -44,12 +50,34 @@ namespace OneItb.GraphQL
         public IConfiguration Configuration { get; }
         public IWebHostEnvironment Environment { get; }
         readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+        private const string FixedWindowRateLimitPolicy = "fixed-window-per-ip";
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
             services.AddHttpContextAccessor();
+            services.AddHealthChecks();
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy(FixedWindowRateLimitPolicy, httpContext =>
+                {
+                    string key = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    int permitLimit = Math.Max(1, Configuration.GetValue("RateLimiting:PermitLimit", 100));
+                    int windowMinutes = Math.Max(1, Configuration.GetValue("RateLimiting:WindowMinutes", 1));
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        key,
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = permitLimit,
+                            Window = TimeSpan.FromMinutes(windowMinutes),
+                            QueueLimit = 0,
+                            AutoReplenishment = true
+                        });
+                });
+            });
             if (Environment.IsDevelopment())
             {
                 var keyDirectory = new DirectoryInfo(System.IO.Path.Combine(
@@ -81,15 +109,17 @@ namespace OneItb.GraphQL
                 });
             });
 
-            services.AddPooledDbContextFactory<OneItbContext>(opt =>
+            services.AddSingleton<AuditSaveChangesInterceptor>();
+            services.AddPooledDbContextFactory<OneItbContext>((serviceProvider, opt) =>
                 opt.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection"),
                     sql => sql
                         .MigrationsAssembly("Data")
-                        .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+                        .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
+                    .AddInterceptors(serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>()));
             services.AddScoped<OneItbContext>(p => p.GetRequiredService<IDbContextFactory<OneItbContext>>().CreateDbContext());
 
-            services.AddGraphQLServer()
+            var graphQlBuilder = services.AddGraphQLServer()
                 // HC 14 breaking change: RegisterDbContext(DbContextKind.Pooled) →
                 // RegisterDbContextFactory<T>() — works with AddPooledDbContextFactory above.
                 .RegisterDbContextFactory<OneItbContext>()
@@ -97,12 +127,23 @@ namespace OneItb.GraphQL
                 .AddFiltering()
                 .AddSorting()
                 .AddAuthorization()
+                .AddErrorFilter<GraphQLErrorFilter>()
+                .AddMaxExecutionDepthRule(Configuration.GetValue("GraphQL:MaxExecutionDepth", 10))
+                .ModifyPagingOptions(options =>
+                {
+                    options.DefaultPageSize = Configuration.GetValue("GraphQL:DefaultPageSize", 20);
+                    options.MaxPageSize = Configuration.GetValue("GraphQL:MaxPageSize", 50);
+                    options.IncludeTotalCount = true;
+                })
                 .ModifyRequestOptions(opt =>
                     opt.IncludeExceptionDetails = Configuration.GetValue<bool>("GraphQL:IncludeExceptionDetails"))
                 .AddQueryType<Query>()
                 .AddMutationType<Mutation>()
-                .AddSubscriptionType<Subscription>()
-                .AddInMemorySubscriptions()
+                .AddSubscriptionType<Subscription>();
+
+            ConfigureSubscriptionProvider(graphQlBuilder, services);
+
+            graphQlBuilder
                 .AddSocketSessionInterceptor<AuthenticationSocketSessionInterceptor>()
                 .AddType(new ObjectType<Account>(d => d.Field(f => f.PasswordHash).Ignore()))
                 .AddType(new ObjectType<User>(descriptor =>
@@ -214,9 +255,9 @@ namespace OneItb.GraphQL
                         .Resolve(_ => 0);
                 }));
 
-            services.AddScoped<IUnitOfWork, Services.Repositories.UnitOfWork>();
-            services.AddScoped<IEmployerAuthService, Services.Auth.EmployerAuthService>();
-            services.AddScoped<IModerationService, Services.Moderation.ModerationService>();
+            services.AddScoped<IUnitOfWork, global::Services.Repositories.UnitOfWork>();
+            services.AddScoped<IEmployerAuthService, global::Services.Auth.EmployerAuthService>();
+            services.AddScoped<IModerationService, global::Services.Moderation.ModerationService>();
             services.AddScoped<ISocialService, SocialService>();
             services.AddScoped<IAcademicService, AcademicService>();
             services.AddScoped<INotificationService, NotificationService>();
@@ -225,6 +266,7 @@ namespace OneItb.GraphQL
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
             services.AddScoped<IUploadCleanupService, UploadCleanupService>();
+            ConfigureFileStorage(services);
             services.AddSingleton<ILinkPreviewService, LinkPreviewService>();
             services.AddHostedService<UploadCleanupHostedService>();
 
@@ -280,8 +322,13 @@ namespace OneItb.GraphQL
             {
                 app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                app.UseHsts();
+            }
 
             app.UseMiddleware<CorrelationIdMiddleware>();
+            app.UseMiddleware<SecurityHeadersMiddleware>();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
@@ -296,15 +343,47 @@ namespace OneItb.GraphQL
             app.UseRouting();
 
             app.UseCors(MyAllowSpecificOrigins);
+            app.UseRateLimiter();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
-                endpoints.MapGraphQL();
+                endpoints.MapHealthChecks("/health");
+                endpoints.MapControllers().RequireRateLimiting(FixedWindowRateLimitPolicy);
+                endpoints.MapGraphQL().RequireRateLimiting(FixedWindowRateLimitPolicy);
             });
+        }
+
+        private void ConfigureSubscriptionProvider(IRequestExecutorBuilder graphQlBuilder, IServiceCollection services)
+        {
+            string? redisConnectionString = Configuration.GetConnectionString("Redis")
+                ?? Configuration["Redis:ConnectionString"];
+
+            if (string.IsNullOrWhiteSpace(redisConnectionString))
+            {
+                graphQlBuilder.AddInMemorySubscriptions();
+                return;
+            }
+
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString));
+            graphQlBuilder.AddRedisSubscriptions(sp => sp.GetRequiredService<IConnectionMultiplexer>());
+        }
+
+        private void ConfigureFileStorage(IServiceCollection services)
+        {
+            services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
+
+            string? cloudinaryUrl = Configuration["CloudinarySettings:Url"];
+            if (string.IsNullOrWhiteSpace(cloudinaryUrl))
+            {
+                services.AddScoped<IFileStorageService, LocalFileStorageService>();
+                return;
+            }
+
+            services.AddHttpClient<IFileStorageService, CloudinaryStorageService>();
         }
     }
 }

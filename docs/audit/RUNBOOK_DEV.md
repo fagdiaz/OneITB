@@ -1,6 +1,6 @@
 # Runbook de desarrollo - OneITB23
 
-**Ultima revision**: 2026-07-06
+**Ultima revision**: 2026-07-07
 
 ## Requisitos
 
@@ -60,6 +60,29 @@ npm.cmd run dev
 El frontend usa `VITE_GRAPHQL_URL`; el valor local por defecto es `https://localhost:44397/graphql`.
 El perfil `OneITB` del backend escucha en el mismo puerto HTTPS para evitar diferencias entre `dotnet run`, Apollo y uploads.
 
+## Docker productivo y servicios opcionales
+
+El entorno local de desarrollo sigue usando `docker-compose.yml` solo para SQL Server. El compose productivo separado agrega Redis, API y frontend Nginx:
+
+```powershell
+$env:ONEITB_SQL_SA_PASSWORD = "<password-fuerte>"
+$env:ONEITB_JWT_KEY = "<clave-jwt-de-32-caracteres-o-mas>"
+$env:ONEITB_SEED_DEMO_PASSWORD = "<password-demo-fuerte>"
+$env:ONEITB_CORS_ORIGIN = "http://localhost"
+
+# Opcionales para produccion/cloud
+$env:ONEITB_REDIS_CONNECTION = "oneitb-redis:6379,abortConnect=false"
+$env:ONEITB_CLOUDINARY_URL = "cloudinary://api_key:api_secret@cloud_name"
+
+docker compose -f docker-compose.prod.yml config
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Si `ConnectionStrings:Redis` no existe, HotChocolate usa Pub/Sub en memoria. Si `CloudinarySettings:Url` no existe, `/api/upload` escribe en disco local bajo `wwwroot/uploads`.
+
+`ONEITB_SEED_DEMO_PASSWORD` es obligatorio para `docker-compose.prod.yml` porque la API inicializa cuentas demo/productivas en bases vacias sin versionar contrasenas. En Development, el host conserva el fallback local `Test1234!`; no usar ese fallback para produccion real.
+
 Si el certificado HTTPS local no esta instalado o confiado:
 
 ```powershell
@@ -102,7 +125,7 @@ El workflow `.github/workflows/quality-gates.yml` ejecuta estos gates en CI y ag
 
 1. Upload sin JWT devuelve `401`.
 2. Archivo invalido o mayor a 15 MB se rechaza.
-3. URL devuelta comienza con `/uploads/`.
+3. URL devuelta comienza con `/uploads/` en modo local o es HTTPS de Cloudinary cuando `CloudinarySettings:Url` esta configurado.
 4. Publicacion/comentario conserva la URL tras recargar.
 
 ## Problemas locales conocidos

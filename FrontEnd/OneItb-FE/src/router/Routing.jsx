@@ -15,17 +15,21 @@ import { Logout } from '../Components/user/Logout'
 import { PrivateChat } from '../Components/chat/PrivateChat'
 import { NotFound } from '../Components/layout/NotFound'
 import { AcademicDashboard } from '../Components/academic/AcademicDashboard'
+import { PublicCertificate } from '../Components/certificates/PublicCertificate'
+import { NotificationProvider } from '../Components/notifications/NotificationProvider'
 
 export const Routing = () => {
   return (
     <BrowserRouter>
     <AuthProvider>
+      <NotificationProvider>
       <Routes>
         <Route path='/' element={<PublicLayout />}>
           <Route index element={<Landing />} />
           <Route path='login' element={<Login />} />
           <Route path='register' element={<Register />} />
           <Route path='employer-login' element={<EmployerLogin />} />
+          <Route path='certificate/:id' element={<PublicCertificate />} />
         </Route>
 
         <Route path='/' element={<PrivateLayout />}>
@@ -43,6 +47,7 @@ export const Routing = () => {
         <Route path='*' element={<NotFound />} />
 
       </Routes>
+      </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   )

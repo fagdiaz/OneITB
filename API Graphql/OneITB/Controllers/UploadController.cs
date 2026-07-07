@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using OneItb.GraphQL.Services.Storage;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,11 +23,11 @@ namespace OneItb.Controllers
             ".txt", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".zip"
         };
 
-        private readonly IWebHostEnvironment _environment;
+        private readonly IFileStorageService _storageService;
 
-        public UploadController(IWebHostEnvironment environment)
+        public UploadController(IFileStorageService storageService)
         {
-            _environment = environment;
+            _storageService = storageService;
         }
 
         [HttpPost]
@@ -47,24 +46,8 @@ namespace OneItb.Controllers
             if (!AllowedExtensions.Contains(extension))
                 return BadRequest(new { message = "El tipo de archivo no esta permitido." });
 
-            string webRoot = _environment.WebRootPath
-                ?? System.IO.Path.Combine(_environment.ContentRootPath, "wwwroot");
-            string uploadsDirectory = System.IO.Path.Combine(webRoot, "uploads");
-            Directory.CreateDirectory(uploadsDirectory);
-
-            string storedFileName = $"{Guid.NewGuid():N}{extension}";
-            string physicalPath = System.IO.Path.Combine(uploadsDirectory, storedFileName);
-
-            await using FileStream stream = new(
-                physicalPath,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None,
-                bufferSize: 81920,
-                useAsync: true);
-            await file.CopyToAsync(stream, cancellationToken);
-
-            return Ok(new { fileUrl = $"/uploads/{storedFileName}" });
+            string fileUrl = await _storageService.SaveAsync(file, extension, cancellationToken);
+            return Ok(new { fileUrl });
         }
     }
 }

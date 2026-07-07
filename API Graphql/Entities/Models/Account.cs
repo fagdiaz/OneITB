@@ -59,6 +59,10 @@ namespace OneItb.Entities.Models
             }
         }
 
+        public int FailedLoginAttempts { get; set; }
+
+        public DateTime? LockoutEnd { get; set; }
+
         public virtual User User { get; set; } = default!;
 
         private static string NormalizeDisplayEmail(string email)

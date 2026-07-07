@@ -12,6 +12,7 @@
     <PackageReference Include="HotChocolate.AspNetCore" Version="14.2.0" />
     <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="14.2.0" />
     <PackageReference Include="HotChocolate.Data.EntityFramework" Version="14.2.0" />
+    <PackageReference Include="HotChocolate.Subscriptions.Redis" Version="14.2.0" />
 
     <!-- JwtBearer — must match the runtime version exactly -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6" />

@@ -1,0 +1,101 @@
+services:
+  oneitb-sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: oneitb23-prod-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      SA_PASSWORD: "${ONEITB_SQL_SA_PASSWORD:?Set ONEITB_SQL_SA_PASSWORD}"
+      MSSQL_SA_PASSWORD: "${ONEITB_SQL_SA_PASSWORD:?Set ONEITB_SQL_SA_PASSWORD}"
+    volumes:
+      - oneitb23_prod_sql_data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${SA_PASSWORD}\" -C -Q \"SELECT 1\" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$${SA_PASSWORD}\" -Q \"SELECT 1\" || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    networks:
+      - oneitb-prod
+
+  oneitb-redis:
+    image: redis:7-alpine
+    container_name: oneitb23-prod-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - oneitb23_prod_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    networks:
+      - oneitb-prod
+
+  oneitb-api:
+    build:
+      context: .
+      dockerfile: API Graphql/OneITB/Dockerfile
+    image: oneitb23-api:prod
+    container_name: oneitb23-prod-api
+    depends_on:
+      oneitb-sql:
+        condition: service_healthy
+      oneitb-redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: "Server=oneitb-sql,1433;Database=OneItb;User Id=sa;Password=${ONEITB_SQL_SA_PASSWORD:?Set ONEITB_SQL_SA_PASSWORD};Encrypt=True;TrustServerCertificate=True;"
+      ConnectionStrings__Redis: "${ONEITB_REDIS_CONNECTION:-oneitb-redis:6379,abortConnect=false}"
+      Jwt__Issuer: "${ONEITB_JWT_ISSUER:-http://localhost/}"
+      Jwt__Audience: "${ONEITB_JWT_AUDIENCE:-http://localhost/}"
+      Jwt__Key: "${ONEITB_JWT_KEY:?Set ONEITB_JWT_KEY with at least 32 characters}"
+      Cors__AllowedOrigins__0: "${ONEITB_CORS_ORIGIN:-http://localhost}"
+      CloudinarySettings__Url: "${ONEITB_CLOUDINARY_URL:-}"
+      RateLimiting__PermitLimit: "${ONEITB_RATE_LIMIT_PER_MINUTE:-100}"
+      RateLimiting__WindowMinutes: "${ONEITB_RATE_LIMIT_WINDOW_MINUTES:-1}"
+      GraphQL__MaxExecutionDepth: "${ONEITB_GRAPHQL_MAX_DEPTH:-10}"
+      GraphQL__DefaultPageSize: "${ONEITB_GRAPHQL_DEFAULT_PAGE_SIZE:-20}"
+      GraphQL__MaxPageSize: "${ONEITB_GRAPHQL_MAX_PAGE_SIZE:-50}"
+      Seed__EnableDemoData: "${ONEITB_SEED_ENABLE_DEMO_DATA:-true}"
+      Seed__DemoPassword: "${ONEITB_SEED_DEMO_PASSWORD:?Set ONEITB_SEED_DEMO_PASSWORD}"
+    volumes:
+      - oneitb23_prod_uploads:/app/wwwroot/uploads
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - oneitb-prod
+
+  oneitb-web:
+    build:
+      context: FrontEnd/OneItb-FE
+      dockerfile: Dockerfile
+    image: oneitb23-web:prod
+    container_name: oneitb23-prod-web
+    depends_on:
+      oneitb-api:
+        condition: service_healthy
+    ports:
+      - "${ONEITB_WEB_PORT:-80}:80"
+    networks:
+      - oneitb-prod
+
+networks:
+  oneitb-prod:
+    driver: bridge
+
+volumes:
+  oneitb23_prod_sql_data:
+  oneitb23_prod_redis_data:
+  oneitb23_prod_uploads:

@@ -25,6 +25,7 @@ namespace OneItb.Data
         public DbSet<AcademicProgress> AcademicProgressRecords { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
         public DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
+        public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
         public DbSet<UserCvExperience> UserCvExperiences { get; set; } = null!;
@@ -60,6 +61,16 @@ namespace OneItb.Data
                     .IsRequired()
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.Property(e => e.FailedLoginAttempts)
+                    .IsRequired()
+                    .HasDefaultValue(0);
+
+                entity.Property(e => e.LockoutEnd)
+                    .HasColumnType("datetime2");
+
+                entity.HasIndex(e => e.Email)
+                    .IsUnique();
             });
 
             // ==========================================
@@ -413,6 +424,33 @@ namespace OneItb.Data
                 entity.HasOne(e => e.User)
                     .WithMany(user => user.NotificationPreferences)
                     .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA AUDIT_LOGS
+            // ==========================================
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.ToTable("AuditLogs", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.CorrelationId).HasMaxLength(128).IsUnicode(false);
+                entity.Property(e => e.Action).IsRequired().HasMaxLength(24).IsUnicode(false);
+                entity.Property(e => e.EntityName).IsRequired().HasMaxLength(120).IsUnicode(false);
+                entity.Property(e => e.EntityId).IsRequired().HasMaxLength(120).IsUnicode(false);
+                entity.Property(e => e.OldValuesJson).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.NewValuesJson).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.ActorUserId);
+                entity.HasIndex(e => new { e.EntityName, e.EntityId, e.CreatedAt });
+
+                entity.HasOne(e => e.ActorUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ActorUserId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

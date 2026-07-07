@@ -6,8 +6,35 @@ import { getMainDefinition } from '@apollo/client/utilities';
 import { createClient } from 'graphql-ws';
 import { GeneralDataProvider } from '../GeneralDataProvider';
 
-const httpUri = import.meta.env.VITE_GRAPHQL_URL || 'https://localhost:44397/graphql';
-const wsUri = import.meta.env.VITE_GRAPHQL_WS_URL || httpUri.replace(/^http/, 'ws');
+const resolveHttpUri = () => {
+  const configuredUri = import.meta.env.VITE_GRAPHQL_URL;
+  if (configuredUri) return configuredUri;
+
+  if (import.meta.env.PROD && typeof window !== 'undefined') {
+    return `${window.location.origin}/graphql`;
+  }
+
+  return 'https://localhost:44397/graphql';
+};
+
+const resolveWsUri = (httpEndpoint) => {
+  const configuredUri = import.meta.env.VITE_GRAPHQL_WS_URL;
+  if (configuredUri) return configuredUri;
+
+  if (httpEndpoint.startsWith('http')) {
+    return httpEndpoint.replace(/^http/, 'ws');
+  }
+
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}${httpEndpoint.startsWith('/') ? httpEndpoint : `/${httpEndpoint}`}`;
+  }
+
+  return httpEndpoint;
+};
+
+const httpUri = resolveHttpUri();
+const wsUri = resolveWsUri(httpUri);
 
 let socketStatus = 'disconnected';
 const socketListeners = new Set();
@@ -158,6 +185,9 @@ const createApolloClient = () => new ApolloClient({
         keyFields: ['id'],
       },
       Notification: {
+        keyFields: ['id'],
+      },
+      AuditLog: {
         keyFields: ['id'],
       },
       Query: {

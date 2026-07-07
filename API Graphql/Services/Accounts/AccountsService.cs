@@ -1,19 +1,21 @@
 using System;
-using System.Threading.Tasks;
-using BCrypt.Net;
-using OneItb.Entities.Models;
-using OneITB.Core.Services.Interfaces;
-using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.Tasks;
 using HotChocolate;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using OneItb.Entities.Models;
+using OneITB.Core.Services.Interfaces;
 
 namespace Services.Accounts
 {
     public class AccountsService : IAccountService
     {
+        private const int MaxFailedLoginAttempts = 5;
+        private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
         private readonly IUnitOfWork _uow;
         private readonly IConfiguration _configuration;
 
@@ -26,12 +28,50 @@ namespace Services.Accounts
         public async Task<AuthPayload> Login(LoginInput input)
         {
             var user = await _uow.Users.GetByEmailAsync(input.Email.ToLowerInvariant());
-            if (user == null || !user.IsActive || !BCrypt.Net.BCrypt.Verify(input.Password, user.Account.PasswordHash))
-                // GraphQLException serializa el mensaje en errors[] — Apollo lo lee como graphQLErrors.
-                throw new GraphQLException("Usuario o contraseña incorrectos.");
+            if (user == null || !user.IsActive || user.Account == null)
+                throw CreateAuthenticationError();
+
+            Account account = user.Account;
+            DateTime utcNow = DateTime.UtcNow;
+
+            if (account.LockoutEnd.HasValue)
+            {
+                if (account.LockoutEnd.Value > utcNow)
+                    throw CreateLockoutError(account.LockoutEnd.Value, utcNow);
+
+                account.LockoutEnd = null;
+                account.FailedLoginAttempts = 0;
+                await _uow.CompleteAsync();
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(input.Password, account.PasswordHash))
+            {
+                account.FailedLoginAttempts++;
+                if (account.FailedLoginAttempts >= MaxFailedLoginAttempts)
+                    account.LockoutEnd = utcNow.Add(LockoutDuration);
+
+                await _uow.CompleteAsync();
+
+                if (account.LockoutEnd.HasValue)
+                    throw CreateLockoutError(account.LockoutEnd.Value, utcNow);
+
+                throw CreateAuthenticationError();
+            }
+
+            if (account.FailedLoginAttempts != 0 || account.LockoutEnd.HasValue)
+            {
+                account.FailedLoginAttempts = 0;
+                account.LockoutEnd = null;
+                await _uow.CompleteAsync();
+            }
 
             string token = GenerateJwtToken(user);
             return new AuthPayload(token, user.FirstName, true, user.Id, user.Role);
+        }
+
+        public Account? GetById(Guid id)
+        {
+            return _uow.Accounts.GetById(id);
         }
 
         private string GenerateJwtToken(User user)
@@ -55,9 +95,23 @@ namespace Services.Accounts
             return tokenHandler.WriteToken(token);
         }
 
-        public Account? GetById(Guid id)
+        private static GraphQLException CreateAuthenticationError()
         {
-            return _uow.Accounts.GetById(id);
+            return new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage("Usuario o contrasena incorrectos.")
+                    .SetCode("AUTH_INVALID_CREDENTIALS")
+                    .Build());
+        }
+
+        private static GraphQLException CreateLockoutError(DateTime lockoutEnd, DateTime utcNow)
+        {
+            int minutes = Math.Max(1, (int)Math.Ceiling((lockoutEnd - utcNow).TotalMinutes));
+            return new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage($"Cuenta bloqueada temporalmente por seguridad. Intenta nuevamente en {minutes} minutos.")
+                    .SetCode("ACCOUNT_LOCKED")
+                    .Build());
         }
     }
 }
