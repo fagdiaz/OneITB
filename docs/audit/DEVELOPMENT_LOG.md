@@ -5,6 +5,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-07-07] - Spec 171: Production Security & Seeding
 
 * **Objetivo**: cerrar brechas MVP vs produccion sin tocar React UI: limitar abuso GraphQL, mitigar fuerza bruta por cuenta y asegurar seeding demo/productivo sin secretos versionados.
@@ -1599,6 +1617,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-13] - Documentation: Stabilization Governance and Feed Baseline (Rama: 049-estabilizacion)
 
 * **Objetivo**: Normalizar la documentacion operativa y establecer una fuente de verdad verificable para estabilizar el feed antes de ampliar funcionalidades.
@@ -1620,6 +1656,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-13] - Bugfix: AlineaciÃ³n Definitiva de Consulta User/Inquiry (Rama: 097-final-query-alignment)
 
 * **Objetivo**: Corregir definitivamente el desajuste entre el nombre de navegaciÃ³n expuesto por el backend (`user`) y las propiedades internas traducidas al espaÃ±ol por HotChocolate en la consulta `GET_INQUIRIES`, habilitando la carga de datos limpios creados desde la interfaz.
@@ -1629,6 +1683,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-13] - Bugfix: AlineaciÃ³n de Nomenclatura Frontend/HotChocolate (Rama: 095-fix-graphql-query-names)
 
@@ -1641,6 +1713,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-13] - Bugfix: Proveedores de Proyecciones HotChocolate (Rama: 094-hotchocolate-projections-fix)
 
 * **Objetivo**: Solucionar el Error HTTP 500 (System.Exception: Projection provider not found) que impedÃ­a la ejecuciÃ³n de las consultas `GetSubjects` y `GetInquiries`.
@@ -1649,6 +1739,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `API Graphql/OneITB/Startup.cs`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-13] - Feature: GraphQL Endpoints para Subjects e Inquiries (Rama: 093-backend-inquiries-subjects-endpoints)
 
@@ -1660,6 +1768,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-13] - Bugfix/Feature: MutaciÃ³n Plana y Formulario de PublicaciÃ³n (Rama: 091-build-flat-mutation)
 
 * **Objetivo**: Reconstruir el formulario de creaciÃ³n de consultas en el feed tras el rollback y conectarlo al backend asegurando el envÃ­o de variables planas para evitar el Error 400 documentado con HotChocolate.
@@ -1670,6 +1796,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-13] - Bugfix: ErradicaciÃ³n de Shadow Properties (Rama: 090-fix-shadow-properties)
 
@@ -1683,6 +1827,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-13] - Feature: Professional Seed Users (Rama: 088-professional-seed-users)
 
 * **Objetivo**: Implementar el sembrado automÃ¡tico de usuarios de prueba (Seeding) para todos los roles del sistema utilizando GUIDs estÃ¡ticos y contraseÃ±as hasheadas con BCrypt, garantizando la idempotencia y evitando errores de integridad referencial.
@@ -1694,6 +1856,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-13] - Bugfix: ActualizaciÃ³n de Font Awesome para Zero Warnings (Rama: 081-fontawesome-upgrade)
 
 * **Objetivo**: Erradicar el warning recurrente de Chromium (`Glyph bbox was incorrect; adjusting`) provocado por errores internos de cÃ¡lculo en Font Awesome 6.1.x, actualizando la librerÃ­a a la versiÃ³n 6.6.0.
@@ -1703,6 +1883,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-12] - UI: Fix Regla de Hooks en AdminDashboard (Rama: 062-admin-dashboard-hooks-fix)
 
 * **Objetivo**: Solucionar la excepciÃ³n "Rendered more hooks than during the previous render" garantizando que los hooks se ejecuten incondicionalmente en la capa de administraciÃ³n.
@@ -1711,6 +1909,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/Components/admin/AdminDashboard.jsx`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-10] - Frontend: Interfaz Rol Empleador y ModeraciÃ³n Comunitaria (Rama: 046-frontend-employer-and-moderation)
 
@@ -1725,6 +1941,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-10] - Backend: Infraestructura Rol Empleador y ModeraciÃ³n (Rama: 045-backend-employer-and-moderation)
 
 * **Objetivo**: Implementar la lÃ³gica y persistencia del nuevo rol de Empleador y del sistema de Reportes Comunitarios.
@@ -1737,6 +1971,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-10] - DocumentaciÃ³n: ActualizaciÃ³n de Requerimientos (Rama: 044-docs-employer-role-update)
 
 * **Objetivo**: Formalizar las decisiones arquitectÃ³nicas respecto a nuevos roles y modalidades de acceso en el documento rector.
@@ -1745,6 +1997,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `docs/academic/02_Requerimientos.md`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-10] - Bugfix & Config: CorrecciÃ³n de Consulta GraphQL de Usuarios (Rama: 043-admin-dashboard-fix-users-query)
 
@@ -1758,6 +2028,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `API Graphql/Services/Repositories/UnitOfWork.cs`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-10] - Full Stack: IntegraciÃ³n GraphQL para Dashboard de AdministraciÃ³n (Rama: 042-admin-user-management-graphql)
 
@@ -1773,6 +2061,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-10] - UI: Dashboard de AdministraciÃ³n de Usuarios (Rama: 041-admin-user-management)
 
 * **Objetivo**: Crear una interfaz dedicada para administradores que permita la gestiÃ³n de usuarios, roles y estados de activaciÃ³n.
@@ -1784,6 +2090,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-10] - UI: InyecciÃ³n de Header en Rutas PÃºblicas (Rama: 040-public-layout-header-fix)
 
 * **Objetivo**: Integrar el componente `Header` en las rutas pÃºblicas de la aplicaciÃ³n (`PublicLayout`) y manejar el estado no autenticado.
@@ -1793,6 +2117,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-10] - Backend: ValidaciÃ³n y Fix de Compatibilidad .NET 8 (Rama: 039-backend-dotnet8-validation)
 
@@ -1808,6 +2150,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-10] - Backend: MigraciÃ³n a .NET 8 LTS (Rama: 038-backend-dotnet8-upgrade)
 
 * **Objetivo**: Migrar los 4 proyectos del backend de .NET 6 (EOL) a .NET 8 LTS y actualizar todas las dependencias NuGet crÃ­ticas a sus versiones compatibles.
@@ -1815,7 +2175,25 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 * **Cambios aplicados**:
 
 | Proyecto | TFM | EF Core | HotChocolate | JwtBearer |
-|----------|-----|---------|--------------|-----------|
+---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 | Entities.csproj | net6.0 â†’ **net8.0** | â€” | â€” | â€” |
 | Data.csproj | net6.0 â†’ **net8.0** | 7.0.4 â†’ **8.0.6** | â€” | â€” |
 | Services.csproj | net6.0 â†’ **net8.0** | â€” | 13.0.5 â†’ **14.2.0** | â€” |
@@ -1831,6 +2209,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-10] - UI: Global Tailwind Refactor â€” Capa Social (Rama: 037-global-tailwind-refactor)
 
 * **Objetivo**: Reparar los daÃ±os estÃ©ticos causados por la purga del CSS legacy (036) en los componentes de la red social, migrÃ¡ndolos al uso exclusivo de Tailwind CSS v4.
@@ -1844,6 +2240,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `AGENTS.md` y `.specify/feature.json` (actualizaciÃ³n de referencia activa)
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-10] - UI: CSS Supremacy â€” ErradicaciÃ³n de Legacy y Sistema de DiseÃ±o Ãšnico (Rama: 036-theme-and-css-supremacy)
 
@@ -1862,6 +2276,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-10] - UI: Trasplante Literal del CV Builder a /profile (Rama: 035-literal-cv-transplant)
 
 * **Objetivo**: Eliminar el overlapping de layouts inventados en `/profile` y realizar un trasplante exacto del layout y componentes de `_temp_cv_reference` hacia `UserProfile.tsx`, garantizando una fidelidad 100% visual al diseÃ±o original.
@@ -1877,6 +2309,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `specs/035-literal-cv-transplant/tasks.md`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-10] - UI: RefactorizaciÃ³n Total del Layout Global y Vista de Perfil (Rama: 034-total-frontend-refactor)
 
@@ -1898,6 +2348,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-09] - UI: CorrecciÃ³n de Consulta GraphQL en Perfil (Rama: 027-fix-profile-graphql-400)
 
 * **Objetivo**: Solventar el error HTTP 400 (Bad Request) al cargar la vista del Perfil alineando las consultas del frontend con el esquema de HotChocolate.
@@ -1911,6 +2379,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-09] - UI: CorrecciÃ³n de SRI y Reflow de Layout (Rama: 025-hotfix-console-warnings)
 
 * **Objetivo**: Solucionar bloqueos de seguridad SRI de Font Awesome y eliminar advertencias de "Layout Forced" en la consola del navegador.
@@ -1923,6 +2409,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `specs/025-hotfix-console-warnings/tasks.md`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-09] - UI: Enrutamiento Limpio, Landing Page y UnificaciÃ³n de Perfil (Rama: 023-router-fix-and-cv-layout)
 
@@ -1947,6 +2451,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-09] - UI: Revamp de NavegaciÃ³n y Perfil Doble Columna (Rama: 022-navigation-profile-revamp)
 
 * **Objetivo**: Refactorizar la navegaciÃ³n global (Header/Nav) eliminando enlaces obsoletos y crear un menÃº de usuario dinÃ¡mico, e integrar los formularios de actualizaciÃ³n del currÃ­culum al perfil pÃºblico en doble columna.
@@ -1962,6 +2484,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-09] - BD: AplicaciÃ³n de Migraciones EF Core de Perfil (Rama: 021-apply-profile-migration)
 
 * **Objetivo**: Ejecutar comandos de Entity Framework Core desde el agente para aplicar y verificar la actualizaciÃ³n fÃ­sica de la base de datos de perfiles.
@@ -1971,6 +2511,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `specs/021-apply-profile-migration/tasks.md` (Completado)
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-09] - BD/API/UI: MÃ³dulo 2 - Perfiles, BiografÃ­a y Redes (Rama: 020-user-profiles-bio)
 
@@ -1996,6 +2554,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-09] - UI: ImplementaciÃ³n de Mejoras RÃ¡pidas (Quick Wins) (Rama: 019-frontend-quick-wins)
 
 * **Objetivo**: Estabilizar y corregir la interfaz visual (UI/UX) del frontend aplicando las mejoras rÃ¡pidas de alto impacto identificadas en la auditorÃ­a.
@@ -2011,6 +2587,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-09] - UI: Relevamiento y AuditorÃ­a de Frontend (Rama: 018-frontend-deep-audit)
 
 * **Objetivo**: Realizar un relevamiento exhaustivo del cÃ³digo fuente del Frontend para identificar la estructura del Ã¡rbol de componentes, fallos de enrutamiento y plantear estÃ¡ndares modernos de desarrollo.
@@ -2020,6 +2614,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `docs/audit/DEVELOPMENT_LOG.md` (Modificado)
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-09] - UI: Refactor Visual Profundo UI/UX (Rama: 016-ui-ux-revamp)
 
@@ -2032,6 +2644,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-09] - UI: Refactor Visual y ReparaciÃ³n de Recursos (Rama: 015-ui-polish-assets)
 
 * **Objetivo**: Solucionar errores de carga de recursos estÃ¡ticos (imagen 404 y fuentes corruptas de FontAwesome) y refabricar el estilo visual de los formularios de autenticaciÃ³n y el layout principal.
@@ -2043,6 +2673,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/assets/css/styles.css`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-09] - UI/Auth-Routing: Persistencia de Token y RedirecciÃ³n en Frontend (Rama: 010-frontend-tracing)
 
@@ -2060,6 +2708,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-09] - API/Auth: ImplementaciÃ³n CriptogrÃ¡fica de JWT para Login (Rama: 010-frontend-tracing)
 
 * **Objetivo**: Reemplazar el token estÃ¡tico de prueba placeholder por una generaciÃ³n criptogrÃ¡fica de JWT vÃ¡lida, alineando firmas y DTOs al estÃ¡ndar en inglÃ©s.
@@ -2073,6 +2739,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/data/graphql/mutations/authenticateUser.js`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-08] - BD/Entidades: RefactorizaciÃ³n Completa de Entidades al InglÃ©s y Hard Reset de DB (Rama: 010-frontend-tracing)
 
@@ -2088,6 +2772,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-08] - API/Resolvers: Mapeo de Nomenclatura en la Entidad User de GraphQL (Rama: 010-frontend-tracing)
 
 * **Objetivo**: Corregir errores de campos no encontrados en la introspecciÃ³n del cliente GraphQL mapeando explÃ­citamente las propiedades hacia el esquema y garantizar su visibilidad en camelCase.
@@ -2096,6 +2798,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `API Graphql/OneITB/Startup.cs`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-08] - API/Resolvers: ExposiciÃ³n del campo de Consulta Usuarios en HotChocolate (Rama: 010-frontend-tracing)
 
@@ -2107,6 +2827,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-08] - API/Resolvers: ResoluciÃ³n de Consultas de Usuarios e InyecciÃ³n de Interfaces en GraphQL (Rama: 010-frontend-tracing)
 
 * **Objetivo**: Implementar la resoluciÃ³n de consultas (Query) para la entidad Usuarios en HotChocolate, corregir la inyecciÃ³n de servicios y registrar la configuraciÃ³n correctamente en el middleware de GraphQL.
@@ -2117,6 +2855,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-08] - BD/MigraciÃ³n: CorrecciÃ³n de Propiedad IDENTITY en MigraciÃ³n EF Core (Rama: 010-frontend-tracing)
 
 * **Objetivo**: Evitar el error `InvalidOperationException: To change the IDENTITY property of a column...` al aplicar la Ãºltima migraciÃ³n de base de datos sin destruir el historial.
@@ -2125,6 +2881,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `API Graphql/Data/Migrations/20260608221114_FixRegistroUsuario.cs`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-08] - API/MutaciÃ³n: SincronizaciÃ³n de Esquema RegisterInput y Resolver en Backend (Rama: 010-frontend-tracing)
 
@@ -2136,6 +2910,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-08] - UI/Trazabilidad: Trazabilidad y SincronizaciÃ³n de Variables de Registro en Frontend (Rama: 010-frontend-tracing)
 
 * **Objetivo**: Sincronizar el mapeo de variables entre el estado local del formulario React y la mutaciÃ³n GraphQL e implementar trazabilidad por consola para el campo "Apellidos".
@@ -2144,6 +2936,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/Components/user/Register.jsx`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-08] - UI/ValidaciÃ³n: Feedback Visual de ValidaciÃ³n y Control de Apellidos en Frontend (Rama: 009-frontend-feedback-validation)
 
@@ -2154,6 +2964,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-08] - ValidaciÃ³n: Validaciones Locales de Formulario de Registro (Rama: 008-frontend-validations)
 
 * **Objetivo**: Implementar chequeos locales antes de disparar la mutaciÃ³n de registro, previniendo peticiones de red invÃ¡lidas innecesarias.
@@ -2162,6 +2990,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/Components/user/Register.jsx`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-08] - Manejo: Lanzar GraphQLException ante Excepciones de ValidaciÃ³n en Registro (Rama: 007-throw-graphql-exception)
 
@@ -2172,6 +3018,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-08] - Manejo: Captura y Control de ArgumentException en MutaciÃ³n de Registro (Rama: 006-handle-mutation-exceptions)
 
 * **Objetivo**: Evitar errores de servidor HTTP 500 capturando excepciones de argumentos y retornando mensajes de validaciÃ³n legibles.
@@ -2180,6 +3044,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `API Graphql/OneITB/GraphQL/Mutation.cs`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-08] - AlineaciÃ³n: MutaciÃ³n de Registro GraphQL en Frontend y Backend (Rama: 005-align-graphql-mutation)
 
@@ -2191,6 +3073,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
+
 ## [2026-06-08] - CorrecciÃ³n: ExcepciÃ³n de Casteo en MutaciÃ³n de HotChocolate (Rama: 004-fix-hotchocolate-mutation)
 
 * **Objetivo**: Corregir la excepciÃ³n crÃ­tica `System.InvalidCastException` de HotChocolate que impedÃ­a compilar e iniciar el servidor.
@@ -2199,6 +3099,24 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `API Graphql/OneITB/GraphQL/Mutation.cs`
 
 ---
+
+## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
+
+* **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).
+* **Resultado**: 
+  - Se verificó transversalmente que la base de código y base de datos actual ya utiliza @itbeltran.com.ar como dominio principal para el seeder y validaciones frontend/backend.
+  - Se confirmó que no existen placeholders ni instancias residuales del dominio @oneitb.edu.ar.
+* **Validaciones ejecutadas**: 
+  - g "@oneitb.edu.ar": PASS (0 ocurrencias).
+  - g "@itbeltran.com.ar": PASS (Ocurrencias correctas en tests, DbInitializer, UI).
+  - dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore: PASS, 38/38 tests.
+  - 
+pm.cmd run build: PASS, build completado exitosamente.
+* **Estado**: 
+  - Verificado. No se requirieron cambios en el código ya que se encontraba correctamente alienado, manteniendo el code freeze intacto.
+* **Archivos principales**: 
+  - N/A (Auditoría limpia)
+
 
 ## [2026-06-08] - ImplementaciÃ³n: ReestructuraciÃ³n AcadÃ©mica y Gobernanza Core-Web (Rama: 003-docs-governance)
 
