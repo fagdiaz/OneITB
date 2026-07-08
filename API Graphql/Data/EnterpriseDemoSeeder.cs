@@ -78,6 +78,9 @@ namespace OneItb.Data
             await SeedJobOffersAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);
 
+            await SeedJobApplicationsAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
             await SeedCommentsAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);
 
@@ -349,6 +352,49 @@ namespace OneItb.Data
             }
         }
 
+        private static async Task SeedJobApplicationsAsync(OneItbContext context, CancellationToken cancellationToken)
+        {
+            Guid[] applicationIds = ManagedJobApplicationIds().ToArray();
+            List<Guid> existingIdList = await context.JobApplications
+                .Where(application => applicationIds.Contains(application.Id))
+                .Select(application => application.Id)
+                .ToListAsync(cancellationToken);
+            HashSet<Guid> existingIds = existingIdList.ToHashSet();
+
+            Guid[] offerIds = ManagedJobOfferIds().ToArray();
+            List<JobOffer> offers = await context.JobOffers
+                .Where(offer => offerIds.Contains(offer.Id) && offer.IsActive)
+                .OrderBy(offer => offer.CreatedAt)
+                .ToListAsync(cancellationToken);
+
+            if (offers.Count == 0)
+                return;
+
+            EnterpriseUser[] applicants = Users
+                .Where(user => user.Role is "Estudiante" or "Egresado")
+                .ToArray();
+
+            for (int index = 0; index < applicants.Length; index++)
+            {
+                EnterpriseUser applicant = applicants[index];
+                JobOffer offer = offers[index % offers.Count];
+                Guid applicationId = StableGuid($"enterprise-job-application:{applicant.Email}:{offer.Id:N}");
+                if (existingIds.Contains(applicationId))
+                    continue;
+
+                context.JobApplications.Add(new JobApplication
+                {
+                    Id = applicationId,
+                    JobOfferId = offer.Id,
+                    ApplicantId = UserId(applicant.Email),
+                    AppliedAt = offer.CreatedAt.AddHours(2 + index),
+                    Status = index % 4 == 0
+                        ? JobApplicationStatus.Reviewed
+                        : JobApplicationStatus.Pending
+                });
+            }
+        }
+
         private static async Task SeedCommentsAsync(OneItbContext context, CancellationToken cancellationToken)
         {
             Guid[] managedInquiryIds = ManagedInquiryIds().ToArray();
@@ -509,6 +555,7 @@ namespace OneItb.Data
             Guid[] managedInquiryIds = ManagedInquiryIds().ToArray();
             Guid[] managedMessageIds = ManagedMessageIds().ToArray();
             Guid[] managedJobOfferIds = ManagedJobOfferIds().ToArray();
+            Guid[] managedJobApplicationIds = ManagedJobApplicationIds().ToArray();
 
             List<Comment> rootComments = await context.Comments
                 .IgnoreQueryFilters()
@@ -600,6 +647,41 @@ namespace OneItb.Data
                 }
             }
 
+            List<JobApplication> applications = await context.JobApplications
+                .Include(application => application.JobOffer)
+                .Include(application => application.Applicant)
+                .Where(application => managedJobApplicationIds.Contains(application.Id))
+                .OrderBy(application => application.AppliedAt)
+                .ToListAsync(cancellationToken);
+
+            foreach (JobApplication application in applications)
+            {
+                notifications.Add(new Notification
+                {
+                    Id = StableGuid($"enterprise-notification:job-application:employer:{application.Id:N}"),
+                    UserId = application.JobOffer.EmployerId,
+                    Type = NotificationType.JobApplication,
+                    Message = $"{application.Applicant.FirstName} {application.Applicant.LastName} se postulo a {application.JobOffer.Title}.",
+                    ActionUrl = "/empleos/mis-ofertas",
+                    IsRead = false,
+                    CreatedAt = application.AppliedAt.AddMinutes(2)
+                });
+
+                if (application.Status != JobApplicationStatus.Pending)
+                {
+                    notifications.Add(new Notification
+                    {
+                        Id = StableGuid($"enterprise-notification:job-application:applicant:{application.Id:N}"),
+                        UserId = application.ApplicantId,
+                        Type = NotificationType.JobApplication,
+                        Message = $"Tu postulacion a {application.JobOffer.Title} fue revisada.",
+                        ActionUrl = "/empleos",
+                        IsRead = false,
+                        CreatedAt = application.AppliedAt.AddMinutes(30)
+                    });
+                }
+            }
+
             Guid[] desiredIds = notifications.Select(notification => notification.Id).ToArray();
             List<Guid> existingIdList = await context.Notifications
                 .Where(notification => desiredIds.Contains(notification.Id))
@@ -665,6 +747,19 @@ namespace OneItb.Data
                 .Where(user => user.Role == "Empleador")
                 .SelectMany(user => Enumerable.Range(1, 2)
                     .Select(index => StableGuid($"enterprise-job:{user.Email}:{index}")));
+        }
+
+        private static IEnumerable<Guid> ManagedJobApplicationIds()
+        {
+            Guid[] offerIds = ManagedJobOfferIds().ToArray();
+            EnterpriseUser[] applicants = Users
+                .Where(user => user.Role is "Estudiante" or "Egresado")
+                .ToArray();
+
+            for (int index = 0; index < applicants.Length; index++)
+            {
+                yield return StableGuid($"enterprise-job-application:{applicants[index].Email}:{offerIds[index % offerIds.Length]:N}");
+            }
         }
 
         private static IEnumerable<Guid> ManagedMessageIds()

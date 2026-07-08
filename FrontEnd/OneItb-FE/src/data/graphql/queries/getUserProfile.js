@@ -16,6 +16,7 @@ export const GET_USER_PROFILE = gql`
       instagram
       phone
       avatarUrl
+      isPublicProfile
       userCareers {
         career {
           id

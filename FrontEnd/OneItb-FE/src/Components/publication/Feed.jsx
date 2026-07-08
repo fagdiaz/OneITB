@@ -594,9 +594,16 @@ export const Feed = () => {
                         {profile.fullName}
                       </span>
                       <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-                        {[profile.role, ...(profile.careers || []).slice(0, 2)].filter(Boolean).join(' - ')}
+                        {profile.canViewSensitiveProfile === false
+                          ? `${profile.role} - Perfil privado`
+                          : [profile.role, ...(profile.careers || []).slice(0, 2)].filter(Boolean).join(' - ')}
                       </span>
                     </span>
+                    {profile.canViewSensitiveProfile === false && (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-700 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-300/20">
+                        Privado
+                      </span>
+                    )}
                     <i className="fa-solid fa-arrow-right text-xs text-slate-400" />
                   </Link>
                 );

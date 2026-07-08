@@ -9,3 +9,13 @@ export const UPDATE_PROFILE = gql`
     }
   }
 `;
+
+export const TOGGLE_PROFILE_PRIVACY = gql`
+  mutation ToggleProfilePrivacy($isPublic: Boolean!) {
+    toggleProfilePrivacy(isPublic: $isPublic) {
+      id
+      success
+      message
+    }
+  }
+`;

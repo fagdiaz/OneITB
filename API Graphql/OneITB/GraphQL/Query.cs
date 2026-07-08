@@ -2,6 +2,7 @@ using HotChocolate;
 using HotChocolate.Data;
 using HotChocolate.Authorization;
 using HotChocolate.Types;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
@@ -10,6 +11,7 @@ using OneITB.Core.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +20,7 @@ using Services.Social;
 using Services.Academic;
 using Services.Notifications;
 using Services.Jobs;
+using OneItb.GraphQL.Services.Email;
 
 namespace GraphQL.GraphQL
 {
@@ -200,6 +203,7 @@ namespace GraphQL.GraphQL
 
             int totalPublications = await publicationMetricsQuery.CountAsync();
             int totalComments = await commentMetricsQuery.CountAsync();
+            bool canViewSensitiveProfile = await CanViewSensitiveProfileAsync(context, user, viewerId);
 
             return new PublicProfileSummary(
                 user.Id,
@@ -207,30 +211,35 @@ namespace GraphQL.GraphQL
                 user.LastName,
                 $"{user.FirstName} {user.LastName}".Trim(),
                 user.Role,
-                user.Biography,
-                user.LinkedIn,
-                user.Facebook,
-                user.Instagram,
-                user.Phone,
+                canViewSensitiveProfile ? user.Biography : null,
+                canViewSensitiveProfile ? user.LinkedIn : null,
+                canViewSensitiveProfile ? user.Facebook : null,
+                canViewSensitiveProfile ? user.Instagram : null,
+                canViewSensitiveProfile ? user.Phone : null,
                 user.AvatarUrl,
-                MapExperiences(user.CvExperiences),
-                MapEducations(user.CvEducations),
-                MapProjects(user.CvProjects),
-                MapSkills(user.CvSkills),
-                MapLanguages(user.CvLanguages),
-                user.UserCareers
-                    .Where(link => link.Career.IsActive)
-                    .Select(link => link.Career.Name)
-                    .OrderBy(name => name)
-                    .ToArray(),
-                totalPublications,
-                totalComments);
+                user.IsPublicProfile,
+                canViewSensitiveProfile,
+                canViewSensitiveProfile ? MapExperiences(user.CvExperiences) : Array.Empty<CvExperienceDto>(),
+                canViewSensitiveProfile ? MapEducations(user.CvEducations) : Array.Empty<CvEducationDto>(),
+                canViewSensitiveProfile ? MapProjects(user.CvProjects) : Array.Empty<CvProjectDto>(),
+                canViewSensitiveProfile ? MapSkills(user.CvSkills) : Array.Empty<CvSkillDto>(),
+                canViewSensitiveProfile ? MapLanguages(user.CvLanguages) : Array.Empty<CvLanguageDto>(),
+                canViewSensitiveProfile
+                    ? user.UserCareers
+                        .Where(link => link.Career.IsActive)
+                        .Select(link => link.Career.Name)
+                        .OrderBy(name => name)
+                        .ToArray()
+                    : Array.Empty<string>(),
+                canViewSensitiveProfile ? totalPublications : 0,
+                canViewSensitiveProfile ? totalComments : 0);
         }
 
         public async Task<IReadOnlyList<PublicProfileSearchResult>> SearchPublicProfiles(
             string? searchTerm,
             int first,
-            [Service] OneItbContext context)
+            [Service] OneItbContext context,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
             string normalizedTerm = (searchTerm ?? string.Empty).Trim();
             int take = Math.Clamp(first, 1, 8);
@@ -257,17 +266,54 @@ namespace GraphQL.GraphQL
                 .AsSplitQuery()
                 .ToListAsync();
 
+            Guid? viewerId = TryGetAuthenticatedUserId(httpContextAccessor);
+            string? viewerRole = null;
+            HashSet<Guid> followedTargetIds = new();
+
+            if (viewerId.HasValue)
+            {
+                viewerRole = await context.Users
+                    .AsNoTracking()
+                    .Where(user => user.Id == viewerId.Value && user.IsActive)
+                    .Select(user => user.Role)
+                    .SingleOrDefaultAsync();
+
+                Guid[] targetIds = users.Select(user => user.Id).ToArray();
+                followedTargetIds = (await context.UserInteractions
+                        .AsNoTracking()
+                        .Where(item =>
+                            item.ObserverId == viewerId.Value &&
+                            targetIds.Contains(item.TargetId) &&
+                            item.Type == InteractionType.Follow)
+                        .Select(item => item.TargetId)
+                        .ToListAsync())
+                    .ToHashSet();
+            }
+
             return users
-                .Select(user => new PublicProfileSearchResult(
-                    user.Id,
-                    $"{user.FirstName} {user.LastName}".Trim(),
-                    user.Role,
-                    user.AvatarUrl,
-                    user.UserCareers
-                        .Where(link => link.Career.IsActive)
-                        .Select(link => link.Career.Name)
-                        .OrderBy(name => name)
-                        .ToArray()))
+                .Select(user =>
+                {
+                    bool canViewSensitiveProfile = CanViewSensitiveProfileFromLoadedData(
+                        user,
+                        viewerId,
+                        viewerRole,
+                        followedTargetIds);
+
+                    return new PublicProfileSearchResult(
+                        user.Id,
+                        $"{user.FirstName} {user.LastName}".Trim(),
+                        user.Role,
+                        user.AvatarUrl,
+                        user.IsPublicProfile,
+                        canViewSensitiveProfile,
+                        canViewSensitiveProfile
+                            ? user.UserCareers
+                                .Where(link => link.Career.IsActive)
+                                .Select(link => link.Career.Name)
+                                .OrderBy(name => name)
+                                .ToArray()
+                            : Array.Empty<string>());
+                })
                 .ToArray();
         }
 
@@ -313,6 +359,39 @@ namespace GraphQL.GraphQL
             return query
                 .OrderByDescending(log => log.CreatedAt)
                 .Take(take);
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
+        public async Task<bool> TestSmtpConnection(
+            string targetEmail,
+            [Service] IEmailSender emailSender,
+            [Service] ILogger<Query> logger,
+            CancellationToken cancellationToken)
+        {
+            string recipient = NormalizeSmokeTestEmail(targetEmail);
+            const string subject = "OneITB: Prueba de configuracion SMTP exitosa";
+            string body =
+                "Este correo confirma que la configuracion SMTP de OneITB pudo enviar mensajes desde el backend.\n\n" +
+                $"Fecha UTC: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}\n\n" +
+                "Equipo OneITB";
+
+            try
+            {
+                await emailSender.SendAsync(recipient, subject, body, cancellationToken);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "SMTP smoke test failed for target email {TargetEmail}.",
+                    recipient);
+
+                string reason = ex is SmtpException
+                    ? "El proveedor SMTP rechazo o no pudo completar el envio."
+                    : "El servicio de correo no pudo completar la prueba.";
+                throw CreateUserError($"{reason} Revisa las variables SMTP y vuelve a intentarlo.");
+            }
         }
 
         public async Task<PublicCertificateDto> GetPublicCertificate(
@@ -457,9 +536,24 @@ namespace GraphQL.GraphQL
         [UseSorting]
         public IQueryable<JobOffer> GetJobOffers(
             bool? onlyActive,
-            [Service] IJobService jobService)
+            [Service] IJobService jobService,
+            [Service] IHttpContextAccessor httpContextAccessor)
         {
-            return jobService.GetJobOffers(onlyActive ?? true);
+            Guid? currentUserId = TryGetAuthenticatedUserId(httpContextAccessor);
+            return jobService.GetJobOffers(onlyActive ?? true, currentUserId);
+        }
+
+        [Authorize]
+        [UsePaging(MaxPageSize = 50, IncludeTotalCount = true)]
+        [UseFiltering]
+        [UseSorting]
+        public IQueryable<JobOffer> GetMyJobOffers(
+            [Service] IJobService jobService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            return jobService.GetMyJobOffers(
+                GetAuthenticatedUserId(httpContextAccessor),
+                GetAuthenticatedRole(httpContextAccessor));
         }
 
         [Authorize]
@@ -658,6 +752,82 @@ namespace GraphQL.GraphQL
                     item.IsHidden,
                     item.SortOrder))
                 .ToArray();
+        }
+
+        private static async Task<bool> CanViewSensitiveProfileAsync(
+            OneItbContext context,
+            User targetUser,
+            Guid? viewerId)
+        {
+            if (targetUser.IsPublicProfile)
+                return true;
+
+            if (!viewerId.HasValue)
+                return false;
+
+            if (viewerId.Value == targetUser.Id)
+                return true;
+
+            string? viewerRole = await context.Users
+                .AsNoTracking()
+                .Where(user => user.Id == viewerId.Value && user.IsActive)
+                .Select(user => user.Role)
+                .SingleOrDefaultAsync();
+
+            if (CanViewPrivateProfilesByRole(viewerRole))
+                return true;
+
+            return await context.UserInteractions
+                .AsNoTracking()
+                .AnyAsync(item =>
+                    item.ObserverId == viewerId.Value &&
+                    item.TargetId == targetUser.Id &&
+                    item.Type == InteractionType.Follow);
+        }
+
+        private static bool CanViewSensitiveProfileFromLoadedData(
+            User targetUser,
+            Guid? viewerId,
+            string? viewerRole,
+            IReadOnlySet<Guid> followedTargetIds)
+        {
+            return targetUser.IsPublicProfile ||
+                   (viewerId.HasValue && viewerId.Value == targetUser.Id) ||
+                   CanViewPrivateProfilesByRole(viewerRole) ||
+                   followedTargetIds.Contains(targetUser.Id);
+        }
+
+        private static bool CanViewPrivateProfilesByRole(string? role)
+        {
+            return role is "Administrador" or "Moderador";
+        }
+
+        private static string NormalizeSmokeTestEmail(string? targetEmail)
+        {
+            string normalized = (targetEmail ?? string.Empty).Trim();
+            if (normalized.Length is < 6 or > 254)
+                throw CreateUserError("El correo de destino no tiene un formato valido.");
+
+            try
+            {
+                var address = new MailAddress(normalized);
+                if (!string.Equals(address.Address, normalized, StringComparison.OrdinalIgnoreCase))
+                    throw CreateUserError("El correo de destino no tiene un formato valido.");
+                return address.Address;
+            }
+            catch (FormatException)
+            {
+                throw CreateUserError("El correo de destino no tiene un formato valido.");
+            }
+        }
+
+        private static GraphQLException CreateUserError(string message)
+        {
+            return new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(message)
+                    .SetCode("USER_ERROR")
+                    .Build());
         }
 
         private static Guid GetAuthenticatedUserId(IHttpContextAccessor httpContextAccessor)

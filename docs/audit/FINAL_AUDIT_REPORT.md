@@ -1,14 +1,14 @@
 # Reporte final de auditoria tecnica - OneITB23
 
-**Fecha**: 2026-07-07
-**Spec de referencia**: `specs/171-production-security-and-seeding/`
-**Estado global del roadmap**: 97% (87/90 items)
+**Fecha**: 2026-07-08
+**Specs de referencia**: `specs/171-production-security-and-seeding/`, `specs/173-enterprise-jobs-ats-seeder-qa/`, `specs/174-ux-alignment-and-smtp/`, `specs/175-privacy-controls-and-smoke-tests/`
+**Estado global del roadmap**: 98% (97/99 items); core funcional Feature Complete
 
 ## 1. Resumen ejecutivo
 
-OneITB23 se encuentra en fase avanzada de cierre tecnico y entra en Code Freeze funcional. La plataforma ya cubre autenticacion, perfiles/CV, feed social, multimedia, mensajeria privada, administracion/moderacion, recursos academicos, progreso academico, adaptador SIU mock, notificaciones y un set de over-delivery institucional: Audit Trail EF, constancias academicas, credenciales publicas aprobadas y toasts globales.
+OneITB23 se encuentra en fase avanzada de cierre tecnico y se aproxima al Code Freeze funcional. La plataforma ya cubre autenticacion, perfiles/CV, feed social, multimedia, mensajeria privada, administracion/moderacion, recursos academicos, progreso academico, adaptador SIU mock, notificaciones, empleabilidad y un set de over-delivery institucional: Audit Trail EF, constancias academicas, credenciales publicas aprobadas y toasts globales.
 
-Esta iteracion no intento inflar artificialmente el estado a 100%. La Spec 169 cerro baselines reales de testing y resiliencia sin agregar features nuevas. La Spec 170 cerro la brecha de infraestructura productiva: Docker multicontenedor, Redis Pub/Sub, Cloudinary opcional, rate limiting y security headers. La Spec 171 cerro brechas finales de seguridad de API y demo readiness: profundidad maxima GraphQL, lockout persistente por cuenta y seeding productivo configurable sin secretos versionados. Google SSO y despliegue Azure real quedan bloqueados/pendientes hasta contar con credenciales y recursos cloud definitivos.
+Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 cerro baselines reales de testing y resiliencia sin agregar features nuevas. La Spec 170 cerro la brecha de infraestructura productiva: Docker multicontenedor, Redis Pub/Sub, Cloudinary opcional, rate limiting y security headers. La Spec 171 cerro brechas finales de seguridad de API y demo readiness: profundidad maxima GraphQL, lockout persistente por cuenta y seeding productivo configurable sin secretos versionados. La Spec 173 agrego empleos y postulaciones; la Spec 174 alineo la terminologia hacia Gestor de Postulaciones e incorporo SMTP real con fallback local. La Spec 175 cerro controles de privacidad de perfil y agrego un smoke SMTP admin-only. Google SSO, despliegue Azure real y mobile quedan bloqueados/pendientes hasta contar con credenciales, recursos cloud y alcance aprobado.
 
 ## 2. Acciones ejecutadas
 
@@ -70,6 +70,20 @@ Esta iteracion no intento inflar artificialmente el estado a 100%. La Spec 169 c
 - La respuesta de login mantiene el contrato `AuthPayload`, pero las fallas controladas usan codigos GraphQL estables (`AUTH_INVALID_CREDENTIALS`, `ACCOUNT_LOCKED`).
 - El seeder demo/productivo exige password por configuracion en produccion y ya no resetea passwords de cuentas existentes en cada arranque.
 
+### Empleabilidad y correo institucional
+
+- Se agrego `JobOffer` y `JobApplication` con ownership estricto del empleador y estados `Pending`, `Reviewed`, `Rejected`.
+- El Gestor de Postulaciones permite revisar postulantes y cambiar estado sin exponer privilegios a terceros.
+- El cambio de estado genera notificacion interna y, si SMTP esta configurado, correo institucional al postulante.
+- Si SMTP no esta configurado, `ConsoleEmailService` conserva la experiencia local/CI sin secretos ni fallos de arranque.
+
+### Privacidad y operabilidad SMTP
+
+- `User.IsPublicProfile` permite a cada usuario decidir si su perfil extendido es publico o privado.
+- `publicProfile` y `searchPublicProfiles` aplican masking backend-side para bio, contacto, carreras, CV y metricas cuando el visor no esta autorizado.
+- `/profile/edit` incorpora switch de privacidad con feedback visual y toast institucional.
+- `testSmtpConnection(targetEmail)` permite a administradores probar la salida de correo con validacion de email y errores GraphQL controlados sin exponer secretos.
+
 ## 3. Evidencia ejecutada
 
 | Validacion | Resultado |
@@ -97,16 +111,24 @@ Esta iteracion no intento inflar artificialmente el estado a 100%. La Spec 169 c
 | EF modelo sin cambios pendientes | PASS |
 | Backend tests con lockout de cuenta | PASS, 38/38 |
 | Docker compose productivo con seed password requerido | PASS, `config` con variables efimeras |
+| Migracion `AddUserProfilePrivacy` | PASS, generada y aplicada contra SQL Server Docker |
+| Backend build tras Spec 175 | PASS, 0 warnings, 0 errores |
+| Backend tests tras Spec 175 | PASS, 39/39 |
+| Frontend build tras Spec 175 | PASS, 352 modulos |
+| EF modelo sin cambios pendientes tras Spec 175 | PASS |
+| Runtime smoke temporal tras Spec 175 | BLOQUEADO por revisor automatico del entorno Codex al iniciar proceso persistente |
 
 Advertencia de entorno: `NU1900` aparece porque el runner local no puede consultar metadata de vulnerabilidades en `https://api.nuget.org/v3/index.json`. No es una advertencia de codigo fuente.
 
 ## 4. Estado pendiente honesto
 
-Quedan tres items funcionales/de despliegue abiertos o bloqueados:
+Quedan items funcionales/de despliegue abiertos o bloqueados:
 
-1. Controles de privacidad y gestion explicita de seguidores.
-2. Regresion visual/runtime del panel admin contra SQL Docker.
-3. Google SSO productivo, bloqueado por credenciales OAuth, callbacks y aprobacion institucional.
+1. Regresion visual/runtime del panel admin contra SQL Docker.
+2. Regresion autenticada en navegador del hub academico y del Gestor de Postulaciones.
+3. Smoke SMTP real con proveedor institucional configurado, usando la query admin-only ya implementada.
+4. Google SSO productivo, bloqueado por credenciales OAuth, callbacks y aprobacion institucional.
+5. Provisioning Azure real y aplicacion movil nativa.
 
 Ademas, el despliegue Azure App Service/Azure SQL real queda como tarea operativa pendiente: la infraestructura Docker/cloud-ready existe, pero no se debe declarar desplegada hasta ejecutar provisionamiento, migracion y smoke test en Azure.
 
@@ -115,10 +137,12 @@ Estos puntos no deben presentarse como cerrados hasta tener implementacion y evi
 ## 5. Riesgos residuales
 
 - Redis Pub/Sub y Cloudinary estan implementados, pero requieren variables/secretos productivos y smoke runtime con esos servicios activos antes de elevarlos a `[V]`.
+- SMTP esta implementado con fallback seguro y smoke admin-only, pero requiere proveedor/secretos reales y prueba de entrega para elevarlo a `[V]`.
 - El compose productivo fue construido y validado estaticamente; la ejecucion completa contra migraciones y trafico real debe hacerse con secretos definitivos.
-- La validacion visual completa del panel admin y del hub academico sigue dependiendo de una sesion de navegador autenticada.
+- La validacion visual completa del panel admin, hub academico, `/empleos` y `/empleos/mis-ofertas` sigue dependiendo de una sesion de navegador autenticada.
 - El entorno necesita restauracion NuGet con red para ejecutar auditoria de vulnerabilidades sin warnings `NU1900`.
 - Open Graph perfecto para LinkedIn requiere SSR o HTML renderizado desde backend; la SPA actual actualiza meta tags en runtime y ofrece URL publica compartible, pero los crawlers pueden no ejecutar JavaScript.
+- El badge rojo de "Empleos nuevos" en la navegacion es deliberadamente efimero: depende del estado WebSocket/Apollo en memoria, se limpia al ingresar a `/empleos` y no persiste tras recargar la pagina. Si se requiere contador persistente, debe modelarse como notificacion leida/no leida en base de datos.
 - El proyecto entra en Code Freeze funcional: la Spec 169 mitigo el riesgo de pantalla blanca con un Error Boundary global y agrego baselines automatizados frontend/GraphQL. La cobertura todavia no debe confundirse con una suite exhaustiva de regresion visual ni con pruebas distribuidas de infraestructura.
 - Las vulnerabilidades de DoS por profundidad GraphQL y fuerza bruta por cuenta quedaron mitigadas a nivel backend; faltan pruebas de penetracion externas para elevarlas de hardening implementado a certificacion formal.
 

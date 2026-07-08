@@ -22,6 +22,7 @@ using Services.Academic;
 using Services.Notifications;
 using Services.Siu;
 using Services.Jobs;
+using OneItb.GraphQL.Services.Email;
 
 namespace OneITB.GraphQL.Mutations
 {
@@ -78,6 +79,23 @@ namespace OneITB.GraphQL.Mutations
             catch (InvalidOperationException ex)
             {
                 throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<UserPayload> ToggleProfilePrivacy(
+            bool isPublic,
+            [Service] IUsersService usersService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
+                return await usersService.ToggleProfilePrivacyAsync(actorUserId, isPublic);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
             }
         }
 
@@ -798,6 +816,97 @@ namespace OneITB.GraphQL.Mutations
         }
 
         [Authorize]
+        public async Task<JobApplication> ApplyToJob(
+            Guid jobOfferId,
+            [Service] IJobService jobService,
+            [Service] INotificationService notificationService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                Guid applicantId = GetAuthenticatedUserId(httpContextAccessor);
+                JobApplication application = await jobService.ApplyToJobAsync(
+                    applicantId,
+                    GetAuthenticatedRole(httpContextAccessor),
+                    jobOfferId,
+                    cancellationToken);
+
+                await notificationService.CreateNotificationsAsync(
+                    new[] { application.JobOffer.EmployerId },
+                    NotificationType.JobApplication,
+                    $"{application.Applicant.FirstName} {application.Applicant.LastName} se postulo a {application.JobOffer.Title}.",
+                    "/empleos/mis-ofertas");
+
+                return application;
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<JobApplication> UpdateApplicationStatus(
+            Guid applicationId,
+            JobApplicationStatus status,
+            [Service] IJobService jobService,
+            [Service] INotificationService notificationService,
+            [Service] IEmailSender emailSender,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ILogger<Mutation> logger,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                Guid actorId = GetAuthenticatedUserId(httpContextAccessor);
+                JobApplication application = await jobService.UpdateApplicationStatusAsync(
+                    actorId,
+                    GetAuthenticatedRole(httpContextAccessor),
+                    applicationId,
+                    status,
+                    cancellationToken);
+
+                string statusLabel = status switch
+                {
+                    JobApplicationStatus.Reviewed => "revisada",
+                    JobApplicationStatus.Rejected => "rechazada",
+                    _ => "actualizada"
+                };
+
+                await notificationService.CreateNotificationsAsync(
+                    new[] { application.ApplicantId },
+                    NotificationType.JobApplication,
+                    $"Tu postulacion a {application.JobOffer.Title} fue {statusLabel}.",
+                    "/empleos");
+
+                if (status is JobApplicationStatus.Reviewed or JobApplicationStatus.Rejected)
+                {
+                    await TrySendApplicationStatusEmailAsync(
+                        application,
+                        statusLabel,
+                        emailSender,
+                        logger,
+                        cancellationToken);
+                }
+
+                return application;
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+        }
+
+        [Authorize]
         public async Task<Message> SendMessage(
             Guid receiverId,
             string content,
@@ -867,6 +976,66 @@ namespace OneITB.GraphQL.Mutations
         private static string? GetAuthenticatedRole(IHttpContextAccessor httpContextAccessor)
         {
             return httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
+        }
+
+        private static GraphQLException CreateUserError(string message)
+        {
+            return new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(message)
+                    .SetCode("USER_ERROR")
+                    .Build());
+        }
+
+        private static async Task TrySendApplicationStatusEmailAsync(
+            JobApplication application,
+            string statusLabel,
+            IEmailSender emailSender,
+            ILogger<Mutation> logger,
+            CancellationToken cancellationToken)
+        {
+            string? recipient = application.Applicant.Account?.Email;
+            if (string.IsNullOrWhiteSpace(recipient))
+            {
+                logger.LogWarning(
+                    "Application {ApplicationId} changed status but applicant email is missing.",
+                    application.Id);
+                return;
+            }
+
+            string applicantName = $"{application.Applicant.FirstName} {application.Applicant.LastName}".Trim();
+            if (string.IsNullOrWhiteSpace(applicantName))
+                applicantName = "postulante";
+
+            string subject = "Actualizacion de tu postulacion en OneITB";
+            string body = BuildApplicationStatusEmailBody(application, applicantName, statusLabel);
+
+            try
+            {
+                await emailSender.SendAsync(recipient, subject, body, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Application {ApplicationId} status changed but email delivery failed.",
+                    application.Id);
+            }
+        }
+
+        private static string BuildApplicationStatusEmailBody(
+            JobApplication application,
+            string applicantName,
+            string statusLabel)
+        {
+            return
+                $"Hola {applicantName},\n\n" +
+                "Tu postulacion en OneITB cambio de estado.\n\n" +
+                $"Oferta: {application.JobOffer.Title}\n" +
+                $"Empresa: {application.JobOffer.Company}\n" +
+                $"Estado actual: {statusLabel}\n\n" +
+                "Podes revisar el detalle desde la seccion Empleos de la plataforma.\n\n" +
+                "Equipo OneITB";
         }
 
         private static void ValidateSubjectYear(int? year)

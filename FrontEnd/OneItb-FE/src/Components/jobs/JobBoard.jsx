@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useSubscription } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
-import { CREATE_JOB_OFFER, GET_JOB_OFFERS, JOB_OFFER_CREATED } from '../../data/graphql/jobs';
+import { APPLY_TO_JOB, CREATE_JOB_OFFER, GET_JOB_OFFERS, JOB_OFFER_CREATED } from '../../data/graphql/jobs';
 
 const initialForm = {
   title: '',
@@ -11,6 +12,7 @@ const initialForm = {
 };
 
 const canPublishJobOffer = (role) => role === 'Empleador' || role === 'Administrador';
+const canApplyToJob = (role) => role === 'Estudiante' || role === 'Egresado';
 
 const formatDate = (value) => {
   if (!value) return 'Fecha no disponible';
@@ -22,13 +24,11 @@ const formatDate = (value) => {
   }).format(new Date(value));
 };
 
-const buildMailTo = (offer) => {
-  const email = offer?.employer?.email || 'empleos@itbeltran.com.ar';
-  const subject = encodeURIComponent(`Postulacion - ${offer.title}`);
-  const body = encodeURIComponent(
-    `Hola ${offer.company},\n\nQuiero postularme a la oferta "${offer.title}" publicada en OneITB.\n\nSaludos.`
-  );
-  return `mailto:${email}?subject=${subject}&body=${body}`;
+const statusLabel = (status) => {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'REVIEWED') return 'Revisado';
+  if (normalized === 'REJECTED') return 'Rechazado';
+  return 'Postulado';
 };
 
 const JobSkeleton = () => (
@@ -46,61 +46,93 @@ const JobSkeleton = () => (
   </div>
 );
 
-const JobCard = ({ offer }) => (
-  <article className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 dark:border-white/10 dark:bg-slate-900/60 dark:hover:border-blue-300/30 dark:hover:shadow-blue-500/10">
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
-          {offer.company}
-        </p>
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-          {offer.title}
-        </h2>
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-          <span className="inline-flex items-center gap-2">
-            <i className="fa-solid fa-location-dot text-blue-500" />
-            {offer.location}
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <i className="fa-regular fa-calendar text-blue-500" />
-            {formatDate(offer.createdAt)}
-          </span>
+const JobCard = ({ offer, canApply, applyingOfferId, onApply }) => {
+  const myApplication = offer?.applications?.[0] || null;
+  const isApplying = applyingOfferId === offer.id;
+
+  return (
+    <article className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 dark:border-white/10 dark:bg-slate-900/60 dark:hover:border-blue-300/30 dark:hover:shadow-blue-500/10">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
+            {offer.company}
+          </p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
+            {offer.title}
+          </h2>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-2">
+              <i className="fa-solid fa-location-dot text-blue-500" />
+              {offer.location}
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <i className="fa-regular fa-calendar text-blue-500" />
+              {formatDate(offer.createdAt)}
+            </span>
+          </div>
         </div>
-      </div>
-      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-400/10 dark:text-emerald-200">
-        Activa
-      </span>
-    </div>
-
-    <p className="mt-5 whitespace-pre-line text-sm leading-7 text-slate-600 dark:text-slate-300">
-      {offer.description}
-    </p>
-
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5 dark:border-white/10">
-      <div className="text-sm text-slate-500 dark:text-slate-400">
-        Publicado por{' '}
-        <span className="font-bold text-slate-800 dark:text-slate-100">
-          {offer.employer?.fullName || 'OneITB'}
+        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-400/10 dark:text-emerald-200">
+          Activa
         </span>
       </div>
-      <a
-        href={buildMailTo(offer)}
-        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-600/20"
-      >
-        <i className="fa-solid fa-paper-plane text-xs" />
-        Postularse
-      </a>
-    </div>
-  </article>
-);
+
+      <p className="mt-5 whitespace-pre-line text-sm leading-7 text-slate-600 dark:text-slate-300">
+        {offer.description}
+      </p>
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5 dark:border-white/10">
+        <div className="text-sm text-slate-500 dark:text-slate-400">
+          Publicado por{' '}
+          <span className="font-bold text-slate-800 dark:text-slate-100">
+            {offer.employer?.fullName || 'OneITB'}
+          </span>
+        </div>
+
+        {canApply ? (
+          myApplication ? (
+            <span className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-400/10 dark:text-emerald-200">
+              <i className="fa-solid fa-circle-check text-xs" />
+              {statusLabel(myApplication.status)}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onApply(offer.id)}
+              disabled={isApplying}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isApplying ? (
+                <>
+                  <i className="fa-solid fa-circle-notch animate-spin text-xs" />
+                  Postulando...
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-paper-plane text-xs" />
+                  Postularse
+                </>
+              )}
+            </button>
+          )
+        ) : (
+          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+            Postulacion disponible para estudiantes y egresados
+          </span>
+        )}
+      </div>
+    </article>
+  );
+};
 
 export const JobBoard = () => {
   const { auth } = useAuth();
   const canPublish = canPublishJobOffer(auth?.role);
+  const canApply = canApplyToJob(auth?.role);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [feedback, setFeedback] = useState(null);
   const [liveOffers, setLiveOffers] = useState([]);
+  const [applyingOfferId, setApplyingOfferId] = useState(null);
 
   const { data, loading, error } = useQuery(GET_JOB_OFFERS, {
     variables: { onlyActive: true, first: 50 },
@@ -109,6 +141,7 @@ export const JobBoard = () => {
 
   const { data: subscriptionData } = useSubscription(JOB_OFFER_CREATED);
   const [createJobOffer, { loading: saving }] = useMutation(CREATE_JOB_OFFER);
+  const [applyToJob] = useMutation(APPLY_TO_JOB);
 
   useEffect(() => {
     const offer = subscriptionData?.jobOfferCreated;
@@ -139,6 +172,51 @@ export const JobBoard = () => {
     setIsModalOpen(false);
     setForm(initialForm);
     setFeedback(null);
+  };
+
+  const handleApply = async (jobOfferId) => {
+    setFeedback(null);
+    setApplyingOfferId(jobOfferId);
+
+    try {
+      const { data: result } = await applyToJob({
+        variables: { jobOfferId },
+        update: (cache, { data: mutationData }) => {
+          const application = mutationData?.applyToJob;
+          if (!application) return;
+
+          cache.updateQuery(
+            { query: GET_JOB_OFFERS, variables: { onlyActive: true, first: 50 } },
+            (current) => {
+              if (!current?.jobOffers?.nodes) return current;
+
+              return {
+                jobOffers: {
+                  ...current.jobOffers,
+                  nodes: current.jobOffers.nodes.map((offer) => (
+                    offer.id === jobOfferId
+                      ? { ...offer, applications: [application] }
+                      : offer
+                  )),
+                },
+              };
+            }
+          );
+        },
+      });
+
+      const application = result?.applyToJob;
+      if (application) {
+        setLiveOffers((current) => current.map((offer) => (
+          offer.id === jobOfferId ? { ...offer, applications: [application] } : offer
+        )));
+        setFeedback({ type: 'success', message: 'Postulacion registrada correctamente.' });
+      }
+    } catch (err) {
+      setFeedback({ type: 'error', message: err?.message || 'No se pudo registrar la postulacion.' });
+    } finally {
+      setApplyingOfferId(null);
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -184,10 +262,7 @@ export const JobBoard = () => {
       setForm(initialForm);
       setIsModalOpen(false);
     } catch (err) {
-      setFeedback({
-        type: 'error',
-        message: err?.message || 'No se pudo publicar la oferta.',
-      });
+      setFeedback({ type: 'error', message: err?.message || 'No se pudo publicar la oferta.' });
     }
   };
 
@@ -210,16 +285,27 @@ export const JobBoard = () => {
                 </p>
               </div>
 
-              {canPublish && (
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/20 dark:bg-blue-600 dark:hover:bg-blue-500"
-                >
-                  <i className="fa-solid fa-plus text-xs" />
-                  Publicar Oferta
-                </button>
-              )}
+              <div className="flex flex-wrap gap-3">
+                {canPublish && (
+                  <Link
+                    to="/empleos/mis-ofertas"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    <i className="fa-solid fa-list-check text-xs" />
+                    Mis ofertas
+                  </Link>
+                )}
+                {canPublish && (
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/20 dark:bg-blue-600 dark:hover:bg-blue-500"
+                  >
+                    <i className="fa-solid fa-plus text-xs" />
+                    Publicar Oferta
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -274,7 +360,13 @@ export const JobBoard = () => {
           )}
 
           {offers.map((offer) => (
-            <JobCard key={offer.id} offer={offer} />
+            <JobCard
+              key={offer.id}
+              offer={offer}
+              canApply={canApply}
+              applyingOfferId={applyingOfferId}
+              onApply={handleApply}
+            />
           ))}
         </div>
       </section>

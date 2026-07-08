@@ -2,7 +2,7 @@
 
 Este documento resume la arquitectura vigente de OneITB23 con diagramas Mermaid renderizables. La explicacion narrativa completa se mantiene en [architecture-and-design.md](../project_docs/architecture-and-design.md).
 
-## 4.1 Diagrama ER completo
+## 4.1 Diagrama ER resumido
 
 ```mermaid
 erDiagram
@@ -10,7 +10,8 @@ erDiagram
         guid Id PK
         string Email
         string PasswordHash
-        datetime CreatedAt
+        int FailedLoginAttempts
+        datetime LockoutEnd
     }
 
     USER {
@@ -19,12 +20,9 @@ erDiagram
         string LastName
         string Role
         string Biography
-        string LinkedIn
-        string Facebook
-        string Instagram
-        string Phone
-        datetime MutedUntil
+        string AvatarUrl
         bool IsActive
+        datetime MutedUntil
     }
 
     CAREER {
@@ -34,23 +32,13 @@ erDiagram
         bool IsActive
     }
 
-    USER_CAREER {
-        guid UserId PK,FK
-        int CareerId PK,FK
-    }
-
     SUBJECT {
         int Id PK
+        int CareerId FK
         string Name
         string Code
-        int CareerId FK
         int Year
         bool IsActive
-    }
-
-    SUBJECT_PREREQUISITE {
-        int SubjectId PK,FK
-        int PrerequisiteId PK,FK
     }
 
     INQUIRY {
@@ -60,8 +48,6 @@ erDiagram
         string Title
         string Content
         string FileUrl
-        datetime PublishDate
-        datetime UpdatedAt
         bool IsActive
     }
 
@@ -72,45 +58,7 @@ erDiagram
         guid ParentCommentId FK
         string Content
         string FileUrl
-        datetime CreatedAt
-        datetime UpdatedAt
         bool IsActive
-    }
-
-    REACTION {
-        guid Id PK
-        guid InquiryId FK
-        guid UserId FK
-        datetime CreatedAt
-    }
-
-    COMMUNITY_REPORT {
-        guid Id PK
-        guid InquiryId FK
-        guid ReporterId FK
-        string Reason
-        string Status
-        datetime CreatedAt
-    }
-
-    MODERATION_AUDIT {
-        guid Id PK
-        guid ActorUserId FK
-        guid TargetUserId FK
-        guid TargetInquiryId FK
-        guid TargetCommentId FK
-        guid TargetReportId FK
-        string Action
-        string Summary
-        datetime CreatedAt
-    }
-
-    USER_INTERACTION {
-        guid Id PK
-        guid ObserverId FK
-        guid TargetId FK
-        string Type
-        datetime CreatedAt
     }
 
     MESSAGE {
@@ -118,8 +66,8 @@ erDiagram
         guid SenderId FK
         guid ReceiverId FK
         string Content
-        datetime SentAt
         bool IsRead
+        datetime SentAt
     }
 
     ACADEMIC_RESOURCE {
@@ -127,12 +75,10 @@ erDiagram
         int SubjectId FK
         guid UploaderId FK
         string Title
-        string Description
+        string Category
+        int Version
         string FileUrl
         string ExternalUrl
-        string ResourceType
-        datetime CreatedAt
-        datetime UpdatedAt
         bool IsActive
     }
 
@@ -143,8 +89,23 @@ erDiagram
         guid AssignedById FK
         decimal Score
         string Status
-        string Notes
-        datetime UpdatedAt
+    }
+
+    JOB_OFFER {
+        guid Id PK
+        guid EmployerId FK
+        string Title
+        string Company
+        string Location
+        bool IsActive
+    }
+
+    JOB_APPLICATION {
+        guid Id PK
+        guid JobOfferId FK
+        guid ApplicantId FK
+        string Status
+        datetime AppliedAt
     }
 
     NOTIFICATION {
@@ -154,65 +115,37 @@ erDiagram
         string Message
         string ActionUrl
         bool IsRead
-        datetime CreatedAt
     }
 
-    NOTIFICATION_PREFERENCE {
+    AUDIT_LOG {
         guid Id PK
-        guid UserId FK
-        string Type
-        bool IsEnabled
-        datetime UpdatedAt
-    }
-
-    MAGIC_LINK {
-        guid Id PK
-        guid AccountId FK
-        string Token
-        datetime ExpiresAt
-        datetime CreatedAt
+        guid ActorUserId FK
+        string CorrelationId
+        string Action
+        string EntityName
+        string EntityId
     }
 
     ACCOUNT ||--|| USER : authenticates
-    ACCOUNT ||--o{ MAGIC_LINK : owns
-
-    USER ||--o{ USER_CAREER : enrolls
-    CAREER ||--o{ USER_CAREER : includes
+    USER ||--o{ CAREER : "via UserCareer"
     CAREER ||--o{ SUBJECT : defines
-
-    SUBJECT ||--o{ SUBJECT_PREREQUISITE : subject
-    SUBJECT ||--o{ SUBJECT_PREREQUISITE : prerequisite
-
+    SUBJECT ||--o{ SUBJECT : prerequisites
     USER ||--o{ INQUIRY : authors
     SUBJECT ||--o{ INQUIRY : classifies
     INQUIRY ||--o{ COMMENT : contains
     COMMENT ||--o{ COMMENT : replies
     USER ||--o{ COMMENT : writes
-    INQUIRY ||--o{ REACTION : receives
-    USER ||--o{ REACTION : creates
-    INQUIRY ||--o{ COMMUNITY_REPORT : reported
-    USER ||--o{ COMMUNITY_REPORT : reports
-
-    USER ||--o{ MODERATION_AUDIT : acts
-    USER ||--o{ MODERATION_AUDIT : targetUser
-    INQUIRY ||--o{ MODERATION_AUDIT : targetInquiry
-    COMMENT ||--o{ MODERATION_AUDIT : targetComment
-    COMMUNITY_REPORT ||--o{ MODERATION_AUDIT : targetReport
-
-    USER ||--o{ USER_INTERACTION : observes
-    USER ||--o{ USER_INTERACTION : targeted
-
     USER ||--o{ MESSAGE : sends
     USER ||--o{ MESSAGE : receives
-
     SUBJECT ||--o{ ACADEMIC_RESOURCE : provides
     USER ||--o{ ACADEMIC_RESOURCE : uploads
     SUBJECT ||--o{ ACADEMIC_PROGRESS : tracks
     USER ||--o{ ACADEMIC_PROGRESS : owns
-    USER ||--o{ ACADEMIC_PROGRESS : assigns
-
+    USER ||--o{ JOB_OFFER : publishes
+    JOB_OFFER ||--o{ JOB_APPLICATION : receives
+    USER ||--o{ JOB_APPLICATION : applies
     USER ||--o{ NOTIFICATION : receives
-    USER ||--o{ NOTIFICATION_PREFERENCE : configures
+    USER ||--o{ AUDIT_LOG : performs
 ```
 
 ## 4.2 Secuencia de sincronizacion SIU Guarani
@@ -221,70 +154,58 @@ erDiagram
 sequenceDiagram
     autonumber
     actor Admin as Administrador
-    participant FE as AcademicDashboard React
+    participant FE as AcademicDashboard
     participant GQL as HotChocolate Mutation
     participant Academic as AcademicService
     participant SIU as MockSiuIntegrationService
-    participant EF as OneItbContext EF Core
+    participant EF as OneItbContext
     participant Notify as NotificationService
-    participant WS as InMemory Pub/Sub
     participant DB as SQL Server
 
     Admin->>FE: Click "Sincronizar SIU"
-    FE->>GQL: mutation syncSiuGrades(subjectId)
+    FE->>GQL: syncSiuGrades(subjectId)
     GQL->>Academic: SyncSiuGradesAsync(actorId, role, subjectId)
     Academic->>Academic: Validar rol Administrador
-    Academic->>EF: Cargar materia activa y carrera
-    EF->>DB: SELECT Subject + Career
-    DB-->>EF: Materia activa
+    Academic->>EF: Cargar materia, carrera y usuarios locales
+    EF->>DB: SELECT Subject, Career, Accounts, Users
+    DB-->>EF: Datos locales
     Academic->>SIU: GetGradesAsync(subjectId)
-    SIU-->>Academic: Registros simulados de alumnos y notas
+    SIU-->>Academic: Registros simulados
 
     loop Por cada registro SIU
-        Academic->>EF: Buscar Account/User por email
-        EF->>DB: SELECT Account + User
-        DB-->>EF: Usuario local o null
-        Academic->>EF: Validar UserCareer de la carrera
-        EF->>DB: SELECT UserCareer
-        DB-->>EF: Pertenencia valida o no
-        alt Usuario valido y estudiante
-            Academic->>EF: Upsert AcademicProgress por UserId + SubjectId
-        else Usuario desconocido o inelegible
-            Academic->>Academic: Agregar motivo a skippedItems
+        Academic->>Academic: Validar usuario, rol y carrera
+        alt Usuario valido
+            Academic->>EF: Upsert AcademicProgress
+        else Usuario no sincronizable
+            Academic->>Academic: Agregar skipped item
         end
     end
 
     Academic->>EF: SaveChangesAsync()
     EF->>DB: INSERT/UPDATE AcademicProgress
-    DB-->>EF: Persistido
-    Academic->>Notify: CreateNotificationsAsync(usuarios, SiuSync, mensaje, actionUrl)
-    Notify->>EF: Insert Notifications segun preferencias
-    EF->>DB: INSERT Notifications
-    DB-->>EF: Persistido
-    Notify->>WS: SendAsync(notification:{userId})
+    Academic->>Notify: Crear notificaciones academicas
+    Notify->>DB: INSERT Notifications
     Academic-->>GQL: SiuSyncResult
-    GQL-->>FE: processed, created, updated, skipped
-    FE-->>Admin: Resumen de sincronizacion
+    GQL-->>FE: Resumen de sincronizacion
 ```
 
 ## 4.3 Arquitectura Pub/Sub de notificaciones
 
 ```mermaid
 flowchart LR
-    subgraph Frontend["Frontend React + Apollo Client"]
+    subgraph Frontend["React + Apollo Client"]
         Bell["NotificationBell"]
-        Queries["myNotifications / unreadNotificationCount"]
-        Subscription["useSubscription(notificationReceived)"]
-        HttpLink["Apollo HTTP Link"]
-        WsLink["Apollo GraphQLWsLink"]
+        Toasts["NotificationProvider / Toasts"]
+        HttpLink["HTTP Link"]
+        WsLink["GraphQLWsLink"]
     end
 
-    subgraph Backend["Backend .NET 8 + HotChocolate"]
-        QueryResolver["Query resolvers"]
-        MutationResolver["Academic mutations"]
+    subgraph Backend[".NET 8 + HotChocolate"]
+        QueryResolver["Queries"]
+        MutationResolver["Mutations"]
         NotificationService["NotificationService"]
-        SubscriptionResolver["Subscription.notificationReceived"]
-        Topic["In-memory topic notification:{userId}"]
+        SubscriptionResolver["notificationReceived"]
+        Topic["notification:{userId}"]
     end
 
     subgraph Persistence["SQL Server"]
@@ -292,33 +213,51 @@ flowchart LR
         Preferences[(NotificationPreferences)]
     end
 
-    Bell --> Queries
-    Bell --> Subscription
-    Queries --> HttpLink
-    Subscription --> WsLink
+    Bell --> HttpLink
+    Toasts --> WsLink
     HttpLink --> QueryResolver
     WsLink --> SubscriptionResolver
-
     MutationResolver --> NotificationService
     QueryResolver --> Notifications
-    QueryResolver --> Preferences
     NotificationService --> Preferences
     NotificationService --> Notifications
     NotificationService --> Topic
     Topic --> SubscriptionResolver
     SubscriptionResolver --> WsLink
-    WsLink --> Bell
-
-    classDef client fill:#eff6ff,stroke:#2563eb,color:#1e3a8a
-    classDef server fill:#f8fafc,stroke:#475569,color:#0f172a
-    classDef data fill:#ecfdf5,stroke:#059669,color:#064e3b
-
-    class Bell,Queries,Subscription,HttpLink,WsLink client
-    class QueryResolver,MutationResolver,NotificationService,SubscriptionResolver,Topic server
-    class Notifications,Preferences data
 ```
 
-## 4.4 Contexto de despliegue local actual
+## 4.4 Flujo de empleos, postulaciones y correo
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Employer as Empleador
+    actor Applicant as Estudiante/Egresado
+    participant FE as Jobs UI
+    participant GQL as GraphQL
+    participant Jobs as JobService
+    participant Notify as NotificationService
+    participant Email as IEmailSender
+    participant DB as SQL Server
+
+    Employer->>FE: Publicar oferta
+    FE->>GQL: createJobOffer
+    GQL->>Jobs: Validar rol y normalizar input
+    Jobs->>DB: INSERT JobOffer
+    GQL->>Notify: Notificar nueva oferta
+    Applicant->>FE: Postularse
+    FE->>GQL: applyToJob(jobOfferId)
+    GQL->>Jobs: Validar rol y postulacion unica
+    Jobs->>DB: INSERT JobApplication
+    Employer->>FE: Marcar Revisado/Rechazado
+    FE->>GQL: updateApplicationStatus
+    GQL->>Jobs: Validar EmployerId == currentUserId
+    Jobs->>DB: UPDATE JobApplication
+    GQL->>Notify: Notificacion en plataforma
+    GQL->>Email: SMTP o fallback consola
+```
+
+## 4.5 Contexto de despliegue local y productivo
 
 ```mermaid
 flowchart TB
@@ -326,12 +265,17 @@ flowchart TB
     Browser["Navegador / Vite"]
     Api["ASP.NET Core OneITB"]
     DockerSql["SQL Server 2022 Docker"]
-    Uploads["wwwroot/uploads local"]
+    Redis["Redis opcional"]
+    Storage["Local uploads o Cloudinary"]
+    Smtp["SMTP opcional"]
+    Nginx["Nginx frontend productivo"]
 
     Developer --> Browser
-    Browser -->|HTTPS /graphql| Api
-    Browser -->|WSS /graphql| Api
+    Browser -->|HTTPS/WSS /graphql| Api
     Browser -->|POST /api/upload| Api
     Api -->|EF Core| DockerSql
-    Api --> Uploads
+    Api -->|Pub/Sub si configurado| Redis
+    Api -->|Archivos| Storage
+    Api -->|Correo| Smtp
+    Nginx -->|proxy /graphql /api /uploads| Api
 ```

@@ -1,18 +1,18 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-07-07
+**Ultima verificacion**: 2026-07-08
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 92/95 (97%) |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 97/99 (98%); core funcional Feature Complete |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente, actualizado post specs 173-175 |
 
 ## Documentacion complementaria
 
@@ -22,7 +22,7 @@
 | `docs/academic/02-software-requirements.md` | Resumen academico de requisitos |
 | `docs/academic/03-use-cases.md` | Casos de uso principales |
 | `docs/academic/04-design-diagrams.md` | Diagramas resumidos |
-| `docs/audit/HISTORICAL_AUDITS.md` | Auditorias supersedidas consolidadas; no representa el estado actual |
+| `docs/audit/HISTORICAL_AUDITS.md` | Archivo compacto de auditorias supersedidas; conservar como respaldo historico, no usar como fuente actual |
 | `core-web/` | Paquete compacto de contexto para Gemini/external AI; no es fuente canonica |
 | `.specify/`, `.agents/`, `AGENTS.md`, `specs/` | Tooling local de agentes y evidencia granular; ignorado en el repo profesional |
 
@@ -30,7 +30,10 @@
 
 | Spec | Estado verificable |
 |---|---|
-| `specs/175-jobs-module-and-enterprise-seeder/` | Modulo de empleos implementado end-to-end: `JobOffer`, FK restrictiva, migracion `AddJobOffers`, `jobOffers`, `createJobOffer`, `jobOfferCreated`, `/empleos`, badge realtime en Nav y seeder enterprise relacional por fases. Backend build PASS, EF sin cambios pendientes, backend tests 38/38, frontend build PASS y smoke GraphQL HTTP autenticado PASS; Vitest bloqueado por EPERM en cache temporal de `node_modules/.vite-temp` |
+| `specs/175-privacy-controls-and-smoke-tests/` | Controles de privacidad implementados: `User.IsPublicProfile`, migracion `AddUserProfilePrivacy`, `toggleProfilePrivacy`, masking backend-side en `publicProfile`/`searchPublicProfiles`, switch en `/profile/edit` con toast local, badges de perfil privado en busqueda, y `testSmtpConnection` admin-only con errores controlados. Backend build PASS, backend tests 39/39, frontend build PASS, EF sin cambios pendientes y diff-check PASS; smoke runtime temporal bloqueado por revisor automatico del entorno Codex al iniciar proceso persistente |
+| `docs/` audit 2026-07-08 | Documentacion normalizada para presentacion institucional: `ROADMAP.md` alinea el modulo laboral como "Empleos y Gestor de Postulaciones", suma SMTP como item implementado y queda actualizado a 97/99; `scope-and-requirements.md`, `architecture-and-design.md` y `docs/academic/*` quedan alineados con empleos, postulaciones, SMTP, AuditLog, SIU mock, recursos academicos y limites pendientes; `docker-compose.prod.yml`, `.env.example` y `RUNBOOK_DEV.md` documentan variables SMTP opcionales |
+| `specs/174-ux-alignment-and-smtp/` | Code Freeze polish: terminologia de empleos alineada a "Gestor de Postulaciones" y "Perfil Academico"; `IEmailSender` con `SmtpEmailService` configurable y `ConsoleEmailService` fallback; `updateApplicationStatus` envia correo en estados `Reviewed`/`Rejected` sin rollback ante fallo SMTP. Backend build PASS, backend tests 38/38, frontend build PASS; Vitest bloqueado por EPERM en `node_modules/.vite-temp`; smoke SMTP real pendiente por falta de secretos/proveedor |
+| `specs/173-enterprise-jobs-ats-seeder-qa/` | Modulo de empleos y Gestor de Postulaciones implementado end-to-end: `JobOffer`, `JobApplication`, FKs restrictivas, indice unico por oferta/postulante, migraciones `AddJobOffers` y `AddJobApplications`, `jobOffers`, `myJobOffers`, `createJobOffer`, `applyToJob`, `updateApplicationStatus`, `jobOfferCreated`, `/empleos`, `/empleos/mis-ofertas`, badge realtime en Nav y seeder enterprise con postulaciones. Backend build PASS, EF sin cambios pendientes, backend tests 38/38 y frontend build PASS; Vitest bloqueado por EPERM en cache temporal de `node_modules/.vite-temp` y smoke runtime bloqueado por restriccion del entorno Codex al iniciar proceso temporal |
 | `specs/171-production-security-and-seeding/` | Hardening final de seguridad/backend: profundidad maxima GraphQL configurable, paging global, lockout persistente por cuenta, migracion `AddAccountLockout`, seeding demo/productivo configurable sin reset de passwords existentes, backend build PASS, backend tests 38/38, EF sin cambios pendientes y compose productivo validado con `ONEITB_SEED_DEMO_PASSWORD` efimero |
 | `specs/170-cloud-devops-scalability/` | Preparacion cloud/devops: Dockerfiles multi-stage API/Web, `docker-compose.prod.yml` con SQL Server/Redis/API/Nginx, Redis Pub/Sub condicional con fallback InMemory, Cloudinary opcional con fallback local, rate limiting, security headers, healthcheck, npm audit productivo 0 vulnerabilidades, backend build PASS, backend tests 35/35, frontend tests 3/3, frontend build PASS, compose config/build PASS |
 | `specs/169-final-qa-and-hardening/` | Code Freeze hardening: `GraphQLErrorFilter` para sanitizar errores inesperados, `GlobalErrorBoundary` institucional, baseline Vitest/Testing Library para `CertificateExport` (3/3), baseline de integracion GraphQL con executor real HotChocolate + EF Core InMemory, workflow CI ejecuta tests frontend, backend tests 35/35, frontend build PASS; `npm audit --omit=dev` bloqueado por endpoint npm |
@@ -87,8 +90,8 @@
 
 - Existen baselines de pruebas de componentes frontend y de integracion GraphQL con executor real; queda ampliar cobertura hacia regresion visual/browser y SQL Server/Testcontainers para CI avanzado.
 - Falta regresion autenticada en navegador del hub academico para elevar busqueda/categorias/versionado/modal de recursos desde `[I]` a `[V]`.
-- Falta regresion visual en navegador de `/empleos` y validacion manual del badge realtime con dos sesiones para elevar la UI de empleos a `[V]`.
-- Redis Pub/Sub y Cloudinary estan implementados de forma condicional; quedan pendientes smoke tests productivos con secretos reales para elevarlos a `[V]`.
+- Falta regresion visual en navegador de `/empleos` y `/empleos/mis-ofertas`, mas validacion manual del badge realtime con dos sesiones para elevar la UI de empleos/Gestor de Postulaciones a `[V]`.
+- Redis Pub/Sub, Cloudinary y SMTP estan implementados de forma condicional; SMTP cuenta con smoke GraphQL admin-only, pero quedan pendientes pruebas productivas con secretos reales para elevar servicios externos a `[V]`.
 - Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
 - El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validar specs.
 - Falta verificacion visual en navegador del panel admin completo contra SQL Docker.
@@ -98,6 +101,7 @@
 - Las miniaturas de YouTube usan imagen estatica y los adjuntos de imagen se resuelven contra el backend antes de renderizar inline.
 - La spec 170 restauro dependencias con red, ejecuto npm audit productivo y dejo 0 vulnerabilidades conocidas en dependencias frontend runtime.
 - Google SSO productivo queda bloqueado hasta disponer de Client ID/secret, callbacks y aprobacion institucional. La ruta publica de certificados usa meta tags runtime; Open Graph perfecto para crawlers exige SSR o HTML renderizado desde backend.
+- `HISTORICAL_AUDITS.md` no debe eliminarse antes de la defensa: reemplaza varios documentos viejos y deja claro que no es fuente vigente. El informe vigente para autoridades es `FINAL_AUDIT_REPORT.md`.
 - Las brechas de fuerza bruta de login y DoS por profundidad GraphQL quedaron mitigadas por Spec 171; queda pendiente aplicar la migracion en cada entorno real con secretos definitivos antes de smoke runtime productivo.
 
 Ante contradicciones, prevalecen codigo, esquema ejecutado y evidencia runtime. Los porcentajes se recalculan exclusivamente desde los checklists de `ROADMAP.md`.

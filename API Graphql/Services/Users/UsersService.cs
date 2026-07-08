@@ -120,6 +120,19 @@ namespace Services.Users
             return new UpdateProfilePayload(user.Id, true, "Perfil actualizado exitosamente.");
         }
 
+        public async Task<UserPayload> ToggleProfilePrivacyAsync(Guid userId, bool isPublic)
+        {
+            User? user = await _context.Users.SingleOrDefaultAsync(item => item.Id == userId && item.IsActive);
+            if (user is null)
+                return new UserPayload(userId, false, "Usuario no encontrado.");
+
+            user.IsPublicProfile = isPublic;
+            await _uow.CompleteAsync();
+
+            string visibility = isPublic ? "publico" : "privado";
+            return new UserPayload(user.Id, true, $"Perfil configurado como {visibility}.");
+        }
+
         public async Task<UserPayload> UpdateUserRoleAsync(
             Guid operatorUserId,
             Guid userId,

@@ -117,6 +117,7 @@ export const Nav = () => {
 
   const isActivePath = (targetPath) => {
     if (targetPath === '/') return location.pathname === '/'
+    if (targetPath === '/empleos') return location.pathname === '/empleos'
     return location.pathname === targetPath || location.pathname.startsWith(`${targetPath}/`)
   }
 
@@ -171,6 +172,15 @@ export const Nav = () => {
                   {jobOfferBadgeCount > 9 ? '9+' : jobOfferBadgeCount}
                 </span>
               )}
+            </NavLink>
+          </li>
+        )}
+
+        {isAuthenticatedUser && (safeAuth?.role === 'Empleador' || safeAuth?.role === 'Administrador') && (
+          <li>
+            <NavLink to="/empleos/mis-ofertas" className={navClassFor('/empleos/mis-ofertas')}>
+              <i className="fa-solid fa-list-check text-xs" />
+              <span>Postulaciones</span>
             </NavLink>
           </li>
         )}

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
-import { UPDATE_PROFILE } from '../../data/graphql/mutations/updateProfile';
+import { TOGGLE_PROFILE_PRIVACY, UPDATE_PROFILE } from '../../data/graphql/mutations/updateProfile';
 import { GET_USER_PROFILE } from '../../data/graphql/queries/getUserProfile';
 import { GET_CAREERS } from '../../data/graphql/queries/careers';
 import { apiBaseUrl, uploadAttachment } from '../../utils/uploadFile';
@@ -25,6 +25,7 @@ type ProfileFormState = {
   facebook: string;
   instagram: string;
   avatarUrl: string;
+  isPublicProfile: boolean;
 };
 
 type CvSections = Pick<CVData, 'experience' | 'education' | 'projects' | 'skills' | 'languages'>;
@@ -36,6 +37,7 @@ const emptyProfileForm: ProfileFormState = {
   facebook: '',
   instagram: '',
   avatarUrl: '',
+  isPublicProfile: true,
 };
 
 const emptyCvSections: CvSections = {
@@ -44,6 +46,19 @@ const emptyCvSections: CvSections = {
   projects: [],
   skills: [],
   languages: [],
+};
+
+const emitProfilePrivacyToast = (isPublic: boolean) => {
+  window.dispatchEvent(
+    new CustomEvent('oneitb:toast', {
+      detail: {
+        type: 'PROFILE_PRIVACY',
+        message: isPublic
+          ? 'Tu perfil vuelve a estar publico para la comunidad.'
+          : 'Tu perfil ahora protege CV, contacto y trayectoria sensible.',
+      },
+    }),
+  );
 };
 
 const sortByOrder = <T extends { sortOrder?: number },>(items?: T[] | null): T[] =>
@@ -195,6 +210,7 @@ export const CvEditorProfile = () => {
     fetchPolicy: 'cache-and-network',
   });
   const [updateProfile, { loading: savingProfile }] = useMutation(UPDATE_PROFILE);
+  const [toggleProfilePrivacy, { loading: savingPrivacy }] = useMutation(TOGGLE_PROFILE_PRIVACY);
 
   const getSessionProfile = () =>
     gqlData?.me?.id && auth?.id && gqlData.me.id === auth.id ? gqlData.me : null;
@@ -215,6 +231,7 @@ export const CvEditorProfile = () => {
       facebook: activeUser.facebook || '',
       instagram: activeUser.instagram || '',
       avatarUrl: activeUser.avatarUrl || '',
+      isPublicProfile: activeUser.isPublicProfile !== false,
     });
     setAvatarPreview(activeUser.avatarUrl || null);
     setSelectedCareerIds(
@@ -233,6 +250,14 @@ export const CvEditorProfile = () => {
     const { name, value } = event.target;
     setSaveStatus('idle');
     setProfileForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handlePrivacyChange = () => {
+    setSaveStatus('idle');
+    setProfileForm((current) => ({
+      ...current,
+      isPublicProfile: !current.isPublicProfile,
+    }));
   };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -325,7 +350,27 @@ export const CvEditorProfile = () => {
         refetchQueries: [{ query: GET_USER_PROFILE }],
       });
 
-      setSaveStatus(response.data?.updateProfile?.success ? 'saved' : 'error');
+      if (!response.data?.updateProfile?.success) {
+        setSaveStatus('error');
+        return;
+      }
+
+      const currentPrivacy = sessionProfile?.isPublicProfile ?? auth?.isPublicProfile ?? true;
+      if (currentPrivacy !== profileForm.isPublicProfile) {
+        const privacyResponse = await toggleProfilePrivacy({
+          variables: { isPublic: profileForm.isPublicProfile },
+          refetchQueries: [{ query: GET_USER_PROFILE }],
+        });
+
+        if (!privacyResponse.data?.toggleProfilePrivacy?.success) {
+          setSaveStatus('error');
+          return;
+        }
+
+        emitProfilePrivacyToast(profileForm.isPublicProfile);
+      }
+
+      setSaveStatus('saved');
     } catch {
       setSaveStatus('error');
     }
@@ -445,7 +490,7 @@ export const CvEditorProfile = () => {
                   variant="secondary"
                   size="sm"
                   onClick={handleCancel}
-                  disabled={savingProfile}
+                  disabled={savingProfile || savingPrivacy}
                   className="!border-slate-200 !bg-white !text-slate-700 hover:!bg-slate-50 disabled:!cursor-not-allowed disabled:!opacity-60 dark:!border-white/10 dark:!bg-slate-900 dark:!text-slate-200 dark:hover:!bg-slate-800"
                 >
                   Cancelar
@@ -454,17 +499,17 @@ export const CvEditorProfile = () => {
                   type="button"
                   size="sm"
                   onClick={handleSaveProfile}
-                  disabled={savingProfile || profileLoading || uploadStatus === 'uploading'}
+                  disabled={savingProfile || savingPrivacy || profileLoading || uploadStatus === 'uploading'}
                   className="!bg-blue-700 !text-white hover:!bg-blue-800 disabled:!cursor-not-allowed disabled:!opacity-60"
                 >
-                  {savingProfile ? 'Guardando...' : 'Guardar perfil y CV'}
+                  {savingProfile || savingPrivacy ? 'Guardando...' : 'Guardar perfil y CV'}
                 </Button>
               </div>
             </div>
 
             {saveStatus === 'saved' && (
               <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">
-                Perfil y CV actualizados correctamente.
+                Perfil, CV y preferencias actualizados correctamente.
               </div>
             )}
             {saveStatus === 'error' && (
@@ -475,6 +520,39 @@ export const CvEditorProfile = () => {
 
             <div className="mt-5 grid gap-4">
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950/60">
+                <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm dark:border-blue-300/20 dark:bg-slate-900/80 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Privacidad del perfil
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {profileForm.isPublicProfile
+                        ? 'Tu CV, contacto y trayectoria son visibles para la comunidad.'
+                        : 'Solo vos, tus seguidores y el equipo de moderacion pueden ver tu CV y contacto.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handlePrivacyChange}
+                    className={[
+                      'relative inline-flex h-8 w-16 shrink-0 items-center rounded-full border p-1 transition',
+                      profileForm.isPublicProfile
+                        ? 'border-emerald-300 bg-emerald-500 shadow-[0_0_18px_rgba(16,185,129,0.24)]'
+                        : 'border-slate-300 bg-slate-300 dark:border-white/10 dark:bg-slate-700',
+                    ].join(' ')}
+                    aria-pressed={profileForm.isPublicProfile}
+                    aria-label="Cambiar privacidad del perfil"
+                  >
+                    <span
+                      className={[
+                        'flex h-6 w-6 items-center justify-center rounded-full bg-white text-[11px] text-slate-700 shadow-sm transition-transform',
+                        profileForm.isPublicProfile ? 'translate-x-8' : 'translate-x-0',
+                      ].join(' ')}
+                    >
+                      <i className={profileForm.isPublicProfile ? 'fa-solid fa-globe' : 'fa-solid fa-lock'} />
+                    </span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">

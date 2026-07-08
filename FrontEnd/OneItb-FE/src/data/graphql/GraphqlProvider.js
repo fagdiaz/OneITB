@@ -181,6 +181,9 @@ const createApolloClient = () => new ApolloClient({
       JobOffer: {
         keyFields: ['id'],
       },
+      JobApplication: {
+        keyFields: ['id'],
+      },
       Subject: {
         keyFields: ['id'],
       },
@@ -242,6 +245,10 @@ const createApolloClient = () => new ApolloClient({
           },
           jobOffers: {
             keyArgs: ['onlyActive'],
+            merge: replaceIncoming,
+          },
+          myJobOffers: {
+            keyArgs: false,
             merge: replaceIncoming,
           },
           myAcademicProgress: {

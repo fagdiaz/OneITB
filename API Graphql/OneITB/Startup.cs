@@ -35,6 +35,7 @@ using Services.Academic;
 using Services.Notifications;
 using Services.Siu;
 using Services.Jobs;
+using OneItb.GraphQL.Services.Email;
 using OneItb.GraphQL.Services.Storage;
 using StackExchange.Redis;
 
@@ -180,6 +181,7 @@ namespace OneItb.GraphQL
                     descriptor.Field(f => f.CvLanguages).Name("cvLanguages");
                     descriptor.Field(f => f.Role).Name("role");
                     descriptor.Field(f => f.MutedUntil).Name("mutedUntil");
+                    descriptor.Field(f => f.IsPublicProfile).Name("isPublicProfile");
                     descriptor.Field("totalPosts")
                         .Type<NonNullType<IntType>>()
                         .Resolve(ctx =>
@@ -268,6 +270,7 @@ namespace OneItb.GraphQL
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
             services.AddScoped<IUploadCleanupService, UploadCleanupService>();
+            ConfigureEmailSender(services);
             ConfigureFileStorage(services);
             services.AddSingleton<ILinkPreviewService, LinkPreviewService>();
             services.AddHostedService<UploadCleanupHostedService>();
@@ -386,6 +389,37 @@ namespace OneItb.GraphQL
             }
 
             services.AddHttpClient<IFileStorageService, CloudinaryStorageService>();
+        }
+
+        private void ConfigureEmailSender(IServiceCollection services)
+        {
+            string? host = Configuration["SmtpSettings:Host"];
+            string? user = Configuration["SmtpSettings:User"];
+            string? pass = Configuration["SmtpSettings:Pass"];
+            int port = Configuration.GetValue<int?>("SmtpSettings:Port") ?? 0;
+
+            if (string.IsNullOrWhiteSpace(host) ||
+                string.IsNullOrWhiteSpace(user) ||
+                string.IsNullOrWhiteSpace(pass) ||
+                port <= 0)
+            {
+                services.AddSingleton<IEmailSender, ConsoleEmailService>();
+                return;
+            }
+
+            bool enableSsl = Configuration.GetValue("SmtpSettings:EnableSsl", true);
+            string? from = Configuration["SmtpSettings:From"];
+            var settings = new SmtpEmailSettings(
+                host.Trim(),
+                port,
+                user.Trim(),
+                pass,
+                string.IsNullOrWhiteSpace(from) ? null : from.Trim(),
+                enableSsl);
+
+            services.AddSingleton<IEmailSender>(sp => new SmtpEmailService(
+                settings,
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SmtpEmailService>>()));
         }
     }
 }

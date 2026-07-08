@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using OneItb.Entities.Abstracts;
 
 namespace OneItb.Entities.Models
@@ -14,5 +15,6 @@ namespace OneItb.Entities.Models
         public Guid EmployerId { get; set; }
 
         public virtual User Employer { get; set; } = default!;
+        public virtual ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
     }
 }

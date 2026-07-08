@@ -18,6 +18,7 @@ import { AcademicDashboard } from '../Components/academic/AcademicDashboard'
 import { PublicCertificate } from '../Components/certificates/PublicCertificate'
 import { NotificationProvider } from '../Components/notifications/NotificationProvider'
 import { JobBoard } from '../Components/jobs/JobBoard'
+import { EmployerJobOffers } from '../Components/jobs/EmployerJobOffers'
 
 export const Routing = () => {
   return (
@@ -41,6 +42,7 @@ export const Routing = () => {
           <Route path='chat' element={<PrivateChat />} />
           <Route path='academic' element={<AcademicDashboard />} />
           <Route path='empleos' element={<JobBoard />} />
+          <Route path='empleos/mis-ofertas' element={<EmployerJobOffers />} />
           <Route path='admin' element={<AdminDashboard />} />
           <Route path='admin/users' element={<Navigate to="/admin" replace />} />
           <Route path='logout' element={<Logout></Logout>} />

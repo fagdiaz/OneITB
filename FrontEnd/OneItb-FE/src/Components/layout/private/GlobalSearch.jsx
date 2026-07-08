@@ -405,9 +405,16 @@ export const GlobalSearch = () => {
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-bold text-white">{profile.fullName}</span>
                             <span className="block truncate text-xs text-slate-400">
-                              {[profile.role, ...(profile.careers || []).slice(0, 1)].filter(Boolean).join(' - ')}
+                              {profile.canViewSensitiveProfile === false
+                                ? `${profile.role} - Perfil privado`
+                                : [profile.role, ...(profile.careers || []).slice(0, 1)].filter(Boolean).join(' - ')}
                             </span>
                           </span>
+                          {profile.canViewSensitiveProfile === false && (
+                            <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-200 ring-1 ring-amber-300/20">
+                              Privado
+                            </span>
+                          )}
                           <i className="fa-solid fa-arrow-right text-xs text-slate-500" />
                         </button>
                       );

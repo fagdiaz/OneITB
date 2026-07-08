@@ -174,6 +174,8 @@ namespace OneITB.Core.Services.Interfaces
         string? Instagram,
         string? Phone,
         string? AvatarUrl,
+        bool IsPublicProfile,
+        bool CanViewSensitiveProfile,
         IReadOnlyList<CvExperienceDto> CvExperiences,
         IReadOnlyList<CvEducationDto> CvEducations,
         IReadOnlyList<CvProjectDto> CvProjects,
@@ -189,6 +191,8 @@ namespace OneITB.Core.Services.Interfaces
         string FullName,
         string Role,
         string? AvatarUrl,
+        bool IsPublicProfile,
+        bool CanViewSensitiveProfile,
         IReadOnlyList<string> Careers
     );
 

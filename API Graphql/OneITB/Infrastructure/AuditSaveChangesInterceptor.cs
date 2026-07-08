@@ -23,7 +23,8 @@ namespace OneItb.GraphQL.Infrastructure
             nameof(AcademicResource),
             nameof(Inquiry),
             nameof(Comment),
-            nameof(JobOffer)
+            nameof(JobOffer),
+            nameof(JobApplication)
         };
 
         private static readonly HashSet<string> SensitiveProperties = new(StringComparer.OrdinalIgnoreCase)

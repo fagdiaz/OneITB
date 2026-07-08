@@ -7,6 +7,8 @@ export const SEARCH_PUBLIC_PROFILES = gql`
       fullName
       role
       avatarUrl
+      isPublicProfile
+      canViewSensitiveProfile
       careers
     }
   }

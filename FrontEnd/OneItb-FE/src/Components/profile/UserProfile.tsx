@@ -100,14 +100,16 @@ export const UserProfile = () => {
   });
 
   const profile = data?.publicProfile;
+  const canViewSensitiveProfile = profile?.canViewSensitiveProfile !== false;
 
   const userPosts = useMemo(() => {
+    if (!canViewSensitiveProfile) return [];
     const posts = inquiriesData?.inquiries ?? [];
     if (!targetUserId) return [];
     return posts
       .filter((post: any) => post.user?.id === targetUserId)
       .sort((left: any, right: any) => new Date(right.publishDate).getTime() - new Date(left.publishDate).getTime());
-  }, [targetUserId, inquiriesData]);
+  }, [canViewSensitiveProfile, targetUserId, inquiriesData]);
 
   const visiblePosts = showAllPosts ? userPosts : userPosts.slice(0, 4);
 
@@ -154,7 +156,9 @@ export const UserProfile = () => {
     );
   }
 
-  const biography = profile.biography || 'Este perfil todavia no tiene una presentacion profesional cargada.';
+  const biography = canViewSensitiveProfile
+    ? profile.biography || 'Este perfil todavia no tiene una presentacion profesional cargada.'
+    : 'Este perfil esta configurado como privado. Solo el titular, sus seguidores y el equipo institucional pueden ver el CV, contacto y trayectoria.';
   const careers = profile.careers ?? [];
   const roleClass = roleStyles[profile.role] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
   const avatarUrl = resolveAssetUrl(profile.avatarUrl) ||
@@ -329,6 +333,12 @@ export const UserProfile = () => {
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 dark:border-white/10 dark:bg-slate-950/50">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Perfil profesional</p>
               <p className="mt-3 text-base leading-8 text-slate-700 dark:text-slate-300">{biography}</p>
+              {!canViewSensitiveProfile && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-300/20 dark:bg-amber-500/10 dark:text-amber-100">
+                  <i className="fa-solid fa-lock mr-2" />
+                  Perfil privado: la informacion sensible esta protegida.
+                </div>
+              )}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 print:grid-cols-2 print:gap-2">

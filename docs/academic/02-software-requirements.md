@@ -6,34 +6,37 @@ Este entregable resume el alcance vigente. La fuente completa y versionada es [s
 
 | Area | Capacidades |
 |---|---|
-| Cuentas | Registro, login JWT, BCrypt, estado activo y proteccion administrativa |
-| Perfiles | Datos personales, CV, redes, carreras y roles |
+| Cuentas | Registro institucional, login JWT, BCrypt, cuenta activa, lockout y proteccion administrativa |
+| Perfiles | Datos personales, CV, redes, avatar, carreras, roles, metricas y privacidad |
 | Materias | Carrera, anio, correlatividades y administracion |
-| Muro | Publicaciones, filtros, comentarios, respuestas, reacciones y reportes |
+| Muro | Publicaciones, filtros, comentarios, respuestas, reacciones, reportes y soft-delete |
 | Archivos | Upload desacoplado, imagenes, documentos, YouTube y adjuntos en comentarios |
 | Grafo social | Seguir, silenciar y bloquear |
-| Chat | Conversaciones uno a uno, historial y WebSocket |
-| Moderacion | Reportes, soft-delete y silenciamiento temporal |
-| Administracion | Usuarios, roles, carreras, materias y contenido |
-| Academico | Recursos por materia, categorias/versionado, progreso, SIU mock y notificaciones |
+| Chat | Conversaciones uno a uno, historial, no leidos y WebSocket |
+| Moderacion | Reportes, silenciamiento temporal, auditoria y trazabilidad |
+| Administracion | Usuarios, roles, carreras, materias, contenido y metricas |
+| Academico | Recursos por materia, categorias/versionado, progreso, SIU mock, constancias y credenciales |
+| Empleos | Ofertas, postulaciones, Gestor de Postulaciones, notificaciones y correo SMTP |
+| Operacion | Docker, CI, rate limiting, security headers, Redis/Cloudinary/SMTP opcionales |
 
 ## 2.2 Requerimientos no funcionales
 
-- Seguridad mediante JWT, BCrypt, autorizacion por rol y CORS restringido.
-- Integridad con FKs explicitas, `DeleteBehavior.Restrict` y soft-delete.
-- Rendimiento sin N+1 y con consultas acotadas.
-- UI responsiva construida con Tailwind CSS 4.
-- Trazabilidad mediante specs, evidencia, roadmap y development log.
+- Seguridad mediante JWT, BCrypt, autorizacion por rol, privacidad server-side, CORS restringido, lockout por cuenta y limites anti-DoS GraphQL.
+- Integridad con FKs explicitas, `DeleteBehavior.Restrict`, soft-delete social y estados activos donde corresponde.
+- Rendimiento sin N+1, queries acotadas, paginacion y `AsSplitQuery`/DataLoaders segun el grafo.
+- UI responsiva construida con Tailwind CSS 4 y sistema visual Clean Tech / Tech Noir.
+- Trazabilidad mediante specs, evidencia, roadmap, development log, audit trail y correlation id.
+- Operacion con Docker local/productivo, CI y configuraciones por entorno sin secretos versionados.
 - Disponibilidad Web actual y extension futura hacia ecosistema movil React Native.
-- Rendimiento y optimización de consumo de recursos bajo un entorno Cloud de capa gratuita (Azure App Service F1 / Azure SQL Free Tier / Docker).
 
 ## 2.3 Roles
 
 `Estudiante`, `Profesor`, `Egresado`, `Empleador`, `Moderador` y `Administrador`.
 
-## 2.4 Alcance pendiente
+## 2.4 Alcance pendiente honesto
 
-- Regresion autenticada en navegador del hub academico.
-- Pruebas automatizadas frontend de componentes y estado.
-- Pruebas de integracion GraphQL contra SQL Server de prueba.
-- Pub/sub distribuido, almacenamiento compartido de archivos, despliegue cloud y app movil.
+- Regresion autenticada en navegador del panel admin, hub academico y Gestor de Postulaciones.
+- Smoke tests productivos con Redis, Cloudinary y SMTP reales.
+- Google SSO productivo con credenciales y callbacks institucionales.
+- Provisioning y smoke test en Azure App Service/Azure SQL.
+- App movil nativa React Native + Expo.

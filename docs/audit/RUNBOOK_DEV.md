@@ -1,6 +1,6 @@
 # Runbook de desarrollo - OneITB23
 
-**Ultima revision**: 2026-07-07
+**Ultima revision**: 2026-07-08
 
 ## Requisitos
 
@@ -40,11 +40,15 @@ Endpoints locales esperados:
 
 ### Credenciales de acceso por defecto (Data Seeder)
 
-Una vez levantada la base de datos con el Seeder (requiere `ONEITB_SEED_DEMO_PASSWORD`), puedes iniciar sesión usando:
+Una vez levantada la base de datos con el Seeder (requiere `ONEITB_SEED_DEMO_PASSWORD` en produccion/demo), puedes iniciar sesion usando usuarios generados por `EnterpriseDemoSeeder`. Todos comparten la contrasena configurada en `Seed:DemoPassword` / `ONEITB_SEED_DEMO_PASSWORD`; en Development existe fallback local `Test1234!`.
 
-- **Usuario Admin:** `admin@itbeltran.com.ar`
-- **Contraseña:** `<tu-ONEITB_SEED_DEMO_PASSWORD>` (o el valor ingresado en `.env` local)
-- **Otros usuarios:** `student@itbeltran.com.ar`, `teacher@itbeltran.com.ar`, `moderator@itbeltran.com.ar`, `employer@itbeltran.com.ar` (todos comparten la misma contraseña configurada).
+| Rol | Usuario demo |
+|---|---|
+| Administrador | `admin1@itbeltran.com.ar` |
+| Profesor | `profesor1.ads@itbeltran.com.ar` |
+| Estudiante | `estudiante1.ads@itbeltran.com.ar` |
+| Egresado | `egresado1@itbeltran.com.ar` |
+| Empleador | `empleador1@itbeltran.com.ar` |
 
 ## Entity Framework Core
 
@@ -81,15 +85,36 @@ $env:ONEITB_CORS_ORIGIN = "http://localhost"
 # Opcionales para produccion/cloud
 $env:ONEITB_REDIS_CONNECTION = "oneitb-redis:6379,abortConnect=false"
 $env:ONEITB_CLOUDINARY_URL = "cloudinary://api_key:api_secret@cloud_name"
+$env:ONEITB_SMTP_HOST = "smtp.example.edu"
+$env:ONEITB_SMTP_PORT = "587"
+$env:ONEITB_SMTP_USER = "oneitb@example.edu"
+$env:ONEITB_SMTP_PASS = "<smtp-secret>"
+$env:ONEITB_SMTP_FROM = "oneitb@example.edu"
+$env:ONEITB_SMTP_ENABLE_SSL = "true"
 
 docker compose -f docker-compose.prod.yml config
 docker compose -f docker-compose.prod.yml build
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-Si `ConnectionStrings:Redis` no existe, HotChocolate usa Pub/Sub en memoria. Si `CloudinarySettings:Url` no existe, `/api/upload` escribe en disco local bajo `wwwroot/uploads`.
+Si `ConnectionStrings:Redis` no existe, HotChocolate usa Pub/Sub en memoria. Si `CloudinarySettings:Url` no existe, `/api/upload` escribe en disco local bajo `wwwroot/uploads`. Si las variables `SmtpSettings` no estan completas, el backend usa `ConsoleEmailService` y no intenta SMTP real.
 
 `ONEITB_SEED_DEMO_PASSWORD` es obligatorio para `docker-compose.prod.yml` porque la API inicializa cuentas demo/productivas en bases vacias sin versionar contrasenas. En Development, el host conserva el fallback local `Test1234!`; no usar ese fallback para produccion real.
+
+### SMTP real para cambios de postulacion
+
+La plataforma envia correos cuando el empleador cambia una postulacion a `Reviewed` o `Rejected`. El envio real se activa solo si estas claves existen:
+
+```powershell
+dotnet user-secrets set "SmtpSettings:Host" "smtp.example.edu" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:Port" "587" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:User" "oneitb@example.edu" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:Pass" "<smtp-secret>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:From" "oneitb@example.edu" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:EnableSsl" "true" --project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+No versionar credenciales SMTP. Para demo sin proveedor real, dejar las claves vacias y verificar el fallback por logs.
 
 Si el certificado HTTPS local no esta instalado o confiado:
 
@@ -169,7 +194,7 @@ Configuracion historica reemplazada: antes se intento usar LocalDB para evitar d
 
 Usar la cadena Docker documentada en la seccion anterior.
 
-Si `sqllocaldb create` devuelve exito pero `sqllocaldb info MSSQLLocalDB` sigue informando que la instancia automatica no existe, el runtime LocalDB del host esta dañado o bloqueado por Windows. En ese caso no marcar runtime como verificado; usar SQL Auth por `user-secrets` o reparar LocalDB fuera del repo.
+Si `sqllocaldb create` devuelve exito pero `sqllocaldb info MSSQLLocalDB` sigue informando que la instancia automatica no existe, el runtime LocalDB del host esta danado o bloqueado por Windows. En ese caso no marcar runtime como verificado; usar SQL Auth por `user-secrets` o reparar LocalDB fuera del repo.
 
 ### SQL SSPI / Kerberos
 

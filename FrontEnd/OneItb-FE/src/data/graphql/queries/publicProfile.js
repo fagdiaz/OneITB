@@ -14,6 +14,8 @@ export const GET_PUBLIC_PROFILE = gql`
       instagram
       phone
       avatarUrl
+      isPublicProfile
+      canViewSensitiveProfile
       cvExperiences {
         id
         company

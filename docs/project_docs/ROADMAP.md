@@ -1,8 +1,10 @@
-﻿# Roadmap unico de OneITB23
+# Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-07-07
+**Ultima revision**: 2026-07-08
 
-**Estado global**: 97% (92 de 95 items)
+**Estado global**: 98% (97 de 99 items)
+
+**Feature Complete funcional core**: 100%. Los pendientes restantes pertenecen a regresion visual, credenciales externas, despliegue cloud real o ecosistema mobile.
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -27,7 +29,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Suite automatizada backend de registro, login, cuentas inactivas y autorizacion administrativa.
 - [x] [I] Lockout persistente por cuenta ante fuerza bruta de login, con tests automatizados.
 
-## Modulo 2 - Perfiles e identidad social: 88% (7/8)
+## Modulo 2 - Perfiles e identidad social: 100% (8/8)
 
 - [x] [V] Perfil publico y perfil propio autenticado.
 - [x] [V] Edicion aislada del perfil y CV con persistencia relacional normalizada, cancelacion limpia e impresion formal A4.
@@ -36,7 +38,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Resumen de publicaciones en perfil publico.
 - [x] [I] Roles diferenciados e insignias de participacion.
 - [x] [I] Seguir, silenciar y bloquear usuarios.
-- [ ] [P] Controles de privacidad y gestion explicita de seguidores.
+- [x] [I] Controles de privacidad del perfil con masking backend-side para CV, bio, contacto y carreras ante terceros no autorizados.
 
 ## Modulo 3 - Carreras y materias: 100% (7/7)
 
@@ -92,13 +94,17 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Auditoria persistente de acciones administrativas y de moderacion.
 - [ ] [P] Regresion runtime del panel tras cambios de materias y superadmin.
 
-## Modulo 7 - Empleos: 100% (5/5)
+## Modulo 7 - Empleos y Gestor de Postulaciones: 100% (9/9)
 
 - [x] [I] Entidad `JobOffer` con FK explicita a `User` y `DeleteBehavior.Restrict`.
-- [x] [I] GraphQL `jobOffers`, `createJobOffer` y subscription `jobOfferCreated`.
-- [x] [I] Vista `/empleos` con skeletons, empty state, tarjetas laborales y postulacion por `mailto:`.
+- [x] [I] Entidad `JobApplication` con estados `Pending`, `Reviewed` y `Rejected`, FKs restrictivas e indice unico por oferta/postulante.
+- [x] [I] GraphQL `jobOffers`, `myJobOffers`, `createJobOffer`, `applyToJob`, `updateApplicationStatus` y subscription `jobOfferCreated`.
+- [x] [I] Vista `/empleos` con skeletons, empty state, tarjetas laborales, postulacion GraphQL y estado `Postulado`.
+- [x] [I] Vista `/empleos/mis-ofertas` como Gestor de Postulaciones con postulantes, filtros por estado, perfil academico y acciones de revision/rechazo.
 - [x] [I] Badge realtime en Nav para nuevas ofertas laborales y limpieza al ingresar a `/empleos`.
-- [x] [I] Seeder enterprise con empleadores, ofertas laborales y notificaciones persistentes.
+- [x] [I] Alertas por correo SMTP para cambios de estado de postulaciones, con fallback local sin romper desarrollo/CI.
+- [x] [I] Seeder enterprise con empleadores, ofertas laborales, postulaciones y notificaciones persistentes.
+- [x] [I] QA/security del gestor: validacion por rol, ownership estricto de oferta, auditoria persistente y build/migracion sin errores.
 
 ## Modulo 8 - Recursos y seguimiento academico: 100% (6/6)
 
@@ -157,7 +163,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 ### P2 - Alcance academico
 
 1. Cerrado a nivel de implementacion y hardening tecnico. El hub academico requiere regresion autenticada en navegador para elevar recursos a `[V]`.
-2. Empleos queda implementado end-to-end y requiere regresion visual en navegador para elevar la UI de `/empleos` de `[I]` a `[V]`.
+2. Empleos y Gestor de Postulaciones quedan implementados end-to-end y requieren regresion visual en navegador para elevar `/empleos` y `/empleos/mis-ofertas` de `[I]` a `[V]`.
 
 ### P3 - Escalabilidad y operacion
 
@@ -178,11 +184,11 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 2. `[ ] [P]` Migracion y alojamiento de base de datos en Azure SQL Free Tier.
 3. `[x] [I]` Integracion de Cloudinary para el alojamiento de imagenes y archivos estaticos.
 
-### P6 - Ecosistema MÃ³vil
+### P6 - Ecosistema Movil
 
-1. InicializaciÃ³n del proyecto mÃ³vil con React Native + Expo.
-2. SincronizaciÃ³n del estado y cache Apollo entre Web y Mobile.
-3. CompilaciÃ³n de APK y distribuciÃ³n en entornos de prueba.
+1. Inicializacion del proyecto movil con React Native + Expo.
+2. Sincronizacion del estado y cache Apollo entre Web y Mobile.
+3. Compilacion de APK y distribucion en entornos de prueba.
 
 ## Definition of Done por feature
 

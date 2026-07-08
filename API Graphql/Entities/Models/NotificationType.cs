@@ -7,6 +7,7 @@ namespace OneItb.Entities.Models
         SiuSync = 2,
         JobOffer = 3,
         SocialComment = 4,
-        PrivateMessage = 5
+        PrivateMessage = 5,
+        JobApplication = 6
     }
 }

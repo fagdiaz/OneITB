@@ -10,6 +10,7 @@ namespace OneITB.Core.Services.Interfaces
     {
         Task<UserPayload> RegisterAsync(RegisterInput input);
         Task<UpdateProfilePayload> UpdateProfileAsync(UpdateProfileInput input);
+        Task<UserPayload> ToggleProfilePrivacyAsync(Guid userId, bool isPublic);
         Task<UserPayload> UpdateUserRoleAsync(
             Guid operatorUserId,
             Guid userId,

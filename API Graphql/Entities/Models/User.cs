@@ -52,6 +52,7 @@ namespace OneItb.Entities.Models
         public string? AvatarUrl { get; set; }
         public DateTime? MutedUntil { get; set; }
         public bool IsActive { get; set; } = true;
+        public bool IsPublicProfile { get; set; } = true;
 
         public virtual Account Account { get; set; } = default!;
         public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
@@ -63,6 +64,7 @@ namespace OneItb.Entities.Models
         public virtual ICollection<AcademicProgress> AcademicProgressRecords { get; set; } = new List<AcademicProgress>();
         public virtual ICollection<AcademicProgress> AssignedAcademicProgressRecords { get; set; } = new List<AcademicProgress>();
         public virtual ICollection<JobOffer> JobOffers { get; set; } = new List<JobOffer>();
+        public virtual ICollection<JobApplication> JobApplications { get; set; } = new List<JobApplication>();
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public virtual ICollection<NotificationPreference> NotificationPreferences { get; set; } = new List<NotificationPreference>();
         public virtual ICollection<UserCvExperience> CvExperiences { get; set; } = new List<UserCvExperience>();

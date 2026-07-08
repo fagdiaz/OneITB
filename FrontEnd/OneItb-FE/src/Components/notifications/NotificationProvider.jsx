@@ -9,6 +9,8 @@ const toastIcons = {
   ACADEMIC_PROGRESS: 'fa-solid fa-chart-line',
   SIU_SYNC: 'fa-solid fa-arrows-rotate',
   JOB_OFFER: 'fa-solid fa-briefcase',
+  JOB_APPLICATION: 'fa-solid fa-user-check',
+  PROFILE_PRIVACY: 'fa-solid fa-user-shield',
   SOCIAL_COMMENT: 'fa-regular fa-comments',
   PRIVATE_MESSAGE: 'fa-regular fa-comment-dots',
 };
@@ -53,6 +55,38 @@ export const NotificationProvider = ({ children }) => {
     }, 6500);
     timersRef.current.set(notification.id, timerId);
   }, [data]);
+
+  useEffect(() => {
+    const handleLocalToast = (event) => {
+      if (!isAuthenticated) return;
+
+      const detail = event.detail ?? {};
+      const message = typeof detail.message === 'string' ? detail.message.trim() : '';
+      if (!message) return;
+
+      const id = detail.id ?? `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      if (seenIdsRef.current.has(id)) return;
+
+      const toast = {
+        id,
+        type: detail.type ?? 'LOCAL',
+        message,
+        actionUrl: detail.actionUrl ?? null,
+      };
+
+      seenIdsRef.current.add(id);
+      setToasts((current) => [toast, ...current].slice(0, 4));
+
+      const timerId = window.setTimeout(() => {
+        setToasts((current) => current.filter((currentToast) => currentToast.id !== id));
+        timersRef.current.delete(id);
+      }, 6500);
+      timersRef.current.set(id, timerId);
+    };
+
+    window.addEventListener('oneitb:toast', handleLocalToast);
+    return () => window.removeEventListener('oneitb:toast', handleLocalToast);
+  }, [isAuthenticated]);
 
   const dismissToast = (id) => {
     const timerId = timersRef.current.get(id);

@@ -27,6 +27,7 @@ namespace OneItb.Data
         public DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<JobOffer> JobOffers { get; set; } = null!;
+        public DbSet<JobApplication> JobApplications { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
         public DbSet<UserCvExperience> UserCvExperiences { get; set; } = null!;
@@ -119,6 +120,10 @@ namespace OneItb.Data
 
                 entity.Property(e => e.MutedUntil)
                     .HasColumnType("datetime2");
+
+                entity.Property(e => e.IsPublicProfile)
+                    .IsRequired()
+                    .HasDefaultValue(true);
 
                 entity.HasOne(u => u.Account)
                     .WithOne(a => a.User)
@@ -451,6 +456,34 @@ namespace OneItb.Data
                 entity.HasOne(e => e.Employer)
                     .WithMany(user => user.JobOffers)
                     .HasForeignKey(e => e.EmployerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA JOB_APPLICATIONS
+            // ==========================================
+            modelBuilder.Entity<JobApplication>(entity =>
+            {
+                entity.ToTable("JobApplications", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.AppliedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Status).IsRequired().HasConversion<string>().HasMaxLength(24).IsUnicode(false);
+
+                entity.HasIndex(e => e.JobOfferId);
+                entity.HasIndex(e => e.ApplicantId);
+                entity.HasIndex(e => new { e.JobOfferId, e.ApplicantId }).IsUnique();
+                entity.HasIndex(e => new { e.JobOfferId, e.Status, e.AppliedAt });
+
+                entity.HasOne(e => e.JobOffer)
+                    .WithMany(offer => offer.Applications)
+                    .HasForeignKey(e => e.JobOfferId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Applicant)
+                    .WithMany(user => user.JobApplications)
+                    .HasForeignKey(e => e.ApplicantId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
