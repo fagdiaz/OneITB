@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useQuery } from '@apollo/client'
+import { useQuery, useSubscription } from '@apollo/client'
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import useAuth from '../../../hooks/useAuth'
 import { NotificationBell } from '../../notifications/NotificationBell'
 import { useTheme } from '../../../context/ThemeContext'
 import { GET_USER_PROFILE } from '../../../data/graphql/queries/getUserProfile'
 import { GET_MESSAGING_CONTACTS } from '../../../data/graphql/chat'
+import { JOB_OFFER_CREATED } from '../../../data/graphql/jobs'
 import { apiBaseUrl } from '../../../utils/uploadFile'
 
 /**
@@ -48,7 +49,9 @@ export const Nav = () => {
   const location = useLocation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [avatarFailed, setAvatarFailed] = useState(false)
+  const [jobOfferBadgeCount, setJobOfferBadgeCount] = useState(0)
   const dropdownRef = useRef(null)
+  const lastJobOfferIdRef = useRef(null)
   const isDark = theme === 'dark'
   const safeAuth = auth ?? {}
   const isAuthenticatedUser = Boolean(isAuthenticated && token && safeAuth?.id)
@@ -61,6 +64,9 @@ export const Nav = () => {
     variables: { first: 50 },
     skip: !isAuthenticatedUser,
     fetchPolicy: 'cache-and-network',
+  })
+  const { data: jobOfferSubscriptionData } = useSubscription(JOB_OFFER_CREATED, {
+    skip: !isAuthenticatedUser,
   })
 
   useEffect(() => {
@@ -92,6 +98,22 @@ export const Nav = () => {
     setAvatarFailed(false)
     setDropdownOpen(false)
   }, [safeAuth?.id, resolvedAvatarUrl, sessionVersion])
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/empleos')) {
+      setJobOfferBadgeCount(0)
+    }
+  }, [location.pathname])
+
+  useEffect(() => {
+    const offer = jobOfferSubscriptionData?.jobOfferCreated
+    if (!offer?.id || offer.id === lastJobOfferIdRef.current) return
+
+    lastJobOfferIdRef.current = offer.id
+    if (!location.pathname.startsWith('/empleos')) {
+      setJobOfferBadgeCount((current) => Math.min(current + 1, 9))
+    }
+  }, [jobOfferSubscriptionData, location.pathname])
 
   const isActivePath = (targetPath) => {
     if (targetPath === '/') return location.pathname === '/'
@@ -135,6 +157,20 @@ export const Nav = () => {
             <NavLink to="/academic" className={navClassFor('/academic')}>
               <i className="fa-solid fa-graduation-cap text-xs" />
               <span>Academico</span>
+            </NavLink>
+          </li>
+        )}
+
+        {isAuthenticatedUser && (
+          <li>
+            <NavLink to="/empleos" className={`${navClassFor('/empleos')} relative`}>
+              <i className="fa-solid fa-briefcase text-xs" />
+              <span>Empleos</span>
+              {jobOfferBadgeCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white/60 bg-red-500 px-1 text-[10px] font-black leading-none text-white shadow-sm">
+                  {jobOfferBadgeCount > 9 ? '9+' : jobOfferBadgeCount}
+                </span>
+              )}
             </NavLink>
           </li>
         )}

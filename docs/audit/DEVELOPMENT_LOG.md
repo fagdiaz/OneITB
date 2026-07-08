@@ -5,6 +5,40 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-07] - Spec 175: Jobs Module & Enterprise Seeder
+
+* **Objetivo**: Levantar el Code Freeze para agregar el Modulo de Empleos y reemplazar el seed efectivo por un grafo relacional enterprise, idempotente y apto para demo academica.
+* **Resultado**:
+  - Se agrego `JobOffer` con FK explicita a `User`, `DeleteBehavior.Restrict`, indices de consulta y cobertura de auditoria EF.
+  - GraphQL expone `jobOffers`, `createJobOffer` y `jobOfferCreated`; la mutacion valida rol `Empleador`/`Administrador`, persiste la oferta, emite subscription y crea notificaciones persistentes.
+  - `/empleos` incorpora tablero Clean Tech / Tech Noir con skeletons, empty state, formulario de publicacion, tarjetas laborales y postulacion por `mailto:`.
+  - `Nav` muestra badge realtime para nuevas ofertas laborales y lo limpia automaticamente al ingresar a `/empleos`.
+  - `DbInitializer` delega en `EnterpriseDemoSeeder`, que genera 2 carreras, 6 materias, 14 usuarios por rol, publicaciones, comentarios, respuestas, reacciones, chats, notificaciones y ofertas con IDs deterministas, `SaveChangesAsync` por fase y `ChangeTracker.Clear()`.
+* **Validaciones ejecutadas**:
+  - `dotnet ef migrations add AddJobOffers --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS.
+  - `dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release -p:RestoreIgnoreFailedSources=true`: PASS, 0 warnings, 0 errores.
+  - `dotnet ef migrations has-pending-model-changes --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS, sin cambios pendientes.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 38/38.
+  - `npm.cmd run build`: PASS, 351 modulos, build en 787 ms.
+  - Runtime GraphQL HTTP temporal en `http://localhost:5445`: PASS para `{ __typename }`, login admin1, `jobOffers` y `createJobOffer`.
+  - `npm.cmd test -- --run`: BLOQUEADO por `EPERM` en `node_modules/.vite-temp`; el build Vite posterior paso.
+* **Estado**:
+  - Implementado y validado por migracion, builds, tests backend y smoke GraphQL autenticado. Queda pendiente QA visual de `/empleos` en navegador y validacion manual del badge realtime con dos sesiones para elevar la UI de `[I]` a `[V]`.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/JobOffer.cs`
+  - `API Graphql/Data/EnterpriseDemoSeeder.cs`
+  - `API Graphql/Data/DbInitializer.cs`
+  - `API Graphql/Data/OneItbContext.cs`
+  - `API Graphql/Data/Migrations/20260708003640_AddJobOffers.cs`
+  - `API Graphql/Services/Jobs/*`
+  - `API Graphql/OneITB/GraphQL/Query.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `API Graphql/OneITB/GraphQL/Subscription.cs`
+  - `FrontEnd/OneItb-FE/src/Components/jobs/JobBoard.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/jobs.js`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+
 ## [2026-07-07] - Spec 172: Hotfix Institutional Domain Alignment
 
 * **Objetivo**: Realizar una refactorización transversal (Hotfix) para alinear todo el código base, pruebas y documentación al dominio institucional correcto (@itbeltran.com.ar).

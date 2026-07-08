@@ -2,7 +2,7 @@
 
 **Ultima revision**: 2026-07-07
 
-**Estado global**: 97% (87 de 90 items)
+**Estado global**: 97% (92 de 95 items)
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -92,7 +92,15 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Auditoria persistente de acciones administrativas y de moderacion.
 - [ ] [P] Regresion runtime del panel tras cambios de materias y superadmin.
 
-## Modulo 7 - Recursos y seguimiento academico: 100% (6/6)
+## Modulo 7 - Empleos: 100% (5/5)
+
+- [x] [I] Entidad `JobOffer` con FK explicita a `User` y `DeleteBehavior.Restrict`.
+- [x] [I] GraphQL `jobOffers`, `createJobOffer` y subscription `jobOfferCreated`.
+- [x] [I] Vista `/empleos` con skeletons, empty state, tarjetas laborales y postulacion por `mailto:`.
+- [x] [I] Badge realtime en Nav para nuevas ofertas laborales y limpieza al ingresar a `/empleos`.
+- [x] [I] Seeder enterprise con empleadores, ofertas laborales y notificaciones persistentes.
+
+## Modulo 8 - Recursos y seguimiento academico: 100% (6/6)
 
 - [x] [I] Entidad y repositorio de recursos academicos independiente del feed.
 - [x] [I] Permisos de recursos por carrera, materia y rol.
@@ -101,7 +109,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Adaptador o simulador desacoplado para SIU Guarani.
 - [x] [I] Preferencias de notificacion por materia.
 
-## Modulo 8 - Calidad, operacion y escalabilidad: 100% (20/20)
+## Modulo 9 - Calidad, operacion y escalabilidad: 100% (20/20)
 
 - [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
 - [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
@@ -149,6 +157,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 ### P2 - Alcance academico
 
 1. Cerrado a nivel de implementacion y hardening tecnico. El hub academico requiere regresion autenticada en navegador para elevar recursos a `[V]`.
+2. Empleos queda implementado end-to-end y requiere regresion visual en navegador para elevar la UI de `/empleos` de `[I]` a `[V]`.
 
 ### P3 - Escalabilidad y operacion
 

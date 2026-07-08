@@ -17,6 +17,7 @@ import { NotFound } from '../Components/layout/NotFound'
 import { AcademicDashboard } from '../Components/academic/AcademicDashboard'
 import { PublicCertificate } from '../Components/certificates/PublicCertificate'
 import { NotificationProvider } from '../Components/notifications/NotificationProvider'
+import { JobBoard } from '../Components/jobs/JobBoard'
 
 export const Routing = () => {
   return (
@@ -39,6 +40,7 @@ export const Routing = () => {
           <Route path='profile/edit' element={<CvEditorProfile />} />
           <Route path='chat' element={<PrivateChat />} />
           <Route path='academic' element={<AcademicDashboard />} />
+          <Route path='empleos' element={<JobBoard />} />
           <Route path='admin' element={<AdminDashboard />} />
           <Route path='admin/users' element={<Navigate to="/admin" replace />} />
           <Route path='logout' element={<Logout></Logout>} />

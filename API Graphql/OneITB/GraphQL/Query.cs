@@ -17,6 +17,7 @@ using Services.LinkPreviews;
 using Services.Social;
 using Services.Academic;
 using Services.Notifications;
+using Services.Jobs;
 
 namespace GraphQL.GraphQL
 {
@@ -448,6 +449,17 @@ namespace GraphQL.GraphQL
             {
                 throw new GraphQLException(ex.Message);
             }
+        }
+
+        [Authorize]
+        [UsePaging(MaxPageSize = 50, IncludeTotalCount = true)]
+        [UseFiltering]
+        [UseSorting]
+        public IQueryable<JobOffer> GetJobOffers(
+            bool? onlyActive,
+            [Service] IJobService jobService)
+        {
+            return jobService.GetJobOffers(onlyActive ?? true);
         }
 
         [Authorize]

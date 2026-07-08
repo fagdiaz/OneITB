@@ -178,6 +178,9 @@ const createApolloClient = () => new ApolloClient({
       AcademicProgress: {
         keyFields: ['id'],
       },
+      JobOffer: {
+        keyFields: ['id'],
+      },
       Subject: {
         keyFields: ['id'],
       },
@@ -235,6 +238,10 @@ const createApolloClient = () => new ApolloClient({
           },
           resourcesBySubject: {
             keyArgs: ['subjectId', 'searchTerm', 'category'],
+            merge: replaceIncoming,
+          },
+          jobOffers: {
+            keyArgs: ['onlyActive'],
             merge: replaceIncoming,
           },
           myAcademicProgress: {

@@ -4,6 +4,9 @@ namespace OneItb.Entities.Models
     {
         AcademicResource = 0,
         AcademicProgress = 1,
-        SiuSync = 2
+        SiuSync = 2,
+        JobOffer = 3,
+        SocialComment = 4,
+        PrivateMessage = 5
     }
 }

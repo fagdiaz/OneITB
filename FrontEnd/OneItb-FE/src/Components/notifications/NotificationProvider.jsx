@@ -8,6 +8,9 @@ const toastIcons = {
   ACADEMIC_RESOURCE: 'fa-solid fa-book-open',
   ACADEMIC_PROGRESS: 'fa-solid fa-chart-line',
   SIU_SYNC: 'fa-solid fa-arrows-rotate',
+  JOB_OFFER: 'fa-solid fa-briefcase',
+  SOCIAL_COMMENT: 'fa-regular fa-comments',
+  PRIVATE_MESSAGE: 'fa-regular fa-comment-dots',
 };
 
 export const NotificationProvider = ({ children }) => {

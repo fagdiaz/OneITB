@@ -9,6 +9,7 @@ using HotChocolate.Types;
 using Microsoft.AspNetCore.Http;
 using OneItb.Entities.Models;
 using Services.Notifications;
+using Services.Jobs;
 
 namespace OneITB.GraphQL.Subscriptions
 {
@@ -50,5 +51,15 @@ namespace OneITB.GraphQL.Subscriptions
         [Authorize]
         [Subscribe(With = nameof(SubscribeToNotificationReceived))]
         public Notification NotificationReceived([EventMessage] Notification notification) => notification;
+
+        public async ValueTask<ISourceStream<JobOffer>> SubscribeToJobOfferCreated(
+            [Service] ITopicEventReceiver receiver)
+        {
+            return await receiver.SubscribeAsync<JobOffer>(JobOfferTopics.Created);
+        }
+
+        [Authorize]
+        [Subscribe(With = nameof(SubscribeToJobOfferCreated))]
+        public JobOffer JobOfferCreated([EventMessage] JobOffer jobOffer) => jobOffer;
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using HotChocolate;
 using HotChocolate.Authorization;
@@ -20,6 +21,7 @@ using OneITB.GraphQL.Subscriptions;
 using Services.Academic;
 using Services.Notifications;
 using Services.Siu;
+using Services.Jobs;
 
 namespace OneITB.GraphQL.Mutations
 {
@@ -731,6 +733,65 @@ namespace OneITB.GraphQL.Mutations
                     isEnabled);
             }
             catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<JobOffer> CreateJobOffer(
+            string title,
+            string company,
+            string description,
+            string location,
+            [Service] IJobService jobService,
+            [Service] INotificationService notificationService,
+            [Service] ITopicEventSender eventSender,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ILogger<Mutation> logger,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                Guid employerId = GetAuthenticatedUserId(httpContextAccessor);
+                string? role = GetAuthenticatedRole(httpContextAccessor);
+                JobOffer jobOffer = await jobService.CreateJobOfferAsync(
+                    employerId,
+                    role,
+                    title,
+                    company,
+                    description,
+                    location,
+                    cancellationToken);
+
+                try
+                {
+                    await eventSender.SendAsync(JobOfferTopics.Created, jobOffer, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(
+                        ex,
+                        "Job offer {JobOfferId} persisted but real-time publication failed.",
+                        jobOffer.Id);
+                }
+
+                Guid[] recipients = await jobService.GetJobNotificationRecipientIdsAsync(
+                    employerId,
+                    cancellationToken);
+                await notificationService.CreateNotificationsAsync(
+                    recipients,
+                    NotificationType.JobOffer,
+                    $"Nueva oferta laboral: {jobOffer.Title} en {jobOffer.Company}.",
+                    "/empleos");
+
+                return jobOffer;
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
             {
                 throw new GraphQLException(ex.Message);
             }

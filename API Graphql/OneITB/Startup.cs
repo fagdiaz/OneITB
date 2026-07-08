@@ -34,6 +34,7 @@ using OneItb.GraphQL.Infrastructure;
 using Services.Academic;
 using Services.Notifications;
 using Services.Siu;
+using Services.Jobs;
 using OneItb.GraphQL.Services.Storage;
 using StackExchange.Redis;
 
@@ -262,6 +263,7 @@ namespace OneItb.GraphQL
             services.AddScoped<IAcademicService, AcademicService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ISiuIntegrationService, MockSiuIntegrationService>();
+            services.AddScoped<IJobService, JobService>();
             services.AddScoped<IMessagingService, MessagingService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();

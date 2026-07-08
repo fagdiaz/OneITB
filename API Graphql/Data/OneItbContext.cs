@@ -26,6 +26,7 @@ namespace OneItb.Data
         public DbSet<Notification> Notifications { get; set; } = null!;
         public DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+        public DbSet<JobOffer> JobOffers { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
         public DbSet<UserCvExperience> UserCvExperiences { get; set; } = null!;
@@ -424,6 +425,32 @@ namespace OneItb.Data
                 entity.HasOne(e => e.User)
                     .WithMany(user => user.NotificationPreferences)
                     .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA JOB_OFFERS
+            // ==========================================
+            modelBuilder.Entity<JobOffer>(entity =>
+            {
+                entity.ToTable("JobOffers", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(180);
+                entity.Property(e => e.Company).IsRequired().HasMaxLength(160);
+                entity.Property(e => e.Description).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.Location).IsRequired().HasMaxLength(160);
+                entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => e.EmployerId);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => new { e.IsActive, e.CreatedAt });
+
+                entity.HasOne(e => e.Employer)
+                    .WithMany(user => user.JobOffers)
+                    .HasForeignKey(e => e.EmployerId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
