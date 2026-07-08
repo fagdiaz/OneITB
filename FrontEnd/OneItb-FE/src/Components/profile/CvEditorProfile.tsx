@@ -196,12 +196,15 @@ export const CvEditorProfile = () => {
   });
   const [updateProfile, { loading: savingProfile }] = useMutation(UPDATE_PROFILE);
 
+  const getSessionProfile = () =>
+    gqlData?.me?.id && auth?.id && gqlData.me.id === auth.id ? gqlData.me : null;
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, []);
 
   useEffect(() => {
-    const sessionProfile = gqlData?.me?.id === auth?.id ? gqlData.me : null;
+    const sessionProfile = getSessionProfile();
     const activeUser = sessionProfile || auth;
     if (!activeUser) return;
 
@@ -294,7 +297,7 @@ export const CvEditorProfile = () => {
   };
 
   const handleSaveProfile = async () => {
-    const sessionProfile = gqlData?.me?.id === auth?.id ? gqlData.me : null;
+    const sessionProfile = getSessionProfile();
     const userId = sessionProfile?.id || auth?.id;
     if (!userId) {
       setSaveStatus('error');
@@ -332,7 +335,7 @@ export const CvEditorProfile = () => {
     navigate('/profile');
   };
 
-  const sessionProfile = gqlData?.me?.id === auth?.id ? gqlData.me : null;
+  const sessionProfile = getSessionProfile();
   const displayName = sessionProfile?.fullName || auth?.fullName || auth?.username || 'Usuario OneITB';
   const rawDisplayRole = sessionProfile?.role || auth?.role || '';
   const displayRole = rawDisplayRole.toLowerCase() === 'user' ? '' : rawDisplayRole;

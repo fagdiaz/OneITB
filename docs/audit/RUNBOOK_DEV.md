@@ -38,6 +38,14 @@ Endpoints locales esperados:
 - Upload REST: `https://localhost:44397/api/upload`
 - Archivos: `https://localhost:44397/uploads/{file}`
 
+### Credenciales de acceso por defecto (Data Seeder)
+
+Una vez levantada la base de datos con el Seeder (requiere `ONEITB_SEED_DEMO_PASSWORD`), puedes iniciar sesión usando:
+
+- **Usuario Admin:** `admin@itbeltran.com.ar`
+- **Contraseña:** `<tu-ONEITB_SEED_DEMO_PASSWORD>` (o el valor ingresado en `.env` local)
+- **Otros usuarios:** `student@itbeltran.com.ar`, `teacher@itbeltran.com.ar`, `moderator@itbeltran.com.ar`, `employer@itbeltran.com.ar` (todos comparten la misma contraseña configurada).
+
 ## Entity Framework Core
 
 ```powershell

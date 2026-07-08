@@ -36,8 +36,9 @@ export const GlobalSearch = () => {
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const isLoggedIn = Boolean(isAuthenticated && token && auth?.id);
-  const canSearchGlobally = auth?.role === 'Administrador' || auth?.role === 'Moderador';
+  const safeAuth = auth ?? {};
+  const isLoggedIn = Boolean(isAuthenticated && token && safeAuth?.id);
+  const canSearchGlobally = safeAuth?.role === 'Administrador' || safeAuth?.role === 'Moderador';
 
   const { data: meData } = useQuery(GET_USER_PROFILE, {
     skip: !isLoggedIn,
@@ -49,7 +50,13 @@ export const GlobalSearch = () => {
     fetchPolicy: 'cache-first',
   });
 
-  const sessionProfile = meData?.me?.id === auth?.id ? meData.me : null;
+  const hasSessionProfile = Boolean(
+    isLoggedIn &&
+    meData?.me?.id &&
+    safeAuth?.id &&
+    meData.me.id === safeAuth.id
+  );
+  const sessionProfile = hasSessionProfile ? meData.me : null;
   const myCareers = useMemo(
     () =>
       (sessionProfile?.userCareers ?? [])

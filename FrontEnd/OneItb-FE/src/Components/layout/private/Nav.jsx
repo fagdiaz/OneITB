@@ -50,7 +50,8 @@ export const Nav = () => {
   const [avatarFailed, setAvatarFailed] = useState(false)
   const dropdownRef = useRef(null)
   const isDark = theme === 'dark'
-  const isAuthenticatedUser = Boolean(isAuthenticated && token && auth?.id)
+  const safeAuth = auth ?? {}
+  const isAuthenticatedUser = Boolean(isAuthenticated && token && safeAuth?.id)
   const { data: meData } = useQuery(GET_USER_PROFILE, {
     skip: !isAuthenticatedUser,
     fetchPolicy: 'cache-and-network',
@@ -72,10 +73,16 @@ export const Nav = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const sessionProfile = meData?.me?.id === auth?.id ? meData.me : null
-  const currentUser = sessionProfile || auth
-  const currentName = currentUser.fullName || auth.fullName || auth.username || 'Usuario'
-  const resolvedAvatarUrl = resolveAssetUrl(currentUser.avatarUrl || auth.avatarUrl)
+  const hasSessionProfile = Boolean(
+    isAuthenticatedUser &&
+    meData?.me?.id &&
+    safeAuth?.id &&
+    meData.me.id === safeAuth.id
+  )
+  const sessionProfile = hasSessionProfile ? meData.me : null
+  const currentUser = sessionProfile || safeAuth
+  const currentName = currentUser?.fullName || safeAuth?.fullName || safeAuth?.username || 'Usuario'
+  const resolvedAvatarUrl = resolveAssetUrl(currentUser?.avatarUrl || safeAuth?.avatarUrl)
   const fallbackAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=3b82f6&color=fff&size=80`
   const avatarSrc = !avatarFailed && resolvedAvatarUrl ? resolvedAvatarUrl : fallbackAvatarUrl
   const unreadMessageCount = (messagingData?.messagingContacts?.nodes || [])
@@ -84,7 +91,7 @@ export const Nav = () => {
   useEffect(() => {
     setAvatarFailed(false)
     setDropdownOpen(false)
-  }, [auth?.id, resolvedAvatarUrl, sessionVersion])
+  }, [safeAuth?.id, resolvedAvatarUrl, sessionVersion])
 
   const isActivePath = (targetPath) => {
     if (targetPath === '/') return location.pathname === '/'
@@ -132,7 +139,7 @@ export const Nav = () => {
           </li>
         )}
 
-        {isAuthenticatedUser && auth.role === 'Administrador' && (
+        {isAuthenticatedUser && safeAuth?.role === 'Administrador' && (
           <li>
             <NavLink to="/admin" className={navClassFor('/admin')}>
               <i className="fa-solid fa-users-gear text-xs" />
