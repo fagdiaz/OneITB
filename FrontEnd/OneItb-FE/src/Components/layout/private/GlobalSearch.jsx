@@ -274,14 +274,21 @@ export const GlobalSearch = () => {
                     Carreras ({effectiveCareerIds.length || (canSearchGlobally ? 'todas' : myCareers.length)})
                   </summary>
                   <div className="mt-2 grid max-h-32 gap-1.5 overflow-y-auto pr-1">
-                    {careerOptions.map((career) => (
+                    {careerOptions.map((career) => {
+                      const isSelected = effectiveCareerIds.includes(career.id);
+                      return (
                       <label
                         key={career.id}
-                        className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+                        className={[
+                          'flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-semibold transition',
+                          isSelected
+                            ? 'bg-slate-200 text-slate-900 ring-1 ring-blue-300/40 hover:bg-slate-100'
+                            : 'text-slate-200 hover:bg-white/10',
+                        ].join(' ')}
                       >
                         <input
                           type="checkbox"
-                          checked={effectiveCareerIds.includes(career.id)}
+                          checked={isSelected}
                           onChange={() => handleCareerToggle(career.id)}
                           className="h-3.5 w-3.5 rounded border-white/20 bg-slate-900 text-blue-500"
                         />
@@ -289,7 +296,8 @@ export const GlobalSearch = () => {
                           {career.code ? `${career.code} - ${career.name}` : career.name}
                         </span>
                       </label>
-                    ))}
+                      );
+                    })}
                   </div>
                 </details>
               </div>
@@ -302,7 +310,14 @@ export const GlobalSearch = () => {
                     Materias ({allSubjectsSelected ? 'todas' : selectedSubjectIds.length})
                   </summary>
                   <div className="mt-2 grid max-h-36 gap-1.5 overflow-y-auto pr-1">
-                    <label className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-black text-blue-100 transition hover:bg-white/10">
+                    <label
+                      className={[
+                        'flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-black transition',
+                        allSubjectsSelected
+                          ? 'bg-slate-200 text-slate-900 ring-1 ring-blue-300/40 hover:bg-slate-100'
+                          : 'text-blue-100 hover:bg-white/10',
+                      ].join(' ')}
+                    >
                       <input
                         type="checkbox"
                         checked={allSubjectsSelected}
@@ -312,14 +327,21 @@ export const GlobalSearch = () => {
                       <span className="min-w-0 truncate">Todas</span>
                     </label>
                     <div className="h-px bg-white/10" />
-                    {subjects.map((subject) => (
+                    {subjects.map((subject) => {
+                      const isSelected = allSubjectsSelected || selectedSubjectIds.includes(subject.id);
+                      return (
                       <label
                         key={subject.id}
-                        className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+                        className={[
+                          'flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-semibold transition',
+                          isSelected
+                            ? 'bg-slate-200 text-slate-900 ring-1 ring-indigo-300/40 hover:bg-slate-100'
+                            : 'text-slate-200 hover:bg-white/10',
+                        ].join(' ')}
                       >
                         <input
                           type="checkbox"
-                          checked={allSubjectsSelected || selectedSubjectIds.includes(subject.id)}
+                          checked={isSelected}
                           onChange={() => handleSubjectToggle(subject.id)}
                           className="h-3.5 w-3.5 rounded border-white/20 bg-slate-900 text-indigo-500"
                         />
@@ -327,7 +349,8 @@ export const GlobalSearch = () => {
                           {[subject.code, subject.name].filter(Boolean).join(' - ')}
                         </span>
                       </label>
-                    ))}
+                      );
+                    })}
                   </div>
                 </details>
               </div>

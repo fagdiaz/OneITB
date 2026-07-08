@@ -125,10 +125,10 @@ export const Nav = () => {
     `${NAV_BASE} ${isActivePath(targetPath) ? NAV_ACTIVE : NAV_INACTIVE}`
 
   return (
-    <nav className="flex items-center gap-6">
+    <nav className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
 
       {/* ── Main nav links ─────────────────────────────────────── */}
-      <ul className="hidden md:flex items-center gap-1 list-none m-0 p-0">
+      <ul className="hidden min-w-0 items-center gap-1 list-none m-0 p-0 md:flex">
         <li>
           <NavLink
             to={isAuthenticatedUser ? '/feed' : '/'}
@@ -196,11 +196,11 @@ export const Nav = () => {
       </ul>
 
       {/* ── Right side ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
 
         {isAuthenticatedUser ? (
           <>
-            <span className="hidden sm:block text-sm font-medium text-slate-300">
+            <span className="hidden max-w-44 truncate text-sm font-medium text-slate-300 lg:block">
               Hola, <span className="font-semibold text-white">{currentName}</span>
             </span>
 

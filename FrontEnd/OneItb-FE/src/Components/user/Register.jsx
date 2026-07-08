@@ -53,11 +53,9 @@ export const Register = () => {
 
     if (!form.name?.trim()) return setValidationError('El campo Nombre es obligatorio.')
     if (!form.surname?.trim()) return setValidationError('El campo Apellidos es obligatorio.')
-    if (!form.alias?.trim()) return setValidationError('El campo Alias es obligatorio.')
     if (!form.email?.trim()) return setValidationError('El campo Correo electrónico es obligatorio.')
     if (!form.password) return setValidationError('El campo Contraseña es obligatorio.')
     if (!form.confirmPassword) return setValidationError('Confirma la contraseña.')
-    if (form.alias.length < 3) return setValidationError('El alias debe tener al menos 3 caracteres.')
 
     const emailPattern = /^[a-zA-Z0-9._%+-]+@itbeltran\.com\.ar$/
     if (!emailPattern.test(form.email)) {
@@ -78,7 +76,6 @@ export const Register = () => {
 
     const variables = {
       input: {
-        username: form.alias,
         firstName: form.name,
         lastName: form.surname,
         email: form.email,
@@ -139,11 +136,6 @@ export const Register = () => {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="alias" className={labelClass}>Alias</label>
-                <input id="alias" type="text" name="alias" onChange={changed} placeholder="Mínimo 3 caracteres" className={inputClass} />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
                 <label htmlFor="role" className={labelClass}>Rol</label>
                 <select id="role" name="role" value={form.role || 'Estudiante'} onChange={changed} className={inputClass}>
                   {PUBLIC_ROLES.map((role) => (
@@ -172,6 +164,7 @@ export const Register = () => {
                   />
                   <button
                     type="button"
+                    onMouseDown={(event) => event.preventDefault()}
                     onClick={() => setShowPassword((current) => !current)}
                     className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
                     aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
@@ -194,6 +187,7 @@ export const Register = () => {
                   />
                   <button
                     type="button"
+                    onMouseDown={(event) => event.preventDefault()}
                     onClick={() => setShowConfirmPassword((current) => !current)}
                     className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
                     aria-label={showConfirmPassword ? 'Ocultar confirmacion' : 'Mostrar confirmacion'}

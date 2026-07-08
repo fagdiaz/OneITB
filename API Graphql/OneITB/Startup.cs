@@ -130,7 +130,19 @@ namespace OneItb.GraphQL
                 .AddSorting()
                 .AddAuthorization()
                 .AddErrorFilter<GraphQLErrorFilter>()
-                .AddMaxExecutionDepthRule(Configuration.GetValue("GraphQL:MaxExecutionDepth", 10))
+                .AddMaxExecutionDepthRule(Configuration.GetValue("GraphQL:MaxExecutionDepth", 15))
+                .ModifyCostOptions(options =>
+                {
+                    options.MaxFieldCost = Configuration.GetValue("GraphQL:MaxFieldCost", 200000);
+                    options.MaxTypeCost = Configuration.GetValue("GraphQL:MaxTypeCost", 200000);
+                    options.EnforceCostLimits = true;
+                })
+                .ModifyParserOptions(options =>
+                {
+                    options.MaxAllowedNodes = Configuration.GetValue("GraphQL:MaxAllowedNodes", 50000);
+                    options.MaxAllowedTokens = Configuration.GetValue("GraphQL:MaxAllowedTokens", 100000);
+                    options.MaxAllowedFields = Configuration.GetValue("GraphQL:MaxAllowedFields", 20000);
+                })
                 .ModifyPagingOptions(options =>
                 {
                     options.DefaultPageSize = Configuration.GetValue("GraphQL:DefaultPageSize", 20);

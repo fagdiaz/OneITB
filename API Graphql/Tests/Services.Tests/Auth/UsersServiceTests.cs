@@ -18,7 +18,6 @@ public sealed class UsersServiceTests
         var service = new UsersService(unitOfWork, context);
 
         UserPayload payload = await service.RegisterAsync(new RegisterInput(
-            "lu.prueba",
             "LU.PRUEBA@ITBELTRAN.COM.AR",
             "Test1234!",
             "lucia",
@@ -52,7 +51,6 @@ public sealed class UsersServiceTests
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.RegisterAsync(new RegisterInput(
-                "admin.intent",
                 "admin.intent@itbeltran.com.ar",
                 "Test1234!",
                 "admin",
@@ -72,7 +70,6 @@ public sealed class UsersServiceTests
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.RegisterAsync(new RegisterInput(
-                "missing.career",
                 "missing.career@itbeltran.com.ar",
                 "Test1234!",
                 "maria",

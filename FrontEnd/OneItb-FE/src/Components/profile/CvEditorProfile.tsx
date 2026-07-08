@@ -371,6 +371,7 @@ export const CvEditorProfile = () => {
       }
 
       setSaveStatus('saved');
+      navigate('/profile');
     } catch {
       setSaveStatus('error');
     }

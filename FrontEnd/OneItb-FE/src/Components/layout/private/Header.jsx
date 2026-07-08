@@ -64,7 +64,7 @@ export const Header = () => {
       ref={headerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative isolate w-full overflow-visible border-b border-white/10 bg-slate-900 text-white sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 px-4 shadow-md backdrop-blur-xl transition-colors dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-[0_14px_45px_rgba(2,6,23,0.45)] no-print print:hidden"
+      className="relative isolate sticky top-0 z-40 flex h-14 w-full max-w-full shrink-0 items-center gap-4 overflow-visible border-b border-white/10 bg-slate-900 px-4 text-white shadow-md backdrop-blur-xl transition-colors dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-[0_14px_45px_rgba(2,6,23,0.45)] no-print print:hidden"
     >
       {/*
         pointer-events-none: no intercepta clicks ni hovers.

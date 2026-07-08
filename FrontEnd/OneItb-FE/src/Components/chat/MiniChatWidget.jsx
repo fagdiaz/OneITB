@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApolloClient, useMutation, useQuery, useSubscription } from '@apollo/client';
+import { useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useForm } from '../../hooks/useForm';
 import {
@@ -24,6 +25,7 @@ import {
 export const MiniChatWidget = () => {
   const { auth } = useAuth();
   const client = useApolloClient();
+  const location = useLocation();
   const { form, changed, setForm } = useForm({ content: '' });
   
   const [isOpen, setIsOpen] = useState(false);
@@ -34,6 +36,7 @@ export const MiniChatWidget = () => {
   const previousSocketStatus = useRef('disconnected');
   const mountedRef = useRef(true);
   const messageEndRef = useRef(null);
+  const widgetRef = useRef(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const searchInput = searchTerm.trim().toLowerCase();
@@ -127,6 +130,13 @@ export const MiniChatWidget = () => {
     return allContacts.reduce((acc, contact) => acc + (contact.unreadCount || 0), 0);
   }, [allContacts]);
 
+  const closeWidget = useCallback(() => {
+    setIsOpen(false);
+    setSelectedContactId(null);
+    setSearchTerm('');
+    setFeedback('');
+  }, []);
+
   useEffect(() => {
     mountedRef.current = true;
     const unsubscribe = subscribeToGraphQLWsStatus((status) => {
@@ -137,6 +147,23 @@ export const MiniChatWidget = () => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    closeWidget();
+  }, [closeWidget, location.pathname]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleOutsideMouseDown = (event) => {
+      if (widgetRef.current && !widgetRef.current.contains(event.target)) {
+        closeWidget();
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideMouseDown);
+    return () => document.removeEventListener('mousedown', handleOutsideMouseDown);
+  }, [closeWidget, isOpen]);
 
   useEffect(() => {
     const wasUnavailable = ['disconnected', 'error'].includes(previousSocketStatus.current);
@@ -216,10 +243,12 @@ export const MiniChatWidget = () => {
   };
 
   const toggleWidget = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen && !selectedContactId) {
-      // open
+    if (isOpen) {
+      closeWidget();
+      return;
     }
+
+    setIsOpen(true);
   };
 
   const handleSubmit = async (event) => {
@@ -327,7 +356,7 @@ export const MiniChatWidget = () => {
   }, [activeContacts, allContacts, searchInput]);
 
   return (
-    <div className="fixed bottom-5 right-5 lg:right-80 z-50 flex flex-col items-end">
+    <div ref={widgetRef} className="fixed bottom-5 right-5 lg:right-80 z-50 flex flex-col items-end">
       {/* Widget Window */}
       {isOpen && (
         <div className="mb-3 flex h-[420px] w-[88vw] origin-bottom-right flex-row overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur-xl ring-1 ring-slate-900/5 transition-all dark:border-white/10 dark:bg-slate-950/95 dark:shadow-[0_24px_70px_rgba(2,6,23,0.50)] dark:ring-blue-400/10 md:w-[560px]">

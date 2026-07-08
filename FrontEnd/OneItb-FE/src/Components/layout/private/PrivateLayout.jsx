@@ -60,16 +60,16 @@ export const PrivateLayout = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-950 transition-colors dark:bg-slate-950 dark:text-slate-100">
+    <div className="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-slate-50 text-slate-950 transition-colors dark:bg-slate-950 dark:text-slate-100">
 
       {/* Top Navigation Bar */}
       <Header />
 
       {/* Body: content + sidebar */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 overflow-hidden">
 
         {/* Main content area — overflow-hidden so child pages control their own scroll */}
-        <main className="flex-1 overflow-hidden">
+        <main className="min-w-0 flex-1 overflow-hidden">
           {auth.id
             ? <Outlet />
             : <Navigate to="/login" />

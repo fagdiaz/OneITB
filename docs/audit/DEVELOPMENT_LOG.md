@@ -5,6 +5,37 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-08] - Spec 176: QA Resolution and UX Polish
+
+* **Objetivo**: Resolver la regresion manual pre-defensa sobre limite de costo GraphQL, registro sin Alias, overflow responsive del header, contraste de filtros, redireccion de perfil, cierre del chat widget y foco de password reveal.
+* **Resultado**:
+  - HotChocolate conserva defensa anti-DoS pero eleva limites operativos reales: profundidad 15, `MaxFieldCost`/`MaxTypeCost` configurables y guardas de parser para nodos, tokens y campos.
+  - `RegisterInput` deja de requerir `Username`; la UI de registro elimina Alias y ya no lo envia en la mutacion.
+  - Login y Registro agregan `onMouseDown.preventDefault()` en botones de ojo para no perder foco del input.
+  - Header/Nav/PublicLayout/PrivateLayout incorporan `max-w-full`, `min-w-0`, gaps responsivos y contencion horizontal para evitar scroll lateral en pantalla dividida.
+  - Filtros de carrera/materia del buscador global renderizan estados seleccionados con contraste explicito.
+  - `/profile/edit` redirige a `/profile` tras guardar correctamente.
+  - `MiniChatWidget` se cierra al cambiar de ruta y al hacer click fuera, con cleanup del listener global.
+* **Validaciones ejecutadas**:
+  - Speckit QA preflight con builds: PASS sobre baseline limpio.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 39/39.
+  - `npm.cmd run build`: PASS, 352 modulos, build en 1.56 s.
+  - `git -c core.autocrlf=false diff --check`: PASS.
+* **Estado**:
+  - Implementado y validado por build backend, tests backend y build frontend. Queda para auditoria manual la verificacion visual de header responsive, contraste de filtros y comportamiento del chat widget.
+* **Archivos principales**:
+  - `API Graphql/OneITB/Startup.cs`
+  - `API Graphql/OneITB/appsettings.json`
+  - `API Graphql/Services/DTOs.cs`
+  - `API Graphql/Tests/Services.Tests/Auth/UsersServiceTests.cs`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/*`
+  - `FrontEnd/OneItb-FE/src/Components/layout/public/PublicLayout.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/chat/MiniChatWidget.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Login.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Register.jsx`
+
 ## [2026-07-08] - Spec 175: Privacy Controls and SMTP Smoke Tests
 
 * **Objetivo**: Cerrar el ultimo quick win funcional de privacidad del perfil y agregar una herramienta admin-only para probar SMTP sin recorrer el flujo completo de postulaciones.

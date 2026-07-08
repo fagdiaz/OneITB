@@ -8,11 +8,6 @@ namespace OneITB.Core.Services.Interfaces
 {
     public record RegisterInput(
         [property: GraphQLType(typeof(NonNullType<StringType>))]
-        [property: StringLength(30, MinimumLength = 3, ErrorMessage = "El nombre de usuario debe tener entre 3 y 30 caracteres.")]
-        [property: RegularExpression(@"^[a-zA-Z0-9_\-\.]+$", ErrorMessage = "El formato del nombre de usuario no es válido.")]
-        string Username,
-
-        [property: GraphQLType(typeof(NonNullType<StringType>))]
         [property: StringLength(100, ErrorMessage = "El email no puede superar los 100 caracteres.")]
         [property: EmailAddress(ErrorMessage = "El formato del correo electrónico no es válido.")]
         string Email,
