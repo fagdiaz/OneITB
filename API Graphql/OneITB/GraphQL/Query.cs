@@ -101,11 +101,12 @@ namespace GraphQL.GraphQL
             int? careerId,
             int[]? careerIds,
             int[]? subjectIds,
+            Guid? inquiryId,
             [Service] ISocialService socialService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
             Guid? currentUserId = TryGetAuthenticatedUserId(httpContextAccessor);
-            return socialService.GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds);
+            return socialService.GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds, inquiryId);
         }
 
         public async Task<InquiryPage> GetInquiriesPage(
@@ -113,6 +114,7 @@ namespace GraphQL.GraphQL
             int? careerId,
             int[]? careerIds,
             int[]? subjectIds,
+            Guid? inquiryId,
             int first,
             string? after,
             [Service] ISocialService socialService,
@@ -128,13 +130,39 @@ namespace GraphQL.GraphQL
                     careerIds,
                     subjectIds,
                     first,
-                    after);
+                    after,
+                    inquiryId);
             }
             catch (InvalidOperationException ex)
             {
                 throw new GraphQLException(ex.Message);
             }
             catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<ReactionUserPage> GetInquiryReactionUsersPage(
+            Guid inquiryId,
+            int first,
+            string? after,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                string? role = GetAuthenticatedRole(httpContextAccessor);
+                bool canModerate = role == "Administrador" || role == "Moderador";
+                return await socialService.GetInquiryReactionUsersPageAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    canModerate,
+                    inquiryId,
+                    first,
+                    after);
+            }
+            catch (InvalidOperationException ex)
             {
                 throw new GraphQLException(ex.Message);
             }

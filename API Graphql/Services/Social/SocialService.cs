@@ -1,21 +1,59 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
+using Services.Notifications;
 using System.Text;
 
 namespace Services.Social
 {
     public class SocialService : ISocialService
     {
-        private readonly OneItbContext _context;
+        private const int MaxAttachmentCount = 10;
+        private const long MaxAttachmentBytes = 15 * 1024 * 1024;
 
-        public SocialService(OneItbContext context)
+        private static readonly HashSet<string> AllowedAttachmentContentTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/zip",
+            "application/x-zip-compressed",
+            "text/plain",
+            "image/png",
+            "image/jpeg",
+            "image/gif",
+            "image/webp",
+            "video/mp4",
+            "video/webm"
+        };
+
+        private readonly OneItbContext _context;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<SocialService> _logger;
+
+        public SocialService(
+            OneItbContext context,
+            INotificationService notificationService,
+            ILogger<SocialService> logger)
         {
             _context = context;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
-        public IQueryable<Inquiry> GetInquiries(Guid? currentUserId, string? searchTerm, int? careerId, int[]? careerIds, int[]? subjectIds)
+        public IQueryable<Inquiry> GetInquiries(
+            Guid? currentUserId,
+            string? searchTerm,
+            int? careerId,
+            int[]? careerIds,
+            int[]? subjectIds,
+            Guid? inquiryId = null)
         {
             IQueryable<Inquiry> query = _context.Inquiries
                 .AsNoTracking()
@@ -24,12 +62,23 @@ namespace Services.Social
                 .ThenInclude(user => user.Account)
                 .Include(inquiry => inquiry.Subject)
                 .ThenInclude(subject => subject.Career)
+                .Include(inquiry => inquiry.Attachments)
                 .Include(inquiry => inquiry.Reactions)
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.User)
                 .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.Attachments)
+                .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.Reactions)
+                .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.Replies)
                 .ThenInclude(reply => reply.User);
+
+            if (inquiryId.HasValue)
+            {
+                Guid selectedInquiryId = inquiryId.Value;
+                query = query.Where(inquiry => inquiry.Id == selectedInquiryId);
+            }
 
             string normalizedSearch = searchTerm?.Trim() ?? string.Empty;
             if (normalizedSearch.Length > 0)
@@ -121,12 +170,13 @@ namespace Services.Social
             int[]? careerIds,
             int[]? subjectIds,
             int first,
-            string? after)
+            string? after,
+            Guid? inquiryId = null)
         {
             int pageSize = Math.Clamp(first, 1, 25);
             int offset = DecodeOffset(after);
 
-            IQueryable<Inquiry> query = GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds);
+            IQueryable<Inquiry> query = GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds, inquiryId);
             int totalCount = await query.CountAsync();
             List<Inquiry> pageItems = await query
                 .Skip(offset)
@@ -148,30 +198,59 @@ namespace Services.Social
             };
         }
 
-        public async Task<Inquiry> AddInquiryAsync(Guid userId, int subjectId, string title, string content, string? fileUrl = null)
+        public async Task<Inquiry> AddInquiryAsync(
+            Guid userId,
+            int subjectId,
+            string title,
+            string content,
+            string? fileUrl = null,
+            IReadOnlyList<SocialAttachmentInput>? attachments = null)
         {
             await EnsureUserCanCreateContentAsync(userId, "publicar");
             string normalizedTitle = RequireText(title, 200, "El título");
             string normalizedContent = RequireText(content, 10000, "El contenido");
 
-            string? normalizedFileUrl = NormalizeFileUrl(fileUrl);
+            string role = await _context.Users
+                .AsNoTracking()
+                .Where(user => user.Id == userId && user.IsActive)
+                .Select(user => user.Role)
+                .SingleAsync();
 
-            if (!await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive))
-                throw new InvalidOperationException("El usuario autenticado no está disponible.");
+            var subjectScope = await _context.Subjects
+                .AsNoTracking()
+                .Where(subject => subject.Id == subjectId && subject.IsActive && subject.Career.IsActive)
+                .Select(subject => new { subject.Id, subject.CareerId })
+                .SingleOrDefaultAsync();
+            if (subjectScope is null)
+                throw new InvalidOperationException("La materia seleccionada no existe o esta inactiva.");
 
-            if (!await _context.Subjects.AnyAsync(subject => subject.Id == subjectId))
-                throw new InvalidOperationException("La materia seleccionada no existe.");
+            if (!role.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+            {
+                bool belongsToCareer = await _context.UserCareers
+                    .AsNoTracking()
+                    .AnyAsync(link => link.UserId == userId && link.CareerId == subjectScope.CareerId);
+                if (!belongsToCareer)
+                    throw new InvalidOperationException("Solo podes publicar en materias de tus carreras.");
+            }
+
+            Guid inquiryId = Guid.NewGuid();
+            List<SocialAttachment> normalizedAttachments = NormalizeAttachments(
+                attachments,
+                fileUrl,
+                inquiryId,
+                null);
 
             var inquiry = new Inquiry
             {
-                Id = Guid.NewGuid(),
+                Id = inquiryId,
                 UserId = userId,
                 SubjectId = subjectId,
                 Title = normalizedTitle,
                 Content = normalizedContent,
-                FileUrl = normalizedFileUrl,
+                FileUrl = normalizedAttachments.FirstOrDefault()?.FileUrl,
                 PublishDate = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,
+                Attachments = normalizedAttachments
             };
 
             _context.Inquiries.Add(inquiry);
@@ -202,6 +281,115 @@ namespace Services.Social
                 parsed.Scheme == Uri.UriSchemeHttps &&
                 (parsed.Host.Equals("res.cloudinary.com", StringComparison.OrdinalIgnoreCase) ||
                  parsed.Host.EndsWith(".cloudinary.com", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static List<SocialAttachment> NormalizeAttachments(
+            IReadOnlyList<SocialAttachmentInput>? inputs,
+            string? legacyFileUrl,
+            Guid? inquiryId,
+            Guid? commentId)
+        {
+            if (inquiryId.HasValue == commentId.HasValue)
+                throw new InvalidOperationException("El adjunto debe pertenecer a una publicacion o comentario.");
+
+            IReadOnlyList<SocialAttachmentInput> normalizedInputs = inputs ?? Array.Empty<SocialAttachmentInput>();
+            if (normalizedInputs.Count == 0 && !string.IsNullOrWhiteSpace(legacyFileUrl))
+            {
+                string normalizedLegacyUrl = NormalizeFileUrl(legacyFileUrl)!;
+                normalizedInputs = new[]
+                {
+                    new SocialAttachmentInput(
+                        normalizedLegacyUrl,
+                        GetFileNameFromUrl(normalizedLegacyUrl),
+                        InferLegacyContentType(normalizedLegacyUrl),
+                        0,
+                        0)
+                };
+            }
+
+            if (normalizedInputs.Count > MaxAttachmentCount)
+                throw new InvalidOperationException($"No podes adjuntar mas de {MaxAttachmentCount} archivos.");
+
+            int[] sortOrders = normalizedInputs.Select(input => input.SortOrder).ToArray();
+            if (sortOrders.Any(order => order < 0 || order >= MaxAttachmentCount) ||
+                sortOrders.Distinct().Count() != sortOrders.Length)
+            {
+                throw new InvalidOperationException("El orden de los archivos adjuntos no es valido.");
+            }
+
+            long aggregateSize = 0;
+            var urls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var result = new List<SocialAttachment>(normalizedInputs.Count);
+
+            foreach (SocialAttachmentInput input in normalizedInputs.OrderBy(item => item.SortOrder))
+            {
+                string normalizedUrl = NormalizeFileUrl(input.FileUrl)
+                    ?? throw new InvalidOperationException("La URL del archivo adjunto es obligatoria.");
+                if (!urls.Add(normalizedUrl))
+                    throw new InvalidOperationException("No se puede adjuntar el mismo archivo mas de una vez.");
+
+                string originalFileName = Path.GetFileName(input.OriginalFileName?.Trim()) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(originalFileName) ||
+                    originalFileName.Length > 255 ||
+                    originalFileName.Any(char.IsControl))
+                {
+                    throw new InvalidOperationException("El nombre original del archivo no es valido.");
+                }
+
+                string contentType = input.ContentType?.Trim().ToLowerInvariant() ?? string.Empty;
+                bool isLegacyInput = input.Size == 0 && normalizedInputs.Count == 1 && inputs is null;
+                if (!isLegacyInput && !AllowedAttachmentContentTypes.Contains(contentType))
+                    throw new InvalidOperationException("El tipo del archivo adjunto no esta permitido.");
+                if (input.Size < 0 || input.Size > MaxAttachmentBytes || (!isLegacyInput && input.Size == 0))
+                    throw new InvalidOperationException("El tamano del archivo adjunto no es valido.");
+
+                aggregateSize = checked(aggregateSize + input.Size);
+                if (aggregateSize > MaxAttachmentBytes)
+                    throw new InvalidOperationException("Los archivos adjuntos superan el limite total de 15 MB.");
+
+                result.Add(new SocialAttachment
+                {
+                    Id = Guid.NewGuid(),
+                    InquiryId = inquiryId,
+                    CommentId = commentId,
+                    FileUrl = normalizedUrl,
+                    OriginalFileName = originalFileName,
+                    ContentType = isLegacyInput ? InferLegacyContentType(normalizedUrl) : contentType,
+                    Size = input.Size,
+                    SortOrder = input.SortOrder,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            return result;
+        }
+
+        private static string GetFileNameFromUrl(string fileUrl)
+        {
+            if (Uri.TryCreate(fileUrl, UriKind.Absolute, out Uri? absolute))
+                return Uri.UnescapeDataString(Path.GetFileName(absolute.LocalPath));
+
+            return Uri.UnescapeDataString(Path.GetFileName(fileUrl));
+        }
+
+        private static string InferLegacyContentType(string fileUrl)
+        {
+            string extension = Path.GetExtension(
+                Uri.TryCreate(fileUrl, UriKind.Absolute, out Uri? absolute)
+                    ? absolute.LocalPath
+                    : fileUrl).ToLowerInvariant();
+
+            return extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".gif" => "image/gif",
+                ".webp" => "image/webp",
+                ".mp4" => "video/mp4",
+                ".webm" => "video/webm",
+                _ => "application/octet-stream"
+            };
         }
 
         private static string EncodeOffset(int offset)
@@ -296,13 +484,23 @@ namespace Services.Social
             return comment;
         }
 
-        public async Task<Comment> AddCommentAsync(Guid userId, Guid inquiryId, string content, Guid? parentCommentId, string? fileUrl = null)
+        public async Task<Comment> AddCommentAsync(
+            Guid userId,
+            Guid inquiryId,
+            string content,
+            Guid? parentCommentId,
+            string? fileUrl = null,
+            IReadOnlyList<SocialAttachmentInput>? attachments = null)
         {
             await EnsureUserCanCreateContentAsync(userId, "comentar");
             string normalizedContent = RequireText(content, 1000, "El comentario");
-            string? normalizedFileUrl = NormalizeFileUrl(fileUrl);
 
-            if (!await _context.Inquiries.AnyAsync(inquiry => inquiry.Id == inquiryId))
+            Guid? inquiryOwnerId = await _context.Inquiries
+                .AsNoTracking()
+                .Where(inquiry => inquiry.Id == inquiryId)
+                .Select(inquiry => (Guid?)inquiry.UserId)
+                .SingleOrDefaultAsync();
+            if (!inquiryOwnerId.HasValue)
                 throw new InvalidOperationException("La publicación no existe.");
 
             if (!await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive))
@@ -322,25 +520,50 @@ namespace Services.Social
                     throw new InvalidOperationException("La respuesta debe pertenecer a la misma publicación.");
             }
 
+            Guid commentId = Guid.NewGuid();
+            List<SocialAttachment> normalizedAttachments = NormalizeAttachments(
+                attachments,
+                fileUrl,
+                null,
+                commentId);
+
             var comment = new Comment
             {
-                Id = Guid.NewGuid(),
+                Id = commentId,
                 InquiryId = inquiryId,
                 UserId = userId,
                 ParentCommentId = parentCommentId,
                 Content = normalizedContent,
-                FileUrl = normalizedFileUrl,
-                CreatedAt = DateTime.UtcNow
+                FileUrl = normalizedAttachments.FirstOrDefault()?.FileUrl,
+                CreatedAt = DateTime.UtcNow,
+                Attachments = normalizedAttachments
             };
 
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
+
+            if (inquiryOwnerId.Value != userId)
+            {
+                await TryNotifyGroupedAsync(
+                    inquiryOwnerId.Value,
+                    NotificationType.SocialComment,
+                    inquiryId,
+                    $"social-comment:inquiry:{inquiryId:D}",
+                    "Tu publicación recibió un comentario.",
+                    "Tu publicación recibió {count} comentarios.");
+            }
+
             return await LoadCommentGraphAsync(comment.Id);
         }
 
         public async Task<ToggleReactionPayload> ToggleReactionAsync(Guid userId, Guid inquiryId)
         {
-            if (!await _context.Inquiries.AnyAsync(inquiry => inquiry.Id == inquiryId))
+            Guid? inquiryOwnerId = await _context.Inquiries
+                .AsNoTracking()
+                .Where(inquiry => inquiry.Id == inquiryId)
+                .Select(inquiry => (Guid?)inquiry.UserId)
+                .SingleOrDefaultAsync();
+            if (!inquiryOwnerId.HasValue)
                 throw new InvalidOperationException("La publicación no existe.");
 
             if (!await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive))
@@ -350,26 +573,169 @@ namespace Services.Social
                 .SingleOrDefaultAsync(reaction => reaction.InquiryId == inquiryId && reaction.UserId == userId);
 
             bool isReacted;
+            Guid? reactionId;
             if (existingReaction is null)
             {
-                _context.Reactions.Add(new Reaction
+                var reaction = new Reaction
                 {
                     Id = Guid.NewGuid(),
                     InquiryId = inquiryId,
                     UserId = userId,
                     CreatedAt = DateTime.UtcNow
-                });
+                };
+                _context.Reactions.Add(reaction);
                 isReacted = true;
+                reactionId = reaction.Id;
             }
             else
             {
                 _context.Reactions.Remove(existingReaction);
                 isReacted = false;
+                reactionId = existingReaction.Id;
             }
 
             await _context.SaveChangesAsync();
+
+            if (isReacted && inquiryOwnerId.Value != userId)
+            {
+                await TryNotifyGroupedAsync(
+                    inquiryOwnerId.Value,
+                    NotificationType.SocialReaction,
+                    inquiryId,
+                    $"social-reaction:inquiry:{inquiryId:D}",
+                    "Tu publicación recibió un Me gusta.",
+                    "Tu publicación recibió {count} Me gusta.");
+            }
+
             int reactionCount = await _context.Reactions.CountAsync(reaction => reaction.InquiryId == inquiryId);
-            return new ToggleReactionPayload(inquiryId, isReacted, reactionCount);
+            return new ToggleReactionPayload(inquiryId, isReacted, reactionCount, reactionId);
+        }
+
+        public async Task<ToggleCommentReactionPayload> ToggleCommentReactionAsync(Guid userId, Guid commentId)
+        {
+            await EnsureUserCanCreateContentAsync(userId, "reaccionar");
+
+            var target = await _context.Comments
+                .AsNoTracking()
+                .Where(comment => comment.Id == commentId)
+                .Select(comment => new { comment.UserId, comment.InquiryId })
+                .SingleOrDefaultAsync()
+                ?? throw new InvalidOperationException("El comentario no existe.");
+
+            CommentReaction? existingReaction = await _context.CommentReactions
+                .SingleOrDefaultAsync(reaction => reaction.CommentId == commentId && reaction.UserId == userId);
+
+            bool isReacted;
+            Guid? reactionId;
+            if (existingReaction is null)
+            {
+                var reaction = new CommentReaction
+                {
+                    Id = Guid.NewGuid(),
+                    CommentId = commentId,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.CommentReactions.Add(reaction);
+                isReacted = true;
+                reactionId = reaction.Id;
+            }
+            else
+            {
+                _context.CommentReactions.Remove(existingReaction);
+                isReacted = false;
+                reactionId = existingReaction.Id;
+            }
+
+            await _context.SaveChangesAsync();
+
+            if (isReacted && target.UserId != userId)
+            {
+                await TryNotifyGroupedAsync(
+                    target.UserId,
+                    NotificationType.SocialReaction,
+                    target.InquiryId,
+                    $"social-reaction:comment:{commentId:D}",
+                    "Tu comentario recibió un Me gusta.",
+                    "Tu comentario recibió {count} Me gusta.");
+            }
+
+            int reactionCount = await _context.CommentReactions
+                .CountAsync(reaction => reaction.CommentId == commentId);
+            return new ToggleCommentReactionPayload(commentId, isReacted, reactionCount, reactionId);
+        }
+
+        public async Task<ReactionUserPage> GetInquiryReactionUsersPageAsync(
+            Guid userId,
+            bool canModerate,
+            Guid inquiryId,
+            int first,
+            string? after)
+        {
+            Guid? ownerId = await _context.Inquiries
+                .AsNoTracking()
+                .Where(inquiry => inquiry.Id == inquiryId)
+                .Select(inquiry => (Guid?)inquiry.UserId)
+                .SingleOrDefaultAsync();
+            if (!ownerId.HasValue)
+                throw new InvalidOperationException("La publicación no existe.");
+            if (ownerId.Value != userId && !canModerate)
+                throw new InvalidOperationException("No tenes permisos para ver las reacciones de esta publicación.");
+
+            int pageSize = Math.Clamp(first, 1, 50);
+            int offset = DecodeOffset(after);
+            IQueryable<Reaction> reactions = _context.Reactions
+                .AsNoTracking()
+                .Where(reaction => reaction.InquiryId == inquiryId)
+                .OrderByDescending(reaction => reaction.CreatedAt)
+                .ThenByDescending(reaction => reaction.Id);
+
+            int totalCount = await reactions.CountAsync();
+            List<User> users = await reactions
+                .Skip(offset)
+                .Take(pageSize + 1)
+                .Select(reaction => reaction.User)
+                .ToListAsync();
+
+            bool hasNextPage = users.Count > pageSize;
+            if (hasNextPage)
+                users.RemoveAt(users.Count - 1);
+
+            return new ReactionUserPage
+            {
+                Items = users,
+                HasNextPage = hasNextPage,
+                NextCursor = hasNextPage ? EncodeOffset(offset + users.Count) : string.Empty,
+                TotalCount = totalCount
+            };
+        }
+
+        private async Task TryNotifyGroupedAsync(
+            Guid recipientId,
+            NotificationType type,
+            Guid inquiryId,
+            string groupKey,
+            string singularMessage,
+            string pluralMessageTemplate)
+        {
+            try
+            {
+                await _notificationService.UpsertGroupedNotificationAsync(
+                    recipientId,
+                    type,
+                    inquiryId,
+                    groupKey,
+                    singularMessage,
+                    pluralMessageTemplate);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Social action persisted but grouped notification failed for inquiry {InquiryId} and user {UserId}.",
+                    inquiryId,
+                    recipientId);
+            }
         }
 
         private async Task EnsureUserCanCreateContentAsync(Guid userId, string action)
@@ -405,9 +771,14 @@ namespace Services.Social
                 .ThenInclude(user => user.Account)
                 .Include(inquiry => inquiry.Subject)
                 .ThenInclude(subject => subject.Career)
+                .Include(inquiry => inquiry.Attachments)
                 .Include(inquiry => inquiry.Reactions)
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.User)
+                .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.Attachments)
+                .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.Reactions)
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.Replies)
                 .ThenInclude(reply => reply.User)
@@ -420,6 +791,8 @@ namespace Services.Social
                 .AsNoTracking()
                 .Include(comment => comment.User)
                 .Include(comment => comment.Inquiry)
+                .Include(comment => comment.Attachments)
+                .Include(comment => comment.Reactions)
                 .SingleAsync(comment => comment.Id == commentId);
         }
     }

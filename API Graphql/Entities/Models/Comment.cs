@@ -19,5 +19,7 @@ namespace OneItb.Entities.Models
         public virtual User User { get; set; } = default!;
         public virtual Comment? ParentComment { get; set; }
         public virtual ICollection<Comment> Replies { get; set; } = new List<Comment>();
+        public virtual ICollection<SocialAttachment> Attachments { get; set; } = new List<SocialAttachment>();
+        public virtual ICollection<CommentReaction> Reactions { get; set; } = new List<CommentReaction>();
     }
 }

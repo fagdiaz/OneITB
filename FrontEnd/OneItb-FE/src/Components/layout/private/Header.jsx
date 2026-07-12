@@ -64,7 +64,7 @@ export const Header = () => {
       ref={headerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative isolate sticky top-0 z-40 flex h-14 w-full max-w-full shrink-0 items-center gap-4 overflow-visible border-b border-white/10 bg-slate-900 px-4 text-white shadow-md backdrop-blur-xl transition-colors dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-[0_14px_45px_rgba(2,6,23,0.45)] no-print print:hidden"
+      className="relative isolate sticky top-0 z-40 flex h-14 w-full max-w-full shrink-0 items-center gap-2 overflow-visible border-b border-white/10 bg-slate-900 px-2 text-white shadow-md backdrop-blur-xl transition-colors dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-[0_14px_45px_rgba(2,6,23,0.45)] sm:gap-3 sm:px-4 no-print print:hidden"
     >
       {/*
         pointer-events-none: no intercepta clicks ni hovers.
@@ -116,9 +116,9 @@ export const Header = () => {
       </Link>
 
       {/* ── SEARCH + SPACER + NAV ─────────────────────────────────── */}
-      <div className="relative z-10 flex min-w-0 flex-1 items-center gap-3">
+      <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         {isLoggedIn && <GlobalSearch />}
-        <div className="min-w-4 flex-1" />
+        <div className="min-w-0 flex-1" />
         <Nav />
       </div>
     </header>

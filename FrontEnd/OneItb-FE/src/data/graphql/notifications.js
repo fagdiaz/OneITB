@@ -9,6 +9,9 @@ export const GET_MY_NOTIFICATIONS = gql`
       actionUrl
       isRead
       createdAt
+      updatedAt
+      aggregateCount
+      relatedInquiryId
     }
   }
 `;
@@ -65,6 +68,9 @@ export const NOTIFICATION_RECEIVED = gql`
       actionUrl
       isRead
       createdAt
+      updatedAt
+      aggregateCount
+      relatedInquiryId
     }
   }
 `;

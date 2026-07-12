@@ -16,12 +16,16 @@ const notificationLabels = {
   ACADEMIC_RESOURCE: 'Recursos',
   ACADEMIC_PROGRESS: 'Progreso',
   SIU_SYNC: 'SIU',
+  SOCIAL_COMMENT: 'Comentarios',
+  SOCIAL_REACTION: 'Me gusta',
 };
 
 const notificationIcons = {
   ACADEMIC_RESOURCE: 'fa-solid fa-book-open',
   ACADEMIC_PROGRESS: 'fa-solid fa-chart-line',
   SIU_SYNC: 'fa-solid fa-arrows-rotate',
+  SOCIAL_COMMENT: 'fa-regular fa-comment-dots',
+  SOCIAL_REACTION: 'fa-regular fa-thumbs-up',
 };
 
 const formatNotificationDate = (value) => {
@@ -198,6 +202,9 @@ export const NotificationBell = () => {
                       }`}
                     >
                       <i className={notificationIcons[notification.type] ?? 'fa-regular fa-bell'} />
+                      {(notification.aggregateCount ?? 1) > 1 && (
+                        <span className="sr-only">{notification.aggregateCount} eventos agrupados</span>
+                      )}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
@@ -207,7 +214,7 @@ export const NotificationBell = () => {
                         {!notification.isRead && <span className="h-2 w-2 rounded-full bg-blue-500" />}
                       </span>
                       <span className="mt-1 block text-sm font-medium text-slate-800 dark:text-slate-100">{notification.message}</span>
-                      <span className="mt-1 block text-xs text-slate-500">{formatNotificationDate(notification.createdAt)}</span>
+                      <span className="mt-1 block text-xs text-slate-500">{formatNotificationDate(notification.updatedAt || notification.createdAt)}</span>
                     </span>
                   </div>
                 );

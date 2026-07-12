@@ -61,6 +61,24 @@ erDiagram
         bool IsActive
     }
 
+    SOCIAL_ATTACHMENT {
+        guid Id PK
+        guid InquiryId FK
+        guid CommentId FK
+        string FileUrl
+        string OriginalFileName
+        string ContentType
+        long Size
+        int SortOrder
+    }
+
+    COMMENT_REACTION {
+        guid Id PK
+        guid CommentId FK
+        guid UserId FK
+        datetime CreatedAt
+    }
+
     MESSAGE {
         guid Id PK
         guid SenderId FK
@@ -111,10 +129,14 @@ erDiagram
     NOTIFICATION {
         guid Id PK
         guid UserId FK
+        guid RelatedInquiryId FK
         string Type
         string Message
         string ActionUrl
         bool IsRead
+        string GroupKey
+        int AggregateCount
+        datetime UpdatedAt
     }
 
     AUDIT_LOG {
@@ -135,6 +157,10 @@ erDiagram
     INQUIRY ||--o{ COMMENT : contains
     COMMENT ||--o{ COMMENT : replies
     USER ||--o{ COMMENT : writes
+    INQUIRY ||--o{ SOCIAL_ATTACHMENT : attaches
+    COMMENT ||--o{ SOCIAL_ATTACHMENT : attaches
+    COMMENT ||--o{ COMMENT_REACTION : receives
+    USER ||--o{ COMMENT_REACTION : creates
     USER ||--o{ MESSAGE : sends
     USER ||--o{ MESSAGE : receives
     SUBJECT ||--o{ ACADEMIC_RESOURCE : provides
@@ -145,6 +171,7 @@ erDiagram
     JOB_OFFER ||--o{ JOB_APPLICATION : receives
     USER ||--o{ JOB_APPLICATION : applies
     USER ||--o{ NOTIFICATION : receives
+    INQUIRY ||--o{ NOTIFICATION : groups
     USER ||--o{ AUDIT_LOG : performs
 ```
 

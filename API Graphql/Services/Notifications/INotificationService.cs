@@ -15,5 +15,13 @@ namespace Services.Notifications
             NotificationType type,
             string message,
             string? actionUrl);
+        Task<Notification?> UpsertGroupedNotificationAsync(
+            Guid userId,
+            NotificationType type,
+            Guid relatedInquiryId,
+            string groupKey,
+            string singularMessage,
+            string pluralMessageTemplate,
+            CancellationToken cancellationToken = default);
     }
 }

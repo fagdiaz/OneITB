@@ -35,6 +35,9 @@ const NAV_BASE = [
 
 const NAV_ACTIVE = 'border-blue-300/30 bg-white/15 text-white ring-1 ring-blue-300/20 shadow-[0_4px_14px_rgba(59,130,246,0.34),0_1px_4px_rgba(0,0,0,0.25)]'
 const NAV_INACTIVE = 'text-slate-300'
+const MOBILE_LINK_BASE = 'flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition'
+const MOBILE_LINK_ACTIVE = 'bg-blue-500/15 text-white ring-1 ring-blue-300/25'
+const MOBILE_LINK_INACTIVE = 'text-slate-300 hover:bg-white/10 hover:text-white'
 
 const resolveAssetUrl = (value) => {
   if (!value) return null
@@ -48,9 +51,11 @@ export const Nav = () => {
   const { theme, toggleTheme } = useTheme()
   const location = useLocation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [avatarFailed, setAvatarFailed] = useState(false)
   const [jobOfferBadgeCount, setJobOfferBadgeCount] = useState(0)
   const dropdownRef = useRef(null)
+  const mobileMenuRef = useRef(null)
   const lastJobOfferIdRef = useRef(null)
   const isDark = theme === 'dark'
   const safeAuth = auth ?? {}
@@ -73,6 +78,9 @@ export const Nav = () => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false)
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+        setMobileMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -103,6 +111,7 @@ export const Nav = () => {
     if (location.pathname.startsWith('/empleos')) {
       setJobOfferBadgeCount(0)
     }
+    setMobileMenuOpen(false)
   }, [location.pathname])
 
   useEffect(() => {
@@ -124,11 +133,14 @@ export const Nav = () => {
   const navClassFor = (targetPath) =>
     `${NAV_BASE} ${isActivePath(targetPath) ? NAV_ACTIVE : NAV_INACTIVE}`
 
+  const mobileNavClassFor = (targetPath) =>
+    `${MOBILE_LINK_BASE} ${isActivePath(targetPath) ? MOBILE_LINK_ACTIVE : MOBILE_LINK_INACTIVE}`
+
   return (
     <nav className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
 
       {/* ── Main nav links ─────────────────────────────────────── */}
-      <ul className="hidden min-w-0 items-center gap-1 list-none m-0 p-0 md:flex">
+      <ul className="hidden min-w-0 items-center gap-1 list-none m-0 p-0 lg:flex">
         <li>
           <NavLink
             to={isAuthenticatedUser ? '/feed' : '/'}
@@ -194,6 +206,89 @@ export const Nav = () => {
           </li>
         )}
       </ul>
+
+      <div className="relative lg:hidden" ref={mobileMenuRef}>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen((current) => !current)}
+          className={[
+            'flex h-9 w-9 items-center justify-center rounded-xl border border-white/10',
+            'bg-white/5 text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10 hover:text-white',
+            mobileMenuOpen ? 'ring-1 ring-blue-300/30 shadow-[0_4px_14px_rgba(59,130,246,0.34)]' : '',
+          ].join(' ')}
+          aria-label={mobileMenuOpen ? 'Cerrar menu de navegacion' : 'Abrir menu de navegacion'}
+          aria-expanded={mobileMenuOpen}
+        >
+          <i className={`fa-solid ${mobileMenuOpen ? 'fa-xmark' : 'fa-bars'} text-sm`} />
+        </button>
+
+        {mobileMenuOpen && (
+          <div className="absolute right-0 top-[calc(100%+12px)] z-[80] w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 p-2 text-slate-100 shadow-[0_24px_70px_rgba(15,23,42,0.45)] backdrop-blur-xl ring-1 ring-blue-400/10">
+            <div className="grid gap-1">
+              <NavLink
+                to={isAuthenticatedUser ? '/feed' : '/'}
+                onClick={() => setMobileMenuOpen(false)}
+                className={mobileNavClassFor(isAuthenticatedUser ? '/feed' : '/')}
+              >
+                <i className="fa-solid fa-house w-4 text-xs text-blue-200" />
+                <span>Inicio</span>
+              </NavLink>
+
+              {isAuthenticatedUser && (
+                <>
+                  <NavLink to="/chat" onClick={() => setMobileMenuOpen(false)} className={`${mobileNavClassFor('/chat')} relative`}>
+                    <i className="fa-regular fa-comment-dots w-4 text-xs text-blue-200" />
+                    <span>Mensajes</span>
+                    {unreadMessageCount > 0 && (
+                      <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white">
+                        {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                      </span>
+                    )}
+                  </NavLink>
+                  <NavLink to="/academic" onClick={() => setMobileMenuOpen(false)} className={mobileNavClassFor('/academic')}>
+                    <i className="fa-solid fa-graduation-cap w-4 text-xs text-blue-200" />
+                    <span>Academico</span>
+                  </NavLink>
+                  <NavLink to="/empleos" onClick={() => setMobileMenuOpen(false)} className={mobileNavClassFor('/empleos')}>
+                    <i className="fa-solid fa-briefcase w-4 text-xs text-blue-200" />
+                    <span>Empleos</span>
+                    {jobOfferBadgeCount > 0 && (
+                      <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white">
+                        {jobOfferBadgeCount > 9 ? '9+' : jobOfferBadgeCount}
+                      </span>
+                    )}
+                  </NavLink>
+                  {(safeAuth?.role === 'Empleador' || safeAuth?.role === 'Administrador') && (
+                    <NavLink to="/empleos/mis-ofertas" onClick={() => setMobileMenuOpen(false)} className={mobileNavClassFor('/empleos/mis-ofertas')}>
+                      <i className="fa-solid fa-list-check w-4 text-xs text-blue-200" />
+                      <span>Postulaciones</span>
+                    </NavLink>
+                  )}
+                  {safeAuth?.role === 'Administrador' && (
+                    <NavLink to="/admin" onClick={() => setMobileMenuOpen(false)} className={mobileNavClassFor('/admin')}>
+                      <i className="fa-solid fa-users-gear w-4 text-xs text-blue-200" />
+                      <span>Admin</span>
+                    </NavLink>
+                  )}
+                </>
+              )}
+
+              {!isAuthenticatedUser && (
+                <>
+                  <NavLink to="/login" onClick={() => setMobileMenuOpen(false)} className={mobileNavClassFor('/login')}>
+                    <i className="fa-solid fa-right-to-bracket w-4 text-xs text-blue-200" />
+                    <span>Iniciar Sesion</span>
+                  </NavLink>
+                  <NavLink to="/register" onClick={() => setMobileMenuOpen(false)} className={mobileNavClassFor('/register')}>
+                    <i className="fa-solid fa-user-plus w-4 text-xs text-blue-200" />
+                    <span>Registrarse</span>
+                  </NavLink>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ── Right side ─────────────────────────────────────────── */}
       <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
@@ -287,7 +382,7 @@ export const Nav = () => {
             </div>
           </>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 lg:flex">
             <Link
               to="/login"
               className={`${NAV_BASE} ${NAV_INACTIVE}`}

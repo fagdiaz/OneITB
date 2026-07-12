@@ -12,6 +12,7 @@ export const GET_SUBJECTS = gql`
         id
         name
         code
+        isActive
       }
       prerequisites {
         id

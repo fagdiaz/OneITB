@@ -1,113 +1,115 @@
-import React from 'react'
-import useAuth from '../../../hooks/useAuth'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@apollo/client';
+import { Link } from 'react-router-dom';
+import useAuth from '../../../hooks/useAuth';
+import { GET_USER_PROFILE } from '../../../data/graphql/queries/getUserProfile';
+import { apiBaseUrl } from '../../../utils/uploadFile';
 
-/**
- * SideBar — REFACTOR 034
- * 
- * Replaces all legacy BEM class names (.layout__aside, .aside__container, etc.)
- * with equivalent Tailwind utility classes.
- * All data display is preserved: avatar, name, alias, stats, quick-post form.
- */
+const resolveAvatarUrl = (avatarUrl) => {
+  if (!avatarUrl) return null;
+  if (/^https?:\/\//i.test(avatarUrl) || avatarUrl.startsWith('data:')) return avatarUrl;
+  return avatarUrl.startsWith('/') ? `${apiBaseUrl}${avatarUrl}` : avatarUrl;
+};
+
+const initials = (profile) => (
+  `${profile?.firstName?.[0] ?? ''}${profile?.lastName?.[0] ?? ''}`.toUpperCase() || 'U'
+);
+
+const quickLinks = [
+  { to: '/profile', icon: 'fa-id-card', label: 'Ver perfil' },
+  { to: '/profile/edit', icon: 'fa-pen-to-square', label: 'Editar perfil' },
+  { to: '/academic', icon: 'fa-graduation-cap', label: 'Modulo academico' },
+  { to: '/empleos', icon: 'fa-briefcase', label: 'Empleos' },
+];
+
 export const SideBar = () => {
-
   const { auth } = useAuth();
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const { data, loading } = useQuery(GET_USER_PROFILE, {
+    skip: !auth?.id,
+    fetchPolicy: 'cache-first',
+  });
+
+  const profile = data?.me;
+  const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
+  const displayName = profile?.fullName
+    || [profile?.firstName, profile?.lastName].filter(Boolean).join(' ')
+    || auth?.username
+    || 'Usuario';
+  const careers = useMemo(() => (
+    (profile?.userCareers ?? [])
+      .map((item) => item?.career)
+      .filter((career) => career?.isActive)
+  ), [profile?.userCareers]);
+
+  useEffect(() => setAvatarFailed(false), [avatarUrl]);
 
   return (
-    <div className="flex flex-col h-full p-4 gap-4">
+    <div className="flex h-full flex-col gap-4 p-4">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/65">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+          Mi cuenta
+        </p>
 
-      {/* Profile Card */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-
-        {/* Header */}
-        <div className="border-b border-slate-100 pb-3 mb-3">
-          <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest">
-            Mi Cuenta
-          </h2>
-        </div>
-
-        {/* Avatar + Name */}
-        <div className="flex items-center gap-3 mb-4">
-          <Link to="/profile" className="shrink-0">
-            <img
-              src={`https://ui-avatars.com/api/?name=${auth.fullName || 'User'}&background=3785e5&color=fff&size=64`}
-              className="w-12 h-12 rounded-full ring-2 ring-blue-200 object-cover"
-              alt="Foto de perfil"
-            />
+        <div className="mt-4 flex items-center gap-3">
+          <Link to="/profile" className="shrink-0" aria-label="Abrir mi perfil">
+            {avatarUrl && !avatarFailed ? (
+              <img
+                src={avatarUrl}
+                alt="Foto de perfil"
+                loading="lazy"
+                decoding="async"
+                onError={() => setAvatarFailed(true)}
+                className="h-12 w-12 rounded-xl object-cover ring-2 ring-blue-100 dark:ring-blue-400/20"
+              />
+            ) : (
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-sm font-black text-white shadow-sm">
+                {initials(profile)}
+              </span>
+            )}
           </Link>
+
           <div className="min-w-0">
-            <Link
-              to="/profile"
-              className="block text-sm font-semibold text-slate-800 hover:text-blue-600 transition-colors truncate"
-            >
-              {auth.fullName || 'Usuario'}
+            <Link to="/profile" className="block truncate text-sm font-bold text-slate-900 transition hover:text-blue-600 dark:text-white dark:hover:text-blue-300">
+              {loading ? 'Cargando perfil...' : displayName}
             </Link>
-            <p className="text-xs text-slate-500 truncate">
-              @{auth.username || 'usuario'}
+            <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+              {profile?.role || auth?.role || 'Usuario'}
             </p>
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="flex divide-x divide-slate-100 border-t border-slate-100 pt-3">
-          <a href="#" className="flex-1 flex flex-col items-center gap-0.5 hover:text-blue-600 transition-colors group">
-            <span className="text-lg font-bold text-blue-600 group-hover:text-blue-700">10</span>
-            <span className="text-xs text-slate-500">Siguiendo</span>
-          </a>
-          <a href="#" className="flex-1 flex flex-col items-center gap-0.5 hover:text-blue-600 transition-colors group">
-            <span className="text-lg font-bold text-blue-600 group-hover:text-blue-700">13</span>
-            <span className="text-xs text-slate-500">Seguidores</span>
-          </a>
-          <a href="#" className="flex-1 flex flex-col items-center gap-0.5 hover:text-blue-600 transition-colors group">
-            <span className="text-lg font-bold text-blue-600 group-hover:text-blue-700">17</span>
-            <span className="text-xs text-slate-500">Posts</span>
-          </a>
-        </div>
-      </div>
-
-      {/* Quick Post Form */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex-1">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">
-          ¿Qué estás pensando?
-        </h3>
-
-        <form className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="sidebar-post" className="text-xs font-medium text-slate-500">
-              Contenido
-            </label>
-            <textarea
-              id="sidebar-post"
-              name="post"
-              rows={4}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
-              placeholder="Comparte algo con la comunidad..."
-            />
+        {careers.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3 dark:border-white/10">
+            {careers.map((career) => (
+              <span key={career.id} className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-200">
+                {career.code || career.name}
+              </span>
+            ))}
           </div>
+        )}
+      </section>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="sidebar-image" className="text-xs font-medium text-slate-500">
-              Imagen (opcional)
-            </label>
-            <input
-              id="sidebar-image"
-              type="file"
-              name="image"
-              accept="image/*"
-              className="w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
-          >
-            Publicar
-          </button>
-        </form>
-      </div>
-
+      <nav aria-label="Accesos rapidos" className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900/65">
+        <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+          Accesos rapidos
+        </p>
+        <ul className="space-y-1">
+          {quickLinks.map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
+              >
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-300">
+                  <i className={`fa-solid ${item.icon}`} />
+                </span>
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
-  )
-}
+  );
+};

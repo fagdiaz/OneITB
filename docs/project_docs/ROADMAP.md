@@ -1,8 +1,8 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-07-08
+**Ultima revision**: 2026-07-11
 
-**Estado global**: 98% (97 de 99 items)
+**Estado global**: 98% (103 de 105 items)
 
 **Feature Complete funcional core**: 100%. Los pendientes restantes pertenecen a regresion visual, credenciales externas, despliegue cloud real o ecosistema mobile.
 
@@ -50,7 +50,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Selectores en cascada carrera-materia en feed y administracion.
 - [x] [I] Progreso academico, cursadas y notas por usuario.
 
-## Modulo 4 - Feed, comentarios y multimedia: 100% (17/17)
+## Modulo 4 - Feed, comentarios y multimedia: 100% (23/23)
 
 - [x] [V] `Inquiry` vinculada a autor y materia sin N+1.
 - [x] [V] Creacion, lectura, refetch y persistencia de publicaciones.
@@ -69,6 +69,12 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Limpieza de archivos huerfanos cuando GraphQL falla tras el upload.
 - [x] [V] Paginacion o scroll incremental del feed.
 - [x] [I] Pruebas automatizadas backend de publicaciones, comentarios, archivos, busqueda, scoping y reacciones.
+- [x] [V] Selector de materias limitado a carreras propias, agrupado por carrera y ordenado por anio/nombre, con validacion backend contra bypass.
+- [x] [V] Adjuntos multiples con nombre original en publicaciones, comentarios y respuestas, maximo 10 archivos y 15 MB agregados.
+- [x] [I] Previsualizacion previa y galeria mixta no excluyente para YouTube, imagenes, video, PDF y documentos con visores accesibles.
+- [x] [V] Reacciones persistentes en comentarios/respuestas y listado paginado de usuarios que reaccionaron a publicaciones propias.
+- [x] [V] Notificaciones sociales agrupadas persistentemente, reabiertas como no leidas y enlazadas a la publicacion objetivo.
+- [x] [I] Footer institucional y eliminacion del compositor legacy duplicado del sidebar para conservar un unico flujo de publicacion.
 
 ## Modulo 5 - Mensajeria privada: 100% (8/8)
 
@@ -159,6 +165,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 1. Paginacion del feed: verificada en runtime contra Docker SQL.
 2. Limpieza de uploads huerfanos: verificada en runtime contra Docker SQL.
 3. Auditoria persistente de moderacion: verificada en runtime contra Docker SQL.
+4. Adjuntos multiples, reacciones de comentarios y notificaciones agrupadas: verificados por tests y smoke GraphQL autenticado contra Docker SQL.
 
 ### P2 - Alcance academico
 

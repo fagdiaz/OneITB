@@ -18,10 +18,10 @@ public sealed class UsersServiceTests
         var service = new UsersService(unitOfWork, context);
 
         UserPayload payload = await service.RegisterAsync(new RegisterInput(
-            "LU.PRUEBA@ITBELTRAN.COM.AR",
+            "  LU.PRUEBA@ITBELTRAN.COM.AR  ",
             "Test1234!",
-            "lucia",
-            "perez",
+            "luCIA",
+            "pEReZ",
             "estudiante",
             new[] { ServiceTestData.CareerId },
             null));
@@ -35,7 +35,7 @@ public sealed class UsersServiceTests
         Assert.Equal("Lucia", persisted.FirstName);
         Assert.Equal("Perez", persisted.LastName);
         Assert.Equal("Estudiante", persisted.Role);
-        Assert.Equal("Lu.prueba@itbeltran.com.ar", persisted.Account.Email);
+        Assert.Equal("lu.prueba@itbeltran.com.ar", persisted.Account.Email);
         Assert.True(BCrypt.Net.BCrypt.Verify("Test1234!", persisted.Account.PasswordHash));
         Assert.Equal(60, persisted.Account.PasswordHash.Length);
         Assert.Contains(persisted.UserCareers, link => link.CareerId == ServiceTestData.CareerId);

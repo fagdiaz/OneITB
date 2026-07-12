@@ -22,7 +22,7 @@ import { EmployerJobOffers } from '../Components/jobs/EmployerJobOffers'
 
 export const Routing = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <AuthProvider>
       <NotificationProvider>
       <Routes>

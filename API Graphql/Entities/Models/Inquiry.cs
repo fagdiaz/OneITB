@@ -15,7 +15,7 @@ namespace OneItb.Entities.Models
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
-                    throw new ArgumentException("El título de la consulta no puede estar vacío o contener espacios en blanco.", nameof(Title));
+                    throw new ArgumentException("El titulo de la consulta no puede estar vacio o contener espacios en blanco.", nameof(Title));
                 _title = value;
             }
         }
@@ -26,7 +26,7 @@ namespace OneItb.Entities.Models
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
-                    throw new ArgumentException("El contenido de la consulta no puede estar vacío.", nameof(Content));
+                    throw new ArgumentException("El contenido de la consulta no puede estar vacio.", nameof(Content));
                 _content = value;
             }
         }
@@ -41,6 +41,7 @@ namespace OneItb.Entities.Models
         public virtual Subject Subject { get; set; } = default!;
         public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+        public virtual ICollection<SocialAttachment> Attachments { get; set; } = new List<SocialAttachment>();
         public virtual ICollection<CommunityReport> Reports { get; set; } = new List<CommunityReport>();
     }
 }

@@ -1,18 +1,18 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-07-08
+**Ultima verificacion**: 2026-07-11
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 97/99 (98%); core funcional Feature Complete |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 103/105 (98%); core funcional Feature Complete |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente, actualizado post specs 173-175 |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente, actualizado hasta Spec 178 |
 
 ## Documentacion complementaria
 
@@ -30,6 +30,7 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/178-qa-session2-social-core-fixes/` | Nucleo social estabilizado: scoping de materias backend/UI, `SocialAttachment`, `CommentReaction`, adjuntos multiples con nombre original, galeria multimedia no excluyente, visores, autofocus, listado paginado de likes, notificaciones agrupadas con deep-link, footer y retiro del compositor legacy del sidebar. Migracion aplicada a Docker SQL, EF sin cambios pendientes, backend build PASS, tests 47/47, frontend tests 6/6, build Vite PASS y smoke GraphQL autenticado PASS. Browser QA fue parcial: detecto el sidebar duplicado y motivo el fix; la recarga post-fix quedo bloqueada por politica de URL de la herramienta |
 | `specs/175-privacy-controls-and-smoke-tests/` | Controles de privacidad implementados: `User.IsPublicProfile`, migracion `AddUserProfilePrivacy`, `toggleProfilePrivacy`, masking backend-side en `publicProfile`/`searchPublicProfiles`, switch en `/profile/edit` con toast local, badges de perfil privado en busqueda, y `testSmtpConnection` admin-only con errores controlados. Backend build PASS, backend tests 39/39, frontend build PASS, EF sin cambios pendientes y diff-check PASS; smoke runtime temporal bloqueado por revisor automatico del entorno Codex al iniciar proceso persistente |
 | `docs/` audit 2026-07-08 | Documentacion normalizada para presentacion institucional: `ROADMAP.md` alinea el modulo laboral como "Empleos y Gestor de Postulaciones", suma SMTP como item implementado y queda actualizado a 97/99; `scope-and-requirements.md`, `architecture-and-design.md` y `docs/academic/*` quedan alineados con empleos, postulaciones, SMTP, AuditLog, SIU mock, recursos academicos y limites pendientes; `docker-compose.prod.yml`, `.env.example` y `RUNBOOK_DEV.md` documentan variables SMTP opcionales |
 | `specs/174-ux-alignment-and-smtp/` | Code Freeze polish: terminologia de empleos alineada a "Gestor de Postulaciones" y "Perfil Academico"; `IEmailSender` con `SmtpEmailService` configurable y `ConsoleEmailService` fallback; `updateApplicationStatus` envia correo en estados `Reviewed`/`Rejected` sin rollback ante fallo SMTP. Backend build PASS, backend tests 38/38, frontend build PASS; Vitest bloqueado por EPERM en `node_modules/.vite-temp`; smoke SMTP real pendiente por falta de secretos/proveedor |
@@ -89,6 +90,7 @@
 ## Brechas vigentes
 
 - Existen baselines de pruebas de componentes frontend y de integracion GraphQL con executor real; queda ampliar cobertura hacia regresion visual/browser y SQL Server/Testcontainers para CI avanzado.
+- El flujo social de Spec 178 quedo verificado por tests y smoke autenticado REST/GraphQL; falta una ultima regresion manual de file picker, lightboxes y sidebar post-fix en el navegador usado para la defensa.
 - Falta regresion autenticada en navegador del hub academico para elevar busqueda/categorias/versionado/modal de recursos desde `[I]` a `[V]`.
 - Falta regresion visual en navegador de `/empleos` y `/empleos/mis-ofertas`, mas validacion manual del badge realtime con dos sesiones para elevar la UI de empleos/Gestor de Postulaciones a `[V]`.
 - Redis Pub/Sub, Cloudinary y SMTP estan implementados de forma condicional; SMTP cuenta con smoke GraphQL admin-only, pero quedan pendientes pruebas productivas con secretos reales para elevar servicios externos a `[V]`.

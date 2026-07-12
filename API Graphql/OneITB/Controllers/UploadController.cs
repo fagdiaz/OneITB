@@ -17,10 +17,25 @@ namespace OneItb.Controllers
         private const long MaxFileSize = 15 * 1024 * 1024;
         private const long MaxRequestSize = 16 * 1024 * 1024;
 
-        private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly IReadOnlyDictionary<string, HashSet<string>> AllowedContentTypes =
+            new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
         {
-            ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx",
-            ".txt", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".zip"
+            [".pdf"] = Types("application/pdf"),
+            [".doc"] = Types("application/msword"),
+            [".docx"] = Types("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+            [".ppt"] = Types("application/vnd.ms-powerpoint"),
+            [".pptx"] = Types("application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+            [".xls"] = Types("application/vnd.ms-excel"),
+            [".xlsx"] = Types("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            [".txt"] = Types("text/plain"),
+            [".png"] = Types("image/png"),
+            [".jpg"] = Types("image/jpeg"),
+            [".jpeg"] = Types("image/jpeg"),
+            [".gif"] = Types("image/gif"),
+            [".webp"] = Types("image/webp"),
+            [".zip"] = Types("application/zip", "application/x-zip-compressed"),
+            [".mp4"] = Types("video/mp4"),
+            [".webm"] = Types("video/webm")
         };
 
         private readonly IFileStorageService _storageService;
@@ -43,11 +58,34 @@ namespace OneItb.Controllers
                 return BadRequest(new { message = "El archivo supera el limite de 15 MB." });
 
             string extension = System.IO.Path.GetExtension(file.FileName)!.ToLowerInvariant();
-            if (!AllowedExtensions.Contains(extension))
+            if (!AllowedContentTypes.TryGetValue(extension, out HashSet<string>? allowedTypes))
                 return BadRequest(new { message = "El tipo de archivo no esta permitido." });
 
+            string contentType = file.ContentType?.Trim().ToLowerInvariant() ?? string.Empty;
+            if (!allowedTypes.Contains(contentType))
+                return BadRequest(new { message = "El contenido del archivo no coincide con su extension." });
+
+            string originalFileName = System.IO.Path.GetFileName(file.FileName).Trim();
+            if (originalFileName.Length == 0 ||
+                originalFileName.Length > 255 ||
+                originalFileName.Any(char.IsControl))
+            {
+                return BadRequest(new { message = "El nombre del archivo no es valido." });
+            }
+
             string fileUrl = await _storageService.SaveAsync(file, extension, cancellationToken);
-            return Ok(new { fileUrl });
+            return Ok(new
+            {
+                fileUrl,
+                originalFileName,
+                contentType,
+                size = file.Length
+            });
+        }
+
+        private static HashSet<string> Types(params string[] values)
+        {
+            return new HashSet<string>(values, StringComparer.OrdinalIgnoreCase);
         }
     }
 }

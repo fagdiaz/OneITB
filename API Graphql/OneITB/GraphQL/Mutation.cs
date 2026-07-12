@@ -320,6 +320,7 @@ namespace OneITB.GraphQL.Mutations
             string title,
             string content,
             string? fileUrl,
+            IReadOnlyList<SocialAttachmentInput>? attachments,
             [Service] ISocialService socialService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -328,7 +329,8 @@ namespace OneITB.GraphQL.Mutations
                 subjectId,
                 title,
                 content,
-                fileUrl);
+                fileUrl,
+                attachments);
         }
 
         [Authorize]
@@ -337,6 +339,7 @@ namespace OneITB.GraphQL.Mutations
             string content,
             Guid? parentCommentId,
             string? fileUrl,
+            IReadOnlyList<SocialAttachmentInput>? attachments,
             [Service] ISocialService socialService,
             [Service] IHttpContextAccessor httpContextAccessor)
         {
@@ -345,7 +348,8 @@ namespace OneITB.GraphQL.Mutations
                 inquiryId,
                 content,
                 parentCommentId,
-                fileUrl);
+                fileUrl,
+                attachments);
         }
 
         [Authorize]
@@ -357,6 +361,17 @@ namespace OneITB.GraphQL.Mutations
             return await socialService.ToggleReactionAsync(
                 GetAuthenticatedUserId(httpContextAccessor),
                 inquiryId);
+        }
+
+        [Authorize]
+        public async Task<ToggleCommentReactionPayload> ToggleCommentReaction(
+            Guid commentId,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor)
+        {
+            return await socialService.ToggleCommentReactionAsync(
+                GetAuthenticatedUserId(httpContextAccessor),
+                commentId);
         }
 
         [Authorize]

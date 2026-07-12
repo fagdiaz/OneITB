@@ -1,14 +1,14 @@
 # Reporte final de auditoria tecnica - OneITB23
 
-**Fecha**: 2026-07-08
-**Specs de referencia**: `specs/171-production-security-and-seeding/`, `specs/173-enterprise-jobs-ats-seeder-qa/`, `specs/174-ux-alignment-and-smtp/`, `specs/175-privacy-controls-and-smoke-tests/`
-**Estado global del roadmap**: 98% (97/99 items); core funcional Feature Complete
+**Fecha**: 2026-07-11
+**Specs de referencia**: `specs/171-production-security-and-seeding/`, `specs/173-enterprise-jobs-ats-seeder-qa/`, `specs/174-ux-alignment-and-smtp/`, `specs/175-privacy-controls-and-smoke-tests/`, `specs/178-qa-session2-social-core-fixes/`
+**Estado global del roadmap**: 98% (103/105 items); core funcional Feature Complete
 
 ## 1. Resumen ejecutivo
 
 OneITB23 se encuentra en fase avanzada de cierre tecnico y se aproxima al Code Freeze funcional. La plataforma ya cubre autenticacion, perfiles/CV, feed social, multimedia, mensajeria privada, administracion/moderacion, recursos academicos, progreso academico, adaptador SIU mock, notificaciones, empleabilidad y un set de over-delivery institucional: Audit Trail EF, constancias academicas, credenciales publicas aprobadas y toasts globales.
 
-Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 cerro baselines reales de testing y resiliencia sin agregar features nuevas. La Spec 170 cerro la brecha de infraestructura productiva: Docker multicontenedor, Redis Pub/Sub, Cloudinary opcional, rate limiting y security headers. La Spec 171 cerro brechas finales de seguridad de API y demo readiness: profundidad maxima GraphQL, lockout persistente por cuenta y seeding productivo configurable sin secretos versionados. La Spec 173 agrego empleos y postulaciones; la Spec 174 alineo la terminologia hacia Gestor de Postulaciones e incorporo SMTP real con fallback local. La Spec 175 cerro controles de privacidad de perfil y agrego un smoke SMTP admin-only. Google SSO, despliegue Azure real y mobile quedan bloqueados/pendientes hasta contar con credenciales, recursos cloud y alcance aprobado.
+Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 cerro baselines reales de testing y resiliencia sin agregar features nuevas. La Spec 170 cerro la brecha de infraestructura productiva: Docker multicontenedor, Redis Pub/Sub, Cloudinary opcional, rate limiting y security headers. La Spec 171 cerro brechas finales de seguridad de API y demo readiness: profundidad maxima GraphQL, lockout persistente por cuenta y seeding productivo configurable sin secretos versionados. La Spec 173 agrego empleos y postulaciones; la Spec 174 alineo la terminologia hacia Gestor de Postulaciones e incorporo SMTP real con fallback local. La Spec 175 cerro controles de privacidad de perfil y agrego un smoke SMTP admin-only. La Spec 178 normalizo adjuntos sociales multiples, reacciones de comentarios, notificaciones agrupadas y scoping academico del muro. Google SSO, despliegue Azure real y mobile quedan bloqueados/pendientes hasta contar con credenciales, recursos cloud y alcance aprobado.
 
 ## 2. Acciones ejecutadas
 
@@ -84,6 +84,15 @@ Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 c
 - `/profile/edit` incorpora switch de privacidad con feedback visual y toast institucional.
 - `testSmtpConnection(targetEmail)` permite a administradores probar la salida de correo con validacion de email y errores GraphQL controlados sin exponer secretos.
 
+### Estabilizacion del nucleo social
+
+- `SocialAttachment` normaliza varios adjuntos por publicacion o comentario y conserva nombre original, MIME, tamano y orden sin eliminar `FileUrl` historico.
+- `CommentReaction` agrega Me gusta persistente y unico sobre comentarios/respuestas con FKs restrictivas y filtro de contenido activo.
+- El backend valida que la materia de una publicacion pertenezca a una carrera activa del autor; Administrador conserva alcance institucional explicito.
+- Las notificaciones de comentarios y reacciones se agrupan en escritura con clave unica, contador persistente, `RowVersion` y deep-link al post.
+- React muestra previews locales, galeria mixta YouTube/adjuntos, visores de imagen/video/PDF, autofocus de comentarios, modal paginado de likes y footer institucional.
+- Se elimino el compositor legacy duplicado del sidebar y sus metricas hardcodeadas; queda un resumen real de `me` y accesos rapidos.
+
 ## 3. Evidencia ejecutada
 
 | Validacion | Resultado |
@@ -117,6 +126,14 @@ Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 c
 | Frontend build tras Spec 175 | PASS, 352 modulos |
 | EF modelo sin cambios pendientes tras Spec 175 | PASS |
 | Runtime smoke temporal tras Spec 175 | BLOQUEADO por revisor automatico del entorno Codex al iniciar proceso persistente |
+| Migracion `AddSocialAttachmentsCommentReactionsAndNotificationGrouping` | PASS, aplicada contra SQL Server Docker |
+| EF modelo sin cambios pendientes tras Spec 178 | PASS |
+| Backend build tras Spec 178 | PASS, 0 warnings, 0 errores |
+| Backend tests tras Spec 178 | PASS, 47/47 |
+| Frontend component tests tras Spec 178 | PASS, 6/6 |
+| Frontend build tras Spec 178 | PASS, 356 modulos, 1.07 s |
+| Smoke GraphQL autenticado Spec 178 | PASS: scoping, adjuntos, comentarios, reacciones, listado de likes, agrupacion y deep-link |
+| Browser QA Spec 178 | PARCIAL: inspeccion autenticada ejecutada y sidebar legacy corregido; recarga final bloqueada por politica de URL de la herramienta |
 
 Advertencia de entorno: `NU1900` aparece porque el runner local no puede consultar metadata de vulnerabilidades en `https://api.nuget.org/v3/index.json`. No es una advertencia de codigo fuente.
 
@@ -140,6 +157,7 @@ Estos puntos no deben presentarse como cerrados hasta tener implementacion y evi
 - SMTP esta implementado con fallback seguro y smoke admin-only, pero requiere proveedor/secretos reales y prueba de entrega para elevarlo a `[V]`.
 - El compose productivo fue construido y validado estaticamente; la ejecucion completa contra migraciones y trafico real debe hacerse con secretos definitivos.
 - La validacion visual completa del panel admin, hub academico, `/empleos` y `/empleos/mis-ofertas` sigue dependiendo de una sesion de navegador autenticada.
+- La Spec 178 tiene validacion funcional real por REST/GraphQL y una inspeccion browser parcial; resta confirmar manualmente el sidebar corregido y las interacciones de file picker/lightbox en el navegador de presentacion.
 - El entorno necesita restauracion NuGet con red para ejecutar auditoria de vulnerabilidades sin warnings `NU1900`.
 - Open Graph perfecto para LinkedIn requiere SSR o HTML renderizado desde backend; la SPA actual actualiza meta tags en runtime y ofrece URL publica compartible, pero los crawlers pueden no ejecutar JavaScript.
 - El badge rojo de "Empleos nuevos" en la navegacion es deliberadamente efimero: depende del estado WebSocket/Apollo en memoria, se limpia al ingresar a `/empleos` y no persiste tras recargar la pagina. Si se requiere contador persistente, debe modelarse como notificacion leida/no leida en base de datos.

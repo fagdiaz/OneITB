@@ -1,15 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
+import { gql, useMutation, useQuery } from '@apollo/client';
 import { Link, useSearchParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { ReportModal } from '../moderation/ReportModal';
 import { CommentThread } from './CommentThread';
 import MediaComponent from './MediaComponent';
-import { UPLOAD_ACCEPT, apiBaseUrl, uploadAttachment } from '../../utils/uploadFile';
+import { AttachmentDraftPicker } from './AttachmentDraftPicker';
+import { ReactionUsersModal } from './ReactionUsersModal';
+import { Footer } from '../layout/Footer';
+import { apiBaseUrl, uploadAttachments } from '../../utils/uploadFile';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import { GET_INQUIRIES_PAGE } from '../../data/graphql/queries/inquiries';
-import { GET_LINK_PREVIEW } from '../../data/graphql/queries/linkPreview';
 import { SEARCH_PUBLIC_PROFILES } from '../../data/graphql/queries/searchPublicProfiles';
 import {
   ADD_COMMENT,
@@ -19,8 +21,53 @@ import {
   INTERACT_WITH_USER,
   TOGGLE_COMMENT_STATUS,
   TOGGLE_INQUIRY_STATUS,
+  TOGGLE_COMMENT_REACTION,
   TOGGLE_REACTION,
 } from '../../data/graphql/mutations/inquiries';
+
+const REACTION_FRAGMENT = gql`
+  fragment FeedReaction on Reaction {
+    id
+    userId
+  }
+`;
+
+const COMMENT_REACTION_FRAGMENT = gql`
+  fragment FeedCommentReaction on CommentReaction {
+    id
+    userId
+  }
+`;
+
+const updateReactionCache = (cache, {
+  parentType,
+  parentId,
+  reactionType,
+  reactionId,
+  userId,
+  isReacted,
+}) => {
+  const parentCacheId = cache.identify({ __typename: parentType, id: parentId });
+  if (!parentCacheId) return;
+
+  let reactionReference = null;
+  if (isReacted && reactionId) {
+    reactionReference = cache.writeFragment({
+      data: { __typename: reactionType, id: reactionId, userId },
+      fragment: reactionType === 'Reaction' ? REACTION_FRAGMENT : COMMENT_REACTION_FRAGMENT,
+    });
+  }
+
+  cache.modify({
+    id: parentCacheId,
+    fields: {
+      reactions(existing = [], { readField }) {
+        const withoutCurrentUser = existing.filter((reference) => readField('userId', reference) !== userId);
+        return isReacted && reactionReference ? [...withoutCurrentUser, reactionReference] : withoutCurrentUser;
+      },
+    },
+  });
+};
 
 const roleStyles = {
   Administrador: { name: 'text-indigo-700', badge: 'bg-indigo-50 text-indigo-500', label: 'admin' },
@@ -137,48 +184,23 @@ export const Feed = () => {
   const [openThreads, setOpenThreads] = useState({});
   const [openMenuId, setOpenMenuId] = useState(null);
   const [reportTargetId, setReportTargetId] = useState(null);
+  const [reactionUsersInquiryId, setReactionUsersInquiryId] = useState(null);
+  const [commentFocusRequest, setCommentFocusRequest] = useState({});
   const [feedback, setFeedback] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [attachmentError, setAttachmentError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingComment, setIsUploadingComment] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
-  const [linkPreviewData, setLinkPreviewData] = useState(null);
-  const [loadLinkPreview] = useLazyQuery(GET_LINK_PREVIEW, { fetchPolicy: 'no-cache' });
-
-  useEffect(() => {
-    const urlRegex = /(https?:\/\/[^\s]+)/;
-    const match = content.match(urlRegex);
-    const url = match?.[0];
-    if (!url || url.includes('youtube.com') || url.includes('youtu.be')) {
-      setLinkPreviewData(null);
-      return undefined;
-    }
-
-    let cancelled = false;
-    const timer = window.setTimeout(async () => {
-      try {
-        const result = await loadLinkPreview({ variables: { url } });
-        if (!cancelled) {
-          setLinkPreviewData(result.data?.linkPreview?.success ? result.data.linkPreview : null);
-        }
-      } catch {
-        if (!cancelled) setLinkPreviewData(null);
-      }
-    }, 350);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [content, loadLinkPreview]);
-
-  const publicationCareerId = selectedCareer ? Number(selectedCareer) : null;
+  const isAdmin = auth.role === 'Administrador';
+  const publicationCareerId = isAdmin && selectedCareer ? Number(selectedCareer) : null;
   const searchTermParam = searchParams.get('q');
   const normalizedSearchTerm = searchTermParam?.trim() || '';
   const careerParam = searchParams.get('career');
   const careersParam = searchParams.get('careers');
   const subjectParam = searchParams.get('subject');
   const subjectsParam = searchParams.get('subjects');
+  const targetInquiryId = searchParams.get('inquiryId');
 
   const legacyCareerId = careerParam ? Number(careerParam) : null;
   const filterCareerIds = parseIdList(careersParam);
@@ -199,6 +221,7 @@ export const Feed = () => {
     careerId: null,
     careerIds: effectiveCareerIds.length > 0 ? effectiveCareerIds : null,
     subjectIds: effectiveSubjectIds.length > 0 ? effectiveSubjectIds : null,
+    inquiryId: targetInquiryId || null,
     first: 15,
     after: null,
   };
@@ -227,6 +250,7 @@ export const Feed = () => {
 
   const [createInquiry, { loading: isPublishing }] = useMutation(CREATE_INQUIRY);
   const [toggleReaction, { loading: isReacting }] = useMutation(TOGGLE_REACTION);
+  const [toggleCommentReaction] = useMutation(TOGGLE_COMMENT_REACTION);
   const [addComment, { loading: isCommenting }] = useMutation(ADD_COMMENT);
   const [editInquiry] = useMutation(EDIT_INQUIRY);
   const [toggleInquiryStatus] = useMutation(TOGGLE_INQUIRY_STATUS);
@@ -242,13 +266,35 @@ export const Feed = () => {
   const posts = feedPage?.items ?? [];
   const isSearchResultsView = normalizedSearchTerm.length > 0;
   const isModerator = auth.role === 'Administrador' || auth.role === 'Moderador';
-  const canSelectCareerForPost = myCareers.length > 1;
-  const publicationCareerOptions = auth.role === 'Administrador' ? careers : myCareers;
-  const mustSelectCareerForPost = auth.role === 'Administrador' || myCareers.length > 1;
+  const publicationCareerOptions = careers;
+  const mustSelectCareerForPost = isAdmin;
   const effectivePublicationSubjects = useMemo(() => {
-    if (!mustSelectCareerForPost || selectedCareer) return publicationSubjects;
-    return [];
-  }, [mustSelectCareerForPost, publicationSubjects, selectedCareer]);
+    const allowedCareerIds = isAdmin
+      ? selectedCareer ? [Number(selectedCareer)] : []
+      : myCareers.map((career) => Number(career.id));
+    if (allowedCareerIds.length === 0) return [];
+
+    const allowed = new Set(allowedCareerIds);
+    return publicationSubjects
+      .filter((subject) => subject.isActive && subject.career?.isActive !== false && allowed.has(Number(subject.career?.id)))
+      .slice()
+      .sort((left, right) => (
+        (left.career?.name ?? '').localeCompare(right.career?.name ?? '', 'es', { sensitivity: 'base' }) ||
+        (left.year ?? Number.MAX_SAFE_INTEGER) - (right.year ?? Number.MAX_SAFE_INTEGER) ||
+        left.name.localeCompare(right.name, 'es', { sensitivity: 'base' })
+      ));
+  }, [isAdmin, myCareers, publicationSubjects, selectedCareer]);
+  const publicationSubjectGroups = useMemo(() => {
+    const groups = new Map();
+    effectivePublicationSubjects.forEach((subject) => {
+      const key = subject.career?.id ?? 'unknown';
+      if (!groups.has(key)) {
+        groups.set(key, { career: subject.career, subjects: [] });
+      }
+      groups.get(key).subjects.push(subject);
+    });
+    return Array.from(groups.values());
+  }, [effectivePublicationSubjects]);
 
   useEffect(() => {
     const closeMenu = (event) => {
@@ -258,32 +304,35 @@ export const Feed = () => {
     return () => document.removeEventListener('mousedown', closeMenu);
   }, []);
 
+  useEffect(() => {
+    if (!targetInquiryId || !posts.some((post) => post.id === targetInquiryId)) return undefined;
+    setOpenThreads((current) => current[targetInquiryId] ? current : { ...current, [targetInquiryId]: true });
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(`inquiry-${targetInquiryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [posts, targetInquiryId]);
+
   const showFeedback = (type, message) => setFeedback({ type, message });
 
   const handlePublish = async (event) => {
     event.preventDefault();
-    if (!title.trim() || !content.trim() || !selectedSubject) return;
+    if (!title.trim() || !content.trim() || !selectedSubject || attachmentError) return;
 
-    let fileUrl = null;
-    if (selectedFile) {
-      setIsUploading(true);
-      try {
-        fileUrl = await uploadAttachment(selectedFile, token);
-      } catch (error) {
-        showFeedback('error', error.message);
-        return;
-      } finally {
-        setIsUploading(false);
-      }
-    }
+    let attachments = [];
 
     try {
+      if (selectedFiles.length > 0) {
+        setIsUploading(true);
+        attachments = await uploadAttachments(selectedFiles, token);
+      }
       await createInquiry({
         variables: {
           subjectId: Number(selectedSubject),
           title: title.trim(),
           content: content.trim(),
-          fileUrl,
+          fileUrl: attachments[0]?.fileUrl ?? null,
+          attachments,
         },
       });
       await refetch();
@@ -291,18 +340,45 @@ export const Feed = () => {
       setContent('');
       setSelectedCareer('');
       setSelectedSubject('');
-      setSelectedFile(null);
-      setLinkPreviewData(null);
+      setSelectedFiles([]);
+      setAttachmentError(null);
       showFeedback('success', 'La publicacion se creo correctamente.');
     } catch (error) {
       showFeedback('error', error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const handleReaction = async (inquiryId) => {
+  const handleReaction = async (post) => {
+    const isLiked = (post.reactions ?? []).some((reaction) => reaction.userId === auth.id);
+    const nextIsReacted = !isLiked;
+    const optimisticReactionId = `optimistic-inquiry-${post.id}-${auth.id}`;
     try {
-      await toggleReaction({ variables: { inquiryId } });
-      await refetch();
+      await toggleReaction({
+        variables: { inquiryId: post.id },
+        optimisticResponse: {
+          toggleReaction: {
+            __typename: 'ToggleReactionPayload',
+            inquiryId: post.id,
+            isReacted: nextIsReacted,
+            reactionCount: Math.max(0, post.reactions.length + (nextIsReacted ? 1 : -1)),
+            reactionId: optimisticReactionId,
+          },
+        },
+        update: (cache, { data }) => {
+          const payload = data?.toggleReaction;
+          if (!payload) return;
+          updateReactionCache(cache, {
+            parentType: 'Inquiry',
+            parentId: post.id,
+            reactionType: 'Reaction',
+            reactionId: payload.reactionId || optimisticReactionId,
+            userId: auth.id,
+            isReacted: payload.isReacted,
+          });
+        },
+      });
     } catch (error) {
       showFeedback('error', error.message);
     }
@@ -341,12 +417,12 @@ export const Feed = () => {
     }
   };
 
-  const handleComment = async (inquiryId, parentCommentId, commentContent, selectedCommentFile = null) => {
-    let fileUrl = null;
+  const handleComment = async (inquiryId, parentCommentId, commentContent, selectedCommentFiles = []) => {
+    let attachments = [];
     try {
-      if (selectedCommentFile) {
+      if (selectedCommentFiles.length > 0) {
         setIsUploadingComment(true);
-        fileUrl = await uploadAttachment(selectedCommentFile, token);
+        attachments = await uploadAttachments(selectedCommentFiles, token);
       }
 
       await addComment({
@@ -354,7 +430,8 @@ export const Feed = () => {
           inquiryId,
           parentCommentId,
           content: commentContent.trim(),
-          fileUrl,
+          fileUrl: attachments[0]?.fileUrl ?? null,
+          attachments,
         },
       });
       await refetch();
@@ -364,6 +441,40 @@ export const Feed = () => {
       throw error;
     } finally {
       setIsUploadingComment(false);
+    }
+  };
+
+  const handleCommentReaction = async (comment) => {
+    const isLiked = (comment.reactions ?? []).some((reaction) => reaction.userId === auth.id);
+    const nextIsReacted = !isLiked;
+    const optimisticReactionId = `optimistic-comment-${comment.id}-${auth.id}`;
+    try {
+      await toggleCommentReaction({
+        variables: { commentId: comment.id },
+        optimisticResponse: {
+          toggleCommentReaction: {
+            __typename: 'ToggleCommentReactionPayload',
+            commentId: comment.id,
+            isReacted: nextIsReacted,
+            reactionCount: Math.max(0, (comment.reactions?.length ?? 0) + (nextIsReacted ? 1 : -1)),
+            reactionId: optimisticReactionId,
+          },
+        },
+        update: (cache, { data }) => {
+          const payload = data?.toggleCommentReaction;
+          if (!payload) return;
+          updateReactionCache(cache, {
+            parentType: 'Comment',
+            parentId: comment.id,
+            reactionType: 'CommentReaction',
+            reactionId: payload.reactionId || optimisticReactionId,
+            userId: auth.id,
+            isReacted: payload.isReacted,
+          });
+        },
+      });
+    } catch (error) {
+      showFeedback('error', error.message);
     }
   };
 
@@ -469,39 +580,13 @@ export const Feed = () => {
           onChange={(event) => setContent(event.target.value)}
           className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            id="file-upload"
-            type="file"
-            accept={UPLOAD_ACCEPT}
-            onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-            className="hidden"
-          />
-          <label
-            htmlFor="file-upload"
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
-          >
-            <i className="fa-solid fa-paperclip" />
-            Adjuntar archivo
-          </label>
-          {selectedFile && (
-            <div className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-600">
-              <span className="max-w-64 truncate">{selectedFile.name}</span>
-              <button
-                type="button"
-                onClick={() => setSelectedFile(null)}
-                aria-label="Quitar archivo adjunto"
-                className="text-slate-400 hover:text-red-600"
-              >
-                <i className="fa-solid fa-xmark" />
-              </button>
-            </div>
-          )}
-          <span className="text-xs text-slate-400">Maximo 15 MB</span>
-        </div>
-        {linkPreviewData && (
+        <AttachmentDraftPicker files={selectedFiles} onChange={setSelectedFiles} onError={setAttachmentError} />
+        {attachmentError && (
+          <p className="text-xs font-semibold text-red-600 dark:text-red-300">{attachmentError}</p>
+        )}
+        {content.match(/https?:\/\//i) && (
           <div className="-mt-1 mb-2">
-            <MediaComponent previewData={linkPreviewData} />
+            <MediaComponent textContext={content} />
           </div>
         )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -527,13 +612,19 @@ export const Feed = () => {
             className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200"
           >
             <option value="">Selecciona una materia...</option>
-            {effectivePublicationSubjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>{subject.name}</option>
+            {publicationSubjectGroups.map((group) => (
+              <optgroup key={group.career?.id ?? 'unknown'} label={`Carrera: ${group.career?.name ?? 'Sin carrera'}`}>
+                {group.subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name} - {subject.code}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <button
             type="submit"
-            disabled={isPublishing || isUploading || !title.trim() || !content.trim() || !selectedSubject}
+            disabled={isPublishing || isUploading || Boolean(attachmentError) || !title.trim() || !content.trim() || !selectedSubject}
             className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {isUploading ? 'Subiendo...' : isPublishing ? 'Publicando...' : 'Publicar'}
@@ -653,7 +744,7 @@ export const Feed = () => {
         const isAdminPost = post.user?.role === 'Administrador';
 
         return (
-          <article key={post.id} className={`flex flex-col gap-3 rounded-xl border p-4 shadow-sm ${
+          <article id={`inquiry-${post.id}`} key={post.id} className={`scroll-mt-24 flex flex-col gap-3 rounded-xl border p-4 shadow-sm ${
             isAdminPost ? 'border-blue-200 bg-blue-50/60 dark:border-blue-300/20 dark:bg-blue-500/10' : 'border-slate-100 bg-white dark:border-white/10 dark:bg-slate-900/70'
           }`}>
             <div className="flex items-start justify-between gap-3">
@@ -735,24 +826,39 @@ export const Feed = () => {
                   )}
                 </>
               )}
-              <MediaComponent textContext={post.content} fileUrl={post.fileUrl} />
+              <MediaComponent textContext={post.content} fileUrl={post.fileUrl} attachments={post.attachments} />
             </div>
 
             <div className="flex items-center gap-4 border-t border-slate-100 pt-3 dark:border-white/10">
               <button
                 type="button"
                 disabled={isReacting}
-                onClick={() => handleReaction(post.id)}
+                onClick={() => handleReaction(post)}
+                aria-pressed={isLiked}
                 className={`flex items-center gap-1.5 text-xs font-medium ${
                   isLiked ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'
                 }`}
               >
                 <i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up`} />
-                {post.reactions.length} Me gusta
+                Me gusta
               </button>
+              {post.user?.id === auth.id ? (
+                <button
+                  type="button"
+                  onClick={() => setReactionUsersInquiryId(post.id)}
+                  className="text-xs font-semibold text-slate-500 underline-offset-2 hover:text-blue-600 hover:underline dark:text-slate-400 dark:hover:text-blue-300"
+                >
+                  {post.reactions.length} {post.reactions.length === 1 ? 'Me gusta' : 'Me gusta'}
+                </button>
+              ) : (
+                <span className="text-xs text-slate-400">{post.reactions.length}</span>
+              )}
               <button
                 type="button"
-                onClick={() => setOpenThreads((current) => ({ ...current, [post.id]: !current[post.id] }))}
+                onClick={() => {
+                  setOpenThreads((current) => ({ ...current, [post.id]: true }));
+                  setCommentFocusRequest((current) => ({ ...current, [post.id]: (current[post.id] ?? 0) + 1 }));
+                }}
                 className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-blue-500"
               >
                 <i className="fa-regular fa-comment" />
@@ -800,10 +906,12 @@ export const Feed = () => {
                     handleComment(post.id, parentCommentId, commentContent, commentFile)
                   }
                   onReport={() => setReportTargetId(post.id)}
+                  onToggleReaction={handleCommentReaction}
                   auth={auth}
                   isModerator={isModerator}
                   onEditComment={handleEditComment}
                   onToggleComment={handleToggleComment}
+                  focusRequest={commentFocusRequest[post.id]}
                 />
               </div>
             )}
@@ -827,6 +935,14 @@ export const Feed = () => {
           No hay mas resultados.
         </p>
       )}
+
+      <Footer />
+
+      <ReactionUsersModal
+        inquiryId={reactionUsersInquiryId}
+        isOpen={Boolean(reactionUsersInquiryId)}
+        onClose={() => setReactionUsersInquiryId(null)}
+      />
 
       <ReportModal
         isOpen={Boolean(reportTargetId)}

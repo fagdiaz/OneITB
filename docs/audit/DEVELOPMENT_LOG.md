@@ -5,6 +5,58 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-11] - Spec 178: QA Session 2 Social Core Fixes
+
+* **Objetivo**: Cerrar la auditoria del muro con scoping academico real, adjuntos multiples, multimedia no excluyente, reacciones en comentarios, notificaciones sociales agrupadas y limpieza del layout de publicacion.
+* **Resultado**:
+  - Se agregaron `SocialAttachment` y `CommentReaction` con FKs explicitas, `DeleteBehavior.Restrict`, indices, filtros de contenido activo y migracion aditiva con backfill seguro de `FileUrl` historico.
+  - `SocialService` valida carrera/materia server-side, limita adjuntos a 10/15 MB, conserva metadatos originales, pagina usuarios reaccionantes y genera notificaciones agrupadas con concurrencia optimista y deep-link.
+  - El feed agrupa materias por carrera/anio, soporta varios adjuntos en posts/comentarios/respuestas, previews locales, YouTube mas archivos, lightbox/visores, autofocus y reacciones optimistas.
+  - Se agregaron footer institucional, modal paginado de likes y un sidebar real basado en `me`; se retiro el compositor legacy duplicado y sus metricas hardcodeadas.
+* **Validaciones ejecutadas**:
+  - Migracion `AddSocialAttachmentsCommentReactionsAndNotificationGrouping`: aplicada contra SQL Server Docker.
+  - `dotnet ef migrations has-pending-model-changes`: PASS, sin cambios pendientes.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 warnings, 0 errores.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-build`: PASS, 47/47.
+  - `npm.cmd run test -- --run --configLoader runner`: PASS, 6/6.
+  - `npm.cmd run build`: PASS, 356 modulos, 1.07 s.
+  - Smoke REST/GraphQL autenticado: PASS para scoping negativo, dos adjuntos, comentarios, reacciones, listado de likes, agrupacion y navegacion dirigida.
+  - Browser QA: parcial; permitio detectar el compositor duplicado. La recarga final post-fix fue bloqueada por la politica de URL local de la herramienta y queda explicitada en evidencia.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/SocialAttachment.cs`, `CommentReaction.cs`, `Notification.cs`
+  - `API Graphql/Data/OneItbContext.cs` y migracion `20260711205348_AddSocialAttachmentsCommentReactionsAndNotificationGrouping`
+  - `API Graphql/Services/Social/*`, `Services/Notifications/*`, `UploadController.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/*`, `Components/layout/Footer.jsx`, `Components/layout/private/SideBar.jsx`
+  - `FrontEnd/OneItb-FE/src/data/graphql/*` y `src/utils/uploadFile.js`
+
+## [2026-07-10] - Spec 177: Responsive Header and Normalization
+
+* **Objetivo**: Resolver bugs de refinamiento productivo detectados en auditoria manual: header responsive, warnings de React Router, normalizacion de identidad en registro y bloqueo de avatares locales por politicas cross-origin.
+* **Resultado**:
+  - `Nav.jsx` usa navegacion completa desde `lg` y menu hamburguesa por debajo de ese breakpoint, manteniendo campanita y avatar visibles sin superposicion.
+  - `Header.jsx` reduce padding/gaps en pantallas chicas y evita que la cabecera fuerce overflow horizontal.
+  - `BrowserRouter` habilita `v7_startTransition` y `v7_relativeSplatPath` para eliminar warnings conocidos de React Router.
+  - El registro envia email normalizado en minuscula desde React.
+  - El backend aplica `Trim` + `ToLowerInvariant` en `UsersService` y `Account.Email`; nombres y apellidos mantienen Title Case institucional.
+  - `UseStaticFiles` agrega `Access-Control-Allow-Origin: *` y `Cross-Origin-Resource-Policy: cross-origin` para archivos locales servidos desde `/uploads`.
+* **Validaciones ejecutadas**:
+  - Speckit QA preflight con builds: PASS sobre baseline limpio.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 39/39.
+  - `npm.cmd run build`: PASS, 352 modulos, build en 1.87 s.
+  - `git -c core.autocrlf=false diff --check`: PASS.
+* **Estado**:
+  - Implementado y validado por build backend, tests backend y build frontend. Queda pendiente auditoria manual en navegador para confirmar comportamiento visual del header mobile y cabeceras `/uploads` en runtime.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Account.cs`
+  - `API Graphql/OneITB/Startup.cs`
+  - `API Graphql/Services/Users/UsersService.cs`
+  - `API Graphql/Tests/Services.Tests/Auth/UsersServiceTests.cs`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Register.jsx`
+  - `FrontEnd/OneItb-FE/src/router/Routing.jsx`
+
 ## [2026-07-08] - Spec 176: QA Resolution and UX Polish
 
 * **Objetivo**: Resolver la regresion manual pre-defensa sobre limite de costo GraphQL, registro sin Alias, overflow responsive del header, contraste de filtros, redireccion de perfil, cierre del chat widget y foco de password reveal.

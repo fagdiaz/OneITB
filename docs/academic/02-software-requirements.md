@@ -9,8 +9,8 @@ Este entregable resume el alcance vigente. La fuente completa y versionada es [s
 | Cuentas | Registro institucional, login JWT, BCrypt, cuenta activa, lockout y proteccion administrativa |
 | Perfiles | Datos personales, CV, redes, avatar, carreras, roles, metricas y privacidad |
 | Materias | Carrera, anio, correlatividades y administracion |
-| Muro | Publicaciones, filtros, comentarios, respuestas, reacciones, reportes y soft-delete |
-| Archivos | Upload desacoplado, imagenes, documentos, YouTube y adjuntos en comentarios |
+| Muro | Publicaciones con scoping academico, comentarios/respuestas, reacciones sobre ambos niveles, notificaciones agrupadas, reportes y soft-delete |
+| Archivos | Upload multiple desacoplado, nombre original, imagenes/video/PDF/documentos, YouTube y adjuntos en comentarios/respuestas |
 | Grafo social | Seguir, silenciar y bloquear |
 | Chat | Conversaciones uno a uno, historial, no leidos y WebSocket |
 | Moderacion | Reportes, silenciamiento temporal, auditoria y trazabilidad |

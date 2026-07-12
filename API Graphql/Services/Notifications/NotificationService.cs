@@ -30,7 +30,7 @@ namespace Services.Notifications
 
             return await NotificationGraph()
                 .Where(notification => notification.UserId == userId)
-                .OrderByDescending(notification => notification.CreatedAt)
+                .OrderByDescending(notification => notification.UpdatedAt ?? notification.CreatedAt)
                 .ThenByDescending(notification => notification.Id)
                 .Take(take)
                 .ToListAsync();
@@ -212,11 +212,147 @@ namespace Services.Notifications
             return persisted;
         }
 
+        public async Task<Notification?> UpsertGroupedNotificationAsync(
+            Guid userId,
+            NotificationType type,
+            Guid relatedInquiryId,
+            string groupKey,
+            string singularMessage,
+            string pluralMessageTemplate,
+            CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty || relatedInquiryId == Guid.Empty)
+                throw new ArgumentException("El destinatario y la publicacion son obligatorios.");
+
+            string normalizedGroupKey = RequireText(groupKey, 160, "La clave de agrupacion");
+            string normalizedSingular = RequireText(singularMessage, 500, "El mensaje singular");
+            string normalizedPlural = RequireText(pluralMessageTemplate, 500, "El mensaje plural");
+            if (!normalizedPlural.Contains("{count}", StringComparison.Ordinal))
+                throw new ArgumentException("El mensaje plural debe incluir el marcador {count}.");
+
+            bool canReceive = await _context.Users
+                .AsNoTracking()
+                .AnyAsync(user => user.Id == userId && user.IsActive, cancellationToken);
+            if (!canReceive)
+                return null;
+
+            bool inquiryExists = await _context.Inquiries
+                .AsNoTracking()
+                .AnyAsync(inquiry => inquiry.Id == relatedInquiryId, cancellationToken);
+            if (!inquiryExists)
+                throw new InvalidOperationException("La publicacion relacionada no existe.");
+
+            bool disabled = await _context.NotificationPreferences
+                .AsNoTracking()
+                .AnyAsync(
+                    preference =>
+                        preference.UserId == userId &&
+                        preference.Type == type &&
+                        !preference.IsEnabled,
+                    cancellationToken);
+            if (disabled)
+                return null;
+
+            string actionUrl = $"/feed?inquiryId={relatedInquiryId:D}";
+
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                Notification? notification = await _context.Notifications
+                    .SingleOrDefaultAsync(
+                        item => item.UserId == userId && item.GroupKey == normalizedGroupKey,
+                        cancellationToken);
+                bool isNew = notification is null;
+
+                if (isNew)
+                {
+                    notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        Type = type,
+                        Message = normalizedSingular,
+                        ActionUrl = actionUrl,
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        GroupKey = normalizedGroupKey,
+                        AggregateCount = 1,
+                        RelatedInquiryId = relatedInquiryId
+                    };
+                    _context.Notifications.Add(notification);
+                }
+                else
+                {
+                    notification!.AggregateCount = checked(notification.AggregateCount + 1);
+                    notification.Message = FormatGroupedMessage(
+                        normalizedSingular,
+                        normalizedPlural,
+                        notification.AggregateCount);
+                    notification.ActionUrl = actionUrl;
+                    notification.IsRead = false;
+                    notification.UpdatedAt = DateTime.UtcNow;
+                    notification.RelatedInquiryId = relatedInquiryId;
+                }
+
+                try
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+                    Notification persisted = await NotificationGraph()
+                        .SingleAsync(item => item.Id == notification!.Id, cancellationToken);
+                    await PublishAsync(persisted, cancellationToken);
+                    return persisted;
+                }
+                catch (DbUpdateConcurrencyException) when (attempt < 2)
+                {
+                    _context.Entry(notification!).State = EntityState.Detached;
+                }
+                catch (DbUpdateException) when (isNew && attempt < 2)
+                {
+                    _context.Entry(notification!).State = EntityState.Detached;
+                }
+            }
+
+            throw new InvalidOperationException("No se pudo actualizar la notificacion agrupada por concurrencia.");
+        }
+
         private IQueryable<Notification> NotificationGraph()
         {
             return _context.Notifications
                 .AsNoTracking()
                 .Include(notification => notification.User);
+        }
+
+        private async Task PublishAsync(Notification notification, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _eventSender.SendAsync(
+                    NotificationTopics.ForUser(notification.UserId),
+                    notification,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Notification {NotificationId} persisted but real-time publication failed.",
+                    notification.Id);
+            }
+        }
+
+        private static string FormatGroupedMessage(
+            string singularMessage,
+            string pluralMessageTemplate,
+            int count)
+        {
+            if (count <= 1)
+                return singularMessage;
+
+            string message = pluralMessageTemplate.Replace(
+                "{count}",
+                count.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                StringComparison.Ordinal);
+            return RequireText(message, 500, "El mensaje agrupado");
         }
 
         private async Task EnsureActiveUserAsync(Guid userId)

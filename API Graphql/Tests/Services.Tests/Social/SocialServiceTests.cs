@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using OneItb.Entities.Models;
+using OneITB.Core.Services.Interfaces;
+using Services.Notifications;
 using Services.Social;
 using Services.Tests.TestSupport;
 using Xunit;
@@ -17,7 +21,7 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await SeedSocialGraphAsync(context);
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
 
         List<Inquiry> inquiries = await service.GetInquiries(
                 ServiceTestData.StudentUserId,
@@ -45,7 +49,7 @@ public sealed class SocialServiceTests
             Type = InteractionType.Block
         });
         await context.SaveChangesAsync();
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
 
         List<Inquiry> inquiries = await service.GetInquiries(
                 ServiceTestData.StudentUserId,
@@ -63,7 +67,7 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await SeedSocialGraphAsync(context);
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
 
         List<Inquiry> byComment = await service.GetInquiries(
                 ServiceTestData.StudentUserId,
@@ -89,7 +93,7 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
 
         Inquiry inquiry = await service.AddInquiryAsync(
             ServiceTestData.StudentUserId,
@@ -108,7 +112,7 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.AddInquiryAsync(
@@ -127,7 +131,7 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
         Inquiry inquiry = await service.AddInquiryAsync(
             ServiceTestData.StudentUserId,
             ServiceTestData.SubjectId,
@@ -159,7 +163,7 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
         Inquiry first = await service.AddInquiryAsync(
             ServiceTestData.StudentUserId,
             ServiceTestData.SubjectId,
@@ -193,7 +197,7 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
         Inquiry inquiry = await service.AddInquiryAsync(
             ServiceTestData.StudentUserId,
             ServiceTestData.SubjectId,
@@ -218,7 +222,7 @@ public sealed class SocialServiceTests
         var mutedUser = await context.Users.SingleAsync(user => user.Id == ServiceTestData.StudentUserId);
         mutedUser.MutedUntil = DateTime.UtcNow.AddHours(1);
         await context.SaveChangesAsync();
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.AddInquiryAsync(
@@ -236,7 +240,7 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new SocialService(context);
+        SocialService service = CreateService(context);
         Inquiry inquiry = await service.AddInquiryAsync(
             ServiceTestData.TeacherUserId,
             ServiceTestData.SubjectId,
@@ -256,6 +260,242 @@ public sealed class SocialServiceTests
 
         Assert.Contains("silenciada", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(context.Comments);
+    }
+
+    [Fact]
+    public async Task AddInquiryAsync_RejectsSubjectOutsideStudentCareers()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        context.Subjects.Add(new Subject
+        {
+            Id = OtherSubjectId,
+            Name = "Proyecto Industrial",
+            Code = "PIN1",
+            CareerId = ServiceTestData.OtherCareerId,
+            Year = 1,
+            IsActive = true
+        });
+        await context.SaveChangesAsync();
+        SocialService service = CreateService(context);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddInquiryAsync(
+                ServiceTestData.StudentUserId,
+                OtherSubjectId,
+                "Publicacion fuera de alcance",
+                "No debe persistirse"));
+
+        Assert.Contains("carreras", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(context.Inquiries);
+    }
+
+    [Fact]
+    public async Task AddInquiryAsync_PersistsMultipleAttachmentDescriptors()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        var attachments = new[]
+        {
+            new SocialAttachmentInput("/uploads/guia.pdf", "Guia Original.pdf", "application/pdf", 1024, 0),
+            new SocialAttachmentInput("/uploads/diagrama.png", "Diagrama.png", "image/png", 2048, 1)
+        };
+
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Material completo",
+            "Incluye guia y diagrama",
+            attachments: attachments);
+
+        Assert.Equal("/uploads/guia.pdf", inquiry.FileUrl);
+        Assert.Collection(
+            inquiry.Attachments.OrderBy(item => item.SortOrder),
+            first =>
+            {
+                Assert.Equal("Guia Original.pdf", first.OriginalFileName);
+                Assert.Equal(1024, first.Size);
+            },
+            second =>
+            {
+                Assert.Equal("Diagrama.png", second.OriginalFileName);
+                Assert.Equal(2048, second.Size);
+            });
+        Assert.Equal(2, context.SocialAttachments.Count());
+    }
+
+    [Fact]
+    public async Task AddInquiryAsync_RejectsAttachmentAggregateOverFifteenMegabytes()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        long eightMegabytes = 8 * 1024 * 1024;
+        var attachments = new[]
+        {
+            new SocialAttachmentInput("/uploads/uno.pdf", "Uno.pdf", "application/pdf", eightMegabytes, 0),
+            new SocialAttachmentInput("/uploads/dos.pdf", "Dos.pdf", "application/pdf", eightMegabytes, 1)
+        };
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddInquiryAsync(
+                ServiceTestData.StudentUserId,
+                ServiceTestData.SubjectId,
+                "Demasiados archivos",
+                "Supera el total permitido",
+                attachments: attachments));
+
+        Assert.Contains("15 MB", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(context.Inquiries);
+        Assert.Empty(context.SocialAttachments);
+    }
+
+    [Fact]
+    public async Task AddCommentAsync_AdminCommentNotifiesInquiryOwner()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        SocialService service = CreateService(context, notifications);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Consulta del estudiante",
+            "Contenido base");
+
+        await service.AddCommentAsync(
+            ServiceTestData.AdminUserId,
+            inquiry.Id,
+            "Respuesta institucional",
+            null);
+
+        notifications.Verify(service => service.UpsertGroupedNotificationAsync(
+            ServiceTestData.StudentUserId,
+            NotificationType.SocialComment,
+            inquiry.Id,
+            $"social-comment:inquiry:{inquiry.Id:D}",
+            It.IsAny<string>(),
+            It.Is<string>(message => message.Contains("{count}", StringComparison.Ordinal)),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ToggleReactionAsync_NotifiesOwnerOnlyWhenReactionIsAdded()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        SocialService service = CreateService(context, notifications);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Publicacion reaccionable",
+            "Contenido base");
+
+        ToggleReactionPayload added = await service.ToggleReactionAsync(ServiceTestData.TeacherUserId, inquiry.Id);
+        ToggleReactionPayload removed = await service.ToggleReactionAsync(ServiceTestData.TeacherUserId, inquiry.Id);
+
+        Assert.True(added.IsReacted);
+        Assert.NotNull(added.ReactionId);
+        Assert.False(removed.IsReacted);
+        notifications.Verify(service => service.UpsertGroupedNotificationAsync(
+            ServiceTestData.StudentUserId,
+            NotificationType.SocialReaction,
+            inquiry.Id,
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ToggleCommentReactionAsync_PersistsAndRemovesNestedCommentLike()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Hilo social",
+            "Contenido base");
+        Comment comment = await service.AddCommentAsync(
+            ServiceTestData.TeacherUserId,
+            inquiry.Id,
+            "Comentario docente",
+            null);
+
+        ToggleCommentReactionPayload added = await service.ToggleCommentReactionAsync(
+            ServiceTestData.StudentUserId,
+            comment.Id);
+        ToggleCommentReactionPayload removed = await service.ToggleCommentReactionAsync(
+            ServiceTestData.StudentUserId,
+            comment.Id);
+
+        Assert.True(added.IsReacted);
+        Assert.Equal(1, added.ReactionCount);
+        Assert.False(removed.IsReacted);
+        Assert.Equal(0, removed.ReactionCount);
+        Assert.Empty(context.CommentReactions);
+    }
+
+    [Fact]
+    public async Task GetInquiryReactionUsersPageAsync_RequiresOwnerOrModerator()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Likes visibles al autor",
+            "Contenido base");
+        await service.ToggleReactionAsync(ServiceTestData.TeacherUserId, inquiry.Id);
+
+        ReactionUserPage page = await service.GetInquiryReactionUsersPageAsync(
+            ServiceTestData.StudentUserId,
+            false,
+            inquiry.Id,
+            10,
+            null);
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetInquiryReactionUsersPageAsync(
+                ServiceTestData.OtherStudentUserId,
+                false,
+                inquiry.Id,
+                10,
+                null));
+
+        User user = Assert.Single(page.Items);
+        Assert.Equal(ServiceTestData.TeacherUserId, user.Id);
+        Assert.Contains("permisos", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static SocialService CreateService(
+        OneItb.Data.OneItbContext context,
+        Mock<INotificationService>? notifications = null)
+    {
+        return new SocialService(
+            context,
+            (notifications ?? CreateNotificationMock()).Object,
+            Mock.Of<ILogger<SocialService>>());
+    }
+
+    private static Mock<INotificationService> CreateNotificationMock()
+    {
+        var notifications = new Mock<INotificationService>(MockBehavior.Loose);
+        notifications
+            .Setup(service => service.UpsertGroupedNotificationAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<NotificationType>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Notification?)null);
+        return notifications;
     }
 
     private static async Task SeedSocialGraphAsync(OneItb.Data.OneItbContext context)

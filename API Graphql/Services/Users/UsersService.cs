@@ -57,7 +57,7 @@ namespace Services.Users
             var account = new Account
             {
                  Id = userId,
-                 Email = input.Email.ToLowerInvariant(),
+                 Email = NormalizeEmail(input.Email),
                  PasswordHash = passwordHash,
                  CreatedAt = DateTime.UtcNow
             };
@@ -470,6 +470,11 @@ namespace Services.Users
             }
 
             return normalized;
+        }
+
+        private static string NormalizeEmail(string? email)
+        {
+            return NormalizeRequired(email, 100, "email").ToLowerInvariant();
         }
 
         private static string NormalizeNameRequired(string? value, int maxLength, string fieldName)

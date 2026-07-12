@@ -25,11 +25,13 @@
 **Actor**: usuario autenticado no silenciado.
 **Resultado**: se crea un `Inquiry` asociado a autor, materia y carrera visible segun reglas de scoping.
 
-## CU-06 Crear publicacion con archivo
+## CU-06 Crear publicacion con archivos
 
-1. El cliente envia el binario a `POST /api/upload` con JWT.
-2. El servidor valida formato/tamano y devuelve `/uploads/{guid.ext}` o URL Cloudinary.
-3. El cliente ejecuta `addInquiry(..., fileUrl)`.
+1. El cliente permite seleccionar y quitar hasta 10 archivos, con limite agregado de 15 MB y vista previa local.
+2. Por cada archivo envia el binario a `POST /api/upload` con JWT.
+3. El servidor valida extension/MIME/tamano y devuelve URL, nombre original, tipo y tamano.
+4. El cliente ejecuta `addInquiry(..., attachments)`; el backend vuelve a validar alcance de materia y metadatos antes de persistir.
+5. El mismo contrato se reutiliza en comentarios y respuestas mediante `addComment(..., attachments)`.
 4. La UI actualiza el muro y conserva la URL tras recarga.
 
 ## CU-07 Comentar o responder

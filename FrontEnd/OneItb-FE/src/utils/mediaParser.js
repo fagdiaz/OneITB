@@ -62,15 +62,23 @@ export const getFileExtension = (fileUrl = '') => {
   }
 };
 
-export const getMediaType = (fileUrl) => {
+export const getMediaType = (fileUrl, contentType = '') => {
+  const normalizedContentType = contentType.toLowerCase();
+  if (normalizedContentType.startsWith('image/')) return 'image';
+  if (normalizedContentType.startsWith('video/')) return 'video';
+  if (normalizedContentType === 'application/pdf') return 'pdf';
+  if (normalizedContentType.includes('presentation') || normalizedContentType.includes('powerpoint')) return 'ppt';
+
   const extension = getFileExtension(fileUrl);
   if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) return 'image';
+  if (['mp4', 'webm'].includes(extension)) return 'video';
   if (extension === 'pdf') return 'pdf';
   if (['ppt', 'pptx'].includes(extension)) return 'ppt';
   return 'document';
 };
 
-export const getFileName = (fileUrl = '') => {
+export const getFileName = (fileUrl = '', originalFileName = '') => {
+  if (originalFileName?.trim()) return originalFileName.trim();
   try {
     const pathname = new URL(fileUrl, 'https://oneitb.local').pathname;
     const encodedName = pathname.split('/').filter(Boolean).pop();

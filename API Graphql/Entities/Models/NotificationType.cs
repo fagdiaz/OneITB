@@ -8,6 +8,7 @@ namespace OneItb.Entities.Models
         JobOffer = 3,
         SocialComment = 4,
         PrivateMessage = 5,
-        JobApplication = 6
+        JobApplication = 6,
+        SocialReaction = 7
     }
 }

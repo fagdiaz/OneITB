@@ -15,8 +15,8 @@ El objetivo institucional es ofrecer una plataforma demostrable y mantenible par
 | Autenticacion y cuentas | Verificado/implementado por etapas | `ROADMAP.md`, specs 038-039, 099, 141, 143, 171 |
 | Perfiles, carreras y CV | Implementado/verificado por etapas | specs 020, 035, 110, 114, 142-146, 148-162, 175 |
 | Materias y correlatividades | Implementado; requiere regresion admin completa | spec 118 |
-| Feed, comentarios, reacciones y reportes | Verificado/implementado por etapas | specs 099, 110, 121-123, 129-135 |
-| Archivos y rich media | Implementado/verificado por etapas | specs 121-122, 133, 135 |
+| Feed, comentarios, reacciones y reportes | Verificado/implementado por etapas | specs 099, 110, 121-123, 129-135, 178 |
+| Archivos y rich media | Implementado/verificado por etapas | specs 121-122, 133, 135, 178 |
 | Grafo social | Implementado | spec 110 |
 | Mensajeria privada | Verificado | specs 104, 106, 107, 132, 160 |
 | Administracion y moderacion | Implementado/verificado por etapas | specs 099, 111, 117-119, 135 |
@@ -43,12 +43,13 @@ El objetivo institucional es ofrecer una plataforma demostrable y mantenible par
 
 ### Muro social
 
-- **RF-008**: Crear, buscar, filtrar, editar y desactivar publicaciones.
+- **RF-008**: Crear, buscar, filtrar, editar y desactivar publicaciones; la materia debe pertenecer a una carrera habilitada para el autor, salvo alcance institucional explicito.
 - **RF-009**: Comentar y responder con hilos anidados de un nivel logico recursivo.
-- **RF-010**: Reaccionar, reportar, seguir, silenciar y bloquear.
-- **RF-011**: Adjuntar archivos a publicaciones y comentarios mediante carga desacoplada.
-- **RF-012**: Mostrar imagenes inline, documentos como tarjetas y enlaces validos de YouTube como embeds controlados.
+- **RF-010**: Reaccionar a publicaciones, comentarios y respuestas; reportar, seguir, silenciar y bloquear. El autor puede consultar de forma paginada quienes reaccionaron a su publicacion.
+- **RF-011**: Adjuntar hasta 10 archivos y 15 MB agregados a publicaciones, comentarios y respuestas mediante carga desacoplada, conservando nombre original, tipo, tamano y orden.
+- **RF-012**: Mostrar conjuntamente YouTube y todos los adjuntos; imagenes/video/PDF usan visores controlados y los documentos conservan apertura o descarga explicita.
 - **RF-013**: Priorizar autores seguidos y excluir silenciados/bloqueados del feed.
+- **RF-013B**: Agrupar persistentemente notificaciones de comentarios y reacciones por destinatario, publicacion y tipo, con contador y navegacion dirigida al contenido.
 
 ### Mensajeria
 

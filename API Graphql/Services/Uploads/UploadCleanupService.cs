@@ -76,8 +76,15 @@ namespace Services.Uploads
                 .Select(comment => comment.FileUrl!)
                 .ToListAsync(cancellationToken);
 
+            List<string> attachmentUrls = await _context.SocialAttachments
+                .AsNoTracking()
+                .Where(attachment => attachment.FileUrl.StartsWith("/uploads/"))
+                .Select(attachment => attachment.FileUrl)
+                .ToListAsync(cancellationToken);
+
             return inquiryUrls
                 .Concat(commentUrls)
+                .Concat(attachmentUrls)
                 .ToHashSet(StringComparer.Ordinal);
         }
     }

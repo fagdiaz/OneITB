@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { getFileName, getMediaType } from '../../utils/mediaParser';
 import { apiBaseUrl } from '../../utils/uploadFile';
+import { MediaViewerModal } from './MediaViewerModal';
 
 const fileStyles = {
   image: { icon: 'fa-file-image', iconClass: 'bg-emerald-50 text-emerald-600', label: 'Imagen' },
+  video: { icon: 'fa-file-video', iconClass: 'bg-violet-50 text-violet-600', label: 'Video' },
   pdf: { icon: 'fa-file-pdf', iconClass: 'bg-red-50 text-red-600', label: 'Documento PDF' },
   ppt: { icon: 'fa-file-powerpoint', iconClass: 'bg-orange-50 text-orange-600', label: 'Presentacion' },
   document: { icon: 'fa-file-lines', iconClass: 'bg-blue-50 text-blue-600', label: 'Documento' },
@@ -14,22 +16,24 @@ export const resolveMediaUrl = (fileUrl) => fileUrl?.startsWith('http')
   : `${apiBaseUrl}${fileUrl}`;
 
 export const YouTubeEmbed = ({ videoId, compact = false }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   useEffect(() => {
-    setIsPlaying(false);
+    setIsOpen(false);
     setThumbnailFailed(false);
   }, [videoId]);
 
   if (!videoId) return null;
+  const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
-  if (!isPlaying) {
-    const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-
-    return (
-      <div
-        className={`relative isolate flex flex-col items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-950 text-white shadow-sm ${compact ? 'min-h-40 p-4' : 'aspect-video w-full p-6'}`}
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className={`group relative isolate flex w-full flex-col items-center justify-center overflow-hidden rounded-lg border border-slate-800 bg-slate-950 text-white shadow-sm ${compact ? 'min-h-40 p-4' : 'aspect-video p-6'}`}
+        aria-label="Reproducir video de YouTube"
       >
         {!thumbnailFailed && (
           <img
@@ -41,107 +45,134 @@ export const YouTubeEmbed = ({ videoId, compact = false }) => {
             className="absolute inset-0 -z-10 h-full w-full object-cover opacity-80"
           />
         )}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-900/20" />
-        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 shadow-lg ring-4 ring-white/20">
+        <span className="absolute inset-0 -z-10 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-900/20" />
+        <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 shadow-lg ring-4 ring-white/20 transition group-hover:scale-105">
           <i className="fa-solid fa-play ml-0.5 text-lg" />
-        </div>
-        <p className="text-sm font-semibold">Video de YouTube</p>
-        <p className="mt-1 max-w-sm text-center text-xs text-slate-300">
-          El reproductor externo se carga solo al reproducir para mantener el feed liviano y reducir warnings de terceros.
-        </p>
-        <button
-          type="button"
-          onClick={() => setIsPlaying(true)}
-          className="mt-4 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-950 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-        >
-          Reproducir video
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <iframe
-      src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
-      title="Video de YouTube adjunto"
-      loading="lazy"
-      referrerPolicy="strict-origin-when-cross-origin"
-      allowFullScreen
-      className="aspect-video w-full rounded-lg border-0"
-    />
+        </span>
+        <span className="text-sm font-semibold">Video de YouTube</span>
+        <span className="mt-1 text-xs text-slate-300">Abrir reproductor</span>
+      </button>
+      <MediaViewerModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        type="youtube"
+        videoId={videoId}
+        title="Video de YouTube"
+      />
+    </>
   );
 };
 
-export const MediaAttachment = ({ fileUrl, compact = false }) => {
+export const MediaAttachment = ({ attachment, fileUrl, compact = false }) => {
+  const descriptor = attachment ?? { fileUrl };
+  const sourceUrl = descriptor?.fileUrl;
   const [imageFailed, setImageFailed] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   useEffect(() => {
     setImageFailed(false);
-  }, [fileUrl]);
+    setViewerOpen(false);
+  }, [sourceUrl]);
 
-  if (!fileUrl) return null;
+  if (!sourceUrl) return null;
 
-  const type = getMediaType(fileUrl);
-  const absoluteUrl = resolveMediaUrl(fileUrl);
-  const fileName = getFileName(fileUrl);
+  const type = getMediaType(sourceUrl, descriptor.contentType);
+  const absoluteUrl = resolveMediaUrl(sourceUrl);
+  const fileName = getFileName(sourceUrl, descriptor.originalFileName);
+  const canPreview = type === 'image' || type === 'video' || type === 'pdf';
 
   if (type === 'image' && !imageFailed) {
     return (
-      <a href={absoluteUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
-        <img
+      <>
+        <button type="button" onClick={() => setViewerOpen(true)} className="block w-full overflow-hidden rounded-lg text-left">
+          <img
+            src={absoluteUrl}
+            alt={`Archivo adjunto: ${fileName}`}
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className={compact
+              ? 'max-h-48 w-auto max-w-full cursor-zoom-in rounded-md object-contain'
+              : 'max-h-96 w-full cursor-zoom-in rounded-lg object-cover'}
+          />
+        </button>
+        <MediaViewerModal
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          type="image"
           src={absoluteUrl}
-          alt={`Archivo adjunto: ${fileName}`}
-          loading="lazy"
-          onError={() => setImageFailed(true)}
-          className={compact
-            ? 'max-h-48 w-auto max-w-full cursor-pointer rounded-md object-contain'
-            : 'max-h-96 w-full cursor-pointer rounded-lg object-cover'}
+          title={fileName}
         />
-      </a>
+      </>
     );
   }
 
-  if (type === 'image' && imageFailed) {
+  if (type === 'video') {
     return (
-      <a
-        href={absoluteUrl}
-        target="_blank"
-        rel="noreferrer"
-        className={`flex items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 ${compact ? 'p-2' : 'p-3'} transition hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-slate-900/60 dark:hover:border-blue-300/20 dark:hover:bg-blue-500/10`}
-        title="Abrir imagen en nueva pestaña"
-      >
-        <span className={`flex shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 ${compact ? 'h-9 w-9' : 'h-11 w-11'}`}>
-          <i className={`fa-solid fa-image-slash ${compact ? 'text-base' : 'text-xl'}`} />
+      <>
+        <button
+          type="button"
+          onClick={() => setViewerOpen(true)}
+          className="group relative block w-full overflow-hidden rounded-lg bg-slate-950"
+        >
+          <video src={absoluteUrl} muted preload="metadata" className={`${compact ? 'max-h-48' : 'max-h-96'} w-full object-contain opacity-80`} />
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-slate-950 shadow-lg transition group-hover:scale-105">
+              <i className="fa-solid fa-play ml-0.5" />
+            </span>
+          </span>
+        </button>
+        <MediaViewerModal
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          type="video"
+          src={absoluteUrl}
+          title={fileName}
+        />
+      </>
+    );
+  }
+
+  const style = fileStyles[type] ?? fileStyles.document;
+  return (
+    <>
+      <div className={`flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 ${compact ? 'p-2' : 'p-3'} dark:border-white/10 dark:bg-slate-900/60`}>
+        <span className={`flex shrink-0 items-center justify-center rounded-lg ${style.iconClass} ${compact ? 'h-9 w-9' : 'h-11 w-11'}`}>
+          <i className={`fa-solid ${style.icon} ${compact ? 'text-base' : 'text-xl'}`} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-600" title={fileName}>{fileName}</p>
-          <p className="text-[11px] text-slate-400">Imagen no disponible · clic para intentar abrir</p>
+          <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200" title={fileName}>{fileName}</p>
+          <p className="text-[11px] uppercase tracking-wide text-slate-400">{imageFailed ? 'Imagen no disponible' : style.label}</p>
         </div>
-        <i className="fa-solid fa-arrow-up-right-from-square shrink-0 text-xs text-slate-400" />
-      </a>
-    );
-  }
-
-  const style = fileStyles[type];
-  return (
-    <div className={`flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 ${compact ? 'p-2' : 'p-3'} dark:border-white/10 dark:bg-slate-900/60`}>
-      <span className={`flex shrink-0 items-center justify-center rounded-lg ${style.iconClass} ${compact ? 'h-9 w-9' : 'h-11 w-11'}`}>
-        <i className={`fa-solid ${style.icon} ${compact ? 'text-base' : 'text-xl'}`} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-700" title={fileName}>{fileName}</p>
-        <p className="text-[11px] uppercase tracking-wide text-slate-400">{style.label}</p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {canPreview && (
+            <button
+              type="button"
+              onClick={() => setViewerOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-100 dark:bg-slate-950 dark:text-slate-200 dark:ring-white/10 dark:hover:bg-white/10"
+            >
+              <i className="fa-regular fa-eye" />
+              {!compact && 'Ver'}
+            </button>
+          )}
+          <a
+            href={absoluteUrl}
+            target="_blank"
+            rel="noreferrer"
+            download
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-2 text-xs font-semibold text-blue-600 shadow-sm ring-1 ring-slate-200 hover:bg-blue-50 dark:bg-slate-950 dark:text-blue-300 dark:ring-white/10 dark:hover:bg-blue-500/10"
+          >
+            <i className="fa-solid fa-download" />
+            {!compact && 'Descargar'}
+          </a>
+        </div>
       </div>
-      <a
-        href={absoluteUrl}
-        target="_blank"
-        rel="noreferrer"
-        download
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 py-2 text-xs font-semibold text-blue-600 shadow-sm ring-1 ring-slate-200 hover:bg-blue-50 dark:bg-slate-950 dark:text-blue-300 dark:ring-white/10 dark:hover:bg-blue-500/10"
-      >
-        <i className="fa-solid fa-download" />
-        {!compact && 'Descargar'}
-      </a>
-    </div>
+      <MediaViewerModal
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        type={type}
+        src={absoluteUrl}
+        title={fileName}
+      />
+    </>
   );
 };

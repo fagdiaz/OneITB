@@ -172,6 +172,12 @@ const createApolloClient = () => new ApolloClient({
       Reaction: {
         keyFields: ['id'],
       },
+      CommentReaction: {
+        keyFields: ['id'],
+      },
+      SocialAttachment: {
+        keyFields: ['id'],
+      },
       AcademicResource: {
         keyFields: ['id'],
       },
@@ -202,11 +208,11 @@ const createApolloClient = () => new ApolloClient({
             merge: replaceIncoming,
           },
           inquiries: {
-            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds'],
+            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds', 'inquiryId'],
             merge: replaceIncoming,
           },
           inquiriesPage: {
-            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds'],
+            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds', 'inquiryId'],
             merge: replaceIncoming,
           },
           conversation: {

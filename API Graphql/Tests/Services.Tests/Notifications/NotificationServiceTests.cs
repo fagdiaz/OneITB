@@ -154,6 +154,49 @@ public sealed class NotificationServiceTests
         Assert.False(context.Notifications.Single(notification => notification.UserId == ServiceTestData.OtherStudentUserId).IsRead);
     }
 
+    [Fact]
+    public async Task UpsertGroupedNotificationAsync_ReusesGroupIncrementsAndReopensUnread()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        var inquiry = new Inquiry
+        {
+            Id = Guid.NewGuid(),
+            UserId = ServiceTestData.StudentUserId,
+            SubjectId = ServiceTestData.SubjectId,
+            Title = "Publicacion agrupada",
+            Content = "Contenido base",
+            PublishDate = DateTime.UtcNow,
+            IsActive = true
+        };
+        context.Inquiries.Add(inquiry);
+        await context.SaveChangesAsync();
+        NotificationService service = CreateService(context);
+
+        Notification first = Assert.IsType<Notification>(await service.UpsertGroupedNotificationAsync(
+            ServiceTestData.StudentUserId,
+            NotificationType.SocialReaction,
+            inquiry.Id,
+            $"social-reaction:inquiry:{inquiry.Id:D}",
+            "Tu publicación recibió un Me gusta.",
+            "Tu publicación recibió {count} Me gusta."));
+        await service.MarkReadAsync(ServiceTestData.StudentUserId, first.Id);
+        Notification second = Assert.IsType<Notification>(await service.UpsertGroupedNotificationAsync(
+            ServiceTestData.StudentUserId,
+            NotificationType.SocialReaction,
+            inquiry.Id,
+            $"social-reaction:inquiry:{inquiry.Id:D}",
+            "Tu publicación recibió un Me gusta.",
+            "Tu publicación recibió {count} Me gusta."));
+
+        Assert.Equal(first.Id, second.Id);
+        Assert.Equal(2, second.AggregateCount);
+        Assert.False(second.IsRead);
+        Assert.Contains("2 Me gusta", second.Message, StringComparison.Ordinal);
+        Assert.Equal($"/feed?inquiryId={inquiry.Id:D}", second.ActionUrl);
+        Assert.Single(context.Notifications);
+    }
+
     private static NotificationService CreateService(
         OneItb.Data.OneItbContext context,
         Mock<ITopicEventSender>? sender = null)

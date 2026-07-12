@@ -184,6 +184,8 @@ AGENTS.md
 GUIA_SPECKIT.md
 Circuito\ SPECKIT.txt
 specs/
+specs/[0-9][0-9][0-9]-*
+specs/[0-9][0-9][0-9]-*/
 specs/**/runtime-*.ps1
 specs/**/*runtime*.log
 specs/**/*.pid

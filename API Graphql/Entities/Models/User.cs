@@ -67,6 +67,7 @@ namespace OneItb.Entities.Models
         public virtual ICollection<JobApplication> JobApplications { get; set; } = new List<JobApplication>();
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public virtual ICollection<NotificationPreference> NotificationPreferences { get; set; } = new List<NotificationPreference>();
+        public virtual ICollection<CommentReaction> CommentReactions { get; set; } = new List<CommentReaction>();
         public virtual ICollection<UserCvExperience> CvExperiences { get; set; } = new List<UserCvExperience>();
         public virtual ICollection<UserCvEducation> CvEducations { get; set; } = new List<UserCvEducation>();
         public virtual ICollection<UserCvProject> CvProjects { get; set; } = new List<UserCvProject>();

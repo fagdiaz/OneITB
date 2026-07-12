@@ -53,12 +53,14 @@ export const Register = () => {
 
     if (!form.name?.trim()) return setValidationError('El campo Nombre es obligatorio.')
     if (!form.surname?.trim()) return setValidationError('El campo Apellidos es obligatorio.')
-    if (!form.email?.trim()) return setValidationError('El campo Correo electrónico es obligatorio.')
+    const normalizedEmail = form.email?.trim().toLowerCase()
+
+    if (!normalizedEmail) return setValidationError('El campo Correo electr�nico es obligatorio.')
     if (!form.password) return setValidationError('El campo Contraseña es obligatorio.')
     if (!form.confirmPassword) return setValidationError('Confirma la contraseña.')
 
     const emailPattern = /^[a-zA-Z0-9._%+-]+@itbeltran\.com\.ar$/
-    if (!emailPattern.test(form.email)) {
+    if (!emailPattern.test(normalizedEmail)) {
       return setValidationError('Se requiere un correo institucional @itbeltran.com.ar.')
     }
     if (form.password.length < 8) {
@@ -78,7 +80,7 @@ export const Register = () => {
       input: {
         firstName: form.name,
         lastName: form.surname,
-        email: form.email,
+        email: normalizedEmail,
         password: form.password,
         role: form.role,
         careerIds: selectedCareerIds,

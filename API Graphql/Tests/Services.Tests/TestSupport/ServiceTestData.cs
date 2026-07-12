@@ -71,6 +71,7 @@ internal static class ServiceTestData
         context.Careers.AddRange(career, otherCareer);
         context.Subjects.Add(subject);
         context.UserCareers.AddRange(
+            new UserCareer { UserId = TeacherUserId, CareerId = CareerId, User = teacher, Career = career },
             new UserCareer { UserId = StudentUserId, CareerId = CareerId, User = student, Career = career },
             new UserCareer { UserId = OtherStudentUserId, CareerId = OtherCareerId, User = otherStudent, Career = otherCareer });
 

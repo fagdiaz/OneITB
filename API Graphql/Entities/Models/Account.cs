@@ -67,10 +67,7 @@ namespace OneItb.Entities.Models
 
         private static string NormalizeDisplayEmail(string email)
         {
-            string normalized = email.Trim().ToLowerInvariant();
-            return normalized.Length == 0
-                ? normalized
-                : char.ToUpperInvariant(normalized[0]) + normalized[1..];
+            return email.Trim().ToLowerInvariant();
         }
     }
 }

@@ -1,26 +1,46 @@
 import { gql } from '@apollo/client';
 
 export const CREATE_INQUIRY = gql`
-  mutation CreateInquiry($subjectId: Int!, $title: String!, $content: String!, $fileUrl: String) {
-    addInquiry(subjectId: $subjectId, title: $title, content: $content, fileUrl: $fileUrl) {
+  mutation CreateInquiry($subjectId: Int!, $title: String!, $content: String!, $fileUrl: String, $attachments: [SocialAttachmentInput!]) {
+    addInquiry(subjectId: $subjectId, title: $title, content: $content, fileUrl: $fileUrl, attachments: $attachments) {
       id
       title
       content
       fileUrl
+      attachments {
+        id
+        fileUrl
+        originalFileName
+        contentType
+        size
+        sortOrder
+      }
       publishDate
     }
   }
 `;
 
 export const ADD_COMMENT = gql`
-  mutation AddComment($inquiryId: UUID!, $content: String!, $parentCommentId: UUID, $fileUrl: String) {
-    addComment(inquiryId: $inquiryId, content: $content, parentCommentId: $parentCommentId, fileUrl: $fileUrl) {
+  mutation AddComment($inquiryId: UUID!, $content: String!, $parentCommentId: UUID, $fileUrl: String, $attachments: [SocialAttachmentInput!]) {
+    addComment(inquiryId: $inquiryId, content: $content, parentCommentId: $parentCommentId, fileUrl: $fileUrl, attachments: $attachments) {
       id
       inquiryId
       userId
       parentCommentId
       content
       fileUrl
+      attachments {
+        id
+        fileUrl
+        originalFileName
+        contentType
+        size
+        sortOrder
+      }
+      reactions {
+        id
+        userId
+      }
       createdAt
     }
   }
@@ -32,6 +52,18 @@ export const TOGGLE_REACTION = gql`
       inquiryId
       isReacted
       reactionCount
+      reactionId
+    }
+  }
+`;
+
+export const TOGGLE_COMMENT_REACTION = gql`
+  mutation ToggleCommentReaction($commentId: UUID!) {
+    toggleCommentReaction(commentId: $commentId) {
+      commentId
+      isReacted
+      reactionCount
+      reactionId
     }
   }
 `;

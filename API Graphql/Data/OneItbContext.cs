@@ -19,6 +19,8 @@ namespace OneItb.Data
         public DbSet<Inquiry> Inquiries { get; set; } = null!;
         public DbSet<Comment> Comments { get; set; } = null!;
         public DbSet<Reaction> Reactions { get; set; } = null!;
+        public DbSet<CommentReaction> CommentReactions { get; set; } = null!;
+        public DbSet<SocialAttachment> SocialAttachments { get; set; } = null!;
         public DbSet<CommunityReport> CommunityReports { get; set; } = null!;
         public DbSet<ModerationAudit> ModerationAudits { get; set; } = null!;
         public DbSet<AcademicResource> AcademicResources { get; set; } = null!;
@@ -402,13 +404,25 @@ namespace OneItb.Data
                 entity.Property(e => e.ActionUrl).HasMaxLength(300);
                 entity.Property(e => e.IsRead).IsRequired().HasDefaultValue(false);
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.GroupKey).HasMaxLength(160).IsUnicode(false);
+                entity.Property(e => e.AggregateCount).IsRequired().HasDefaultValue(1);
+                entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+                entity.Property(e => e.RowVersion).IsRowVersion().IsConcurrencyToken();
 
                 entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt });
                 entity.HasIndex(e => new { e.UserId, e.CreatedAt });
+                entity.HasIndex(e => new { e.UserId, e.GroupKey })
+                    .IsUnique()
+                    .HasFilter("[GroupKey] IS NOT NULL");
 
                 entity.HasOne(e => e.User)
                     .WithMany(user => user.Notifications)
                     .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.RelatedInquiry)
+                    .WithMany()
+                    .HasForeignKey(e => e.RelatedInquiryId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -691,6 +705,68 @@ namespace OneItb.Data
                 entity.HasOne(e => e.User)
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA COMMENT_REACTIONS
+            // ==========================================
+            modelBuilder.Entity<CommentReaction>(entity =>
+            {
+                entity.ToTable("CommentReactions", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasQueryFilter(e => e.Comment.IsActive && e.Comment.Inquiry.IsActive);
+                entity.HasIndex(e => new { e.CommentId, e.UserId }).IsUnique();
+                entity.HasIndex(e => e.UserId);
+
+                entity.HasOne(e => e.Comment)
+                    .WithMany(comment => comment.Reactions)
+                    .HasForeignKey(e => e.CommentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.User)
+                    .WithMany(user => user.CommentReactions)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA SOCIAL_ATTACHMENTS
+            // ==========================================
+            modelBuilder.Entity<SocialAttachment>(entity =>
+            {
+                entity.ToTable(
+                    "SocialAttachments",
+                    "dbo",
+                    table => table.HasCheckConstraint(
+                        "CK_SocialAttachments_ExactlyOneOwner",
+                        "([InquiryId] IS NOT NULL AND [CommentId] IS NULL) OR ([InquiryId] IS NULL AND [CommentId] IS NOT NULL)"));
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.FileUrl).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.OriginalFileName).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100).IsUnicode(false);
+                entity.Property(e => e.Size).IsRequired();
+                entity.Property(e => e.SortOrder).IsRequired();
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => new { e.InquiryId, e.SortOrder });
+                entity.HasIndex(e => new { e.CommentId, e.SortOrder });
+                entity.HasIndex(e => e.FileUrl);
+
+                entity.HasOne(e => e.Inquiry)
+                    .WithMany(inquiry => inquiry.Attachments)
+                    .HasForeignKey(e => e.InquiryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Comment)
+                    .WithMany(comment => comment.Attachments)
+                    .HasForeignKey(e => e.CommentId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

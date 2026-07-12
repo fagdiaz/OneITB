@@ -1,6 +1,6 @@
 # Arquitectura y diseno de OneITB23
 
-**Ultima alineacion con codigo**: 2026-07-08
+**Ultima alineacion con codigo**: 2026-07-11
 
 ## 1. Stack vigente
 
@@ -46,7 +46,7 @@ Mobile/OneItb-App/
 - `/uploads/{file}`: lectura de archivos estaticos almacenados localmente cuando no se usa Cloudinary.
 - SMTP: salida de correo para eventos institucionales, actualmente cambios de estado de postulaciones.
 
-Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/api/upload`; luego esa URL se persiste en `Inquiry.FileUrl`, `Comment.FileUrl` o `AcademicResource.FileUrl`.
+Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/api/upload`; luego GraphQL persiste el descriptor en `SocialAttachment` para publicaciones/comentarios o la URL en `AcademicResource.FileUrl`. `Inquiry.FileUrl` y `Comment.FileUrl` se conservan como compatibilidad con clientes y datos historicos.
 
 Controles defensivos vigentes: `/graphql` y `/api/upload` tienen rate limiting fixed-window por IP; GraphQL aplica profundidad maxima configurable (`GraphQL:MaxExecutionDepth`, default 10) y limites globales de paginacion (`DefaultPageSize` 20, `MaxPageSize` 50). El login usa lockout persistente por cuenta (`FailedLoginAttempts`, `LockoutEnd`) para mitigar fuerza bruta aunque el atacante rote IPs. Los perfiles privados se enmascaran en el backend, no solo en React.
 
@@ -70,6 +70,10 @@ erDiagram
     USER ||--o{ COMMENT : writes
     INQUIRY ||--o{ REACTION : receives
     USER ||--o{ REACTION : creates
+    INQUIRY ||--o{ SOCIAL_ATTACHMENT : attaches
+    COMMENT ||--o{ SOCIAL_ATTACHMENT : attaches
+    COMMENT ||--o{ COMMENT_REACTION : receives
+    USER ||--o{ COMMENT_REACTION : creates
     INQUIRY ||--o{ COMMUNITY_REPORT : reported
     USER ||--o{ COMMUNITY_REPORT : reports
 
@@ -89,12 +93,13 @@ erDiagram
     USER ||--o{ JOB_APPLICATION : applies
 
     USER ||--o{ NOTIFICATION : receives
+    INQUIRY ||--o{ NOTIFICATION : groups
     USER ||--o{ NOTIFICATION_PREFERENCE : configures
     USER ||--o{ MODERATION_AUDIT : acts
     USER ||--o{ AUDIT_LOG : performs
 ```
 
-Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`, `NotificationPreference`, `ModerationAudit`, `AuditLog`, `MagicLink`, `JobOffer`, `JobApplication`, `UserCvExperience`, `UserCvEducation`, `UserCvProject`, `UserCvSkill` y `UserCvLanguage`.
+Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommentReaction`, `SocialAttachment`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`, `NotificationPreference`, `ModerationAudit`, `AuditLog`, `MagicLink`, `JobOffer`, `JobApplication`, `UserCvExperience`, `UserCvEducation`, `UserCvProject`, `UserCvSkill` y `UserCvLanguage`.
 
 Campos destacados recientes:
 
@@ -102,6 +107,9 @@ Campos destacados recientes:
 - `JobApplication`: `Status` (`Pending`, `Reviewed`, `Rejected`) con indice unico por `JobOfferId + ApplicantId`.
 - `AuditLog`: `ActorUserId`, `CorrelationId`, `Action`, `EntityName`, `EntityId`, snapshots JSON acotados.
 - `User.IsPublicProfile`: controla si terceros pueden ver bio, contacto, carreras, CV y metricas extendidas del perfil publico.
+- `SocialAttachment`: propietario exclusivo `InquiryId` XOR `CommentId`, URL, nombre original, MIME, tamano y orden; FKs restrictivas.
+- `CommentReaction`: reaccion unica por `CommentId + UserId`, con filtro de contenido activo y FKs restrictivas.
+- `Notification`: `GroupKey`, `AggregateCount`, `RelatedInquiryId`, `UpdatedAt` y `RowVersion` para agrupacion persistente y concurrencia optimista.
 
 ## 5. Integridad y borrado
 
@@ -122,17 +130,19 @@ sequenceDiagram
     participant Upload as POST /api/upload
     participant GQL as GraphQL
     participant DB as SQL Server
-    User->>FE: selecciona archivo y contenido
-    FE->>Upload: multipart/form-data + JWT
-    Upload-->>FE: /uploads/{guid.ext} o URL HTTPS Cloudinary
-    FE->>GQL: addInquiry(fileUrl)
-    GQL->>DB: INSERT Inquiry
+    User->>FE: selecciona varios archivos y contenido
+    loop hasta 10 archivos / 15 MB agregados
+        FE->>Upload: multipart/form-data + JWT
+        Upload-->>FE: descriptor con URL, nombre, MIME y tamano
+    end
+    FE->>GQL: addInquiry(attachments[])
+    GQL->>DB: INSERT Inquiry + SocialAttachments
     GQL-->>FE: Inquiry
 ```
 
 ### Mensajeria privada y notificaciones
 
-El historial se persiste en `Messages`. El envio publica un evento al topico privado del emisor y receptor; Apollo reconcilia historial, eventos y estado optimista. Las notificaciones se persisten en `Notifications` y se publican por topico privado `notification:{userId}` respetando preferencias.
+El historial se persiste en `Messages`. El envio publica un evento al topico privado del emisor y receptor; Apollo reconcilia historial, eventos y estado optimista. Las notificaciones se persisten en `Notifications` y se publican por topico privado `notification:{userId}` respetando preferencias. Los eventos sociales se agrupan al escribir mediante clave unica por destinatario/objetivo/tipo, contador persistente y `RowVersion`; cada grupo conserva deep-link `/feed?inquiryId={id}`.
 
 ### Recursos y progreso academico
 

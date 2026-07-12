@@ -1,12 +1,20 @@
 import { gql } from '@apollo/client';
 
 export const GET_INQUIRIES = gql`
-  query GetInquiries($searchTerm: String, $careerId: Int, $careerIds: [Int!], $subjectIds: [Int!]) {
-    inquiries(searchTerm: $searchTerm, careerId: $careerId, careerIds: $careerIds, subjectIds: $subjectIds) {
+  query GetInquiries($searchTerm: String, $careerId: Int, $careerIds: [Int!], $subjectIds: [Int!], $inquiryId: UUID) {
+    inquiries(searchTerm: $searchTerm, careerId: $careerId, careerIds: $careerIds, subjectIds: $subjectIds, inquiryId: $inquiryId) {
       id
       title
       content
       fileUrl
+      attachments {
+        id
+        fileUrl
+        originalFileName
+        contentType
+        size
+        sortOrder
+      }
       publishDate
       isActive
       reportCount
@@ -37,6 +45,18 @@ export const GET_INQUIRIES = gql`
         parentCommentId
         content
         fileUrl
+        attachments {
+          id
+          fileUrl
+          originalFileName
+          contentType
+          size
+          sortOrder
+        }
+        reactions {
+          id
+          userId
+        }
         createdAt
         isActive
         reportCount
@@ -57,8 +77,8 @@ export const GET_INQUIRIES = gql`
 `;
 
 export const GET_INQUIRIES_PAGE = gql`
-  query GetInquiriesPage($searchTerm: String, $careerId: Int, $careerIds: [Int!], $subjectIds: [Int!], $first: Int!, $after: String) {
-    inquiriesPage(searchTerm: $searchTerm, careerId: $careerId, careerIds: $careerIds, subjectIds: $subjectIds, first: $first, after: $after) {
+  query GetInquiriesPage($searchTerm: String, $careerId: Int, $careerIds: [Int!], $subjectIds: [Int!], $inquiryId: UUID, $first: Int!, $after: String) {
+    inquiriesPage(searchTerm: $searchTerm, careerId: $careerId, careerIds: $careerIds, subjectIds: $subjectIds, inquiryId: $inquiryId, first: $first, after: $after) {
       hasNextPage
       nextCursor
       totalCount
@@ -67,6 +87,14 @@ export const GET_INQUIRIES_PAGE = gql`
         title
         content
         fileUrl
+        attachments {
+          id
+          fileUrl
+          originalFileName
+          contentType
+          size
+          sortOrder
+        }
         publishDate
         isActive
         reportCount
@@ -97,6 +125,18 @@ export const GET_INQUIRIES_PAGE = gql`
           parentCommentId
           content
           fileUrl
+          attachments {
+            id
+            fileUrl
+            originalFileName
+            contentType
+            size
+            sortOrder
+          }
+          reactions {
+            id
+            userId
+          }
           createdAt
           isActive
           reportCount
@@ -112,6 +152,23 @@ export const GET_INQUIRIES_PAGE = gql`
             totalReportsReceived
           }
         }
+      }
+    }
+  }
+`;
+
+export const GET_INQUIRY_REACTION_USERS_PAGE = gql`
+  query GetInquiryReactionUsersPage($inquiryId: UUID!, $first: Int!, $after: String) {
+    inquiryReactionUsersPage(inquiryId: $inquiryId, first: $first, after: $after) {
+      hasNextPage
+      nextCursor
+      totalCount
+      items {
+        id
+        firstName
+        lastName
+        avatarUrl
+        role
       }
     }
   }

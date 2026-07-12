@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -268,6 +269,22 @@ namespace OneItb.GraphQL
                     descriptor.Field("reportCount")
                         .Type<NonNullType<IntType>>()
                         .Resolve(_ => 0);
+                }))
+                .AddType(new ObjectType<SocialAttachment>(descriptor =>
+                {
+                    descriptor.Field(attachment => attachment.Inquiry).Ignore();
+                    descriptor.Field(attachment => attachment.Comment).Ignore();
+                }))
+                .AddType(new ObjectType<CommentReaction>(descriptor =>
+                {
+                    descriptor.Field(reaction => reaction.Comment).Ignore();
+                    descriptor.Field(reaction => reaction.User).Ignore();
+                }))
+                .AddType(new ObjectType<Notification>(descriptor =>
+                {
+                    descriptor.Field(notification => notification.GroupKey).Ignore();
+                    descriptor.Field(notification => notification.RowVersion).Ignore();
+                    descriptor.Field(notification => notification.RelatedInquiry).Ignore();
                 }));
 
             services.AddScoped<IUnitOfWork, global::Services.Repositories.UnitOfWork>();
@@ -347,7 +364,14 @@ namespace OneItb.GraphQL
             app.UseMiddleware<CorrelationIdMiddleware>();
             app.UseMiddleware<SecurityHeadersMiddleware>();
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                OnPrepareResponse = ctx =>
+                {
+                    ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+                    ctx.Context.Response.Headers.Append("Cross-Origin-Resource-Policy", "cross-origin");
+                }
+            });
 
             var webSocketOptions = new WebSocketOptions();
             string[] allowedOrigins = Configuration
