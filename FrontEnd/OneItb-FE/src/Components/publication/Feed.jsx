@@ -7,18 +7,31 @@ import { CommentThread } from './CommentThread';
 import MediaComponent from './MediaComponent';
 import { AttachmentDraftPicker } from './AttachmentDraftPicker';
 import { ReactionUsersModal } from './ReactionUsersModal';
-import { Footer } from '../layout/Footer';
-import { apiBaseUrl, uploadAttachments } from '../../utils/uploadFile';
+import { copyPostShareUrl } from './sharePostLink';
+import { ExpandableText } from './ExpandableText';
+import { ModerationReasonModal } from './ModerationReasonModal';
+import { FollowButton } from '../social/FollowButton';
+import {
+  apiBaseUrl,
+  getFileIdentity,
+  MAX_UPLOAD_FILES,
+  MAX_UPLOAD_SIZE,
+  uploadAttachments,
+} from '../../utils/uploadFile';
+import { parseYouTubeContent } from '../../utils/mediaParser';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import { GET_INQUIRIES_PAGE } from '../../data/graphql/queries/inquiries';
 import { SEARCH_PUBLIC_PROFILES } from '../../data/graphql/queries/searchPublicProfiles';
+import { GET_MY_FOLLOWED_USER_IDS } from '../../data/graphql/social';
 import {
   ADD_COMMENT,
   CREATE_INQUIRY,
   EDIT_COMMENT,
   EDIT_INQUIRY,
   INTERACT_WITH_USER,
+  MODERATE_COMMENT_VISIBILITY,
+  MODERATE_INQUIRY_VISIBILITY,
   TOGGLE_COMMENT_STATUS,
   TOGGLE_INQUIRY_STATUS,
   TOGGLE_COMMENT_REACTION,
@@ -68,6 +81,14 @@ const updateReactionCache = (cache, {
     },
   });
 };
+
+const toAttachmentInput = (attachment, sortOrder) => ({
+  fileUrl: attachment.fileUrl,
+  originalFileName: attachment.originalFileName,
+  contentType: attachment.contentType,
+  size: Number(attachment.size),
+  sortOrder,
+});
 
 const roleStyles = {
   Administrador: { name: 'text-indigo-700', badge: 'bg-indigo-50 text-indigo-500', label: 'admin' },
@@ -188,10 +209,13 @@ export const Feed = () => {
   const [commentFocusRequest, setCommentFocusRequest] = useState({});
   const [feedback, setFeedback] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [coverSelection, setCoverSelection] = useState(null);
   const [attachmentError, setAttachmentError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingComment, setIsUploadingComment] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
+  const [moderationTarget, setModerationTarget] = useState(null);
+  const [moderationError, setModerationError] = useState(null);
   const isAdmin = auth.role === 'Administrador';
   const publicationCareerId = isAdmin && selectedCareer ? Number(selectedCareer) : null;
   const searchTermParam = searchParams.get('q');
@@ -201,6 +225,7 @@ export const Feed = () => {
   const subjectParam = searchParams.get('subject');
   const subjectsParam = searchParams.get('subjects');
   const targetInquiryId = searchParams.get('inquiryId');
+  const targetCommentId = searchParams.get('commentId');
 
   const legacyCareerId = careerParam ? Number(careerParam) : null;
   const filterCareerIds = parseIdList(careersParam);
@@ -236,6 +261,10 @@ export const Feed = () => {
     skip: normalizedSearchTerm.length < 2,
     fetchPolicy: 'cache-and-network',
   });
+  const { data: followedData } = useQuery(GET_MY_FOLLOWED_USER_IDS, {
+    skip: !auth?.id,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const {
     data: inquiriesData,
@@ -257,6 +286,9 @@ export const Feed = () => {
   const [editComment] = useMutation(EDIT_COMMENT);
   const [toggleCommentStatus] = useMutation(TOGGLE_COMMENT_STATUS);
   const [interactWithUser] = useMutation(INTERACT_WITH_USER);
+  const [moderateInquiryVisibility, { loading: moderatingInquiry }] = useMutation(MODERATE_INQUIRY_VISIBILITY);
+  const [moderateCommentVisibility, { loading: moderatingComment }] = useMutation(MODERATE_COMMENT_VISIBILITY);
+  const [followOverrides, setFollowOverrides] = useState({});
 
   const careers = careersData?.careers ?? [];
   const myCareers = myCareersData?.myCareers ?? [];
@@ -264,8 +296,13 @@ export const Feed = () => {
   const searchProfiles = searchProfilesData?.searchPublicProfiles ?? [];
   const feedPage = inquiriesData?.inquiriesPage;
   const posts = feedPage?.items ?? [];
+  const followedUserIds = useMemo(
+    () => new Set(followedData?.myFollowedUserIds ?? []),
+    [followedData],
+  );
   const isSearchResultsView = normalizedSearchTerm.length > 0;
   const isModerator = auth.role === 'Administrador' || auth.role === 'Moderador';
+  const composerVideoId = useMemo(() => parseYouTubeContent(content).videoId, [content]);
   const publicationCareerOptions = careers;
   const mustSelectCareerForPost = isAdmin;
   const effectivePublicationSubjects = useMemo(() => {
@@ -305,13 +342,35 @@ export const Feed = () => {
   }, []);
 
   useEffect(() => {
-    if (!targetInquiryId || !posts.some((post) => post.id === targetInquiryId)) return undefined;
+    const fileIds = new Set(selectedFiles.map(getFileIdentity));
+    const selectionIsValid = coverSelection === 'youtube'
+      ? Boolean(composerVideoId)
+      : Boolean(coverSelection && fileIds.has(coverSelection));
+    if (selectionIsValid) return;
+    if (composerVideoId) setCoverSelection('youtube');
+    else setCoverSelection(selectedFiles[0] ? getFileIdentity(selectedFiles[0]) : null);
+  }, [composerVideoId, coverSelection, selectedFiles]);
+
+  useEffect(() => {
+    if (!targetInquiryId) return undefined;
+    const targetPost = posts.find((post) => post.id === targetInquiryId);
+    if (!targetPost) return undefined;
     setOpenThreads((current) => current[targetInquiryId] ? current : { ...current, [targetInquiryId]: true });
+    const hasTargetComment = !targetCommentId || targetPost.comments?.some((comment) => comment.id === targetCommentId);
     const frame = window.requestAnimationFrame(() => {
-      document.getElementById(`inquiry-${targetInquiryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!targetCommentId || !hasTargetComment) {
+        document.getElementById(`inquiry-${targetInquiryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
+    if (targetCommentId && !hasTargetComment) {
+      setFeedback({ type: 'error', message: 'El comentario indicado ya no esta disponible. Se abrio la publicacion relacionada.' });
+    }
     return () => window.cancelAnimationFrame(frame);
-  }, [posts, targetInquiryId]);
+  }, [posts, targetCommentId, targetInquiryId]);
+
+  useEffect(() => {
+    setFollowOverrides({});
+  }, [auth?.id]);
 
   const showFeedback = (type, message) => setFeedback({ type, message });
 
@@ -324,7 +383,13 @@ export const Feed = () => {
     try {
       if (selectedFiles.length > 0) {
         setIsUploading(true);
-        attachments = await uploadAttachments(selectedFiles, token);
+        const orderedFiles = [...selectedFiles];
+        const coverIndex = orderedFiles.findIndex((file) => getFileIdentity(file) === coverSelection);
+        if (coverIndex > 0) {
+          const [coverFile] = orderedFiles.splice(coverIndex, 1);
+          orderedFiles.unshift(coverFile);
+        }
+        attachments = await uploadAttachments(orderedFiles, token);
       }
       await createInquiry({
         variables: {
@@ -333,6 +398,7 @@ export const Feed = () => {
           content: content.trim(),
           fileUrl: attachments[0]?.fileUrl ?? null,
           attachments,
+          preferAttachmentCover: attachments.length > 0 && (!composerVideoId || coverSelection !== 'youtube'),
         },
       });
       await refetch();
@@ -341,6 +407,7 @@ export const Feed = () => {
       setSelectedCareer('');
       setSelectedSubject('');
       setSelectedFiles([]);
+      setCoverSelection(null);
       setAttachmentError(null);
       showFeedback('success', 'La publicacion se creo correctamente.');
     } catch (error) {
@@ -384,6 +451,16 @@ export const Feed = () => {
     }
   };
 
+  const handleCopyPostLink = async (inquiryId) => {
+    setOpenMenuId(null);
+    try {
+      await copyPostShareUrl(inquiryId);
+      showFeedback('success', 'Enlace de publicacion copiado.');
+    } catch (error) {
+      showFeedback('error', error.message || 'No se pudo copiar el enlace.');
+    }
+  };
+
   const handleLoadMore = async () => {
     if (!feedPage?.hasNextPage || !feedPage.nextCursor) return;
 
@@ -417,7 +494,7 @@ export const Feed = () => {
     }
   };
 
-  const handleComment = async (inquiryId, parentCommentId, commentContent, selectedCommentFiles = []) => {
+  const handleComment = async (inquiryId, parentCommentId, commentContent, selectedCommentFiles = [], replyTargetCommentId = null) => {
     let attachments = [];
     try {
       if (selectedCommentFiles.length > 0) {
@@ -429,6 +506,7 @@ export const Feed = () => {
         variables: {
           inquiryId,
           parentCommentId,
+          replyTargetCommentId,
           content: commentContent.trim(),
           fileUrl: attachments[0]?.fileUrl ?? null,
           attachments,
@@ -483,11 +561,27 @@ export const Feed = () => {
     if (!editingPost?.title.trim() || !editingPost?.content.trim()) return;
 
     try {
+      let uploadedAttachments = [];
+      if (editingPost.newFiles.length > 0) {
+        setIsUploading(true);
+        uploadedAttachments = await uploadAttachments(editingPost.newFiles, token);
+      }
+      const combinedAttachments = [
+        ...editingPost.attachments,
+        ...uploadedAttachments,
+      ];
+      const totalSize = combinedAttachments.reduce((sum, attachment) => sum + Number(attachment.size || 0), 0);
+      if (combinedAttachments.length > MAX_UPLOAD_FILES || totalSize > MAX_UPLOAD_SIZE) {
+        throw new Error('Los adjuntos editados superan el limite de 10 archivos o 15 MB.');
+      }
+      const attachmentInputs = combinedAttachments.map(toAttachmentInput);
       await editInquiry({
         variables: {
           inquiryId: editingPost.id,
           newTitle: editingPost.title.trim(),
           newContent: editingPost.content.trim(),
+          attachments: attachmentInputs,
+          preferAttachmentCover: editingPost.preferAttachmentCover && attachmentInputs.length > 0,
         },
       });
       setEditingPost(null);
@@ -495,6 +589,8 @@ export const Feed = () => {
       showFeedback('success', 'Publicacion actualizada.');
     } catch (error) {
       showFeedback('error', error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -509,14 +605,47 @@ export const Feed = () => {
     }
   };
 
-  const handleEditComment = async (commentId, newContent) => {
-    await editComment({ variables: { commentId, newContent: newContent.trim() } });
+  const handleEditComment = async (commentId, newContent, retainedAttachments = [], newFiles = []) => {
+    const uploadedAttachments = newFiles.length > 0 ? await uploadAttachments(newFiles, token) : [];
+    const combinedAttachments = [...retainedAttachments, ...uploadedAttachments];
+    const totalSize = combinedAttachments.reduce((sum, attachment) => sum + Number(attachment.size || 0), 0);
+    if (combinedAttachments.length > MAX_UPLOAD_FILES || totalSize > MAX_UPLOAD_SIZE) {
+      throw new Error('Los adjuntos editados superan el limite de 10 archivos o 15 MB.');
+    }
+    await editComment({
+      variables: {
+        commentId,
+        newContent: newContent.trim(),
+        attachments: combinedAttachments.map(toAttachmentInput),
+      },
+    });
     await refetch();
   };
 
   const handleToggleComment = async (commentId) => {
     await toggleCommentStatus({ variables: { commentId } });
     await refetch();
+  };
+
+  const handleModerationConfirm = async (reason) => {
+    if (!moderationTarget) return;
+    setModerationError(null);
+    try {
+      if (moderationTarget.kind === 'comment') {
+        await moderateCommentVisibility({
+          variables: { commentId: moderationTarget.id, isHidden: true, reason },
+        });
+      } else {
+        await moderateInquiryVisibility({
+          variables: { inquiryId: moderationTarget.id, isHidden: true, reason },
+        });
+      }
+      setModerationTarget(null);
+      await refetch();
+      showFeedback('success', 'Contenido ocultado y decision registrada.');
+    } catch (error) {
+      setModerationError(error.message || 'No se pudo aplicar la moderacion.');
+    }
   };
 
   const handleUserInteraction = async (targetUserId, type) => {
@@ -530,8 +659,13 @@ export const Feed = () => {
     }
   };
 
+  const resolveFollowState = (targetUserId) => followOverrides[targetUserId] ?? followedUserIds.has(targetUserId);
+  const handleFollowStateChange = (targetUserId, isFollowing) => {
+    setFollowOverrides((current) => ({ ...current, [targetUserId]: isFollowing }));
+  };
+
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6 text-slate-900 dark:text-slate-100">
+    <div className="mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-4 px-4 py-6 text-slate-900 dark:text-slate-100">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-7 w-1 rounded-full bg-blue-600" />
@@ -564,23 +698,30 @@ export const Feed = () => {
         </div>
       )}
 
-      <form onSubmit={handlePublish} className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.24)]">
+      <form onSubmit={handlePublish} className="flex w-full min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/75 dark:shadow-[0_18px_50px_rgba(15,23,42,0.24)]">
         <input
           type="text"
           maxLength={200}
           placeholder="Titulo de tu consulta"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-700/75 dark:text-slate-100 dark:placeholder:font-semibold dark:placeholder:text-slate-200"
         />
         <textarea
           maxLength={10000}
           placeholder="Que queres compartir con la comunidad?"
           value={content}
           onChange={(event) => setContent(event.target.value)}
-          className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
+          className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-700/75 dark:text-slate-100 dark:placeholder:text-slate-300"
         />
-        <AttachmentDraftPicker files={selectedFiles} onChange={setSelectedFiles} onError={setAttachmentError} />
+        <AttachmentDraftPicker
+          files={selectedFiles}
+          onChange={setSelectedFiles}
+          onError={setAttachmentError}
+          allowCoverSelection
+          coverFileIdentity={coverSelection === 'youtube' ? null : coverSelection}
+          onCoverChange={setCoverSelection}
+        />
         {attachmentError && (
           <p className="text-xs font-semibold text-red-600 dark:text-red-300">{attachmentError}</p>
         )}
@@ -589,7 +730,25 @@ export const Feed = () => {
             <MediaComponent textContext={content} />
           </div>
         )}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {composerVideoId && selectedFiles.length > 0 && (
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-950/60">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Portada principal</span>
+            <button
+              type="button"
+              onClick={() => setCoverSelection('youtube')}
+              aria-pressed={coverSelection === 'youtube'}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                coverSelection === 'youtube'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:text-red-600 dark:bg-slate-900 dark:text-slate-300 dark:ring-white/10'
+              }`}
+            >
+              <i className="fa-brands fa-youtube" />
+              Video de YouTube
+            </button>
+          </div>
+        )}
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {mustSelectCareerForPost && (
             <select
               value={selectedCareer}
@@ -597,7 +756,7 @@ export const Feed = () => {
                 setSelectedCareer(event.target.value);
                 setSelectedSubject('');
               }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200"
+              className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:flex-1 dark:border-white/10 dark:bg-slate-700/75 dark:text-slate-200"
             >
               <option value="">Selecciona una carrera...</option>
               {publicationCareerOptions.map((career) => (
@@ -609,7 +768,7 @@ export const Feed = () => {
             value={selectedSubject}
             onChange={(event) => setSelectedSubject(event.target.value)}
             disabled={subjectsLoading || (mustSelectCareerForPost && !selectedCareer)}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200"
+            className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:flex-1 dark:border-white/10 dark:bg-slate-700/75 dark:text-slate-200"
           >
             <option value="">Selecciona una materia...</option>
             {publicationSubjectGroups.map((group) => (
@@ -625,7 +784,7 @@ export const Feed = () => {
           <button
             type="submit"
             disabled={isPublishing || isUploading || Boolean(attachmentError) || !title.trim() || !content.trim() || !selectedSubject}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full shrink-0 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 sm:w-auto"
           >
             {isUploading ? 'Subiendo...' : isPublishing ? 'Publicando...' : 'Publicar'}
           </button>
@@ -751,15 +910,26 @@ export const Feed = () => {
               <div className="flex items-center gap-3">
                 <UserAvatar user={post.user} />
                 <div>
-                  <p className={`text-sm font-semibold ${roleStyle.name}`}>
-                    <Link to={`/profile/${post.user?.id}`} className="hover:underline">
-                      {post.user?.firstName} {post.user?.lastName}
-                    </Link>
-                    <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleStyle.badge}`}>
-                      {roleStyle.label}
-                    </span>
-                    <ParticipationBadges user={post.user} />
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className={`text-sm font-semibold ${roleStyle.name}`}>
+                      <Link to={`/profile/${post.user?.id}`} className="hover:underline">
+                        {post.user?.firstName} {post.user?.lastName}
+                      </Link>
+                      <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleStyle.badge}`}>
+                        {roleStyle.label}
+                      </span>
+                      <ParticipationBadges user={post.user} />
+                    </p>
+                    {post.user?.id && post.user.id !== auth.id && (
+                      <FollowButton
+                        targetUserId={post.user.id}
+                        isFollowing={resolveFollowState(post.user.id)}
+                        onStateChange={handleFollowStateChange}
+                        onError={(error) => showFeedback('error', error.message)}
+                        compact
+                      />
+                    )}
+                  </div>
                   <p className="text-xs text-slate-400">
                     {post.subject?.name} · {new Date(post.publishDate).toLocaleDateString('es-AR')} {new Date(post.publishDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -776,22 +946,25 @@ export const Feed = () => {
                 </button>
                 {openMenuId === post.id && (
                 <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-xl dark:border-white/10 dark:bg-slate-950/95 dark:shadow-[0_20px_60px_rgba(2,6,23,0.45)]">
+                  <button type="button" onClick={() => handleCopyPostLink(post.id)} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">
+                    <i className="fa-solid fa-link mr-2 text-xs text-slate-400" />
+                    Copiar enlace
+                  </button>
                   {post.user?.id === auth.id && (
                     <>
-                      <button type="button" onClick={() => { setEditingPost({ id: post.id, title: post.title, content: post.content }); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Editar</button>
+                      <button type="button" onClick={() => { setEditingPost({ id: post.id, title: post.title, content: post.content, attachments: [...(post.attachments ?? [])], newFiles: [], attachmentError: null, preferAttachmentCover: Boolean(post.preferAttachmentCover) }); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Editar</button>
                       <button type="button" onClick={() => handleTogglePost(post.id)} className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50">Eliminar</button>
                     </>
                   )}
                   {post.user?.id !== auth.id && (
                     <>
-                      <button type="button" onClick={() => handleUserInteraction(post.user.id, 'FOLLOW')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Seguir autor</button>
                       <button type="button" onClick={() => handleUserInteraction(post.user.id, 'MUTE')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Silenciar</button>
                       <button type="button" onClick={() => handleUserInteraction(post.user.id, 'BLOCK')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Bloquear</button>
                       <button type="button" onClick={() => { setReportTargetId(post.id); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50">Reportar</button>
                     </>
                   )}
-                  {isModerator && (
-                    <button type="button" onClick={() => handleTogglePost(post.id)} className="block w-full border-t border-slate-100 px-4 py-2 text-left text-amber-700 hover:bg-amber-50">Desactivar contenido</button>
+                  {isModerator && post.user?.id !== auth.id && (
+                    <button type="button" onClick={() => { setModerationTarget({ kind: 'inquiry', id: post.id }); setModerationError(null); setOpenMenuId(null); }} className="block w-full border-t border-slate-100 px-4 py-2 text-left text-amber-700 hover:bg-amber-50">Ocultar por moderacion</button>
                   )}
                 </div>
                 )}
@@ -811,8 +984,28 @@ export const Feed = () => {
                     onChange={(event) => setEditingPost((current) => ({ ...current, content: event.target.value }))}
                     className="min-h-24 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  {editingPost.attachments.length > 0 && (
+                    <ul className="grid gap-2 sm:grid-cols-2">
+                      {editingPost.attachments.map((attachment) => (
+                        <li key={attachment.id || attachment.fileUrl} className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-950/60">
+                          <i className="fa-solid fa-paperclip text-slate-400" />
+                          <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-600 dark:text-slate-300">{attachment.originalFileName}</span>
+                          <button type="button" onClick={() => setEditingPost((current) => ({ ...current, attachments: current.attachments.filter((item) => item.id !== attachment.id) }))} className="text-slate-400 hover:text-red-600" aria-label={`Quitar ${attachment.originalFileName}`}>
+                            <i className="fa-solid fa-xmark" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <AttachmentDraftPicker
+                    files={editingPost.newFiles}
+                    onChange={(newFiles) => setEditingPost((current) => ({ ...current, newFiles }))}
+                    onError={(attachmentError) => setEditingPost((current) => ({ ...current, attachmentError }))}
+                    compact
+                  />
+                  {editingPost.attachmentError && <p className="text-xs font-semibold text-red-600">{editingPost.attachmentError}</p>}
                   <div className="flex gap-2">
-                    <button type="submit" className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white">Guardar</button>
+                    <button type="submit" disabled={Boolean(editingPost.attachmentError) || isUploading} className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{isUploading ? 'Subiendo...' : 'Guardar'}</button>
                     <button type="button" onClick={() => setEditingPost(null)} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">Cancelar</button>
                   </div>
                 </form>
@@ -820,39 +1013,37 @@ export const Feed = () => {
                 <>
                   <h2 className={`font-semibold ${isAdminPost ? 'text-blue-950 dark:text-blue-100' : 'text-slate-800 dark:text-slate-100'}`}>{post.title}</h2>
                   {post.content && (
-                    <p className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed ${isAdminPost ? 'text-blue-900 dark:text-blue-100/85' : 'text-slate-700 dark:text-slate-300'}`}>
+                    <ExpandableText className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed ${isAdminPost ? 'text-blue-900 dark:text-blue-100/85' : 'text-slate-700 dark:text-slate-300'}`}>
                       {post.content}
-                    </p>
+                    </ExpandableText>
                   )}
                 </>
               )}
-              <MediaComponent textContext={post.content} fileUrl={post.fileUrl} attachments={post.attachments} />
+              {editingPost?.id !== post.id && (
+                <MediaComponent textContext={post.content} fileUrl={post.fileUrl} attachments={post.attachments} preferAttachmentCover={post.preferAttachmentCover} />
+              )}
             </div>
 
             <div className="flex items-center gap-4 border-t border-slate-100 pt-3 dark:border-white/10">
-              <button
-                type="button"
-                disabled={isReacting}
-                onClick={() => handleReaction(post)}
-                aria-pressed={isLiked}
-                className={`flex items-center gap-1.5 text-xs font-medium ${
-                  isLiked ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'
-                }`}
-              >
-                <i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up`} />
-                Me gusta
-              </button>
-              {post.user?.id === auth.id ? (
+              <div className={`inline-flex items-center overflow-hidden rounded-full border text-xs font-semibold transition ${isLiked ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-300/20 dark:bg-blue-500/10 dark:text-blue-200' : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}>
                 <button
                   type="button"
-                  onClick={() => setReactionUsersInquiryId(post.id)}
-                  className="text-xs font-semibold text-slate-500 underline-offset-2 hover:text-blue-600 hover:underline dark:text-slate-400 dark:hover:text-blue-300"
+                  disabled={isReacting}
+                  onClick={() => handleReaction(post)}
+                  aria-pressed={isLiked}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 transition hover:bg-blue-100 disabled:opacity-50 dark:hover:bg-blue-500/15"
                 >
-                  {post.reactions.length} {post.reactions.length === 1 ? 'Me gusta' : 'Me gusta'}
+                  <i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up`} />
+                  Me gusta
                 </button>
-              ) : (
-                <span className="text-xs text-slate-400">{post.reactions.length}</span>
-              )}
+                {post.user?.id === auth.id || isModerator ? (
+                  <button type="button" onClick={() => setReactionUsersInquiryId(post.id)} className="border-l border-current/15 px-2.5 py-1.5 transition hover:bg-blue-100 dark:hover:bg-blue-500/15" aria-label={`Ver ${post.reactions.length} reacciones`}>
+                    {post.reactions.length}
+                  </button>
+                ) : (
+                  <span className="border-l border-current/15 px-2.5 py-1.5">{post.reactions.length}</span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -864,16 +1055,6 @@ export const Feed = () => {
                 <i className="fa-regular fa-comment" />
                 {post.comments.length} comentarios
               </button>
-              {post.user?.id && post.user.id !== auth.id && (
-                <button
-                  type="button"
-                  onClick={() => handleUserInteraction(post.user.id, 'FOLLOW')}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100"
-                >
-                  <i className="fa-solid fa-user-plus" />
-                  Seguir
-                </button>
-              )}
               {isModerator && (
                 <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
                   <i className="fa-solid fa-flag" />
@@ -902,8 +1083,8 @@ export const Feed = () => {
                 <CommentThread
                   comments={post.comments}
                   submitting={isCommenting || isUploadingComment}
-                  onComment={(parentCommentId, commentContent, commentFile) =>
-                    handleComment(post.id, parentCommentId, commentContent, commentFile)
+                  onComment={(parentCommentId, commentContent, commentFiles, replyTargetCommentId) =>
+                    handleComment(post.id, parentCommentId, commentContent, commentFiles, replyTargetCommentId)
                   }
                   onReport={() => setReportTargetId(post.id)}
                   onToggleReaction={handleCommentReaction}
@@ -911,7 +1092,12 @@ export const Feed = () => {
                   isModerator={isModerator}
                   onEditComment={handleEditComment}
                   onToggleComment={handleToggleComment}
+                  onModerateComment={(commentId) => {
+                    setModerationTarget({ kind: 'comment', id: commentId });
+                    setModerationError(null);
+                  }}
                   focusRequest={commentFocusRequest[post.id]}
+                  targetCommentId={post.id === targetInquiryId ? targetCommentId : null}
                 />
               </div>
             )}
@@ -936,8 +1122,6 @@ export const Feed = () => {
         </p>
       )}
 
-      <Footer />
-
       <ReactionUsersModal
         inquiryId={reactionUsersInquiryId}
         isOpen={Boolean(reactionUsersInquiryId)}
@@ -949,6 +1133,16 @@ export const Feed = () => {
         inquiryId={reportTargetId}
         onClose={() => setReportTargetId(null)}
         onReported={() => showFeedback('success', 'El reporte fue enviado a moderacion.')}
+      />
+
+      <ModerationReasonModal
+        target={moderationTarget}
+        submitting={moderatingInquiry || moderatingComment}
+        error={moderationError}
+        onClose={() => {
+          if (!moderatingInquiry && !moderatingComment) setModerationTarget(null);
+        }}
+        onConfirm={handleModerationConfirm}
       />
     </div>
   );

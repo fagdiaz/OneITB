@@ -53,9 +53,33 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('./assets/Background.png');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.055;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
 .dark body {
-  background-color: #020617;
+  background-color: #1e293b;
   color: #e2e8f0;
+}
+
+.dark body::before {
+  opacity: 0.08;
+  filter: saturate(0.85) brightness(0.8);
 }
 
 /* Print Optimization */

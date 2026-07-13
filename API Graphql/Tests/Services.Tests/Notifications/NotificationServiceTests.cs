@@ -197,6 +197,84 @@ public sealed class NotificationServiceTests
         Assert.Single(context.Notifications);
     }
 
+    [Fact]
+    public async Task UpsertUnreadMessageReminderAsync_IsIdempotentUntilNewerMessageExists()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedNotificationUsersAsync(context);
+        Mock<ITopicEventSender> sender = CreateSenderMock();
+        NotificationService service = CreateService(context, sender);
+        DateTime firstMessageAt = DateTime.UtcNow.AddHours(-2);
+
+        Notification first = Assert.IsType<Notification>(await service.UpsertUnreadMessageReminderAsync(
+            ServiceTestData.StudentUserId,
+            2,
+            firstMessageAt));
+        Notification second = Assert.IsType<Notification>(await service.UpsertUnreadMessageReminderAsync(
+            ServiceTestData.StudentUserId,
+            2,
+            firstMessageAt));
+
+        Assert.Equal(first.Id, second.Id);
+        Assert.Single(context.Notifications);
+        sender.Verify(service => service.SendAsync(
+            NotificationTopics.ForUser(ServiceTestData.StudentUserId),
+            It.IsAny<Notification>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpsertUnreadMessageReminderAsync_UpdatesExistingReminderForNewerUnreadMessage()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedNotificationUsersAsync(context);
+        Mock<ITopicEventSender> sender = CreateSenderMock();
+        NotificationService service = CreateService(context, sender);
+
+        Notification first = Assert.IsType<Notification>(await service.UpsertUnreadMessageReminderAsync(
+            ServiceTestData.StudentUserId,
+            1,
+            DateTime.UtcNow.AddHours(-2)));
+        Notification updated = Assert.IsType<Notification>(await service.UpsertUnreadMessageReminderAsync(
+            ServiceTestData.StudentUserId,
+            3,
+            DateTime.UtcNow.AddMinutes(1)));
+
+        Assert.Equal(first.Id, updated.Id);
+        Assert.Equal(3, updated.AggregateCount);
+        Assert.Contains("3 mensajes", updated.Message, StringComparison.Ordinal);
+        Assert.Single(context.Notifications);
+        sender.Verify(service => service.SendAsync(
+            NotificationTopics.ForUser(ServiceTestData.StudentUserId),
+            It.IsAny<Notification>(),
+            It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task UpsertUnreadMessageReminderAsync_RespectsDisabledPrivateMessagePreference()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedNotificationUsersAsync(context);
+        context.NotificationPreferences.Add(new NotificationPreference
+        {
+            Id = Guid.NewGuid(),
+            UserId = ServiceTestData.StudentUserId,
+            Type = NotificationType.PrivateMessage,
+            IsEnabled = false,
+            UpdatedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+        NotificationService service = CreateService(context);
+
+        Notification? reminder = await service.UpsertUnreadMessageReminderAsync(
+            ServiceTestData.StudentUserId,
+            1,
+            DateTime.UtcNow.AddHours(-2));
+
+        Assert.Null(reminder);
+        Assert.Empty(context.Notifications);
+    }
+
     private static NotificationService CreateService(
         OneItb.Data.OneItbContext context,
         Mock<ITopicEventSender>? sender = null)

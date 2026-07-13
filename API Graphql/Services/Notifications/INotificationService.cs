@@ -22,6 +22,12 @@ namespace Services.Notifications
             string groupKey,
             string singularMessage,
             string pluralMessageTemplate,
+            CancellationToken cancellationToken = default,
+            string? actionUrl = null);
+        Task<Notification?> UpsertUnreadMessageReminderAsync(
+            Guid userId,
+            int unreadCount,
+            DateTime latestUnreadMessageAt,
             CancellationToken cancellationToken = default);
     }
 }

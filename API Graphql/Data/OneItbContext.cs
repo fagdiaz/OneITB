@@ -581,7 +581,7 @@ namespace OneItb.Data
                 entity.Property(e => e.Type).IsRequired().HasConversion<string>().HasMaxLength(20);
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
 
-                entity.HasIndex(e => new { e.ObserverId, e.TargetId }).IsUnique();
+                entity.HasIndex(e => new { e.ObserverId, e.TargetId, e.Type }).IsUnique();
                 entity.HasIndex(e => new { e.ObserverId, e.Type });
 
                 entity.HasOne(e => e.Observer)
@@ -626,14 +626,23 @@ namespace OneItb.Data
                     .IsRequired()
                     .HasDefaultValue(true);
 
+                entity.Property(e => e.IsHiddenByModerator)
+                    .IsRequired()
+                    .HasDefaultValue(false);
+
+                entity.Property(e => e.PreferAttachmentCover)
+                    .IsRequired()
+                    .HasDefaultValue(false);
+
                 entity.Property(e => e.FileUrl)
                     .HasMaxLength(500)
                     .IsUnicode(true);
 
-                entity.HasQueryFilter(e => e.IsActive);
+                entity.HasQueryFilter(e => e.IsActive && !e.IsHiddenByModerator);
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.SubjectId);
                 entity.HasIndex(e => e.PublishDate);
+                entity.HasIndex(e => new { e.IsActive, e.IsHiddenByModerator, e.PublishDate });
 
                 entity.HasOne(i => i.User)
                     .WithMany()
@@ -660,12 +669,15 @@ namespace OneItb.Data
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
                 entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
                 entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
+                entity.Property(e => e.IsHiddenByModerator).IsRequired().HasDefaultValue(false);
 
-                entity.HasQueryFilter(e => e.IsActive);
+                entity.HasQueryFilter(e => e.IsActive && !e.IsHiddenByModerator);
 
                 entity.HasIndex(e => e.InquiryId);
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.ParentCommentId);
+                entity.HasIndex(e => e.ReplyToUserId);
+                entity.HasIndex(e => new { e.InquiryId, e.IsActive, e.IsHiddenByModerator });
 
                 entity.HasOne(e => e.Inquiry)
                     .WithMany(i => i.Comments)
@@ -681,6 +693,11 @@ namespace OneItb.Data
                     .WithMany(e => e.Replies)
                     .HasForeignKey(e => e.ParentCommentId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.ReplyToUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ReplyToUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // ==========================================
@@ -694,7 +711,7 @@ namespace OneItb.Data
                 entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
 
-                entity.HasQueryFilter(e => e.Inquiry.IsActive);
+                entity.HasQueryFilter(e => e.Inquiry.IsActive && !e.Inquiry.IsHiddenByModerator);
                 entity.HasIndex(e => new { e.InquiryId, e.UserId }).IsUnique();
 
                 entity.HasOne(e => e.Inquiry)
@@ -719,7 +736,11 @@ namespace OneItb.Data
                 entity.Property(e => e.Id).ValueGeneratedNever();
                 entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
 
-                entity.HasQueryFilter(e => e.Comment.IsActive && e.Comment.Inquiry.IsActive);
+                entity.HasQueryFilter(e =>
+                    e.Comment.IsActive &&
+                    !e.Comment.IsHiddenByModerator &&
+                    e.Comment.Inquiry.IsActive &&
+                    !e.Comment.Inquiry.IsHiddenByModerator);
                 entity.HasIndex(e => new { e.CommentId, e.UserId }).IsUnique();
                 entity.HasIndex(e => e.UserId);
 

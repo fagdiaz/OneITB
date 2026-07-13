@@ -5,6 +5,161 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-12] - Spec 184: QA Master Polish and Layout
+
+* **Objetivo**: Cerrar la auditoria visual de Header, Footer, compositor y multimedia; mejorar contraste dual-theme y completar navegacion dirigida de menciones y empleos sin incorporar dependencias ni relajar controles de seguridad.
+* **Resultado**:
+  - El Header elimina la accion duplicada `Inicio`, mantiene accesos publicos visibles desde `md` y, autenticado, se oculta solo al bajar con scroll y reaparece al subir, enfocar o acercar el puntero al borde superior. Los listeners son pasivos, usan RAF, respetan `prefers-reduced-motion` y se limpian al desmontar.
+  - `BrandLogo` entrega `fetchpriority` como atributo DOM valido. El Footer privado adopta la identidad de la landing conservando enlaces funcionales y se renderiza una sola vez desde `PrivateLayout`.
+  - `Background.png` se integra como textura global unica y tenue; las superficies oscuras afectadas se aclaran hacia slate azulado, el titulo del compositor recupera contraste y el spotlight de Home aumenta radio sin provocar renders React por movimiento.
+  - El compositor queda acotado con `min-w-0`/`w-full`. El mosaico reserva media superficie a la portada, promueve YouTube entre los secundarios, conserva imagenes completas con `object-contain` y calcula el overlay `+X`; el carrusel usa controles sin placas opacas.
+  - Las menciones solo enlazan identidades respaldadas por `ReplyToUserId`; el backend carga `ReplyToUser` en el grafo y conserva notificacion agrupada, acotada al hilo y sin auto-notificacion.
+  - Preferencias de notificacion pasa a drawer lateral accesible con Escape, click-outside, restauracion de foco y cleanup. Las notificaciones laborales incluyen `jobOfferId`; `/empleos` enfoca, desplaza y resalta una sola vez la tarjeta exacta.
+* **Validaciones ejecutadas**:
+  - Speckit QA preflight y revision final: PASS.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 63/63.
+  - `npm.cmd run test -- --run --configLoader runner`: PASS, 18 archivos / 39 tests.
+  - Backend Release: PASS, 0 warnings / 0 errores; Vite: PASS, 374 modulos en 1.07 s en la ejecucion final.
+  - `npm.cmd audit --audit-level=high`: PASS, 0 vulnerabilidades; `git diff --check`: PASS.
+  - Runtime aislado GraphQL: HTTP 200; el schema real expone `Comment.replyToUser` y las mutaciones afectadas. La instancia temporal fue detenida tras el smoke.
+* **Estado**:
+  - Implementado y validado por tests, builds, audit y schema runtime. La aprobacion visual manual de auto-hide, textura, mosaico, drawer y foco laboral queda como gate explicito de la regresion de presentacion.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/layout/{Footer.jsx,private/Header.jsx,private/Nav.jsx,private/PrivateLayout.jsx}`
+  - `FrontEnd/OneItb-FE/src/Components/publication/{Feed,MediaGrid,MediaAttachment,MediaViewerModal,MentionText,CommentThread}.*`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/NotificationPreferencesModal.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/jobs/JobBoard.jsx`
+  - `API Graphql/Services/Social/SocialService.cs` y `API Graphql/OneITB/GraphQL/Mutation.cs`
+
+## [2026-07-12] - Spec 183: Premium Branding and Landing
+
+* **Objetivo**: Sustituir el laboratorio temporal de logos por la identidad visual definitiva de OneITB y elevar Home/Header a una presentacion institucional premium, responsive, dual-theme y accesible.
+* **Resultado**:
+  - Los cuatro assets aprobados quedaron normalizados con nombres portables en `src/assets`; `BrandLogo` centraliza el isotipo y la marca completa. El Header reemplaza el wordmark de texto por el isotipo, conserva navegacion/buscador/auth y suma elevacion glass al hacer scroll sin alterar estados activos.
+  - `/` ahora es una landing unica con hero, propuesta de valor, recorridos por rol, CTA y footer. Se eliminaron escenarios comparativos, imports borrador y superficies principales en blanco/negro puro.
+  - `usePointerSpotlight` actualiza variables CSS mediante un unico RAF, sin `setState` por movimiento, con guard para pointer fino/reduced-motion y cancelacion al desmontar. `RevealOnScroll` observa una vez, desconecta y deja el contenido visible si la API no existe o el usuario reduce animaciones.
+  - Quick win de rendimiento: los PNG con fondo de 4.47 MB y 5.12 MB se conservan como fuentes aprobadas pero no se importan; el contraste se resuelve con CSS y el bundle solo emite los logos transparentes de 70/206 kB. No se agrego Framer Motion ni ninguna dependencia.
+* **Validaciones ejecutadas**:
+  - Speckit QA final: PASS; `git diff --check` y Vite build PASS.
+  - Vitest/Testing Library: PASS, 16 archivos / 31 tests; nuevas suites cubren branding, Header, Landing, reduced-motion y cleanup de IntersectionObserver.
+  - `npm.cmd run build`: PASS, 373 modulos, 941 ms en ejecucion final; `npm audit --omit=dev --audit-level=high`: 0 vulnerabilidades.
+  - Scan de runtime: sin imports Gemini/Logo edit, copy de laboratorio, `framer-motion`, fondos principales puros ni PNG pesados en el bundle.
+* **Estado**:
+  - Implementado y validado por tests/build/auditoria estatica. La aprobacion visual final en navegador de presentacion (responsive, ambos temas y spotlight) queda como gate manual explicito.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/assets/{logo-oneitb,logo-oneitb-bg,only-logo,only-logo-bg}.png`
+  - `FrontEnd/OneItb-FE/src/Components/branding/BrandLogo.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/common/RevealOnScroll.jsx`
+  - `FrontEnd/OneItb-FE/src/hooks/usePointerSpotlight.js`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/user/Landing.jsx`
+
+## [2026-07-12] - Spec 182: Feed Hierarchy, Media Grid and Followers
+
+* **Objetivo**: Resolver la cuarta sesion de QA social con densidad multimedia acotada, respuestas dirigidas sin tercer nivel, navegacion exacta desde notificaciones, no leidos independientes y seguimiento explicito.
+* **Resultado**:
+  - Las portadas PDF renderizan la primera pagina mediante PDF.js y worker locales cargados de forma diferida. Publicaciones/comentarios reutilizan un mosaico responsive de hasta 4/3 tiles con overflow hacia galeria, manteniendo Ver/Descargar y el visor Blob seguro existente.
+  - `Comment.ReplyToUserId` persiste el destinatario validado de una respuesta. Responder una respuesta antepone la mencion y se guarda como hermana bajo la raiz; targets ocultos, inactivos o de otra publicacion son rechazados server-side.
+  - Las notificaciones sociales actualizan el deep-link al comentario mas reciente. El feed abre el hilo, hace scroll al `commentId`, aplica highlight temporal y degrada a la publicacion si el comentario ya no esta disponible.
+  - `UserInteraction` usa unicidad `ObserverId + TargetId + Type`; `SocialGraphService` implementa follow/unfollow idempotente, coexistencia con Mute, bloqueo incompatible y errores GraphQL controlados. Feed y perfil comparten `FollowButton` optimista y una unica hidratacion de IDs seguidos.
+  - El orden del feed seguido-primero/nuevo-primero queda cubierto por test sin consultas por tarjeta. El widget hidrata no leidos y mantiene la subscription aun minimizado; preferencias conserva Escape/backdrop y adopta layout compacto.
+  - Quick win de rendimiento: PDF.js queda aislado en un chunk propio, fuera del vendor inicial; no se agregaron CDN, relajaciones anti-framing ni listeners sin cleanup.
+* **Validaciones ejecutadas**:
+  - Speckit QA preflight previo: PASS; backend 0/0, frontend build PASS y EF sin drift.
+  - Migracion `AddDirectedRepliesAndSocialGraphIndex`: aplicada a SQL Server Docker; FK `ReplyToUserId` restrictiva e indice social triple unico; `has-pending-model-changes` PASS.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 62/62.
+  - `npm.cmd run test -- --run`: PASS, 12 archivos / 25 tests.
+  - `npm.cmd run build`: PASS, 368 modulos, 1.12 s; chunks independientes `pdfjs` y `pdf.worker`.
+  - `npm.cmd audit --omit=dev --audit-level=high`: PASS, 0 vulnerabilidades.
+  - Runtime Docker autenticado: login PASS; follow/query/unfollow persistidos; respuesta dirigida conserva raiz y destinatario; comentario smoke desactivado al cerrar. Schema expone `myFollowedUserIds`, `followUser`, `unfollowUser` y `addComment` extendido.
+  - Scan propio y `git diff --check`: PASS; sin worker PDF remoto, CDN ni referencias `mozPressure`/`mozInputSource`.
+* **Estado**:
+  - Implementado y validado por migracion, schema, tests, builds y smoke GraphQL autenticado. Queda pendiente la regresion visual manual de mosaicos PDF, highlight, badge minimizado y controles Follow en el navegador de presentacion.
+* **Archivos principales**:
+  - `API Graphql/Entities/Models/Comment.cs`, `Data/OneItbContext.cs` y migracion `20260712215518_AddDirectedRepliesAndSocialGraphIndex`
+  - `API Graphql/Services/Social/SocialGraphService.cs`, `SocialService.cs` y `Services/Notifications/NotificationService.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/{MediaGrid,MediaGalleryModal,PdfFirstPageThumbnail,CommentThread,Feed}.*`
+  - `FrontEnd/OneItb-FE/src/Components/social/FollowButton.jsx`, `Components/profile/UserProfile.tsx` y `Components/chat/MiniChatWidget.jsx`
+
+## [2026-07-12] - Spec 181: QA Session 3 - Media, Moderation and Notifications
+
+* **Objetivo**: Resolver la tercera sesion de QA social sin debilitar seguridad: multimedia con portada/carrusel, edicion de adjuntos, permisos de moderacion, recordatorios de mensajes y limpieza honesta de warnings propios.
+* **Resultado**:
+  - `Inquiry` persiste `PreferAttachmentCover` e `IsHiddenByModerator`; `Comment` agrega estado de ocultamiento equivalente. Los filtros globales excluyen contenido desactivado u oculto y la migracion agrega indices alineados con esas consultas.
+  - La edicion de publicaciones/comentarios queda restringida al autor y reemplaza adjuntos de forma atomica. Moderadores y administradores ocultan/restauran mediante mutaciones separadas, motivo obligatorio y `ModerationAudit` persistido en la misma transaccion.
+  - El backend impide respuestas de tercer nivel. La UI oculta `Responder` en respuestas y separa acciones de autor y moderador.
+  - El compositor permite elegir portada; el muro renderiza un medio principal y secundarios compactos. El visor agrega carrusel por publicacion y obtiene PDF locales como Blob URL abortable/revocable, preservando `X-Frame-Options: DENY`.
+  - El feed incorpora texto expandible y una unica superficie de reaccion/contador. El menu movil reutiliza el conteo de mensajes existente sin duplicar consultas.
+  - `UnreadMessageReminderHostedService` procesa lotes acotados e invoca un upsert idempotente que respeta preferencias. La configuracion de notificaciones se movio a un modal accesible independiente.
+  - Se aislo el key ring de Data Protection de Development para no reusar claves DPAPI historicas incompatibles; no se altero la configuracion productiva.
+* **Validaciones ejecutadas**:
+  - Migracion `AddMediaModerationState`: aplicada a SQL Server Docker; `has-pending-model-changes` PASS.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore`: PASS, 0 warnings, 0 errores.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore`: PASS, 55/55.
+  - `npm.cmd run test -- --run --configLoader runner`: PASS, 8 archivos / 18 tests.
+  - `npm.cmd run build`: PASS, 360 modulos, 879 ms en el gate final.
+  - Runtime aislado: `/health` responde `Healthy`; GraphQL responde HTTP 200 e introspecciona `addInquiry`, `editInquiry`, `editComment`, `moderateInquiryVisibility` y `moderateCommentVisibility`.
+  - Scan propio: sin referencias a `mozPressure`, `mozInputSource`, `pdf.worker` o `docBaseUrl`; YouTube usa permisos actuales y carga por click.
+* **Estado**:
+  - Implementado y validado por migracion, schema, builds y pruebas automatizadas. La regresion visual autenticada de portada, edicion de adjuntos, carrusel/PDF y moderacion con motivo queda para el checklist manual de la defensa.
+* **Archivos principales**:
+  - `API Graphql/Data/OneItbContext.cs` y migracion `20260712201024_AddMediaModerationState`
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `API Graphql/Services/Moderation/ModerationService.cs`
+  - `API Graphql/Services/Notifications/NotificationService.cs`
+  - `API Graphql/OneITB/Infrastructure/UnreadMessageReminderHostedService.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/*`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/*`
+
+## [2026-07-12] - Spec 180: Final Release Candidate Audit
+
+* **Objetivo**: Ejecutar una auditoria Release Candidate sin agregar features: higiene Git, gates backend/frontend, drift EF, smoke runtime GraphQL y revision de contratos criticos antes de la regresion manual final.
+* **Resultado**:
+  - Se detecto en runtime un bug real del `EnterpriseDemoSeeder`: al arrancar sobre una base Docker ya poblada intentaba insertar nuevamente `JobApplications` con IDs determinísticos.
+  - `EnterpriseDemoSeeder.SeedJobApplicationsAsync` quedo idempotente por `Id` y por par logico `JobOfferId + ApplicantId`, preservando el indice unico existente y sin requerir migracion.
+  - Se auditaron frontera de sesion/Apollo, privacidad de perfil, upload/static files, limites GraphQL/rate limiting y ownership de mutaciones sensibles sin hallar otro bug bloqueante de codigo propio.
+  - No se elevaron items `[I]` a `[V]` sin evidencia de navegador o servicio externo real.
+* **Validaciones ejecutadas**:
+  - `docker compose ps`: SQL Server Docker healthy.
+  - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release`: PASS, 0 warnings, 0 errores.
+  - `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-build`: PASS, 47/47.
+  - `dotnet ef migrations has-pending-model-changes --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release --no-build`: PASS, sin cambios pendientes.
+  - `npm.cmd run test -- --run --configLoader runner`: PASS, 4 archivos / 12 tests.
+  - `npm.cmd run build`: PASS, 357 modulos, build final en 743 ms.
+  - Smoke runtime: backend Release en `Development` inicia y `POST http://localhost:5000/graphql` con `{ __typename }` responde HTTP 200 (`Query`).
+  - `git diff --check`: PASS; solo avisos LF/CRLF de Windows.
+* **Estado**:
+  - Release Candidate tecnico estabilizado a nivel build/test/runtime smoke. Quedan como QA manual consciente el panel admin, hub academico, empleos/Gestor de Postulaciones, drag-and-drop/lightboxes y servicios externos con secretos reales.
+* **Archivos principales**:
+  - `API Graphql/Data/EnterpriseDemoSeeder.cs`
+  - `docs/audit/FINAL_AUDIT_REPORT.md`
+  - `docs/audit/DOCUMENTATION_STATUS.md`
+  - `docs/audit/DEVELOPMENT_LOG.md`
+
+## [2026-07-12] - Spec 179: Social Polish Quick Wins
+
+* **Objetivo**: Aplicar quick wins sobre las ultimas specs sociales sin reabrir contratos de backend: enlaces compartibles, adjuntos por drag-and-drop, modales mas accesibles y fallback defensivo para previews rotas.
+* **Resultado**:
+  - El menu de cada publicacion incorpora `Copiar enlace`, generando deep-links estables a `/feed?inquiryId=...` y usando feedback controlado ante exito o bloqueo del portapapeles.
+  - `AttachmentDraftPicker` acepta drag-and-drop y reutiliza la misma deduplicacion, allowlist, cantidad maxima y limite agregado de 15 MB que la seleccion manual.
+  - `MediaViewerModal` y `ReactionUsersModal` restauran foco al cerrar, mantienen scroll global controlado y agregan labels estables para tecnologia asistiva.
+  - El listado paginado de reacciones evita cargas duplicadas y `MediaComponent` degrada previews de enlace rotas a una tarjeta defensiva sin romper layout.
+* **Validaciones ejecutadas**:
+  - Speckit QA preflight con builds: PASS sobre baseline limpio antes de la implementacion.
+  - `npm.cmd run test -- --run --configLoader runner`: PASS, 4 archivos / 12 tests.
+  - `npm.cmd run build`: PASS, 357 modulos, build en 1.28 s.
+  - `git diff --check`: PASS; solo avisos LF/CRLF propios de Windows.
+* **Estado**:
+  - Implementado y validado por pruebas de componentes y build frontend. La verificacion visual manual del drag-and-drop nativo y lightboxes queda para el navegador de presentacion.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/sharePostLink.js`
+  - `FrontEnd/OneItb-FE/src/Components/publication/AttachmentDraftPicker.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaViewerModal.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/ReactionUsersModal.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/MediaComponent.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/*.test.*`
+
 ## [2026-07-11] - Spec 178: QA Session 2 Social Core Fixes
 
 * **Objetivo**: Cerrar la auditoria del muro con scoping academico real, adjuntos multiples, multimedia no excluyente, reacciones en comentarios, notificaciones sociales agrupadas y limpieza del layout de publicacion.

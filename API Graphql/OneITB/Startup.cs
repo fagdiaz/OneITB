@@ -86,15 +86,12 @@ namespace OneItb.GraphQL
                 var keyDirectory = new DirectoryInfo(System.IO.Path.Combine(
                     Environment.ContentRootPath,
                     "App_Data",
-                    "DataProtection-Keys"));
+                    "DataProtection-Keys-Development-v2"));
                 keyDirectory.Create();
 
-                var dataProtectionBuilder = services.AddDataProtection()
+                services.AddDataProtection()
+                    .SetApplicationName("OneITB23-Development")
                     .PersistKeysToFileSystem(keyDirectory);
-                if (OperatingSystem.IsWindows())
-                {
-                    dataProtectionBuilder.ProtectKeysWithDpapi();
-                }
             }
             services.AddCors(options =>
             {
@@ -291,6 +288,7 @@ namespace OneItb.GraphQL
             services.AddScoped<IEmployerAuthService, global::Services.Auth.EmployerAuthService>();
             services.AddScoped<IModerationService, global::Services.Moderation.ModerationService>();
             services.AddScoped<ISocialService, SocialService>();
+            services.AddScoped<ISocialGraphService, SocialGraphService>();
             services.AddScoped<IAcademicService, AcademicService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ISiuIntegrationService, MockSiuIntegrationService>();
@@ -303,6 +301,7 @@ namespace OneItb.GraphQL
             ConfigureFileStorage(services);
             services.AddSingleton<ILinkPreviewService, LinkPreviewService>();
             services.AddHostedService<UploadCleanupHostedService>();
+            services.AddHostedService<UnreadMessageReminderHostedService>();
 
             services.AddAuthentication(options =>
             {

@@ -1,6 +1,6 @@
 # Arquitectura y diseno de OneITB23
 
-**Ultima alineacion con codigo**: 2026-07-11
+**Ultima alineacion con codigo**: 2026-07-12
 
 ## 1. Stack vigente
 
@@ -46,7 +46,7 @@ Mobile/OneItb-App/
 - `/uploads/{file}`: lectura de archivos estaticos almacenados localmente cuando no se usa Cloudinary.
 - SMTP: salida de correo para eventos institucionales, actualmente cambios de estado de postulaciones.
 
-Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/api/upload`; luego GraphQL persiste el descriptor en `SocialAttachment` para publicaciones/comentarios o la URL en `AcademicResource.FileUrl`. `Inquiry.FileUrl` y `Comment.FileUrl` se conservan como compatibilidad con clientes y datos historicos.
+Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/api/upload`; luego GraphQL persiste el descriptor en `SocialAttachment` para publicaciones/comentarios o la URL en `AcademicResource.FileUrl`. `Inquiry.FileUrl` y `Comment.FileUrl` se conservan como compatibilidad con clientes y datos historicos. El feed usa un mosaico acotado y, solo cuando una portada PDF entra en proximidad visual, carga un chunk PDF.js y worker locales para rasterizar la primera pagina en canvas con cancelacion/cleanup. El visor completo recupera el PDF con `fetch`, crea una Blob URL temporal, aborta la descarga y revoca la URL al cerrar; no se relaja `X-Frame-Options: DENY` ni se depende de CDN.
 
 Controles defensivos vigentes: `/graphql` y `/api/upload` tienen rate limiting fixed-window por IP; GraphQL aplica profundidad maxima configurable (`GraphQL:MaxExecutionDepth`, default 10) y limites globales de paginacion (`DefaultPageSize` 20, `MaxPageSize` 50). El login usa lockout persistente por cuenta (`FailedLoginAttempts`, `LockoutEnd`) para mitigar fuerza bruta aunque el atacante rote IPs. Los perfiles privados se enmascaran en el backend, no solo en React.
 
@@ -108,13 +108,16 @@ Campos destacados recientes:
 - `AuditLog`: `ActorUserId`, `CorrelationId`, `Action`, `EntityName`, `EntityId`, snapshots JSON acotados.
 - `User.IsPublicProfile`: controla si terceros pueden ver bio, contacto, carreras, CV y metricas extendidas del perfil publico.
 - `SocialAttachment`: propietario exclusivo `InquiryId` XOR `CommentId`, URL, nombre original, MIME, tamano y orden; FKs restrictivas.
+- `Inquiry.PreferAttachmentCover`: conserva si la portada elegida es un adjunto o el video detectado; `Inquiry.IsHiddenByModerator` y `Comment.IsHiddenByModerator` separan visibilidad moderada de autoria/soft-delete.
+- `Comment.ReplyToUserId`: destinatario opcional de una respuesta dirigida. La API deriva y valida ese usuario desde un comentario visible del mismo `Inquiry`; la FK usa `DeleteBehavior.Restrict` y la respuesta siempre conserva el comentario raiz como `ParentCommentId`.
+- `UserInteraction`: arista social tipada con unicidad `ObserverId + TargetId + Type`; Follow y Mute pueden coexistir, Block elimina relaciones incompatibles y todas las FKs son restrictivas.
 - `CommentReaction`: reaccion unica por `CommentId + UserId`, con filtro de contenido activo y FKs restrictivas.
 - `Notification`: `GroupKey`, `AggregateCount`, `RelatedInquiryId`, `UpdatedAt` y `RowVersion` para agrupacion persistente y concurrencia optimista.
 
 ## 5. Integridad y borrado
 
 - Las relaciones sociales, academicas, de publicaciones, comentarios, mensajes, empleos y postulaciones usan `DeleteBehavior.Restrict`.
-- `Inquiry` y `Comment` usan soft-delete mediante `IsActive` y filtros globales.
+- `Inquiry` y `Comment` usan soft-delete de autor mediante `IsActive` y ocultamiento moderado mediante `IsHiddenByModerator`; ambos estados participan en filtros globales. Ocultar/restaurar exige rol, motivo y un `ModerationAudit` atomico.
 - `AcademicResource` y `JobOffer` usan estado activo para no perder trazabilidad.
 - La relacion 1:1 `Account`-`User` conserva cascade como excepcion explicita del agregado de identidad.
 - Todas las claves foraneas relevantes se modelan de forma explicita; no se admiten shadow properties.
@@ -142,7 +145,7 @@ sequenceDiagram
 
 ### Mensajeria privada y notificaciones
 
-El historial se persiste en `Messages`. El envio publica un evento al topico privado del emisor y receptor; Apollo reconcilia historial, eventos y estado optimista. Las notificaciones se persisten en `Notifications` y se publican por topico privado `notification:{userId}` respetando preferencias. Los eventos sociales se agrupan al escribir mediante clave unica por destinatario/objetivo/tipo, contador persistente y `RowVersion`; cada grupo conserva deep-link `/feed?inquiryId={id}`.
+El historial se persiste en `Messages`. El envio publica un evento al topico privado del emisor y receptor; Apollo reconcilia historial, eventos y estado optimista. El widget mantiene hidratacion de no leidos y subscription mientras esta minimizado, sin depender del Header. Las notificaciones se persisten en `Notifications` y se publican por topico privado `notification:{userId}` respetando preferencias. Los eventos sociales se agrupan al escribir mediante clave unica por destinatario/objetivo/tipo, contador persistente y `RowVersion`; el upsert actualiza el deep-link al ultimo comentario relevante (`/feed?inquiryId={id}&commentId={id}`). Un `BackgroundService` configurable procesa como maximo 500 destinatarios por ciclo y hace upsert idempotente del recordatorio de mensajes con al menos una hora sin leer; cancelacion y fallos se registran sin detener la API.
 
 ### Recursos y progreso academico
 

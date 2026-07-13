@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
@@ -8,6 +8,8 @@ import { GET_MY_ACADEMIC_PROGRESS } from '../../data/graphql/queries/academic';
 import { apiBaseUrl } from '../../utils/uploadFile';
 import { CVPrintTemplate } from '../resume/CVPrintTemplate';
 import { CVData } from '../../types/resume';
+import { GET_MY_FOLLOWED_USER_IDS } from '../../data/graphql/social';
+import { FollowButton } from '../social/FollowButton';
 
 const roleStyles: Record<string, string> = {
   Administrador: 'bg-blue-50 text-blue-800 ring-blue-200',
@@ -78,6 +80,7 @@ export const UserProfile = () => {
   const { id } = useParams();
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [followOverride, setFollowOverride] = useState<boolean | null>(null);
 
   const targetUserId = id || auth.id;
   const isOwnProfile = Boolean(auth?.id && targetUserId && String(auth.id).toLowerCase() === String(targetUserId).toLowerCase());
@@ -98,9 +101,18 @@ export const UserProfile = () => {
     skip: !isOwnProfile,
     fetchPolicy: 'cache-and-network',
   });
+  const { data: followedData } = useQuery(GET_MY_FOLLOWED_USER_IDS, {
+    skip: !auth?.id || isOwnProfile,
+    fetchPolicy: 'cache-and-network',
+  });
+
+  useEffect(() => {
+    setFollowOverride(null);
+  }, [targetUserId]);
 
   const profile = data?.publicProfile;
   const canViewSensitiveProfile = profile?.canViewSensitiveProfile !== false;
+  const isFollowing = followOverride ?? Boolean(targetUserId && followedData?.myFollowedUserIds?.includes(targetUserId));
 
   const userPosts = useMemo(() => {
     if (!canViewSensitiveProfile) return [];
@@ -324,6 +336,15 @@ export const UserProfile = () => {
                     <i className="fa-solid fa-pen-to-square" />
                     Editar CV/Perfil
                   </Link>
+                </div>
+              )}
+              {!isOwnProfile && targetUserId && (
+                <div className="flex items-center print:hidden">
+                  <FollowButton
+                    targetUserId={targetUserId}
+                    isFollowing={isFollowing}
+                    onStateChange={(_, nextState) => setFollowOverride(nextState)}
+                  />
                 </div>
               )}
             </div>

@@ -63,6 +63,46 @@ public sealed class SocialServiceTests
     }
 
     [Fact]
+    public async Task GetInquiries_PrioritizesFollowedAuthorsBeforeChronology()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+        Guid newerInquiryId = Guid.Parse("10000000-0000-0000-0000-000000000003");
+        context.Inquiries.Add(new Inquiry
+        {
+            Id = newerInquiryId,
+            UserId = ServiceTestData.AdminUserId,
+            SubjectId = ServiceTestData.SubjectId,
+            Title = "Publicacion institucional reciente",
+            Content = "Contenido reciente no seguido",
+            PublishDate = DateTime.UtcNow.AddMinutes(-1),
+            IsActive = true
+        });
+        context.UserInteractions.Add(new UserInteraction
+        {
+            Id = Guid.NewGuid(),
+            ObserverId = ServiceTestData.StudentUserId,
+            TargetId = ServiceTestData.TeacherUserId,
+            Type = InteractionType.Follow,
+            CreatedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+        SocialService service = CreateService(context);
+
+        List<Inquiry> inquiries = await service.GetInquiries(
+                ServiceTestData.StudentUserId,
+                null,
+                null,
+                null,
+                null)
+            .ToListAsync();
+
+        Assert.Equal(2, inquiries.Count);
+        Assert.Equal(OwnCareerInquiryId, inquiries[0].Id);
+        Assert.Equal(newerInquiryId, inquiries[1].Id);
+    }
+
+    [Fact]
     public async Task GetInquiries_SearchFindsCommentContentAndAuthorEmail()
     {
         await using var context = ServiceTestData.CreateContext();
@@ -190,6 +230,98 @@ public sealed class SocialServiceTests
                 null));
 
         Assert.Contains("misma publicaci", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AddCommentAsync_RejectsThirdNestingLevel()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Consulta con profundidad",
+            "Contenido base");
+        Comment root = await service.AddCommentAsync(
+            ServiceTestData.TeacherUserId,
+            inquiry.Id,
+            "Comentario principal",
+            null);
+        Comment reply = await service.AddCommentAsync(
+            ServiceTestData.StudentUserId,
+            inquiry.Id,
+            "Respuesta permitida",
+            root.Id);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddCommentAsync(
+                ServiceTestData.TeacherUserId,
+                inquiry.Id,
+                "Respuesta demasiado profunda",
+                reply.Id));
+
+        Assert.Contains("dos niveles", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, context.Comments.Count());
+    }
+
+    [Fact]
+    public async Task EditInquiryAsync_RejectsModeratorEditingAnotherUsersText()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Texto del autor",
+            "Contenido original");
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.EditInquiryAsync(
+                ServiceTestData.AdminUserId,
+                inquiry.Id,
+                "Texto institucional",
+                "Contenido alterado"));
+
+        Assert.Contains("permisos", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Inquiry persisted = await context.Inquiries.SingleAsync(item => item.Id == inquiry.Id);
+        Assert.Equal("Texto del autor", persisted.Title);
+        Assert.Equal("Contenido original", persisted.Content);
+    }
+
+    [Fact]
+    public async Task EditInquiryAsync_ReplacesAttachmentsAndPersistsCoverPreference()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Material inicial",
+            "Contenido inicial",
+            attachments: new[]
+            {
+                new SocialAttachmentInput("/uploads/anterior.pdf", "Anterior.pdf", "application/pdf", 100, 0)
+            });
+
+        Inquiry updated = await service.EditInquiryAsync(
+            ServiceTestData.StudentUserId,
+            inquiry.Id,
+            "Material actualizado",
+            "Contenido actualizado",
+            new[]
+            {
+                new SocialAttachmentInput("/uploads/portada.png", "Portada.png", "image/png", 200, 0),
+                new SocialAttachmentInput("/uploads/nuevo.pdf", "Nuevo.pdf", "application/pdf", 300, 1)
+            },
+            true);
+
+        Assert.True(updated.PreferAttachmentCover);
+        Assert.Equal("/uploads/portada.png", updated.FileUrl);
+        Assert.Equal(2, updated.Attachments.Count);
+        Assert.DoesNotContain(context.SocialAttachments, item => item.FileUrl == "/uploads/anterior.pdf");
     }
 
     [Fact]
@@ -377,7 +509,125 @@ public sealed class SocialServiceTests
             $"social-comment:inquiry:{inquiry.Id:D}",
             It.IsAny<string>(),
             It.Is<string>(message => message.Contains("{count}", StringComparison.Ordinal)),
-            It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<CancellationToken>(),
+            It.Is<string>(url => url.StartsWith($"/feed?inquiryId={inquiry.Id:D}&commentId=", StringComparison.Ordinal))), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddCommentAsync_ReplyToReplyUsesRootAndNotifiesDirectedUser()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        SocialService service = CreateService(context, notifications);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Conversacion dirigida",
+            "Contenido base");
+        Comment root = await service.AddCommentAsync(
+            ServiceTestData.TeacherUserId,
+            inquiry.Id,
+            "Comentario principal",
+            null);
+        Comment firstReply = await service.AddCommentAsync(
+            ServiceTestData.OtherStudentUserId,
+            inquiry.Id,
+            "Primera respuesta",
+            root.Id,
+            replyTargetCommentId: root.Id);
+
+        Comment directedReply = await service.AddCommentAsync(
+            ServiceTestData.StudentUserId,
+            inquiry.Id,
+            "@Omar Respuesta dirigida",
+            root.Id,
+            replyTargetCommentId: firstReply.Id);
+
+        Assert.Equal(root.Id, directedReply.ParentCommentId);
+        Assert.Equal(ServiceTestData.OtherStudentUserId, directedReply.ReplyToUserId);
+        Assert.NotNull(directedReply.ReplyToUser);
+        notifications.Verify(notificationService => notificationService.UpsertGroupedNotificationAsync(
+            ServiceTestData.OtherStudentUserId,
+            NotificationType.SocialComment,
+            inquiry.Id,
+            $"social-mention:inquiry:{inquiry.Id:D}:user:{ServiceTestData.OtherStudentUserId:D}",
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>(),
+            $"/feed?inquiryId={inquiry.Id:D}&commentId={directedReply.Id:D}"), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddCommentAsync_DoesNotNotifyUserForSelfMention()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        SocialService service = CreateService(context, notifications);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.TeacherUserId,
+            ServiceTestData.SubjectId,
+            "Conversacion sin auto notificacion",
+            "Contenido base");
+        Comment root = await service.AddCommentAsync(
+            ServiceTestData.StudentUserId,
+            inquiry.Id,
+            "Comentario propio",
+            null);
+
+        Comment reply = await service.AddCommentAsync(
+            ServiceTestData.StudentUserId,
+            inquiry.Id,
+            "@Leandro Aclaracion propia",
+            root.Id,
+            replyTargetCommentId: root.Id);
+
+        Assert.Equal(ServiceTestData.StudentUserId, reply.ReplyToUserId);
+        notifications.Verify(notificationService => notificationService.UpsertGroupedNotificationAsync(
+            ServiceTestData.StudentUserId,
+            NotificationType.SocialComment,
+            inquiry.Id,
+            It.Is<string>(key => key.StartsWith("social-mention:", StringComparison.Ordinal)),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AddCommentAsync_RejectsReplyTargetFromAnotherInquiry()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry firstInquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Primer hilo",
+            "Contenido base");
+        Inquiry secondInquiry = await service.AddInquiryAsync(
+            ServiceTestData.TeacherUserId,
+            ServiceTestData.SubjectId,
+            "Segundo hilo",
+            "Contenido base");
+        Comment foreignTarget = await service.AddCommentAsync(
+            ServiceTestData.StudentUserId,
+            secondInquiry.Id,
+            "Comentario de otro hilo",
+            null);
+        int before = await context.Comments.CountAsync();
+
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddCommentAsync(
+                ServiceTestData.TeacherUserId,
+                firstInquiry.Id,
+                "Respuesta invalida",
+                null,
+                replyTargetCommentId: foreignTarget.Id));
+
+        Assert.Contains("no existe", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(before, await context.Comments.CountAsync());
     }
 
     [Fact]
@@ -406,7 +656,8 @@ public sealed class SocialServiceTests
             It.IsAny<string>(),
             It.IsAny<string>(),
             It.IsAny<string>(),
-            It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<CancellationToken>(),
+            null), Times.Once);
     }
 
     [Fact]
@@ -493,7 +744,8 @@ public sealed class SocialServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<CancellationToken>(),
+                It.IsAny<string?>()))
             .ReturnsAsync((Notification?)null);
         return notifications;
     }

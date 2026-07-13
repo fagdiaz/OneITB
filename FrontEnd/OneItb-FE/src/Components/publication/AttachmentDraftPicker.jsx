@@ -18,7 +18,7 @@ const LocalFilePreview = ({ file, compact }) => {
   const type = getMediaType(file.name, file.type);
 
   useEffect(() => {
-    if (!['image', 'video', 'pdf'].includes(type)) {
+    if (!['image', 'video'].includes(type)) {
       setObjectUrl(null);
       return undefined;
     }
@@ -45,22 +45,28 @@ const LocalFilePreview = ({ file, compact }) => {
   }
 
   return (
-    <iframe
-      src={`${objectUrl}#page=1&toolbar=0&navpanes=0`}
-      title={`Primera pagina de ${file.name}`}
-      className={`${compact ? 'h-20' : 'h-28'} w-full border-0 bg-white`}
-    />
+    <div className={`${compact ? 'h-20' : 'h-28'} flex w-full flex-col items-center justify-center bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300`}>
+      <i className="fa-solid fa-file-pdf text-2xl" />
+      <span className="mt-1 text-[10px] font-bold uppercase tracking-wide">PDF</span>
+    </div>
   );
 };
 
-export const AttachmentDraftPicker = ({ files, onChange, onError, compact = false }) => {
+export const AttachmentDraftPicker = ({
+  files,
+  onChange,
+  onError,
+  compact = false,
+  allowCoverSelection = false,
+  coverFileIdentity = null,
+  onCoverChange,
+}) => {
   const inputId = useId();
   const normalizedFiles = files ?? [];
   const totalSize = normalizedFiles.reduce((total, file) => total + file.size, 0);
+  const [isDragActive, setIsDragActive] = useState(false);
 
-  const handleSelection = (event) => {
-    const selected = Array.from(event.target.files ?? []);
-    event.target.value = '';
+  const mergeSelectedFiles = (selected) => {
     if (selected.length === 0) return;
 
     const existingIds = new Set(normalizedFiles.map(getFileIdentity));
@@ -79,8 +85,46 @@ export const AttachmentDraftPicker = ({ files, onChange, onError, compact = fals
     }
   };
 
+  const handleSelection = (event) => {
+    const selected = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    mergeSelectedFiles(selected);
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isDragActive) setIsDragActive(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.currentTarget.contains(event.relatedTarget)) return;
+    setIsDragActive(false);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragActive(false);
+    mergeSelectedFiles(Array.from(event.dataTransfer?.files ?? []));
+  };
+
   return (
-    <div className="space-y-2">
+    <div
+      className={`space-y-2 rounded-xl border border-dashed p-2 transition ${
+        isDragActive
+          ? 'border-blue-400 bg-blue-50/80 dark:border-blue-300/50 dark:bg-blue-500/10'
+          : 'border-transparent'
+      }`}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      data-testid="attachment-dropzone"
+      aria-label="Zona para adjuntar archivos"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <input
           id={inputId}
@@ -100,30 +144,56 @@ export const AttachmentDraftPicker = ({ files, onChange, onError, compact = fals
         <span className="text-xs text-slate-400">
           {normalizedFiles.length}/{MAX_UPLOAD_FILES} · {formatSize(totalSize)} de {formatSize(MAX_UPLOAD_SIZE)}
         </span>
+        <span className={`text-xs font-medium ${isDragActive ? 'text-blue-600 dark:text-blue-200' : 'text-slate-400'}`}>
+          {isDragActive ? 'Solta los archivos para adjuntarlos' : 'Tambien podes arrastrar archivos aca'}
+        </span>
       </div>
 
       {normalizedFiles.length > 0 && (
         <ul className={`grid gap-2 ${compact ? 'grid-cols-2 sm:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
-          {normalizedFiles.map((file) => (
+          {normalizedFiles.map((file) => {
+            const identity = getFileIdentity(file);
+            const isCover = coverFileIdentity === identity;
+            return (
             <li
-              key={getFileIdentity(file)}
+              key={identity}
               className="group relative min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/70"
             >
               <LocalFilePreview file={file} compact={compact} />
               <div className="min-w-0 px-2.5 py-2">
                 <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-200" title={file.name}>{file.name}</p>
                 <p className="text-[10px] text-slate-400">{formatSize(file.size)}</p>
+                {allowCoverSelection && (
+                  <button
+                    type="button"
+                    onClick={() => onCoverChange?.(identity)}
+                    aria-pressed={isCover}
+                    className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold transition ${
+                      isCover
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-700 dark:bg-white/10 dark:text-slate-300'
+                    }`}
+                  >
+                    <i className={`fa-${isCover ? 'solid' : 'regular'} fa-star`} />
+                    {isCover ? 'Portada' : 'Usar de portada'}
+                  </button>
+                )}
               </div>
               <button
                 type="button"
-                onClick={() => onChange(normalizedFiles.filter((item) => getFileIdentity(item) !== getFileIdentity(file)))}
+                onClick={() => {
+                  const nextFiles = normalizedFiles.filter((item) => getFileIdentity(item) !== identity);
+                  onChange(nextFiles);
+                  if (isCover) onCoverChange?.(nextFiles[0] ? getFileIdentity(nextFiles[0]) : null);
+                }}
                 className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-950/75 text-xs text-white shadow transition hover:bg-red-600"
                 aria-label={`Quitar ${file.name}`}
               >
                 <i className="fa-solid fa-xmark" />
               </button>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

@@ -21,6 +21,9 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes('pdfjs-dist')) {
+            return 'pdfjs';
+          }
           if (id.includes('node_modules')) {
             return 'vendor';
           }

@@ -18,5 +18,7 @@ namespace OneITB.Core.Services.Interfaces
             Guid? targetInquiryId = null,
             Guid? targetCommentId = null,
             Guid? targetReportId = null);
+        Task<Inquiry> ModerateInquiryVisibilityAsync(Guid actorUserId, Guid inquiryId, bool isHidden, string reason, CancellationToken cancellationToken = default);
+        Task<Comment> ModerateCommentVisibilityAsync(Guid actorUserId, Guid commentId, bool isHidden, string reason, CancellationToken cancellationToken = default);
     }
 }

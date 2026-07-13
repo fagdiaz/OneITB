@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useSubscription } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { APPLY_TO_JOB, CREATE_JOB_OFFER, GET_JOB_OFFERS, JOB_OFFER_CREATED } from '../../data/graphql/jobs';
@@ -46,18 +46,24 @@ const JobSkeleton = () => (
   </div>
 );
 
-const JobCard = ({ offer, canApply, applyingOfferId, onApply }) => {
+const JobCard = ({ offer, canApply, applyingOfferId, onApply, isTarget, targetRef }) => {
   const myApplication = offer?.applications?.[0] || null;
   const isApplying = applyingOfferId === offer.id;
 
   return (
-    <article className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 dark:border-white/10 dark:bg-slate-900/60 dark:hover:border-blue-300/30 dark:hover:shadow-blue-500/10">
+    <article
+      id={`job-offer-${offer.id}`}
+      ref={isTarget ? targetRef : undefined}
+      tabIndex={isTarget ? -1 : undefined}
+      aria-labelledby={`job-offer-title-${offer.id}`}
+      className={`group scroll-mt-24 rounded-3xl border bg-white p-6 shadow-sm outline-none transition duration-700 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 dark:bg-slate-700/65 dark:hover:border-blue-300/30 dark:hover:shadow-blue-500/10 ${isTarget ? 'border-cyan-400 ring-2 ring-cyan-400/70 shadow-xl shadow-cyan-500/15 dark:border-cyan-300 dark:ring-cyan-300/55' : 'border-slate-200 dark:border-white/10'}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
             {offer.company}
           </p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
+          <h2 id={`job-offer-title-${offer.id}`} className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-100">
             {offer.title}
           </h2>
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
@@ -126,6 +132,10 @@ const JobCard = ({ offer, canApply, applyingOfferId, onApply }) => {
 
 export const JobBoard = () => {
   const { auth } = useAuth();
+  const [searchParams] = useSearchParams();
+  const targetOfferId = searchParams.get('jobOfferId');
+  const targetOfferRef = useRef(null);
+  const handledTargetRef = useRef(null);
   const canPublish = canPublishJobOffer(auth?.role);
   const canApply = canApplyToJob(auth?.role);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -133,6 +143,7 @@ export const JobBoard = () => {
   const [feedback, setFeedback] = useState(null);
   const [liveOffers, setLiveOffers] = useState([]);
   const [applyingOfferId, setApplyingOfferId] = useState(null);
+  const [highlightedOfferId, setHighlightedOfferId] = useState(null);
 
   const { data, loading, error } = useQuery(GET_JOB_OFFERS, {
     variables: { onlyActive: true, first: 50 },
@@ -161,6 +172,31 @@ export const JobBoard = () => {
 
     return [...byId.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [data, liveOffers]);
+
+  useEffect(() => {
+    if (!targetOfferId || handledTargetRef.current === targetOfferId) return undefined;
+    if (!offers.some((offer) => offer.id === targetOfferId)) return undefined;
+    setHighlightedOfferId(targetOfferId);
+    return undefined;
+  }, [offers, targetOfferId]);
+
+  useEffect(() => {
+    if (!highlightedOfferId || !targetOfferRef.current) return undefined;
+    handledTargetRef.current = highlightedOfferId;
+    const frame = window.requestAnimationFrame(() => {
+      targetOfferRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetOfferRef.current?.focus({ preventScroll: true });
+    });
+    const timeout = window.setTimeout(() => setHighlightedOfferId(null), 4000);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [highlightedOfferId]);
+
+  useEffect(() => {
+    if (handledTargetRef.current !== targetOfferId) handledTargetRef.current = null;
+  }, [targetOfferId]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -267,9 +303,9 @@ export const JobBoard = () => {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-white">
+    <main className="min-h-screen bg-slate-50/90 px-4 py-8 text-slate-950 dark:bg-slate-800/90 dark:text-slate-100">
       <section className="mx-auto max-w-6xl">
-        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-700/65">
           <div className="relative isolate px-6 py-8 sm:px-8">
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.10),transparent_35%)]" />
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -366,6 +402,8 @@ export const JobBoard = () => {
               canApply={canApply}
               applyingOfferId={applyingOfferId}
               onApply={handleApply}
+              isTarget={highlightedOfferId === offer.id}
+              targetRef={targetOfferRef}
             />
           ))}
         </div>
@@ -375,7 +413,7 @@ export const JobBoard = () => {
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 px-4 py-6 backdrop-blur-sm">
           <form
             onSubmit={handleSubmit}
-            className="w-full max-w-2xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-950/20 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+            className="w-full max-w-2xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-950/20 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
           >
             <div className="flex items-start justify-between gap-4">
               <div>

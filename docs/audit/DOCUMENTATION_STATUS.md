@@ -1,18 +1,18 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-07-11
+**Ultima verificacion**: 2026-07-12
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 103/105 (98%); core funcional Feature Complete |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 106/108 (98%); core funcional Feature Complete |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente, actualizado hasta Spec 178 |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente, actualizado hasta Spec 184 |
 
 ## Documentacion complementaria
 
@@ -30,6 +30,12 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/184-qa-master-polish-and-layout/` | Header auto-hide defensivo, Footer unificado, textura global, dark mode suavizado, compositor acotado, mosaico mixto con portada/YouTube/overflow, menciones respaldadas por identidad, preferencias en drawer y deep-link laboral exacto. Backend 63/63, frontend 39/39, builds PASS, Vite 1.19 s, npm audit 0 vulnerabilidades y schema GraphQL runtime HTTP 200; regresion visual manual pendiente |
+| `specs/183-premium-branding-landing/` | Identidad final normalizada en cuatro assets canonicos, Header con isotipo aprobado y landing institucional unica Clean Tech/Tech Noir. Spotlight usa RAF sin re-render, reveals respetan reduced-motion y limpian observers; los PNG de fondo de 4.47/5.12 MB quedan fuera del bundle. Frontend 31/31, Vite build PASS en 941 ms, npm audit 0 vulnerabilidades y diff-check PASS; aprobacion visual responsive/manual pendiente |
+| `specs/182-qa-session4-feed-hierarchy-and-media-grid/` | Mosaico acotado 4/3, portada PDF por worker local diferido, respuestas dirigidas sin tercer nivel, deep-link exacto con highlight, widget no leido independiente y follow/unfollow explicito. Migracion aplicada a Docker SQL, EF sin drift, tests backend 62/62, frontend 25/25, Vite build PASS, npm audit 0 vulnerabilidades y smoke GraphQL autenticado PASS; regresion visual manual pendiente |
+| `specs/181-qa-session3-media-moderation/` | Portada multimedia y carrusel, PDF por Blob URL, reemplazo de adjuntos, texto expandible, reaccion unificada, nesting maximo de dos niveles, edicion exclusiva del autor, ocultamiento moderado auditado, badges de chat, recordatorio idempotente con reintentos de concurrencia y preferencias separadas. Migracion aplicada a Docker SQL, EF sin drift, backend 0/0 y tests 55/55, frontend tests 18/18 y Vite build PASS; schema/runtime HTTP 200. La regresion visual autenticada final queda explicitamente pendiente |
+| `specs/180-final-release-candidate-audit/` | Auditoria Release Candidate ejecutada: Git hygiene revisado, builds/tests backend y frontend PASS, EF sin drift, runtime GraphQL HTTP 200 contra Docker SQL y contratos criticos auditados. Se corrigio idempotencia del `EnterpriseDemoSeeder` para `JobApplications` ya existentes por `Id` y por par `JobOfferId + ApplicantId`, evitando fallos de arranque sobre bases demo previamente pobladas |
+| `specs/179-social-polish-quick-wins/` | Quick wins del muro implementados: enlace copiable por publicacion con deep-link estable, drag-and-drop de adjuntos reutilizando validaciones existentes, restauracion de foco en visores/listado de reacciones, guard contra cargas duplicadas y fallback de preview de enlaces rotos. Frontend tests PASS 12/12 y Vite build PASS |
 | `specs/178-qa-session2-social-core-fixes/` | Nucleo social estabilizado: scoping de materias backend/UI, `SocialAttachment`, `CommentReaction`, adjuntos multiples con nombre original, galeria multimedia no excluyente, visores, autofocus, listado paginado de likes, notificaciones agrupadas con deep-link, footer y retiro del compositor legacy del sidebar. Migracion aplicada a Docker SQL, EF sin cambios pendientes, backend build PASS, tests 47/47, frontend tests 6/6, build Vite PASS y smoke GraphQL autenticado PASS. Browser QA fue parcial: detecto el sidebar duplicado y motivo el fix; la recarga post-fix quedo bloqueada por politica de URL de la herramienta |
 | `specs/175-privacy-controls-and-smoke-tests/` | Controles de privacidad implementados: `User.IsPublicProfile`, migracion `AddUserProfilePrivacy`, `toggleProfilePrivacy`, masking backend-side en `publicProfile`/`searchPublicProfiles`, switch en `/profile/edit` con toast local, badges de perfil privado en busqueda, y `testSmtpConnection` admin-only con errores controlados. Backend build PASS, backend tests 39/39, frontend build PASS, EF sin cambios pendientes y diff-check PASS; smoke runtime temporal bloqueado por revisor automatico del entorno Codex al iniciar proceso persistente |
 | `docs/` audit 2026-07-08 | Documentacion normalizada para presentacion institucional: `ROADMAP.md` alinea el modulo laboral como "Empleos y Gestor de Postulaciones", suma SMTP como item implementado y queda actualizado a 97/99; `scope-and-requirements.md`, `architecture-and-design.md` y `docs/academic/*` quedan alineados con empleos, postulaciones, SMTP, AuditLog, SIU mock, recursos academicos y limites pendientes; `docker-compose.prod.yml`, `.env.example` y `RUNBOOK_DEV.md` documentan variables SMTP opcionales |
@@ -90,7 +96,7 @@
 ## Brechas vigentes
 
 - Existen baselines de pruebas de componentes frontend y de integracion GraphQL con executor real; queda ampliar cobertura hacia regresion visual/browser y SQL Server/Testcontainers para CI avanzado.
-- El flujo social de Spec 178 quedo verificado por tests y smoke autenticado REST/GraphQL; falta una ultima regresion manual de file picker, lightboxes y sidebar post-fix en el navegador usado para la defensa.
+- El flujo social de Specs 178/179/181 quedo verificado por tests, schema y smoke REST/GraphQL donde aplica; falta una ultima regresion manual autenticada de portadas, reemplazo de adjuntos, carrusel/PDF, moderacion con motivo y preferencias en el navegador usado para la defensa.
 - Falta regresion autenticada en navegador del hub academico para elevar busqueda/categorias/versionado/modal de recursos desde `[I]` a `[V]`.
 - Falta regresion visual en navegador de `/empleos` y `/empleos/mis-ofertas`, mas validacion manual del badge realtime con dos sesiones para elevar la UI de empleos/Gestor de Postulaciones a `[V]`.
 - Redis Pub/Sub, Cloudinary y SMTP estan implementados de forma condicional; SMTP cuenta con smoke GraphQL admin-only, pero quedan pendientes pruebas productivas con secretos reales para elevar servicios externos a `[V]`.

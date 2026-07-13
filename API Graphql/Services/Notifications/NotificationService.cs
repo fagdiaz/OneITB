@@ -219,7 +219,8 @@ namespace Services.Notifications
             string groupKey,
             string singularMessage,
             string pluralMessageTemplate,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            string? actionUrl = null)
         {
             if (userId == Guid.Empty || relatedInquiryId == Guid.Empty)
                 throw new ArgumentException("El destinatario y la publicacion son obligatorios.");
@@ -253,7 +254,8 @@ namespace Services.Notifications
             if (disabled)
                 return null;
 
-            string actionUrl = $"/feed?inquiryId={relatedInquiryId:D}";
+            string resolvedActionUrl = NormalizeActionUrl(actionUrl)
+                ?? $"/feed?inquiryId={relatedInquiryId:D}";
 
             for (int attempt = 0; attempt < 3; attempt++)
             {
@@ -271,7 +273,7 @@ namespace Services.Notifications
                         UserId = userId,
                         Type = type,
                         Message = normalizedSingular,
-                        ActionUrl = actionUrl,
+                        ActionUrl = resolvedActionUrl,
                         IsRead = false,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow,
@@ -288,7 +290,7 @@ namespace Services.Notifications
                         normalizedSingular,
                         normalizedPlural,
                         notification.AggregateCount);
-                    notification.ActionUrl = actionUrl;
+                    notification.ActionUrl = resolvedActionUrl;
                     notification.IsRead = false;
                     notification.UpdatedAt = DateTime.UtcNow;
                     notification.RelatedInquiryId = relatedInquiryId;
@@ -313,6 +315,99 @@ namespace Services.Notifications
             }
 
             throw new InvalidOperationException("No se pudo actualizar la notificacion agrupada por concurrencia.");
+        }
+
+        public async Task<Notification?> UpsertUnreadMessageReminderAsync(
+            Guid userId,
+            int unreadCount,
+            DateTime latestUnreadMessageAt,
+            CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty)
+                throw new ArgumentException("El destinatario es obligatorio.");
+            if (unreadCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(unreadCount));
+
+            bool canReceive = await _context.Users
+                .AsNoTracking()
+                .AnyAsync(user => user.Id == userId && user.IsActive, cancellationToken);
+            if (!canReceive)
+                return null;
+
+            bool disabled = await _context.NotificationPreferences
+                .AsNoTracking()
+                .AnyAsync(
+                    preference =>
+                        preference.UserId == userId &&
+                        preference.Type == NotificationType.PrivateMessage &&
+                        !preference.IsEnabled,
+                    cancellationToken);
+            if (disabled)
+                return null;
+
+            string groupKey = $"private-message-reminder:{userId:D}";
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                Notification? notification = await _context.Notifications
+                    .SingleOrDefaultAsync(
+                        item => item.UserId == userId && item.GroupKey == groupKey,
+                        cancellationToken);
+
+                DateTime lastSignalAt = notification?.UpdatedAt ?? notification?.CreatedAt ?? DateTime.MinValue;
+                if (notification is not null && latestUnreadMessageAt <= lastSignalAt)
+                    return notification;
+
+                bool isNew = notification is null;
+                DateTime now = DateTime.UtcNow;
+                string message = unreadCount == 1
+                    ? "Tenes un mensaje privado sin leer."
+                    : $"Tenes {unreadCount} mensajes privados sin leer.";
+
+                if (isNew)
+                {
+                    notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        Type = NotificationType.PrivateMessage,
+                        Message = message,
+                        ActionUrl = "/chat",
+                        IsRead = false,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                        GroupKey = groupKey,
+                        AggregateCount = unreadCount
+                    };
+                    _context.Notifications.Add(notification);
+                }
+                else
+                {
+                    notification!.Message = message;
+                    notification.ActionUrl = "/chat";
+                    notification.IsRead = false;
+                    notification.UpdatedAt = now;
+                    notification.AggregateCount = unreadCount;
+                }
+
+                try
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+                    Notification persisted = await NotificationGraph()
+                        .SingleAsync(item => item.Id == notification!.Id, cancellationToken);
+                    await PublishAsync(persisted, cancellationToken);
+                    return persisted;
+                }
+                catch (DbUpdateConcurrencyException) when (attempt < 2)
+                {
+                    _context.Entry(notification!).State = EntityState.Detached;
+                }
+                catch (DbUpdateException) when (isNew && attempt < 2)
+                {
+                    _context.Entry(notification!).State = EntityState.Detached;
+                }
+            }
+
+            throw new InvalidOperationException("No se pudo actualizar el recordatorio de mensajes por concurrencia.");
         }
 
         private IQueryable<Notification> NotificationGraph()

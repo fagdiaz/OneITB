@@ -355,11 +355,24 @@ namespace OneItb.Data
         private static async Task SeedJobApplicationsAsync(OneItbContext context, CancellationToken cancellationToken)
         {
             Guid[] applicationIds = ManagedJobApplicationIds().ToArray();
-            List<Guid> existingIdList = await context.JobApplications
+            var desiredPairs = BuildManagedJobApplicationPairs();
+
+            List<JobApplication> existingApplications = await context.JobApplications
                 .Where(application => applicationIds.Contains(application.Id))
-                .Select(application => application.Id)
                 .ToListAsync(cancellationToken);
-            HashSet<Guid> existingIds = existingIdList.ToHashSet();
+            List<JobApplication> existingPairApplications = await context.JobApplications
+                .Where(application => desiredPairs.OfferIds.Contains(application.JobOfferId)
+                    && desiredPairs.ApplicantIds.Contains(application.ApplicantId))
+                .ToListAsync(cancellationToken);
+
+            HashSet<Guid> existingIds = existingApplications
+                .Concat(existingPairApplications)
+                .Select(application => application.Id)
+                .ToHashSet();
+            HashSet<string> existingPairs = existingApplications
+                .Concat(existingPairApplications)
+                .Select(application => JobApplicationPairKey(application.JobOfferId, application.ApplicantId))
+                .ToHashSet(StringComparer.Ordinal);
 
             Guid[] offerIds = ManagedJobOfferIds().ToArray();
             List<JobOffer> offers = await context.JobOffers
@@ -379,19 +392,23 @@ namespace OneItb.Data
                 EnterpriseUser applicant = applicants[index];
                 JobOffer offer = offers[index % offers.Count];
                 Guid applicationId = StableGuid($"enterprise-job-application:{applicant.Email}:{offer.Id:N}");
-                if (existingIds.Contains(applicationId))
+                Guid applicantId = UserId(applicant.Email);
+                string pairKey = JobApplicationPairKey(offer.Id, applicantId);
+                if (existingIds.Contains(applicationId) || existingPairs.Contains(pairKey))
                     continue;
 
                 context.JobApplications.Add(new JobApplication
                 {
                     Id = applicationId,
                     JobOfferId = offer.Id,
-                    ApplicantId = UserId(applicant.Email),
+                    ApplicantId = applicantId,
                     AppliedAt = offer.CreatedAt.AddHours(2 + index),
                     Status = index % 4 == 0
                         ? JobApplicationStatus.Reviewed
                         : JobApplicationStatus.Pending
                 });
+                existingIds.Add(applicationId);
+                existingPairs.Add(pairKey);
             }
         }
 
@@ -760,6 +777,22 @@ namespace OneItb.Data
             {
                 yield return StableGuid($"enterprise-job-application:{applicants[index].Email}:{offerIds[index % offerIds.Length]:N}");
             }
+        }
+
+        private static (Guid[] OfferIds, Guid[] ApplicantIds) BuildManagedJobApplicationPairs()
+        {
+            Guid[] offerIds = ManagedJobOfferIds().ToArray();
+            Guid[] applicantIds = Users
+                .Where(user => user.Role is "Estudiante" or "Egresado")
+                .Select(user => UserId(user.Email))
+                .ToArray();
+
+            return (offerIds, applicantIds);
+        }
+
+        private static string JobApplicationPairKey(Guid offerId, Guid applicantId)
+        {
+            return $"{offerId:N}:{applicantId:N}";
         }
 
         private static IEnumerable<Guid> ManagedMessageIds()

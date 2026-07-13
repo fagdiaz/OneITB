@@ -50,7 +50,7 @@ export const MiniChatWidget = () => {
   } = useQuery(GET_MESSAGING_CONTACTS, {
     variables: { first: 50 },
     fetchPolicy: 'cache-and-network',
-    skip: !isOpen,
+    skip: !auth?.id,
   });
 
   const {
@@ -167,10 +167,12 @@ export const MiniChatWidget = () => {
 
   useEffect(() => {
     const wasUnavailable = ['disconnected', 'error'].includes(previousSocketStatus.current);
-    if (socketStatus === 'connected' && wasUnavailable && isOpen) {
+    if (socketStatus === 'connected' && wasUnavailable) {
       refetchContacts();
-      refetchActive();
-      if (selectedContactId) refetchConversation();
+      if (isOpen) {
+        refetchActive();
+        if (selectedContactId) refetchConversation();
+      }
     }
     previousSocketStatus.current = socketStatus;
   }, [socketStatus, selectedContactId, refetchContacts, refetchActive, refetchConversation, isOpen]);
@@ -199,20 +201,18 @@ export const MiniChatWidget = () => {
   }, [messages.length]);
 
   const { error: subscriptionError } = useSubscription(MESSAGE_RECEIVED, {
-    skip: !isOpen || !auth.id,
+    skip: !auth.id,
     onData: ({ data }) => {
       const message = data.data?.messageReceived;
       if (!message || !mountedRef.current) return;
 
-      setTimeout(() => {
-        if (!mountedRef.current) return;
       const otherUserId = message.senderId === auth.id ? message.receiverId : message.senderId;
       const isSelected = selectedContactId === otherUserId && isOpen;
       appendMessageToConversation(client.cache, otherUserId, message);
       updateContactCache(client.cache, otherUserId, message, auth.id, isSelected);
 
       const isActive = activeData?.activeConversations?.nodes?.some(u => u.contact.id === otherUserId);
-      if (!isActive) {
+      if (isOpen && !isActive) {
         refetchActive().catch(() => {
           if (mountedRef.current) setFeedback('No se pudo actualizar la lista de conversaciones.');
         });
@@ -226,7 +226,6 @@ export const MiniChatWidget = () => {
           if (mountedRef.current) setFeedback('El mensaje llegó, pero no se pudo marcar como leído.');
         });
       }
-      }, 0);
     },
   });
 
@@ -403,13 +402,13 @@ export const MiniChatWidget = () => {
       <button
         onClick={toggleWidget}
         className="group relative flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-600 text-white shadow-[0_18px_45px_rgba(37,99,235,0.35)] transition hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-[0_22px_55px_rgba(37,99,235,0.45)] active:scale-95"
-        aria-label="Abrir chat"
+        aria-label={isOpen ? 'Cerrar chat' : totalUnreadCount > 0 ? `Abrir chat, ${totalUnreadCount} mensajes sin leer` : 'Abrir chat'}
       >
         <i className={`fa-solid fa-comment-dots text-xl transition duration-300 ${isOpen ? 'scale-0 opacity-0 absolute' : 'scale-100 opacity-100'}`}></i>
         <i className={`fa-solid fa-xmark text-xl transition duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 absolute'}`}></i>
         
         {totalUnreadCount > 0 && !isOpen && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 text-[10px] font-bold">
+          <span aria-hidden="true" className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[10px] font-bold">
             {totalUnreadCount > 9 ? '+9' : totalUnreadCount}
           </span>
         )}

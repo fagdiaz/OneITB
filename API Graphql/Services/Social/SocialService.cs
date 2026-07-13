@@ -67,6 +67,8 @@ namespace Services.Social
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.User)
                 .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.ReplyToUser)
+                .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.Attachments)
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.Reactions)
@@ -204,9 +206,11 @@ namespace Services.Social
             string title,
             string content,
             string? fileUrl = null,
-            IReadOnlyList<SocialAttachmentInput>? attachments = null)
+            IReadOnlyList<SocialAttachmentInput>? attachments = null,
+            bool preferAttachmentCover = false,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureUserCanCreateContentAsync(userId, "publicar");
+            await EnsureUserCanCreateContentAsync(userId, "publicar", cancellationToken);
             string normalizedTitle = RequireText(title, 200, "El título");
             string normalizedContent = RequireText(content, 10000, "El contenido");
 
@@ -214,13 +218,13 @@ namespace Services.Social
                 .AsNoTracking()
                 .Where(user => user.Id == userId && user.IsActive)
                 .Select(user => user.Role)
-                .SingleAsync();
+                .SingleAsync(cancellationToken);
 
             var subjectScope = await _context.Subjects
                 .AsNoTracking()
                 .Where(subject => subject.Id == subjectId && subject.IsActive && subject.Career.IsActive)
                 .Select(subject => new { subject.Id, subject.CareerId })
-                .SingleOrDefaultAsync();
+                .SingleOrDefaultAsync(cancellationToken);
             if (subjectScope is null)
                 throw new InvalidOperationException("La materia seleccionada no existe o esta inactiva.");
 
@@ -228,7 +232,7 @@ namespace Services.Social
             {
                 bool belongsToCareer = await _context.UserCareers
                     .AsNoTracking()
-                    .AnyAsync(link => link.UserId == userId && link.CareerId == subjectScope.CareerId);
+                    .AnyAsync(link => link.UserId == userId && link.CareerId == subjectScope.CareerId, cancellationToken);
                 if (!belongsToCareer)
                     throw new InvalidOperationException("Solo podes publicar en materias de tus carreras.");
             }
@@ -250,12 +254,13 @@ namespace Services.Social
                 FileUrl = normalizedAttachments.FirstOrDefault()?.FileUrl,
                 PublishDate = DateTime.UtcNow,
                 IsActive = true,
+                PreferAttachmentCover = preferAttachmentCover && normalizedAttachments.Count > 0,
                 Attachments = normalizedAttachments
             };
 
             _context.Inquiries.Add(inquiry);
-            await _context.SaveChangesAsync();
-            return await LoadInquiryGraphAsync(inquiry.Id);
+            await _context.SaveChangesAsync(cancellationToken);
+            return await LoadInquiryGraphAsync(inquiry.Id, cancellationToken);
         }
 
         private static string? NormalizeFileUrl(string? fileUrl)
@@ -419,68 +424,107 @@ namespace Services.Social
             }
         }
 
-        public async Task<Inquiry> EditInquiryAsync(Guid userId, bool canModerate, Guid inquiryId, string newTitle, string newContent)
+        public async Task<Inquiry> EditInquiryAsync(
+            Guid userId,
+            Guid inquiryId,
+            string newTitle,
+            string newContent,
+            IReadOnlyList<SocialAttachmentInput>? attachments = null,
+            bool? preferAttachmentCover = null,
+            CancellationToken cancellationToken = default)
         {
             Inquiry inquiry = await _context.Inquiries
                 .IgnoreQueryFilters()
-                .SingleOrDefaultAsync(item => item.Id == inquiryId)
+                .Include(item => item.Attachments)
+                .SingleOrDefaultAsync(item => item.Id == inquiryId, cancellationToken)
                 ?? throw new InvalidOperationException("La publicaciÃ³n no existe.");
 
-            if (inquiry.UserId != userId && !canModerate)
+            if (inquiry.UserId != userId)
                 throw new InvalidOperationException("No tenÃ©s permisos para editar esta publicaciÃ³n.");
 
             inquiry.Title = RequireText(newTitle, 200, "El tÃ­tulo");
             inquiry.Content = RequireText(newContent, 10000, "El contenido");
+            if (attachments is not null)
+            {
+                List<SocialAttachment> replacements = NormalizeAttachments(attachments, null, inquiry.Id, null);
+                _context.SocialAttachments.RemoveRange(inquiry.Attachments);
+                inquiry.Attachments = replacements;
+                inquiry.FileUrl = replacements.FirstOrDefault()?.FileUrl;
+            }
+
+            if (preferAttachmentCover.HasValue)
+                inquiry.PreferAttachmentCover = preferAttachmentCover.Value && inquiry.Attachments.Count > 0;
+
             inquiry.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return inquiry;
+            await _context.SaveChangesAsync(cancellationToken);
+            return await LoadInquiryGraphAsync(inquiry.Id, cancellationToken);
         }
 
-        public async Task<Inquiry> ToggleInquiryStatusAsync(Guid userId, bool canModerate, Guid inquiryId)
+        public async Task<Inquiry> ToggleInquiryStatusAsync(
+            Guid userId,
+            Guid inquiryId,
+            CancellationToken cancellationToken = default)
         {
             Inquiry inquiry = await _context.Inquiries
                 .IgnoreQueryFilters()
-                .SingleOrDefaultAsync(item => item.Id == inquiryId)
+                .SingleOrDefaultAsync(item => item.Id == inquiryId, cancellationToken)
                 ?? throw new InvalidOperationException("La publicaciÃ³n no existe.");
 
-            if (inquiry.UserId != userId && !canModerate)
+            if (inquiry.UserId != userId)
                 throw new InvalidOperationException("No tenÃ©s permisos para cambiar el estado de esta publicaciÃ³n.");
 
             inquiry.IsActive = !inquiry.IsActive;
             inquiry.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return inquiry;
         }
 
-        public async Task<Comment> EditCommentAsync(Guid userId, bool canModerate, Guid commentId, string newContent)
+        public async Task<Comment> EditCommentAsync(
+            Guid userId,
+            Guid commentId,
+            string newContent,
+            IReadOnlyList<SocialAttachmentInput>? attachments = null,
+            CancellationToken cancellationToken = default)
         {
             Comment comment = await _context.Comments
                 .IgnoreQueryFilters()
-                .SingleOrDefaultAsync(item => item.Id == commentId)
+                .Include(item => item.Attachments)
+                .SingleOrDefaultAsync(item => item.Id == commentId, cancellationToken)
                 ?? throw new InvalidOperationException("El comentario no existe.");
 
-            if (comment.UserId != userId && !canModerate)
+            if (comment.UserId != userId)
                 throw new InvalidOperationException("No tenÃ©s permisos para editar este comentario.");
 
             comment.Content = RequireText(newContent, 1000, "El comentario");
+            if (attachments is not null)
+            {
+                List<SocialAttachment> replacements = NormalizeAttachments(attachments, null, null, comment.Id);
+                _context.SocialAttachments.RemoveRange(comment.Attachments);
+                comment.Attachments = replacements;
+                comment.FileUrl = replacements.FirstOrDefault()?.FileUrl;
+            }
+
             comment.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return comment;
+            await _context.SaveChangesAsync(cancellationToken);
+            return await LoadCommentGraphAsync(comment.Id, cancellationToken);
         }
 
-        public async Task<Comment> ToggleCommentStatusAsync(Guid userId, bool canModerate, Guid commentId)
+        public async Task<Comment> ToggleCommentStatusAsync(
+            Guid userId,
+            Guid commentId,
+            CancellationToken cancellationToken = default)
         {
             Comment comment = await _context.Comments
                 .IgnoreQueryFilters()
-                .SingleOrDefaultAsync(item => item.Id == commentId)
+                .SingleOrDefaultAsync(item => item.Id == commentId, cancellationToken)
                 ?? throw new InvalidOperationException("El comentario no existe.");
 
-            if (comment.UserId != userId && !canModerate)
+            if (comment.UserId != userId)
                 throw new InvalidOperationException("No tenÃ©s permisos para cambiar el estado de este comentario.");
 
             comment.IsActive = !comment.IsActive;
             comment.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return comment;
         }
 
@@ -490,34 +534,67 @@ namespace Services.Social
             string content,
             Guid? parentCommentId,
             string? fileUrl = null,
-            IReadOnlyList<SocialAttachmentInput>? attachments = null)
+            IReadOnlyList<SocialAttachmentInput>? attachments = null,
+            Guid? replyTargetCommentId = null,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureUserCanCreateContentAsync(userId, "comentar");
+            await EnsureUserCanCreateContentAsync(userId, "comentar", cancellationToken);
             string normalizedContent = RequireText(content, 1000, "El comentario");
 
             Guid? inquiryOwnerId = await _context.Inquiries
                 .AsNoTracking()
                 .Where(inquiry => inquiry.Id == inquiryId)
                 .Select(inquiry => (Guid?)inquiry.UserId)
-                .SingleOrDefaultAsync();
+                .SingleOrDefaultAsync(cancellationToken);
             if (!inquiryOwnerId.HasValue)
                 throw new InvalidOperationException("La publicación no existe.");
 
-            if (!await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive))
+            if (!await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive, cancellationToken))
                 throw new InvalidOperationException("El usuario autenticado no está disponible.");
+
+            Guid? replyToUserId = null;
+            if (replyTargetCommentId.HasValue)
+            {
+                var replyTarget = await _context.Comments
+                    .AsNoTracking()
+                    .Where(comment =>
+                        comment.Id == replyTargetCommentId.Value &&
+                        comment.InquiryId == inquiryId &&
+                        comment.Inquiry.IsActive &&
+                        !comment.Inquiry.IsHiddenByModerator)
+                    .Select(comment => new
+                    {
+                        comment.Id,
+                        comment.UserId,
+                        comment.ParentCommentId
+                    })
+                    .SingleOrDefaultAsync(cancellationToken)
+                    ?? throw new InvalidOperationException("El comentario al que intentas responder no existe o no esta disponible.");
+
+                Guid canonicalParentId = replyTarget.ParentCommentId ?? replyTarget.Id;
+                if (parentCommentId.HasValue && parentCommentId.Value != canonicalParentId)
+                    throw new InvalidOperationException("La respuesta dirigida no coincide con el hilo seleccionado.");
+
+                parentCommentId = canonicalParentId;
+                replyToUserId = replyTarget.UserId;
+            }
 
             if (parentCommentId.HasValue)
             {
-                var parentInquiryId = await _context.Comments
+                var parent = await _context.Comments
                     .Where(comment => comment.Id == parentCommentId.Value)
-                    .Select(comment => (Guid?)comment.InquiryId)
-                    .SingleOrDefaultAsync();
+                    .Select(comment => new { comment.InquiryId, comment.ParentCommentId, comment.UserId })
+                    .SingleOrDefaultAsync(cancellationToken);
 
-                if (!parentInquiryId.HasValue)
+                if (parent is null)
                     throw new InvalidOperationException("El comentario al que intentas responder no existe.");
 
-                if (parentInquiryId.Value != inquiryId)
+                if (parent.InquiryId != inquiryId)
                     throw new InvalidOperationException("La respuesta debe pertenecer a la misma publicación.");
+                if (parent.ParentCommentId.HasValue)
+                    throw new InvalidOperationException("Los comentarios permiten un maximo de dos niveles.");
+
+                replyToUserId ??= parent.UserId;
             }
 
             Guid commentId = Guid.NewGuid();
@@ -533,6 +610,7 @@ namespace Services.Social
                 InquiryId = inquiryId,
                 UserId = userId,
                 ParentCommentId = parentCommentId,
+                ReplyToUserId = replyToUserId,
                 Content = normalizedContent,
                 FileUrl = normalizedAttachments.FirstOrDefault()?.FileUrl,
                 CreatedAt = DateTime.UtcNow,
@@ -540,9 +618,24 @@ namespace Services.Social
             };
 
             _context.Comments.Add(comment);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
-            if (inquiryOwnerId.Value != userId)
+            string commentActionUrl = $"/feed?inquiryId={inquiryId:D}&commentId={comment.Id:D}";
+
+            if (replyToUserId.HasValue && replyToUserId.Value != userId)
+            {
+                await TryNotifyGroupedAsync(
+                    replyToUserId.Value,
+                    NotificationType.SocialComment,
+                    inquiryId,
+                    $"social-mention:inquiry:{inquiryId:D}:user:{replyToUserId.Value:D}",
+                    "Te mencionaron en una conversación.",
+                    "Te mencionaron {count} veces en una conversación.",
+                    commentActionUrl,
+                    cancellationToken);
+            }
+
+            if (inquiryOwnerId.Value != userId && inquiryOwnerId.Value != replyToUserId)
             {
                 await TryNotifyGroupedAsync(
                     inquiryOwnerId.Value,
@@ -550,10 +643,12 @@ namespace Services.Social
                     inquiryId,
                     $"social-comment:inquiry:{inquiryId:D}",
                     "Tu publicación recibió un comentario.",
-                    "Tu publicación recibió {count} comentarios.");
+                    "Tu publicación recibió {count} comentarios.",
+                    commentActionUrl,
+                    cancellationToken);
             }
 
-            return await LoadCommentGraphAsync(comment.Id);
+            return await LoadCommentGraphAsync(comment.Id, cancellationToken);
         }
 
         public async Task<ToggleReactionPayload> ToggleReactionAsync(Guid userId, Guid inquiryId)
@@ -657,7 +752,8 @@ namespace Services.Social
                     target.InquiryId,
                     $"social-reaction:comment:{commentId:D}",
                     "Tu comentario recibió un Me gusta.",
-                    "Tu comentario recibió {count} Me gusta.");
+                    "Tu comentario recibió {count} Me gusta.",
+                    $"/feed?inquiryId={target.InquiryId:D}&commentId={commentId:D}");
             }
 
             int reactionCount = await _context.CommentReactions
@@ -716,7 +812,9 @@ namespace Services.Social
             Guid inquiryId,
             string groupKey,
             string singularMessage,
-            string pluralMessageTemplate)
+            string pluralMessageTemplate,
+            string? actionUrl = null,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -726,7 +824,9 @@ namespace Services.Social
                     inquiryId,
                     groupKey,
                     singularMessage,
-                    pluralMessageTemplate);
+                    pluralMessageTemplate,
+                    cancellationToken,
+                    actionUrl);
             }
             catch (Exception ex)
             {
@@ -738,12 +838,15 @@ namespace Services.Social
             }
         }
 
-        private async Task EnsureUserCanCreateContentAsync(Guid userId, string action)
+        private async Task EnsureUserCanCreateContentAsync(
+            Guid userId,
+            string action,
+            CancellationToken cancellationToken = default)
         {
             var userModerationState = await _context.Users
                 .Where(user => user.Id == userId && user.IsActive)
                 .Select(user => new { user.MutedUntil })
-                .SingleOrDefaultAsync();
+                .SingleOrDefaultAsync(cancellationToken);
 
             if (userModerationState is null)
                 throw new InvalidOperationException("El usuario autenticado no esta disponible.");
@@ -762,7 +865,9 @@ namespace Services.Social
             return normalized;
         }
 
-        private async Task<Inquiry> LoadInquiryGraphAsync(Guid inquiryId)
+        private async Task<Inquiry> LoadInquiryGraphAsync(
+            Guid inquiryId,
+            CancellationToken cancellationToken = default)
         {
             return await _context.Inquiries
                 .AsNoTracking()
@@ -776,24 +881,29 @@ namespace Services.Social
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.User)
                 .Include(inquiry => inquiry.Comments)
+                .ThenInclude(comment => comment.ReplyToUser)
+                .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.Attachments)
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.Reactions)
                 .Include(inquiry => inquiry.Comments)
                 .ThenInclude(comment => comment.Replies)
                 .ThenInclude(reply => reply.User)
-                .SingleAsync(inquiry => inquiry.Id == inquiryId);
+                .SingleAsync(inquiry => inquiry.Id == inquiryId, cancellationToken);
         }
 
-        private async Task<Comment> LoadCommentGraphAsync(Guid commentId)
+        private async Task<Comment> LoadCommentGraphAsync(
+            Guid commentId,
+            CancellationToken cancellationToken = default)
         {
             return await _context.Comments
                 .AsNoTracking()
                 .Include(comment => comment.User)
+                .Include(comment => comment.ReplyToUser)
                 .Include(comment => comment.Inquiry)
                 .Include(comment => comment.Attachments)
                 .Include(comment => comment.Reactions)
-                .SingleAsync(comment => comment.Id == commentId);
+                .SingleAsync(comment => comment.Id == commentId, cancellationToken);
         }
     }
 }

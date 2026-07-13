@@ -321,16 +321,31 @@ namespace OneITB.GraphQL.Mutations
             string content,
             string? fileUrl,
             IReadOnlyList<SocialAttachmentInput>? attachments,
+            bool? preferAttachmentCover,
             [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
-            return await socialService.AddInquiryAsync(
-                GetAuthenticatedUserId(httpContextAccessor),
-                subjectId,
-                title,
-                content,
-                fileUrl,
-                attachments);
+            try
+            {
+                return await socialService.AddInquiryAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    subjectId,
+                    title,
+                    content,
+                    fileUrl,
+                    attachments,
+                    preferAttachmentCover ?? false,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
         }
 
         [Authorize]
@@ -338,18 +353,33 @@ namespace OneITB.GraphQL.Mutations
             Guid inquiryId,
             string content,
             Guid? parentCommentId,
+            Guid? replyTargetCommentId,
             string? fileUrl,
             IReadOnlyList<SocialAttachmentInput>? attachments,
             [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
-            return await socialService.AddCommentAsync(
-                GetAuthenticatedUserId(httpContextAccessor),
-                inquiryId,
-                content,
-                parentCommentId,
-                fileUrl,
-                attachments);
+            try
+            {
+                return await socialService.AddCommentAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    inquiryId,
+                    content,
+                    parentCommentId,
+                    fileUrl,
+                    attachments,
+                    replyTargetCommentId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
         }
 
         [Authorize]
@@ -413,17 +443,22 @@ namespace OneITB.GraphQL.Mutations
             Guid inquiryId,
             string newTitle,
             string newContent,
+            IReadOnlyList<SocialAttachmentInput>? attachments,
+            bool? preferAttachmentCover,
             [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await socialService.EditInquiryAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
-                    CanModerate(httpContextAccessor),
                     inquiryId,
                     newTitle,
-                    newContent);
+                    newContent,
+                    attachments,
+                    preferAttachmentCover,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -440,15 +475,16 @@ namespace OneITB.GraphQL.Mutations
             Guid inquiryId,
             [Service] ISocialService socialService,
             [Service] IModerationService moderationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
                 Inquiry inquiry = await socialService.ToggleInquiryStatusAsync(
                     actorUserId,
-                    CanModerate(httpContextAccessor),
-                    inquiryId);
+                    inquiryId,
+                    cancellationToken);
                 await moderationService.RecordAuditAsync(
                     actorUserId,
                     "ToggleInquiryStatus",
@@ -466,16 +502,19 @@ namespace OneITB.GraphQL.Mutations
         public async Task<Comment> EditComment(
             Guid commentId,
             string newContent,
+            IReadOnlyList<SocialAttachmentInput>? attachments,
             [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await socialService.EditCommentAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
-                    CanModerate(httpContextAccessor),
                     commentId,
-                    newContent);
+                    newContent,
+                    attachments,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -492,15 +531,16 @@ namespace OneITB.GraphQL.Mutations
             Guid commentId,
             [Service] ISocialService socialService,
             [Service] IModerationService moderationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
                 Comment comment = await socialService.ToggleCommentStatusAsync(
                     actorUserId,
-                    CanModerate(httpContextAccessor),
-                    commentId);
+                    commentId,
+                    cancellationToken);
                 await moderationService.RecordAuditAsync(
                     actorUserId,
                     "ToggleCommentStatus",
@@ -515,44 +555,134 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
+        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        public async Task<Inquiry> ModerateInquiryVisibility(
+            Guid inquiryId,
+            bool isHidden,
+            string reason,
+            [Service] IModerationService moderationService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await moderationService.ModerateInquiryVisibilityAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    inquiryId,
+                    isHidden,
+                    reason,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        public async Task<Comment> ModerateCommentVisibility(
+            Guid commentId,
+            bool isHidden,
+            string reason,
+            [Service] IModerationService moderationService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await moderationService.ModerateCommentVisibilityAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    commentId,
+                    isHidden,
+                    reason,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+        }
+
         [Authorize]
         public async Task<UserInteraction> InteractWithUser(
             Guid targetUserId,
             InteractionType type,
-            [Service] OneItbContext context,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] ISocialGraphService socialGraphService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
-            Guid observerId = GetAuthenticatedUserId(httpContextAccessor);
-            if (observerId == targetUserId)
-                throw new GraphQLException("No podÃ©s interactuar socialmente con tu propio usuario.");
-
-            bool targetExists = await context.Users.AnyAsync(user => user.Id == targetUserId && user.IsActive);
-            if (!targetExists)
-                throw new GraphQLException("Usuario objetivo no encontrado.");
-
-            UserInteraction? interaction = await context.UserInteractions
-                .SingleOrDefaultAsync(item => item.ObserverId == observerId && item.TargetId == targetUserId);
-
-            if (interaction is null)
+            try
             {
-                interaction = new UserInteraction
-                {
-                    Id = Guid.NewGuid(),
-                    ObserverId = observerId,
-                    TargetId = targetUserId,
-                    Type = type,
-                    CreatedAt = DateTime.UtcNow
-                };
-                context.UserInteractions.Add(interaction);
+                return await socialGraphService.SetInteractionAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    targetUserId,
+                    type,
+                    cancellationToken);
             }
-            else
+            catch (InvalidOperationException ex)
             {
-                interaction.Type = type;
-                interaction.CreatedAt = DateTime.UtcNow;
+                throw CreateUserError(ex.Message);
             }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+        }
 
-            await context.SaveChangesAsync();
-            return interaction;
+        [Authorize]
+        public async Task<FollowStatePayload> FollowUser(
+            Guid targetUserId,
+            [Service] ISocialGraphService socialGraphService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await socialGraphService.FollowUserAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    targetUserId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<FollowStatePayload> UnfollowUser(
+            Guid targetUserId,
+            [Service] ISocialGraphService socialGraphService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await socialGraphService.UnfollowUserAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    targetUserId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
         }
 
         [Authorize(Roles = new[] { "Administrador", "Profesor" })]
@@ -816,7 +946,7 @@ namespace OneITB.GraphQL.Mutations
                     recipients,
                     NotificationType.JobOffer,
                     $"Nueva oferta laboral: {jobOffer.Title} en {jobOffer.Company}.",
-                    "/empleos");
+                    $"/empleos?jobOfferId={jobOffer.Id:D}");
 
                 return jobOffer;
             }
@@ -897,7 +1027,7 @@ namespace OneITB.GraphQL.Mutations
                     new[] { application.ApplicantId },
                     NotificationType.JobApplication,
                     $"Tu postulacion a {application.JobOffer.Title} fue {statusLabel}.",
-                    "/empleos");
+                    $"/empleos?jobOfferId={application.JobOfferId:D}");
 
                 if (status is JobApplicationStatus.Reviewed or JobApplicationStatus.Rejected)
                 {

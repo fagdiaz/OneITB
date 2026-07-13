@@ -20,14 +20,85 @@ namespace Services.Moderation
         public IQueryable<CommunityReport> GetCommunityReports()
         {
             return _context.CommunityReports
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .OrderByDescending(report => report.CreatedAt);
+        }
+
+        public async Task<Inquiry> ModerateInquiryVisibilityAsync(
+            Guid actorUserId,
+            Guid inquiryId,
+            bool isHidden,
+            string reason,
+            CancellationToken cancellationToken = default)
+        {
+            await EnsureModeratorAsync(actorUserId, cancellationToken);
+            string normalizedReason = NormalizeModerationReason(reason);
+
+            Inquiry inquiry = await _context.Inquiries
+                .IgnoreQueryFilters()
+                .SingleOrDefaultAsync(item => item.Id == inquiryId, cancellationToken)
+                ?? throw new InvalidOperationException("La publicacion no existe.");
+
+            if (inquiry.IsHiddenByModerator == isHidden)
+                return inquiry;
+
+            inquiry.IsHiddenByModerator = isHidden;
+            inquiry.UpdatedAt = DateTime.UtcNow;
+            _context.ModerationAudits.Add(new ModerationAudit
+            {
+                Id = Guid.NewGuid(),
+                ActorUserId = actorUserId,
+                TargetInquiryId = inquiry.Id,
+                Action = isHidden ? "HideInquiry" : "RestoreInquiry",
+                Summary = normalizedReason,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return inquiry;
+        }
+
+        public async Task<Comment> ModerateCommentVisibilityAsync(
+            Guid actorUserId,
+            Guid commentId,
+            bool isHidden,
+            string reason,
+            CancellationToken cancellationToken = default)
+        {
+            await EnsureModeratorAsync(actorUserId, cancellationToken);
+            string normalizedReason = NormalizeModerationReason(reason);
+
+            Comment comment = await _context.Comments
+                .IgnoreQueryFilters()
+                .SingleOrDefaultAsync(item => item.Id == commentId, cancellationToken)
+                ?? throw new InvalidOperationException("El comentario no existe.");
+
+            if (comment.IsHiddenByModerator == isHidden)
+                return comment;
+
+            comment.IsHiddenByModerator = isHidden;
+            comment.UpdatedAt = DateTime.UtcNow;
+            _context.ModerationAudits.Add(new ModerationAudit
+            {
+                Id = Guid.NewGuid(),
+                ActorUserId = actorUserId,
+                TargetInquiryId = comment.InquiryId,
+                TargetCommentId = comment.Id,
+                Action = isHidden ? "HideComment" : "RestoreComment",
+                Summary = normalizedReason,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return comment;
         }
 
         public IQueryable<ModerationAudit> GetModerationAudits(int first)
         {
             int limit = Math.Clamp(first, 1, 100);
             return _context.ModerationAudits
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .Include(audit => audit.ActorUser)
                 .Include(audit => audit.TargetUser)
@@ -104,6 +175,28 @@ namespace Services.Moderation
             });
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task EnsureModeratorAsync(Guid actorUserId, CancellationToken cancellationToken)
+        {
+            string? role = await _context.Users
+                .AsNoTracking()
+                .Where(user => user.Id == actorUserId && user.IsActive)
+                .Select(user => user.Role)
+                .SingleOrDefaultAsync(cancellationToken);
+
+            if (role is not ("Administrador" or "Moderador"))
+                throw new InvalidOperationException("No tenes permisos para moderar contenido.");
+        }
+
+        private static string NormalizeModerationReason(string reason)
+        {
+            string normalized = reason?.Trim() ?? string.Empty;
+            if (normalized.Length < 5)
+                throw new ArgumentException("El motivo de moderacion debe tener al menos 5 caracteres.");
+            if (normalized.Length > 500)
+                throw new ArgumentException("El motivo de moderacion no puede superar 500 caracteres.");
+            return normalized;
         }
     }
 }

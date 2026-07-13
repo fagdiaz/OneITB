@@ -3,6 +3,7 @@ import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Header } from './Header'
 import { SideBar } from './SideBar'
 import { MiniChatWidget } from '../../chat/MiniChatWidget'
+import { Footer } from '../Footer'
 import useAuth from '../../../hooks/useAuth'
 
 /**
@@ -32,7 +33,7 @@ export const PrivateLayout = () => {
   // instead of evaluating auth.id (which is still {} at this point).
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-800">
         <div className="flex flex-col items-center gap-3 text-slate-400 dark:text-slate-500">
           <svg
             className="animate-spin h-8 w-8 text-blue-500"
@@ -60,7 +61,7 @@ export const PrivateLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-slate-50 text-slate-950 transition-colors dark:bg-slate-950 dark:text-slate-100">
+    <div className="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-slate-50/94 text-slate-950 transition-colors dark:bg-slate-800/92 dark:text-slate-100">
 
       {/* Top Navigation Bar */}
       <Header />
@@ -77,11 +78,13 @@ export const PrivateLayout = () => {
         </main>
 
         {/* Right-rail sidebar — hidden on mobile, visible on lg+ */}
-        <aside className="hidden lg:block w-72 shrink-0 overflow-y-auto border-l border-slate-200 bg-white transition-colors dark:border-white/10 dark:bg-slate-950">
+        <aside className="hidden lg:block w-72 shrink-0 overflow-y-auto border-l border-slate-200 bg-slate-50/90 transition-colors dark:border-white/10 dark:bg-slate-800/90">
           <SideBar />
         </aside>
 
       </div>
+
+      {auth.id && <Footer />}
 
       {/* Mini Chat Widget (Módulo 4) */}
       {auth.id && !location.pathname.toLowerCase().startsWith('/chat') && (

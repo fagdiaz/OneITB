@@ -1,8 +1,8 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-07-11
+**Ultima revision**: 2026-07-12
 
-**Estado global**: 98% (103 de 105 items)
+**Estado global**: 98% (106 de 108 items)
 
 **Feature Complete funcional core**: 100%. Los pendientes restantes pertenecen a regresion visual, credenciales externas, despliegue cloud real o ecosistema mobile.
 
@@ -37,7 +37,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Asociacion de usuarios a multiples carreras desde perfil.
 - [x] [I] Resumen de publicaciones en perfil publico.
 - [x] [I] Roles diferenciados e insignias de participacion.
-- [x] [I] Seguir, silenciar y bloquear usuarios.
+- [x] [I] Seguir/dejar de seguir con estado explicito e idempotente, ademas de silenciar y bloquear usuarios sin sobrescribir relaciones compatibles.
 - [x] [I] Controles de privacidad del perfil con masking backend-side para CV, bio, contacto y carreras ante terceros no autorizados.
 
 ## Modulo 3 - Carreras y materias: 100% (7/7)
@@ -50,17 +50,17 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Selectores en cascada carrera-materia en feed y administracion.
 - [x] [I] Progreso academico, cursadas y notas por usuario.
 
-## Modulo 4 - Feed, comentarios y multimedia: 100% (23/23)
+## Modulo 4 - Feed, comentarios y multimedia: 100% (25/25)
 
 - [x] [V] `Inquiry` vinculada a autor y materia sin N+1.
 - [x] [V] Creacion, lectura, refetch y persistencia de publicaciones.
 - [x] [I] Busqueda y filtros por carrera y materias.
-- [x] [I] Edicion y soft-delete de publicaciones.
-- [x] [V] Comentarios y respuestas anidadas.
-- [x] [I] Edicion y soft-delete de comentarios.
+- [x] [I] Edicion de texto/adjuntos y soft-delete de publicaciones exclusiva del autor.
+- [x] [V] Comentarios limitados a dos niveles; responder a una respuesta conserva la raiz, registra destinatario dirigido y muestra mencion sin crear un tercer nivel.
+- [x] [I] Edicion de texto/adjuntos y soft-delete de comentarios exclusiva del autor.
 - [x] [V] Reacciones con contador.
 - [x] [V] Reportes comunitarios.
-- [x] [I] Prioridad de seguidos y exclusion de silenciados/bloqueados.
+- [x] [I] Prioridad de seguidos y exclusion de silenciados/bloqueados, sin consultas por publicacion y con orden cronologico secundario cubierto por tests.
 - [x] [I] Upload desacoplado y `Inquiry.FileUrl`.
 - [x] [I] Adjuntos persistentes en comentarios y respuestas.
 - [x] [I] Imagenes inline con URL de backend, tarjetas de documentos y YouTube con miniatura previa y carga por click sobre `youtube-nocookie`.
@@ -71,12 +71,14 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Pruebas automatizadas backend de publicaciones, comentarios, archivos, busqueda, scoping y reacciones.
 - [x] [V] Selector de materias limitado a carreras propias, agrupado por carrera y ordenado por anio/nombre, con validacion backend contra bypass.
 - [x] [V] Adjuntos multiples con nombre original en publicaciones, comentarios y respuestas, maximo 10 archivos y 15 MB agregados.
-- [x] [I] Previsualizacion previa y galeria mixta no excluyente para YouTube, imagenes, video, PDF y documentos con visores accesibles.
+- [x] [I] Portada persistente sin recorte, mosaico mixto acotado que preserva YouTube y calcula overflow `+X`, galeria/carrusel e imagen de primera pagina PDF por worker local diferido; visor completo por Blob URL sin relajar protecciones anti-framing.
 - [x] [V] Reacciones persistentes en comentarios/respuestas y listado paginado de usuarios que reaccionaron a publicaciones propias.
-- [x] [V] Notificaciones sociales agrupadas persistentemente, reabiertas como no leidas y enlazadas a la publicacion objetivo.
+- [x] [V] Notificaciones sociales agrupadas persistentemente, reabiertas como no leidas y enlazadas a publicacion/comentario exactos cuando corresponde.
 - [x] [I] Footer institucional y eliminacion del compositor legacy duplicado del sidebar para conservar un unico flujo de publicacion.
+- [x] [I] Enlaces compartibles por publicacion con deep-link estable y feedback controlado.
+- [x] [I] Drag-and-drop de adjuntos, restauracion de foco en visores y fallback defensivo para previews rotas.
 
-## Modulo 5 - Mensajeria privada: 100% (8/8)
+## Modulo 5 - Mensajeria privada: 100% (9/9)
 
 - [x] [V] Persistencia de mensajes uno a uno.
 - [x] [V] Contactos e historial paginados.
@@ -86,6 +88,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Busqueda de contactos y mensajes.
 - [x] [I] Integracion entre chat completo y widget sin updates cruzados.
 - [x] [I] Reemplazar pub/sub en memoria por transporte distribuido Redis configurable.
+- [x] [I] Badges de no leidos independientes en navegacion/widget minimizado y recordatorio persistente, acotado e idempotente para mensajes con mas de una hora, respetando preferencias.
 
 ## Modulo 6 - Administracion y moderacion: 90% (9/10)
 
@@ -97,7 +100,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Silenciamiento temporal por moderadores.
 - [x] [I] Metricas, short IDs y jerarquia visual por rol.
 - [x] [V] Seed administrado e idempotente.
-- [x] [V] Auditoria persistente de acciones administrativas y de moderacion.
+- [x] [V] Auditoria persistente de acciones administrativas y moderacion reversible con motivo, separada de la edicion exclusiva del autor.
 - [ ] [P] Regresion runtime del panel tras cambios de materias y superadmin.
 
 ## Modulo 7 - Empleos y Gestor de Postulaciones: 100% (9/9)
@@ -105,7 +108,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Entidad `JobOffer` con FK explicita a `User` y `DeleteBehavior.Restrict`.
 - [x] [I] Entidad `JobApplication` con estados `Pending`, `Reviewed` y `Rejected`, FKs restrictivas e indice unico por oferta/postulante.
 - [x] [I] GraphQL `jobOffers`, `myJobOffers`, `createJobOffer`, `applyToJob`, `updateApplicationStatus` y subscription `jobOfferCreated`.
-- [x] [I] Vista `/empleos` con skeletons, empty state, tarjetas laborales, postulacion GraphQL y estado `Postulado`.
+- [x] [I] Vista `/empleos` con skeletons, empty state, tarjetas laborales, postulacion GraphQL, estado `Postulado` y deep-link que enfoca/resalta la oferta exacta.
 - [x] [I] Vista `/empleos/mis-ofertas` como Gestor de Postulaciones con postulantes, filtros por estado, perfil academico y acciones de revision/rechazo.
 - [x] [I] Badge realtime en Nav para nuevas ofertas laborales y limpieza al ingresar a `/empleos`.
 - [x] [I] Alertas por correo SMTP para cambios de estado de postulaciones, con fallback local sin romper desarrollo/CI.
@@ -136,7 +139,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Entorno local reproducible sin bloqueo de SQL SSPI/certificado HTTPS.
 - [x] [V] Limpieza de warnings de compilacion (Vite chunk size y .NET nullability).
 - [x] [I] Actualizacion controlada de dependencias y division del bundle frontend.
-- [x] [I] Sistema visual Clean Tech / Tech Noir con tema persistente, selector en Header y superficies principales dual-theme.
+- [x] [I] Sistema visual Clean Tech / Tech Noir con tema persistente, branding OneITB definitivo, textura global tenue, landing premium, Header institucional auto-hide accesible, Footer unificado y superficies principales dual-theme.
 - [x] [I] Dockerizacion productiva multi-stage para API .NET y frontend Nginx con reverse proxy SPA/WebSocket.
 - [x] [I] Orquestacion productiva `docker-compose.prod.yml` con SQL Server, Redis, API y frontend sin secretos versionados.
 - [x] [I] Almacenamiento cloud opcional con Cloudinary y fallback local para `/api/upload`.

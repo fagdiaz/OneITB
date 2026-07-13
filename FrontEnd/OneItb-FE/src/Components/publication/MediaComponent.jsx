@@ -1,20 +1,42 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import { GET_LINK_PREVIEW } from '../../data/graphql/queries/linkPreview';
-import { parseYouTubeContent } from '../../utils/mediaParser';
-import { MediaAttachment, YouTubeEmbed } from './MediaAttachment';
+import { getMediaType, parseYouTubeContent } from '../../utils/mediaParser';
+import { MediaAttachment, resolveMediaUrl, YouTubeEmbed } from './MediaAttachment';
+import { MediaGrid } from './MediaGrid';
 
 const URL_PATTERN = /https?:\/\/[^\s<>"]+/i;
 
-const MediaComponent = ({ textContext = '', fileUrl, attachments, previewData, compact = false }) => {
+const MediaComponent = ({
+  textContext = '',
+  fileUrl,
+  attachments,
+  previewData,
+  compact = false,
+  preferAttachmentCover = false,
+}) => {
   const [fetchedPreview, setFetchedPreview] = useState(null);
+  const [previewImageFailed, setPreviewImageFailed] = useState(false);
   const [loadLinkPreview] = useLazyQuery(GET_LINK_PREVIEW, { fetchPolicy: 'no-cache' });
   const firstUrl = textContext.match(URL_PATTERN)?.[0] ?? null;
   const { videoId } = useMemo(() => parseYouTubeContent(textContext), [textContext]);
   const normalizedAttachments = useMemo(() => {
-    if (attachments?.length) return attachments;
+    if (attachments?.length) return [...attachments].sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0));
     return fileUrl ? [{ id: `legacy:${fileUrl}`, fileUrl }] : [];
   }, [attachments, fileUrl]);
+  const imageGallery = useMemo(
+    () => normalizedAttachments
+      .filter((attachment) => getMediaType(attachment.fileUrl, attachment.contentType) === 'image')
+      .map((attachment) => ({
+        src: resolveMediaUrl(attachment.fileUrl),
+        title: attachment.originalFileName || 'Imagen adjunta',
+      })),
+    [normalizedAttachments],
+  );
+  const imageIndexByUrl = useMemo(
+    () => new Map(imageGallery.map((item, index) => [item.src, index])),
+    [imageGallery],
+  );
 
   useEffect(() => {
     if (!firstUrl || videoId || previewData) {
@@ -39,28 +61,43 @@ const MediaComponent = ({ textContext = '', fileUrl, attachments, previewData, c
   }, [firstUrl, videoId, previewData, loadLinkPreview]);
 
   const finalPreview = previewData || fetchedPreview;
+  useEffect(() => {
+    setPreviewImageFailed(false);
+  }, [finalPreview?.imageUrl]);
+
   const showPreviewImage = Boolean(finalPreview?.imageUrl) && (
     !finalPreview.imageUrl.startsWith('data:') ||
     /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,/.test(finalPreview.imageUrl)
-  );
+  ) && !previewImageFailed;
 
   if (!videoId && normalizedAttachments.length === 0 && !finalPreview?.success) return null;
+  const attachmentItems = normalizedAttachments.map((attachment) => ({
+    key: `attachment:${attachment.id || attachment.fileUrl}`,
+    kind: 'attachment',
+    attachment,
+  }));
+  const videoItem = videoId ? [{ key: `youtube:${videoId}`, kind: 'youtube', videoId }] : [];
+  const mediaItems = preferAttachmentCover && attachmentItems.length > 0
+    ? [...attachmentItems, ...videoItem]
+    : [...videoItem, ...attachmentItems];
+  const renderMediaItem = (item, index, isCompact) => {
+    if (item.kind === 'youtube') return <YouTubeEmbed videoId={item.videoId} compact={isCompact} />;
+    const absoluteUrl = resolveMediaUrl(item.attachment.fileUrl);
+    return (
+      <MediaAttachment
+        attachment={item.attachment}
+        compact={isCompact}
+        featured={index === 0}
+        tile
+        galleryItems={imageGallery}
+        galleryIndex={imageIndexByUrl.get(absoluteUrl) ?? 0}
+      />
+    );
+  };
 
   return (
     <div className="mt-3 space-y-3">
-      {videoId && <YouTubeEmbed videoId={videoId} compact={compact} />}
-
-      {normalizedAttachments.length > 0 && (
-        <div className={normalizedAttachments.length > 1 ? 'grid gap-3 sm:grid-cols-2' : 'space-y-3'}>
-          {normalizedAttachments.map((attachment, index) => (
-            <MediaAttachment
-              key={attachment.id || `${attachment.fileUrl}:${index}`}
-              attachment={attachment}
-              compact={compact}
-            />
-          ))}
-        </div>
-      )}
+      {mediaItems.length > 0 && <MediaGrid items={mediaItems} renderItem={renderMediaItem} compact={compact} />}
 
       {finalPreview?.success && !videoId && (
         <a
@@ -76,6 +113,7 @@ const MediaComponent = ({ textContext = '', fileUrl, attachments, previewData, c
                 alt={finalPreview.title || 'Vista previa del enlace'}
                 className="h-full w-full object-cover"
                 loading="lazy"
+                onError={() => setPreviewImageFailed(true)}
               />
             </div>
           ) : (

@@ -141,16 +141,6 @@ export const Nav = () => {
 
       {/* ── Main nav links ─────────────────────────────────────── */}
       <ul className="hidden min-w-0 items-center gap-1 list-none m-0 p-0 lg:flex">
-        <li>
-          <NavLink
-            to={isAuthenticatedUser ? '/feed' : '/'}
-            className={navClassFor(isAuthenticatedUser ? '/feed' : '/')}
-          >
-            <i className="fa-solid fa-house text-xs" />
-            <span>Inicio</span>
-          </NavLink>
-        </li>
-
         {isAuthenticatedUser && (
           <li>
             <NavLink to="/chat" className={`${navClassFor('/chat')} relative`}>
@@ -207,12 +197,12 @@ export const Nav = () => {
         )}
       </ul>
 
-      <div className="relative lg:hidden" ref={mobileMenuRef}>
+      <div className={`relative ${isAuthenticatedUser ? 'lg:hidden' : 'md:hidden'}`} ref={mobileMenuRef}>
         <button
           type="button"
           onClick={() => setMobileMenuOpen((current) => !current)}
           className={[
-            'flex h-9 w-9 items-center justify-center rounded-xl border border-white/10',
+            'relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/10',
             'bg-white/5 text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10 hover:text-white',
             mobileMenuOpen ? 'ring-1 ring-blue-300/30 shadow-[0_4px_14px_rgba(59,130,246,0.34)]' : '',
           ].join(' ')}
@@ -220,20 +210,16 @@ export const Nav = () => {
           aria-expanded={mobileMenuOpen}
         >
           <i className={`fa-solid ${mobileMenuOpen ? 'fa-xmark' : 'fa-bars'} text-sm`} />
+          {unreadMessageCount > 0 && !mobileMenuOpen && (
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border border-slate-950 bg-red-500 px-1 text-[9px] font-black leading-none text-white shadow-sm" aria-label={`${unreadMessageCount} mensajes sin leer`}>
+              {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+            </span>
+          )}
         </button>
 
         {mobileMenuOpen && (
-          <div className="absolute right-0 top-[calc(100%+12px)] z-[80] w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 p-2 text-slate-100 shadow-[0_24px_70px_rgba(15,23,42,0.45)] backdrop-blur-xl ring-1 ring-blue-400/10">
+          <div className="absolute right-0 top-[calc(100%+12px)] z-[80] w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-white/10 bg-slate-800/96 p-2 text-slate-100 shadow-[0_24px_70px_rgba(15,23,42,0.38)] backdrop-blur-xl ring-1 ring-blue-400/10">
             <div className="grid gap-1">
-              <NavLink
-                to={isAuthenticatedUser ? '/feed' : '/'}
-                onClick={() => setMobileMenuOpen(false)}
-                className={mobileNavClassFor(isAuthenticatedUser ? '/feed' : '/')}
-              >
-                <i className="fa-solid fa-house w-4 text-xs text-blue-200" />
-                <span>Inicio</span>
-              </NavLink>
-
               {isAuthenticatedUser && (
                 <>
                   <NavLink to="/chat" onClick={() => setMobileMenuOpen(false)} className={`${mobileNavClassFor('/chat')} relative`}>
@@ -328,7 +314,7 @@ export const Nav = () => {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute right-0 top-[calc(100%+12px)] z-[80] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 py-1.5 text-slate-900 shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur-xl ring-1 ring-slate-900/5 list-none m-0 p-0 dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-100 dark:shadow-[0_24px_70px_rgba(15,23,42,0.45)] dark:ring-blue-400/10">
+                <ul className="absolute right-0 top-[calc(100%+12px)] z-[80] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 py-1.5 text-slate-900 shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur-xl ring-1 ring-slate-900/5 list-none m-0 p-0 dark:border-white/10 dark:bg-slate-800/96 dark:text-slate-100 dark:shadow-[0_24px_70px_rgba(15,23,42,0.36)] dark:ring-blue-400/10">
                   <li>
                     <NavLink
                       to="/profile"
@@ -382,7 +368,7 @@ export const Nav = () => {
             </div>
           </>
         ) : (
-          <div className="hidden items-center gap-2 lg:flex">
+          <div data-testid="desktop-auth-actions" className="hidden items-center gap-2 md:flex">
             <Link
               to="/login"
               className={`${NAV_BASE} ${NAV_INACTIVE}`}

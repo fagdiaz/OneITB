@@ -1,126 +1,120 @@
-import React, { useRef, useCallback, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Nav } from './Nav'
-import { GlobalSearch } from './GlobalSearch'
-import useAuth from '../../../hooks/useAuth'
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { BrandLogo } from '../../branding/BrandLogo';
+import { usePointerSpotlight } from '../../../hooks/usePointerSpotlight';
+import useAuth from '../../../hooks/useAuth';
+import { GlobalSearch } from './GlobalSearch';
+import { Nav } from './Nav';
 
-/**
- * Header — Spotlight Effect
- *
- * Técnica de performance: las coordenadas del cursor se escriben
- * DIRECTAMENTE como CSS custom properties en el elemento del DOM
- * (headerRef.current.style.setProperty), sin pasar por useState.
- *
- * Resultado: CERO re-renders de React por movimiento de mouse.
- * El navegador actualiza solo la capa de composición de CSS.
- *
- * El spotlight es un div absoluto con pointer-events-none que usa
- * radial-gradient centrado en var(--mouse-x) / var(--mouse-y).
- * Los nav-items reciben clases de hover lift (translate + shadow)
- * para "levantarse" cuando la linterna pasa por detrás.
- */
+const HIDE_THRESHOLD = 96;
+const DIRECTION_DELTA = 6;
+
 export const Header = () => {
-  const { isAuthenticated, token } = useAuth()
-  const headerRef = useRef(null)
-  const spotlightRef = useRef(null)
-  const rafRef = useRef(null)
-  const isLoggedIn = Boolean(isAuthenticated && token)
+  const { isAuthenticated, token } = useAuth();
+  const location = useLocation();
+  const [isElevated, setIsElevated] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+  const previousScrollRef = useRef(0);
+  const scrollFrameRef = useRef(null);
+  const { containerRef, spotlightHandlers } = usePointerSpotlight();
+  const isLoggedIn = Boolean(isAuthenticated && token);
 
-  // Inicializa las CSS vars para que el spotlight empiece invisible
   useEffect(() => {
-    const el = headerRef.current
-    if (!el) return
-    el.style.setProperty('--mouse-x', '-9999px')
-    el.style.setProperty('--mouse-y', '-9999px')
-  }, [])
+    setIsHidden(false);
+  }, [location.pathname]);
 
-  const handleMouseMove = useCallback((e) => {
-    // Cancela el frame anterior para no acumular callbacks
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+  useEffect(() => {
+    previousScrollRef.current = Math.max(window.scrollY, 0);
 
-    rafRef.current = requestAnimationFrame(() => {
-      const el = headerRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      // Escritura directa → sin setState → sin re-render
-      el.style.setProperty('--mouse-x', `${x}px`)
-      el.style.setProperty('--mouse-y', `${y}px`)
-    })
-  }, [])
+    const handleScroll = () => {
+      if (scrollFrameRef.current !== null) return;
+      scrollFrameRef.current = window.requestAnimationFrame(() => {
+        const currentScroll = Math.max(window.scrollY, 0);
+        const delta = currentScroll - previousScrollRef.current;
+        const reducedMotion = typeof window.matchMedia === 'function'
+          && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const handleMouseLeave = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    const el = headerRef.current
-    if (!el) return
-    // Mueve el spotlight fuera del viewport para desvanecerlo
-    el.style.setProperty('--mouse-x', '-9999px')
-    el.style.setProperty('--mouse-y', '-9999px')
-  }, [])
+        setIsElevated(currentScroll > 12);
+        if (!isLoggedIn || reducedMotion || currentScroll < HIDE_THRESHOLD) {
+          setIsHidden(false);
+        } else if (delta > DIRECTION_DELTA) {
+          setIsHidden(true);
+        } else if (delta < -DIRECTION_DELTA) {
+          setIsHidden(false);
+        }
+
+        previousScrollRef.current = currentScroll;
+        scrollFrameRef.current = null;
+      });
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollFrameRef.current !== null) window.cancelAnimationFrame(scrollFrameRef.current);
+    };
+  }, [isLoggedIn]);
+
+  const revealHeader = () => setIsHidden(false);
 
   return (
-    <header
-      ref={headerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="relative isolate sticky top-0 z-40 flex h-14 w-full max-w-full shrink-0 items-center gap-2 overflow-visible border-b border-white/10 bg-slate-900 px-2 text-white shadow-md backdrop-blur-xl transition-colors dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-[0_14px_45px_rgba(2,6,23,0.45)] sm:gap-3 sm:px-4 no-print print:hidden"
-    >
-      {/*
-        pointer-events-none: no intercepta clicks ni hovers.
-        radial-gradient centrado en las CSS vars actualizadas por JS.
-        El degradado va de azul-índigo suave a transparente.
-        transition-opacity permite el fade-in/out al entrar/salir.
-        ────────────────────────────────────────────────────────────── */}
-      <div
-        ref={spotlightRef}
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-500"
-        style={{
-          background: [
-            'radial-gradient(',
-            '  380px circle at var(--mouse-x) var(--mouse-y),',
-            '  rgba(59, 130, 246, 0.18) 0%,',
-            '  rgba(99, 102, 241, 0.10) 40%,',
-            '  transparent 75%',
-            ')',
-          ].join(''),
-        }}
-      />
-
-      {/* Capa de brillo difuso secundaria (más estrecha, más blanca) */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          background: [
-            'radial-gradient(',
-            '  160px circle at var(--mouse-x) var(--mouse-y),',
-            '  rgba(191, 219, 254, 0.07) 0%,',
-            '  transparent 80%',
-            ')',
-          ].join(''),
-        }}
-      />
-
-      {/* ── BRAND ─────────────────────────────────────────────────── */}
-      <Link
-        to="/"
+    <>
+      {isLoggedIn && (
+        <div
+          data-testid="header-reveal-zone"
+          aria-hidden="true"
+          onPointerEnter={revealHeader}
+          className={`fixed inset-x-0 top-0 z-[45] h-2 bg-transparent ${isHidden ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        />
+      )}
+      <header
+        ref={containerRef}
+        {...spotlightHandlers}
+        onPointerEnter={revealHeader}
+        onFocusCapture={revealHeader}
         className={[
-          'relative z-10 shrink-0 rounded-lg px-2 py-1',
-          'text-lg font-extrabold tracking-tight text-white',
-          'transition-colors duration-150',
+          'isolate sticky top-0 z-40 flex h-14 w-full max-w-full shrink-0 items-center gap-2 overflow-visible border-b px-2 text-slate-100 transition-[transform,background-color,box-shadow,border-color] duration-300 ease-out sm:gap-3 sm:px-4 no-print print:hidden',
+          isHidden ? '-translate-y-full' : 'translate-y-0',
+          isElevated
+            ? 'border-cyan-300/15 bg-slate-900/90 shadow-[0_14px_44px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-800/92 dark:shadow-[0_18px_52px_rgba(15,23,42,0.38)]'
+            : 'border-slate-700/70 bg-slate-900 dark:border-white/10 dark:bg-slate-800',
         ].join(' ')}
       >
-        ONEITB
-      </Link>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 opacity-90 motion-reduce:hidden"
+          style={{
+            background: 'radial-gradient(440px circle at var(--spotlight-x) var(--spotlight-y), rgba(34,211,238,0.20), rgba(59,130,246,0.10) 44%, transparent 76%)',
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 motion-reduce:hidden"
+          style={{
+            background: 'radial-gradient(180px circle at var(--spotlight-x) var(--spotlight-y), rgba(224,242,254,0.10), transparent 82%)',
+          }}
+        />
 
-      {/* ── SEARCH + SPACER + NAV ─────────────────────────────────── */}
-      <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-        {isLoggedIn && <GlobalSearch />}
-        <div className="min-w-0 flex-1" />
-        <Nav />
-      </div>
-    </header>
-  )
-}
+        <Link
+          to="/"
+          aria-label="Ir al inicio de OneITB"
+          className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+        >
+          <BrandLogo
+            variant="symbol"
+            alt="OneITB"
+            className="h-8 w-8 object-contain sm:h-10 sm:w-10"
+            fetchpriority="high"
+          />
+        </Link>
+
+        <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          {isLoggedIn && <GlobalSearch />}
+          <div className="min-w-0 flex-1" />
+          <Nav />
+        </div>
+      </header>
+    </>
+  );
+};

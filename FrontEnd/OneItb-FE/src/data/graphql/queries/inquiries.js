@@ -17,6 +17,8 @@ export const GET_INQUIRIES = gql`
       }
       publishDate
       isActive
+      isHiddenByModerator
+      preferAttachmentCover
       reportCount
       user {
         id
@@ -43,6 +45,13 @@ export const GET_INQUIRIES = gql`
         inquiryId
         userId
         parentCommentId
+        replyToUserId
+        replyToUser {
+          id
+          firstName
+          lastName
+          fullName
+        }
         content
         fileUrl
         attachments {
@@ -59,6 +68,7 @@ export const GET_INQUIRIES = gql`
         }
         createdAt
         isActive
+        isHiddenByModerator
         reportCount
         user {
           id
@@ -97,6 +107,8 @@ export const GET_INQUIRIES_PAGE = gql`
         }
         publishDate
         isActive
+        isHiddenByModerator
+        preferAttachmentCover
         reportCount
         user {
           id
@@ -123,6 +135,13 @@ export const GET_INQUIRIES_PAGE = gql`
           inquiryId
           userId
           parentCommentId
+          replyToUserId
+          replyToUser {
+            id
+            firstName
+            lastName
+            fullName
+          }
           content
           fileUrl
           attachments {
@@ -139,6 +158,7 @@ export const GET_INQUIRIES_PAGE = gql`
           }
           createdAt
           isActive
+          isHiddenByModerator
           reportCount
           user {
             id

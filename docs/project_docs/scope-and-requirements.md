@@ -1,6 +1,6 @@
 # Alcance y requerimientos de OneITB23
 
-**Ultima alineacion con codigo**: 2026-07-08
+**Ultima alineacion con codigo**: 2026-07-12
 
 ## 1. Objetivo
 
@@ -44,24 +44,25 @@ El objetivo institucional es ofrecer una plataforma demostrable y mantenible par
 ### Muro social
 
 - **RF-008**: Crear, buscar, filtrar, editar y desactivar publicaciones; la materia debe pertenecer a una carrera habilitada para el autor, salvo alcance institucional explicito.
-- **RF-009**: Comentar y responder con hilos anidados de un nivel logico recursivo.
-- **RF-010**: Reaccionar a publicaciones, comentarios y respuestas; reportar, seguir, silenciar y bloquear. El autor puede consultar de forma paginada quienes reaccionaron a su publicacion.
-- **RF-011**: Adjuntar hasta 10 archivos y 15 MB agregados a publicaciones, comentarios y respuestas mediante carga desacoplada, conservando nombre original, tipo, tamano y orden.
-- **RF-012**: Mostrar conjuntamente YouTube y todos los adjuntos; imagenes/video/PDF usan visores controlados y los documentos conservan apertura o descarga explicita.
+- **RF-009**: Comentar con un maximo persistido de dos niveles. Al responder una respuesta, el sistema la agrega como hermana bajo el comentario raiz, registra el destinatario validado y antepone una mencion visible; nunca crea un tercer nivel.
+- **RF-010**: Reaccionar a publicaciones, comentarios y respuestas; reportar, seguir/dejar de seguir, silenciar y bloquear. Follow, Mute y Block se persisten como relaciones explicitas sin sobrescribir estados compatibles. El autor puede consultar de forma paginada quienes reaccionaron a su publicacion.
+- **RF-011**: Adjuntar hasta 10 archivos y 15 MB agregados a publicaciones, comentarios y respuestas mediante carga desacoplada, conservando nombre original, tipo, tamano y orden; el autor puede reemplazarlos al editar.
+- **RF-012**: Mostrar conjuntamente YouTube y adjuntos con una portada elegida en un mosaico acotado (cuatro tiles por publicacion y tres por comentario). La portada PDF renderiza su primera pagina mediante PDF.js/worker local diferido; el documento completo usa una Blob URL revocable sin debilitar headers anti-framing.
 - **RF-013**: Priorizar autores seguidos y excluir silenciados/bloqueados del feed.
-- **RF-013B**: Agrupar persistentemente notificaciones de comentarios y reacciones por destinatario, publicacion y tipo, con contador y navegacion dirigida al contenido.
+- **RF-013B**: Agrupar persistentemente notificaciones de comentarios y reacciones por destinatario, publicacion y tipo, con contador y navegacion dirigida a `inquiryId` y, cuando corresponde, al `commentId` exacto con scroll/resaltado temporal.
 
 ### Mensajeria
 
 - **RF-014**: Mantener conversaciones privadas uno a uno con historial persistente.
 - **RF-015**: Recibir mensajes nuevos por WebSocket con aislamiento por usuario autenticado.
 - **RF-016**: Buscar contactos y mensajes y marcar mensajes como leidos.
+- **RF-016B**: Mostrar badges de mensajes no leidos y generar como maximo un recordatorio persistente por usuario cuando existan mensajes con al menos una hora de antiguedad, respetando sus preferencias.
 
 ### Administracion y moderacion
 
 - **RF-017**: Gestionar usuarios, roles, carreras y materias desde un panel protegido.
 - **RF-018**: Gestionar reportes, publicaciones y comentarios con permisos diferenciados.
-- **RF-019**: Permitir silenciamientos temporales y soft-delete; no borrar contenido social fisicamente.
+- **RF-019**: Reservar la edicion y desactivacion de contenido al autor. Moderadores y administradores solo pueden ocultar/restaurar contenido de forma reversible, con motivo obligatorio y auditoria persistente; no se borra contenido social fisicamente.
 
 ### Recursos academicos, SIU y notificaciones
 

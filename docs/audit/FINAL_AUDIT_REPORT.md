@@ -1,14 +1,14 @@
 # Reporte final de auditoria tecnica - OneITB23
 
-**Fecha**: 2026-07-11
-**Specs de referencia**: `specs/171-production-security-and-seeding/`, `specs/173-enterprise-jobs-ats-seeder-qa/`, `specs/174-ux-alignment-and-smtp/`, `specs/175-privacy-controls-and-smoke-tests/`, `specs/178-qa-session2-social-core-fixes/`
-**Estado global del roadmap**: 98% (103/105 items); core funcional Feature Complete
+**Fecha**: 2026-07-12
+**Specs de referencia**: `specs/171-production-security-and-seeding/`, `specs/173-enterprise-jobs-ats-seeder-qa/`, `specs/174-ux-alignment-and-smtp/`, `specs/175-privacy-controls-and-smoke-tests/`, `specs/178-qa-session2-social-core-fixes/`, `specs/179-social-polish-quick-wins/`, `specs/180-final-release-candidate-audit/`, `specs/181-qa-session3-media-moderation/`, `specs/182-qa-session4-feed-hierarchy-and-media-grid/`, `specs/183-premium-branding-landing/`, `specs/184-qa-master-polish-and-layout/`
+**Estado global del roadmap**: 98% (106/108 items); core funcional Feature Complete
 
 ## 1. Resumen ejecutivo
 
 OneITB23 se encuentra en fase avanzada de cierre tecnico y se aproxima al Code Freeze funcional. La plataforma ya cubre autenticacion, perfiles/CV, feed social, multimedia, mensajeria privada, administracion/moderacion, recursos academicos, progreso academico, adaptador SIU mock, notificaciones, empleabilidad y un set de over-delivery institucional: Audit Trail EF, constancias academicas, credenciales publicas aprobadas y toasts globales.
 
-Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 cerro baselines reales de testing y resiliencia sin agregar features nuevas. La Spec 170 cerro la brecha de infraestructura productiva: Docker multicontenedor, Redis Pub/Sub, Cloudinary opcional, rate limiting y security headers. La Spec 171 cerro brechas finales de seguridad de API y demo readiness: profundidad maxima GraphQL, lockout persistente por cuenta y seeding productivo configurable sin secretos versionados. La Spec 173 agrego empleos y postulaciones; la Spec 174 alineo la terminologia hacia Gestor de Postulaciones e incorporo SMTP real con fallback local. La Spec 175 cerro controles de privacidad de perfil y agrego un smoke SMTP admin-only. La Spec 178 normalizo adjuntos sociales multiples, reacciones de comentarios, notificaciones agrupadas y scoping academico del muro. Google SSO, despliegue Azure real y mobile quedan bloqueados/pendientes hasta contar con credenciales, recursos cloud y alcance aprobado.
+Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 cerro baselines reales de testing y resiliencia sin agregar features nuevas. La Spec 170 cerro la brecha de infraestructura productiva: Docker multicontenedor, Redis Pub/Sub, Cloudinary opcional, rate limiting y security headers. La Spec 171 cerro brechas finales de seguridad de API y demo readiness: profundidad maxima GraphQL, lockout persistente por cuenta y seeding productivo configurable sin secretos versionados. La Spec 173 agrego empleos y postulaciones; la Spec 174 alineo la terminologia hacia Gestor de Postulaciones e incorporo SMTP real con fallback local. La Spec 175 cerro controles de privacidad de perfil y agrego un smoke SMTP admin-only. Las Specs 178, 179, 181 y 182 consolidaron el muro: adjuntos multiples, mosaico/portada PDF segura, nesting dirigido acotado, ownership estricto, moderacion reversible auditada, seguidores explicitos, notificaciones exactas y recordatorios de mensajes. La Spec 180 ejecuto auditoria Release Candidate y corrigio un bug real de idempotencia en el seeder enterprise. La Spec 183 retiro el laboratorio visual temporal y adopto la identidad OneITB definitiva. La Spec 184 cerro el polish tecnico verificable de Header/Footer, contraste, mosaico multimedia, menciones dirigidas, preferencias y navegacion laboral exacta, con lifecycle cleanup y pruebas de regresion. Google SSO, despliegue Azure real y mobile quedan bloqueados/pendientes hasta contar con credenciales, recursos cloud y alcance aprobado.
 
 ## 2. Acciones ejecutadas
 
@@ -134,6 +134,27 @@ Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 c
 | Frontend build tras Spec 178 | PASS, 356 modulos, 1.07 s |
 | Smoke GraphQL autenticado Spec 178 | PASS: scoping, adjuntos, comentarios, reacciones, listado de likes, agrupacion y deep-link |
 | Browser QA Spec 178 | PARCIAL: inspeccion autenticada ejecutada y sidebar legacy corregido; recarga final bloqueada por politica de URL de la herramienta |
+| Backend build Spec 180 | PASS, 0 warnings, 0 errores |
+| Backend tests Spec 180 | PASS, 47/47 |
+| EF drift Spec 180 | PASS, sin cambios pendientes |
+| Frontend tests Spec 180 | PASS, 4 archivos / 12 tests |
+| Frontend build Spec 180 | PASS, 357 modulos, 743 ms |
+| Runtime GraphQL smoke Spec 180 | PASS, backend Release inicia en Development y `{ __typename }` responde HTTP 200 |
+| Seeder enterprise Spec 180 | PASS, `JobApplications` idempotente por `Id` y por `JobOfferId + ApplicantId` |
+| Migracion `AddMediaModerationState` Spec 181 | PASS, aplicada a Docker SQL y EF sin drift |
+| Backend build/tests Spec 181 | PASS, 0 warnings/0 errores y 55/55 tests |
+| Frontend build/tests Spec 181 | PASS, Vite 360 modulos/879 ms y 8 archivos/18 tests |
+| Runtime schema Spec 181 | PASS, `/health` Healthy, GraphQL HTTP 200 y mutaciones sociales/moderacion introspectadas |
+| Migracion `AddDirectedRepliesAndSocialGraphIndex` Spec 182 | PASS, aplicada a Docker SQL; EF sin drift y FKs restrictivas |
+| Backend tests Spec 182 | PASS, 62/62 |
+| Frontend tests/build Spec 182 | PASS, 12 archivos/25 tests; 368 modulos en 1.12 s con PDF.js separado |
+| NPM audit productivo Spec 182 | PASS, 0 vulnerabilidades |
+| Runtime GraphQL autenticado Spec 182 | PASS: login, follow/query/unfollow, respuesta dirigida con raiz/destinatario y cleanup por soft-delete |
+| Frontend tests/build Spec 183 | PASS, 16 archivos/31 tests y Vite 373 modulos/941 ms |
+| Frontend/backend tests Spec 184 | PASS, 18 archivos/39 tests y 63/63 tests .NET |
+| Builds Release Spec 184 | PASS, backend 0 warnings/0 errores y Vite 374 modulos/1.07 s en la ejecucion final |
+| NPM audit Spec 184 | PASS, 0 vulnerabilidades |
+| Runtime schema Spec 184 | PASS, GraphQL HTTP 200 y `Comment.replyToUser` expuesto en el schema real |
 
 Advertencia de entorno: `NU1900` aparece porque el runner local no puede consultar metadata de vulnerabilidades en `https://api.nuget.org/v3/index.json`. No es una advertencia de codigo fuente.
 
@@ -157,7 +178,8 @@ Estos puntos no deben presentarse como cerrados hasta tener implementacion y evi
 - SMTP esta implementado con fallback seguro y smoke admin-only, pero requiere proveedor/secretos reales y prueba de entrega para elevarlo a `[V]`.
 - El compose productivo fue construido y validado estaticamente; la ejecucion completa contra migraciones y trafico real debe hacerse con secretos definitivos.
 - La validacion visual completa del panel admin, hub academico, `/empleos` y `/empleos/mis-ofertas` sigue dependiendo de una sesion de navegador autenticada.
-- La Spec 178 tiene validacion funcional real por REST/GraphQL y una inspeccion browser parcial; resta confirmar manualmente el sidebar corregido y las interacciones de file picker/lightbox en el navegador de presentacion.
+- Las Specs 178/179/181/182 tienen validacion funcional por tests, schema y smoke REST/GraphQL donde aplica; resta confirmar manualmente portada/mosaico PDF, reemplazo de adjuntos, carrusel, highlight dirigido, badge minimizado, Follow en feed/perfil, moderacion con motivo y preferencias en una sesion autenticada del navegador de presentacion.
+- El seeder enterprise ya no bloquea el arranque al reejecutarse sobre una base demo existente; queda recomendado ejecutar una regeneracion completa de base antes de la defensa solo si se necesita partir de datos limpios.
 - El entorno necesita restauracion NuGet con red para ejecutar auditoria de vulnerabilidades sin warnings `NU1900`.
 - Open Graph perfecto para LinkedIn requiere SSR o HTML renderizado desde backend; la SPA actual actualiza meta tags en runtime y ofrece URL publica compartible, pero los crawlers pueden no ejecutar JavaScript.
 - El badge rojo de "Empleos nuevos" en la navegacion es deliberadamente efimero: depende del estado WebSocket/Apollo en memoria, se limpia al ingresar a `/empleos` y no persiste tras recargar la pagina. Si se requiere contador persistente, debe modelarse como notificacion leida/no leida en base de datos.

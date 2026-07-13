@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getFileName, getMediaType } from '../../utils/mediaParser';
 import { apiBaseUrl } from '../../utils/uploadFile';
 import { MediaViewerModal } from './MediaViewerModal';
+import { PdfFirstPageThumbnail } from './PdfFirstPageThumbnail';
 
 const fileStyles = {
   image: { icon: 'fa-file-image', iconClass: 'bg-emerald-50 text-emerald-600', label: 'Imagen' },
@@ -63,7 +64,15 @@ export const YouTubeEmbed = ({ videoId, compact = false }) => {
   );
 };
 
-export const MediaAttachment = ({ attachment, fileUrl, compact = false }) => {
+export const MediaAttachment = ({
+  attachment,
+  fileUrl,
+  compact = false,
+  featured = false,
+  galleryItems = [],
+  galleryIndex = 0,
+  tile = false,
+}) => {
   const descriptor = attachment ?? { fileUrl };
   const sourceUrl = descriptor?.fileUrl;
   const [imageFailed, setImageFailed] = useState(false);
@@ -84,15 +93,19 @@ export const MediaAttachment = ({ attachment, fileUrl, compact = false }) => {
   if (type === 'image' && !imageFailed) {
     return (
       <>
-        <button type="button" onClick={() => setViewerOpen(true)} className="block w-full overflow-hidden rounded-lg text-left">
+        <button type="button" onClick={() => setViewerOpen(true)} className={`block w-full overflow-hidden text-left ${tile ? 'h-full bg-slate-100 dark:bg-slate-700/60' : 'rounded-lg'}`}>
           <img
             src={absoluteUrl}
             alt={`Archivo adjunto: ${fileName}`}
             loading="lazy"
             onError={() => setImageFailed(true)}
-            className={compact
+            className={tile
+              ? `h-full w-full cursor-zoom-in ${featured ? 'object-contain' : 'object-cover'}`
+              : compact
               ? 'max-h-48 w-auto max-w-full cursor-zoom-in rounded-md object-contain'
-              : 'max-h-96 w-full cursor-zoom-in rounded-lg object-cover'}
+              : featured
+                ? 'max-h-[32rem] w-full cursor-zoom-in rounded-lg object-contain'
+                : 'max-h-72 w-full cursor-zoom-in rounded-lg object-cover'}
           />
         </button>
         <MediaViewerModal
@@ -101,6 +114,8 @@ export const MediaAttachment = ({ attachment, fileUrl, compact = false }) => {
           type="image"
           src={absoluteUrl}
           title={fileName}
+          galleryItems={galleryItems}
+          initialIndex={galleryIndex}
         />
       </>
     );
@@ -112,9 +127,9 @@ export const MediaAttachment = ({ attachment, fileUrl, compact = false }) => {
         <button
           type="button"
           onClick={() => setViewerOpen(true)}
-          className="group relative block w-full overflow-hidden rounded-lg bg-slate-950"
+          className={`group relative block w-full overflow-hidden bg-slate-950 ${tile ? 'h-full' : 'rounded-lg'}`}
         >
-          <video src={absoluteUrl} muted preload="metadata" className={`${compact ? 'max-h-48' : 'max-h-96'} w-full object-contain opacity-80`} />
+          <video src={absoluteUrl} muted preload="metadata" className={`${tile ? 'h-full' : compact ? 'max-h-48' : 'max-h-96'} w-full object-cover opacity-80`} />
           <span className="absolute inset-0 flex items-center justify-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-slate-950 shadow-lg transition group-hover:scale-105">
               <i className="fa-solid fa-play ml-0.5" />
@@ -128,6 +143,24 @@ export const MediaAttachment = ({ attachment, fileUrl, compact = false }) => {
           src={absoluteUrl}
           title={fileName}
         />
+      </>
+    );
+  }
+
+  if (type === 'pdf' && tile) {
+    return (
+      <>
+        <div className="group relative h-full min-h-36 overflow-hidden bg-slate-100 dark:bg-slate-900">
+          <PdfFirstPageThumbnail src={absoluteUrl} title={fileName} compact={compact} />
+          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-10 text-white">
+            <span className="min-w-0 truncate text-xs font-semibold" title={fileName}>{fileName}</span>
+            <span className="flex shrink-0 gap-1">
+              <button type="button" onClick={() => setViewerOpen(true)} aria-label={`Ver ${fileName}`} className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 hover:bg-white/25"><i className="fa-regular fa-eye" /></button>
+              <a href={absoluteUrl} target="_blank" rel="noreferrer" download aria-label={`Descargar ${fileName}`} className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 hover:bg-white/25"><i className="fa-solid fa-download" /></a>
+            </span>
+          </div>
+        </div>
+        <MediaViewerModal isOpen={viewerOpen} onClose={() => setViewerOpen(false)} type="pdf" src={absoluteUrl} title={fileName} />
       </>
     );
   }

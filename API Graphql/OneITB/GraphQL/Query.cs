@@ -109,6 +109,24 @@ namespace GraphQL.GraphQL
             return socialService.GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds, inquiryId);
         }
 
+        [Authorize]
+        public async Task<IReadOnlyList<Guid>> GetMyFollowedUserIds(
+            [Service] ISocialGraphService socialGraphService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await socialGraphService.GetFollowedUserIdsAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
+        }
+
         public async Task<InquiryPage> GetInquiriesPage(
             string? searchTerm,
             int? careerId,

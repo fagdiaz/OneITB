@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MediaComponent from './MediaComponent';
 import { AttachmentDraftPicker } from './AttachmentDraftPicker';
+import { MentionText } from './MentionText';
 
 const buildCommentTree = (comments = []) => {
   const nodes = new Map(comments.map((comment) => [comment.id, {
@@ -14,7 +15,8 @@ const buildCommentTree = (comments = []) => {
 
   nodes.forEach((comment) => {
     const parent = comment.parentCommentId ? nodes.get(comment.parentCommentId) : null;
-    if (parent) parent.replies.push(comment);
+    const canonicalParent = parent?.parentCommentId ? nodes.get(parent.parentCommentId) : parent;
+    if (canonicalParent) canonicalParent.replies.push(comment);
     else roots.push(comment);
   });
 
@@ -69,6 +71,9 @@ const CommentNode = ({
   isModerator,
   onEditComment,
   onToggleComment,
+  onModerateComment,
+  targetCommentId,
+  depth = 0,
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -76,8 +81,13 @@ const CommentNode = ({
   const [replyFiles, setReplyFiles] = useState([]);
   const [fileError, setFileError] = useState(null);
   const [draftContent, setDraftContent] = useState(comment.content);
+  const [retainedAttachments, setRetainedAttachments] = useState(comment.attachments ?? []);
+  const [editFiles, setEditFiles] = useState([]);
+  const [editFileError, setEditFileError] = useState(null);
   const replyInputRef = useRef(null);
-  const canManage = comment.userId === auth?.id || isModerator;
+  const nodeRef = useRef(null);
+  const [isHighlighted, setIsHighlighted] = useState(false);
+  const canAuthorManage = comment.userId === auth?.id;
   const roleStyle = getRoleStyle(comment.user?.role);
   const isAdminComment = comment.user?.role === 'Administrador';
   const reactions = comment.reactions ?? [];
@@ -89,11 +99,37 @@ const CommentNode = ({
     return () => window.cancelAnimationFrame(frame);
   }, [isReplying]);
 
+  useEffect(() => {
+    if (targetCommentId !== comment.id) return undefined;
+    setIsHighlighted(true);
+    const frame = window.requestAnimationFrame(() => {
+      nodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      nodeRef.current?.focus({ preventScroll: true });
+    });
+    const timeout = window.setTimeout(() => setIsHighlighted(false), 3500);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [comment.id, targetCommentId]);
+
+  const toggleReplyComposer = () => {
+    setIsReplying((current) => {
+      const next = !current;
+      if (next && depth > 0 && !reply.trim()) {
+        const mentionName = comment.user?.firstName?.trim();
+        setReply(mentionName ? `@${mentionName} ` : '');
+      }
+      return next;
+    });
+  };
+
   const submitReply = async (event) => {
     event.preventDefault();
     if (!reply.trim()) return;
     try {
-      await onReply(comment.id, reply, replyFiles);
+      const rootParentId = depth > 0 ? comment.parentCommentId : comment.id;
+      await onReply(rootParentId, reply, replyFiles, comment.id);
       setReply('');
       setReplyFiles([]);
       setFileError(null);
@@ -106,13 +142,19 @@ const CommentNode = ({
   const submitEdit = async (event) => {
     event.preventDefault();
     if (!draftContent.trim()) return;
-    await onEditComment(comment.id, draftContent);
-    setIsEditing(false);
+    try {
+      await onEditComment(comment.id, draftContent, retainedAttachments, editFiles);
+      setEditFiles([]);
+      setEditFileError(null);
+      setIsEditing(false);
+    } catch (error) {
+      setEditFileError(error.message || 'No se pudo actualizar el comentario.');
+    }
   };
 
   return (
-    <li className={`border-l-2 pl-3 ${isAdminComment ? 'border-blue-200 dark:border-blue-300/30' : 'border-slate-100 dark:border-white/10'}`}>
-      <div className={`rounded-lg p-3 ${isAdminComment ? 'bg-blue-50/70 ring-1 ring-blue-100 dark:bg-blue-500/10 dark:ring-blue-300/20' : 'bg-slate-50 dark:bg-slate-900/55 dark:ring-1 dark:ring-white/10'}`}>
+    <li id={`comment-${comment.id}`} ref={nodeRef} tabIndex={-1} className={`scroll-mt-28 border-l-2 outline-none transition-colors duration-700 ${depth > 0 ? 'ml-4 border-blue-200 pl-4 sm:ml-7 dark:border-blue-400/25' : 'border-slate-200 pl-3 dark:border-white/10'} ${isHighlighted ? 'rounded-xl bg-amber-100/80 ring-2 ring-amber-300 dark:bg-amber-400/10 dark:ring-amber-300/40' : ''}`}>
+      <div className={`rounded-lg p-3 ${depth > 0 ? 'bg-blue-50/45 dark:bg-blue-500/[0.06]' : ''} ${isAdminComment ? 'bg-blue-50/70 ring-1 ring-blue-100 dark:bg-blue-500/10 dark:ring-blue-300/20' : 'ring-1 ring-slate-100 dark:bg-slate-900/55 dark:ring-white/10'}`}>
         <div className="flex items-center justify-between gap-3">
           <span className={`text-xs font-semibold ${roleStyle.name}`}>
             <Link to={`/profile/${comment.user?.id}`} className="hover:underline">
@@ -140,13 +182,29 @@ const CommentNode = ({
         </div>
 
         {isEditing ? (
-          <form onSubmit={submitEdit} className="mt-2 flex gap-2">
-            <input value={draftContent} onChange={(event) => setDraftContent(event.target.value)} maxLength={1000} className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100" />
-            <button type="submit" className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">Guardar</button>
-            <button type="button" onClick={() => setIsEditing(false)} className="rounded-lg bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-slate-200">Cancelar</button>
+          <form onSubmit={submitEdit} className="mt-2 space-y-2">
+            <div className="flex gap-2">
+              <input value={draftContent} onChange={(event) => setDraftContent(event.target.value)} maxLength={1000} className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-700/75 dark:text-slate-100" />
+              <button type="submit" disabled={Boolean(editFileError)} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Guardar</button>
+              <button type="button" onClick={() => setIsEditing(false)} className="rounded-lg bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-slate-200">Cancelar</button>
+            </div>
+            {retainedAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {retainedAttachments.map((attachment) => (
+                  <span key={attachment.id || attachment.fileUrl} className="inline-flex max-w-full items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                    <span className="truncate">{attachment.originalFileName}</span>
+                    <button type="button" onClick={() => setRetainedAttachments((items) => items.filter((item) => item.id !== attachment.id))} aria-label={`Quitar ${attachment.originalFileName}`} className="hover:text-red-600"><i className="fa-solid fa-xmark" /></button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <AttachmentDraftPicker files={editFiles} onChange={setEditFiles} onError={setEditFileError} compact />
+            {editFileError && <p className="text-xs font-medium text-red-600">{editFileError}</p>}
           </form>
         ) : (
-          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-300">{comment.content}</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-200">
+            <MentionText text={comment.content} users={comment.replyToUser ? [comment.replyToUser] : []} />
+          </p>
         )}
 
         <MediaComponent textContext={comment.content} fileUrl={comment.fileUrl} attachments={comment.attachments} compact />
@@ -156,14 +214,17 @@ const CommentNode = ({
             <i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up mr-1.5`} />
             Me gusta{reactions.length > 0 ? ` · ${reactions.length}` : ''}
           </button>
-          <button type="button" onClick={() => setIsReplying((current) => !current)} className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300">
-            Responder
+          <button type="button" onClick={toggleReplyComposer} className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300">
+            {depth > 0 ? `Responder a ${comment.user?.firstName || 'usuario'}` : 'Responder'}
           </button>
-          {canManage && (
+          {canAuthorManage && (
             <>
-              <button type="button" onClick={() => setIsEditing((current) => !current)} className="text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-200">Editar</button>
+              <button type="button" onClick={() => { setDraftContent(comment.content); setRetainedAttachments(comment.attachments ?? []); setEditFiles([]); setEditFileError(null); setIsEditing((current) => !current); }} className="text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-200">Editar</button>
               <button type="button" onClick={() => onToggleComment(comment.id)} className="text-xs font-medium text-red-500 hover:text-red-600">Eliminar</button>
             </>
+          )}
+          {isModerator && !canAuthorManage && (
+            <button type="button" onClick={() => onModerateComment(comment.id)} className="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-300">Ocultar</button>
           )}
         </div>
       </div>
@@ -171,7 +232,7 @@ const CommentNode = ({
       {isReplying && (
         <form onSubmit={submitReply} className="mt-2 space-y-2">
           <div className="flex gap-2">
-            <input ref={replyInputRef} value={reply} onChange={(event) => setReply(event.target.value)} maxLength={1000} placeholder="Escribe una respuesta..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100" />
+            <input ref={replyInputRef} value={reply} onChange={(event) => setReply(event.target.value)} maxLength={1000} placeholder="Escribe una respuesta..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-700/75 dark:text-slate-100 dark:placeholder:text-slate-300" />
             <button type="submit" disabled={submitting || !reply.trim()} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
               {submitting ? 'Enviando...' : 'Enviar'}
             </button>
@@ -195,6 +256,9 @@ const CommentNode = ({
               isModerator={isModerator}
               onEditComment={onEditComment}
               onToggleComment={onToggleComment}
+              onModerateComment={onModerateComment}
+              targetCommentId={targetCommentId}
+              depth={depth + 1}
             />
           ))}
         </ul>
@@ -213,7 +277,9 @@ export const CommentThread = ({
   isModerator,
   onEditComment,
   onToggleComment,
+  onModerateComment,
   focusRequest,
+  targetCommentId,
 }) => {
   const [draft, setDraft] = useState('');
   const [draftFiles, setDraftFiles] = useState([]);
@@ -244,7 +310,7 @@ export const CommentThread = ({
     <section className="space-y-3 border-t border-slate-100 pt-3 dark:border-white/10">
       <form onSubmit={submitComment} className="space-y-2">
         <div className="flex gap-2">
-          <input ref={draftInputRef} value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={1000} placeholder="Sumate a la conversacion..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100" />
+          <input ref={draftInputRef} value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={1000} placeholder="Sumate a la conversacion..." className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-700/75 dark:text-slate-100 dark:placeholder:text-slate-300" />
           <button type="submit" disabled={submitting || !draft.trim()} className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500">
             {submitting ? 'Enviando...' : 'Comentar'}
           </button>
@@ -267,6 +333,9 @@ export const CommentThread = ({
               isModerator={isModerator}
               onEditComment={onEditComment}
               onToggleComment={onToggleComment}
+              onModerateComment={onModerateComment}
+              targetCommentId={targetCommentId}
+              depth={0}
             />
           ))}
         </ul>
