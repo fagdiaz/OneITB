@@ -14,6 +14,7 @@ export const BrandLogo = ({
   className = '',
   loading = 'eager',
   fetchpriority,
+  enhanceOnDark = true,
 }) => {
   const source = SOURCES[variant] ?? SOURCES.full;
 
@@ -22,7 +23,7 @@ export const BrandLogo = ({
       src={source}
       alt={decorative ? '' : alt}
       aria-hidden={decorative ? 'true' : undefined}
-      className={className}
+      className={`${enhanceOnDark ? 'dark:drop-shadow-[0_0_10px_rgba(248,250,252,0.58)]' : ''} ${className}`.trim()}
       loading={loading}
       decoding="async"
       fetchpriority={fetchpriority}

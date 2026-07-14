@@ -5,6 +5,7 @@ using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
 using Services.Notifications;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Services.Social
 {
@@ -12,6 +13,11 @@ namespace Services.Social
     {
         private const int MaxAttachmentCount = 10;
         private const long MaxAttachmentBytes = 15 * 1024 * 1024;
+        private const int MaxYouTubeLinks = 2;
+        private static readonly Regex UrlPattern = new(
+            @"https?://[^\s<>""']+",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+            TimeSpan.FromMilliseconds(250));
 
         private static readonly HashSet<string> AllowedAttachmentContentTypes = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -213,6 +219,7 @@ namespace Services.Social
             await EnsureUserCanCreateContentAsync(userId, "publicar", cancellationToken);
             string normalizedTitle = RequireText(title, 200, "El título");
             string normalizedContent = RequireText(content, 10000, "El contenido");
+            EnsureYouTubeLinkLimit(normalizedContent);
 
             string role = await _context.Users
                 .AsNoTracking()
@@ -442,8 +449,12 @@ namespace Services.Social
             if (inquiry.UserId != userId)
                 throw new InvalidOperationException("No tenÃ©s permisos para editar esta publicaciÃ³n.");
 
-            inquiry.Title = RequireText(newTitle, 200, "El tÃ­tulo");
-            inquiry.Content = RequireText(newContent, 10000, "El contenido");
+            string normalizedTitle = RequireText(newTitle, 200, "El tÃ­tulo");
+            string normalizedContent = RequireText(newContent, 10000, "El contenido");
+            EnsureYouTubeLinkLimit(normalizedContent);
+
+            inquiry.Title = normalizedTitle;
+            inquiry.Content = normalizedContent;
             if (attachments is not null)
             {
                 List<SocialAttachment> replacements = NormalizeAttachments(attachments, null, inquiry.Id, null);
@@ -458,6 +469,50 @@ namespace Services.Social
             inquiry.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync(cancellationToken);
             return await LoadInquiryGraphAsync(inquiry.Id, cancellationToken);
+        }
+
+        private static void EnsureYouTubeLinkLimit(string content)
+        {
+            int count = 0;
+            foreach (Match match in UrlPattern.Matches(content))
+            {
+                string candidate = match.Value.TrimEnd(')', ',', '.', '!', '?', ';', ':');
+                if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri? uri))
+                    continue;
+
+                string host = uri.Host.ToLowerInvariant();
+                string? videoId = null;
+                if (host == "youtu.be")
+                {
+                    videoId = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                }
+                else if (host is "youtube.com" or "www.youtube.com" or "m.youtube.com")
+                {
+                    string[] segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                    if (uri.AbsolutePath == "/watch")
+                    {
+                        videoId = uri.Query
+                            .TrimStart('?')
+                            .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(part => part.Split('=', 2))
+                            .Where(part => part.Length == 2 && part[0] == "v")
+                            .Select(part => Uri.UnescapeDataString(part[1]))
+                            .FirstOrDefault();
+                    }
+                    else if (segments.Length >= 2 && (segments[0] == "shorts" || segments[0] == "embed"))
+                    {
+                        videoId = segments[1];
+                    }
+                }
+
+                if (videoId is null || videoId.Length != 11 || videoId.Any(character =>
+                        !char.IsAsciiLetterOrDigit(character) && character is not '_' and not '-'))
+                    continue;
+
+                count++;
+                if (count > MaxYouTubeLinks)
+                    throw new InvalidOperationException("Cada publicacion admite como maximo 2 enlaces de YouTube.");
+            }
         }
 
         public async Task<Inquiry> ToggleInquiryStatusAsync(

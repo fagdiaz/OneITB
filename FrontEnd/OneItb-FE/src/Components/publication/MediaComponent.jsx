@@ -19,7 +19,7 @@ const MediaComponent = ({
   const [previewImageFailed, setPreviewImageFailed] = useState(false);
   const [loadLinkPreview] = useLazyQuery(GET_LINK_PREVIEW, { fetchPolicy: 'no-cache' });
   const firstUrl = textContext.match(URL_PATTERN)?.[0] ?? null;
-  const { videoId } = useMemo(() => parseYouTubeContent(textContext), [textContext]);
+  const { videoId, videoIds } = useMemo(() => parseYouTubeContent(textContext), [textContext]);
   const normalizedAttachments = useMemo(() => {
     if (attachments?.length) return [...attachments].sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0));
     return fileUrl ? [{ id: `legacy:${fileUrl}`, fileUrl }] : [];
@@ -76,12 +76,16 @@ const MediaComponent = ({
     kind: 'attachment',
     attachment,
   }));
-  const videoItem = videoId ? [{ key: `youtube:${videoId}`, kind: 'youtube', videoId }] : [];
+  const videoItems = videoIds.slice(0, 2).map((currentVideoId, index) => ({
+    key: `youtube:${currentVideoId}:${index}`,
+    kind: 'youtube',
+    videoId: currentVideoId,
+  }));
   const mediaItems = preferAttachmentCover && attachmentItems.length > 0
-    ? [...attachmentItems, ...videoItem]
-    : [...videoItem, ...attachmentItems];
-  const renderMediaItem = (item, index, isCompact) => {
-    if (item.kind === 'youtube') return <YouTubeEmbed videoId={item.videoId} compact={isCompact} />;
+    ? [...attachmentItems, ...videoItems]
+    : [...videoItems, ...attachmentItems];
+  const renderMediaItem = (item, index, isCompact, metadata = {}) => {
+    if (item.kind === 'youtube') return <YouTubeEmbed videoId={item.videoId} compact={isCompact} tile />;
     const absoluteUrl = resolveMediaUrl(item.attachment.fileUrl);
     return (
       <MediaAttachment
@@ -89,6 +93,8 @@ const MediaComponent = ({
         compact={isCompact}
         featured={index === 0}
         tile
+        landscapeCover={metadata.isLandscapePrimary}
+        onIntrinsicImageDimensions={metadata.reportDimensions}
         galleryItems={imageGallery}
         galleryIndex={imageIndexByUrl.get(absoluteUrl) ?? 0}
       />

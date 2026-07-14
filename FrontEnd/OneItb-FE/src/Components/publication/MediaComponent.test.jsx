@@ -26,7 +26,18 @@ describe('MediaComponent', () => {
 
     expect(screen.getByText('Video de YouTube')).toBeInTheDocument();
     expect(screen.getByText('OneITB.pdf')).toBeInTheDocument();
+    expect(screen.getByLabelText('Primera pagina de OneITB.pdf')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reproducir video de youtube/i })).toBeInTheDocument();
+  });
+
+  it('renders the two accepted YouTube links in source order', () => {
+    render(
+      <MockedProvider>
+        <MediaComponent textContext="Videos https://youtu.be/dQw4w9WgXcQ y https://youtu.be/9bZkp7q19f0" />
+      </MockedProvider>,
+    );
+
+    expect(screen.getAllByRole('button', { name: /reproducir video de youtube/i })).toHaveLength(2);
   });
 
   it('falls back when a link preview image cannot be loaded', () => {

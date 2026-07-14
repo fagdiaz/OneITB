@@ -29,16 +29,14 @@ const getYouTubeId = (rawUrl) => {
 };
 
 export const parseYouTubeContent = (content = '') => {
-  let videoId = null;
+  const videoIds = [];
   const text = content.replace(URL_PATTERN, (match) => {
-    if (videoId) return match;
-
     const trailing = match.match(TRAILING_PUNCTUATION)?.[0] ?? '';
     const candidate = trailing ? match.slice(0, -trailing.length) : match;
     const parsedId = getYouTubeId(candidate);
     if (!parsedId) return match;
 
-    videoId = parsedId;
+    videoIds.push(parsedId);
     return trailing;
   });
 
@@ -47,7 +45,9 @@ export const parseYouTubeContent = (content = '') => {
       .replace(/[ \t]{2,}/g, ' ')
       .replace(/[ \t]+\n/g, '\n')
       .trim(),
-    videoId,
+    videoId: videoIds[0] ?? null,
+    videoIds,
+    youtubeLinkCount: videoIds.length,
   };
 };
 

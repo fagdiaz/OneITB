@@ -167,6 +167,47 @@ public sealed class SocialServiceTests
     }
 
     [Fact]
+    public async Task AddInquiryAsync_RejectsMoreThanTwoYouTubeLinks()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddInquiryAsync(
+                ServiceTestData.StudentUserId,
+                ServiceTestData.SubjectId,
+                "Videos de la clase",
+                "https://youtu.be/dQw4w9WgXcQ https://youtube.com/watch?v=9bZkp7q19f0 https://youtube.com/embed/M7lc1UVf-VE"));
+
+        Assert.Contains("2 enlaces de YouTube", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(context.Inquiries);
+    }
+
+    [Fact]
+    public async Task EditInquiryAsync_RejectsMoreThanTwoYouTubeLinksWithoutChangingContent()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Videos de la clase",
+            "Contenido original");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.EditInquiryAsync(
+            ServiceTestData.StudentUserId,
+            inquiry.Id,
+            "Videos actualizados",
+            "https://youtu.be/dQw4w9WgXcQ https://youtube.com/watch?v=9bZkp7q19f0 https://youtube.com/embed/M7lc1UVf-VE"));
+
+        context.ChangeTracker.Clear();
+        Inquiry persisted = await context.Inquiries.IgnoreQueryFilters().SingleAsync(item => item.Id == inquiry.Id);
+        Assert.Equal("Contenido original", persisted.Content);
+    }
+
+    [Fact]
     public async Task AddCommentAsync_CreatesNestedReplyWithinSameInquiry()
     {
         await using var context = ServiceTestData.CreateContext();

@@ -58,5 +58,6 @@ describe('NotificationPreferencesModal', () => {
 
     expect(screen.getByRole('dialog')).toHaveClass('ml-auto', 'h-full');
     expect(screen.getByRole('presentation')).not.toHaveClass('items-center', 'justify-center');
+    expect(screen.getByRole('presentation').parentElement).toBe(document.body);
   });
 });

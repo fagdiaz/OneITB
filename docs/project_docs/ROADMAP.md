@@ -1,6 +1,6 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-07-12
+**Ultima revision**: 2026-07-13
 
 **Estado global**: 98% (106 de 108 items)
 
@@ -71,9 +71,9 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Pruebas automatizadas backend de publicaciones, comentarios, archivos, busqueda, scoping y reacciones.
 - [x] [V] Selector de materias limitado a carreras propias, agrupado por carrera y ordenado por anio/nombre, con validacion backend contra bypass.
 - [x] [V] Adjuntos multiples con nombre original en publicaciones, comentarios y respuestas, maximo 10 archivos y 15 MB agregados.
-- [x] [I] Portada persistente sin recorte, mosaico mixto acotado que preserva YouTube y calcula overflow `+X`, galeria/carrusel e imagen de primera pagina PDF por worker local diferido; visor completo por Blob URL sin relajar protecciones anti-framing.
+- [x] [I] Portada persistente sin recorte y adaptada por orientacion, mosaico mixto acotado que preserva hasta dos videos de YouTube y calcula overflow `+X`, galeria/carrusel e imagen de primera pagina PDF por worker local diferido; visor completo por Blob URL sin relajar protecciones anti-framing.
 - [x] [V] Reacciones persistentes en comentarios/respuestas y listado paginado de usuarios que reaccionaron a publicaciones propias.
-- [x] [V] Notificaciones sociales agrupadas persistentemente, reabiertas como no leidas y enlazadas a publicacion/comentario exactos cuando corresponde.
+- [x] [V] Notificaciones sociales agrupadas persistentemente, reabiertas como una unica fila no leida, con badge calculado solo por `IsRead == false` y enlaces a publicacion/comentario exactos cuando corresponde.
 - [x] [I] Footer institucional y eliminacion del compositor legacy duplicado del sidebar para conservar un unico flujo de publicacion.
 - [x] [I] Enlaces compartibles por publicacion con deep-link estable y feedback controlado.
 - [x] [I] Drag-and-drop de adjuntos, restauracion de foco en visores y fallback defensivo para previews rotas.

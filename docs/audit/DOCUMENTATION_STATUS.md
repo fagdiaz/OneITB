@@ -1,6 +1,6 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-07-12
+**Ultima verificacion**: 2026-07-13
 
 ## Fuentes canonicas
 
@@ -12,7 +12,7 @@
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente, actualizado hasta Spec 184 |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente, actualizado hasta Spec 185 |
 
 ## Documentacion complementaria
 
@@ -30,6 +30,7 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/185-media-notification-polish/` | Media Grid orientado por dimensiones, dos YouTube con limite UI/backend, PDF con primera hoja y pie de acciones, logo/nombres legibles en dark, transicion de tema accesible, textura global visible, preferencias en portal y badge estrictamente no leido. Backend 65/65, frontend 49/49, builds PASS, Vite 858 ms en el gate final, EF sin drift, npm audit 0 vulnerabilidades y runtime GraphQL HTTP 200; regresion visual manual pendiente |
 | `specs/184-qa-master-polish-and-layout/` | Header auto-hide defensivo, Footer unificado, textura global, dark mode suavizado, compositor acotado, mosaico mixto con portada/YouTube/overflow, menciones respaldadas por identidad, preferencias en drawer y deep-link laboral exacto. Backend 63/63, frontend 39/39, builds PASS, Vite 1.19 s, npm audit 0 vulnerabilidades y schema GraphQL runtime HTTP 200; regresion visual manual pendiente |
 | `specs/183-premium-branding-landing/` | Identidad final normalizada en cuatro assets canonicos, Header con isotipo aprobado y landing institucional unica Clean Tech/Tech Noir. Spotlight usa RAF sin re-render, reveals respetan reduced-motion y limpian observers; los PNG de fondo de 4.47/5.12 MB quedan fuera del bundle. Frontend 31/31, Vite build PASS en 941 ms, npm audit 0 vulnerabilidades y diff-check PASS; aprobacion visual responsive/manual pendiente |
 | `specs/182-qa-session4-feed-hierarchy-and-media-grid/` | Mosaico acotado 4/3, portada PDF por worker local diferido, respuestas dirigidas sin tercer nivel, deep-link exacto con highlight, widget no leido independiente y follow/unfollow explicito. Migracion aplicada a Docker SQL, EF sin drift, tests backend 62/62, frontend 25/25, Vite build PASS, npm audit 0 vulnerabilidades y smoke GraphQL autenticado PASS; regresion visual manual pendiente |

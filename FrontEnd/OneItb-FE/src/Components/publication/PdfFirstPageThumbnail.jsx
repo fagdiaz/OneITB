@@ -6,7 +6,7 @@ export const calculatePdfScale = (pageWidth, targetWidth, maximumScale = 2) => {
   return Math.min(targetWidth / pageWidth, maximumScale);
 };
 
-export const PdfFirstPageThumbnail = ({ src, title, compact = false }) => {
+export const PdfFirstPageThumbnail = ({ src, title, compact = false, fill = false }) => {
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
   const [shouldRender, setShouldRender] = useState(false);
@@ -77,7 +77,7 @@ export const PdfFirstPageThumbnail = ({ src, title, compact = false }) => {
   }, [compact, shouldRender, src]);
 
   return (
-    <div ref={hostRef} className={`relative flex w-full items-start justify-center overflow-hidden bg-slate-100 dark:bg-slate-900 ${compact ? 'h-40' : 'h-72'}`}>
+    <div ref={hostRef} className={`relative flex w-full items-start justify-center overflow-hidden bg-slate-100 dark:bg-slate-900 ${fill ? 'h-full min-h-28' : compact ? 'h-40' : 'h-72'}`}>
       {status !== 'ready' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400">
           <i className={`fa-solid ${status === 'error' ? 'fa-file-pdf text-red-500' : 'fa-spinner fa-spin'} text-3xl`} />

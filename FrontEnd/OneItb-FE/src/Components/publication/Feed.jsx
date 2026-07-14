@@ -91,15 +91,15 @@ const toAttachmentInput = (attachment, sortOrder) => ({
 });
 
 const roleStyles = {
-  Administrador: { name: 'text-indigo-700', badge: 'bg-indigo-50 text-indigo-500', label: 'admin' },
-  Moderador: { name: 'text-amber-700', badge: 'bg-amber-50 text-amber-600', label: 'moderador' },
-  Profesor: { name: 'text-emerald-700', badge: 'bg-emerald-50 text-emerald-600', label: 'profesor' },
-  Estudiante: { name: 'text-blue-700', badge: 'bg-blue-50 text-blue-600', label: 'estudiante' },
-  Egresado: { name: 'text-cyan-700', badge: 'bg-cyan-50 text-cyan-600', label: 'egresado' },
-  Empleador: { name: 'text-fuchsia-700', badge: 'bg-fuchsia-50 text-fuchsia-600', label: 'empleador' },
+  Administrador: { name: 'text-indigo-700 dark:text-indigo-200', badge: 'bg-indigo-50 text-indigo-500 dark:bg-indigo-400/15 dark:text-indigo-200', label: 'admin' },
+  Moderador: { name: 'text-amber-700 dark:text-amber-200', badge: 'bg-amber-50 text-amber-600 dark:bg-amber-400/15 dark:text-amber-200', label: 'moderador' },
+  Profesor: { name: 'text-emerald-700 dark:text-emerald-200', badge: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-200', label: 'profesor' },
+  Estudiante: { name: 'text-blue-700 dark:text-sky-200', badge: 'bg-blue-50 text-blue-600 dark:bg-sky-400/15 dark:text-sky-200', label: 'estudiante' },
+  Egresado: { name: 'text-cyan-700 dark:text-cyan-200', badge: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-400/15 dark:text-cyan-200', label: 'egresado' },
+  Empleador: { name: 'text-fuchsia-700 dark:text-fuchsia-200', badge: 'bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/15 dark:text-fuchsia-200', label: 'empleador' },
 };
 
-const getRoleStyle = (role) => roleStyles[role] ?? { name: 'text-slate-800', badge: 'bg-slate-100 text-slate-500', label: role || 'usuario' };
+const getRoleStyle = (role) => roleStyles[role] ?? { name: 'text-slate-800 dark:text-slate-100', badge: 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300', label: role || 'usuario' };
 
 const resolveAvatarUrl = (user) => {
   if (user?.avatarUrl) {
@@ -302,7 +302,9 @@ export const Feed = () => {
   );
   const isSearchResultsView = normalizedSearchTerm.length > 0;
   const isModerator = auth.role === 'Administrador' || auth.role === 'Moderador';
-  const composerVideoId = useMemo(() => parseYouTubeContent(content).videoId, [content]);
+  const composerYouTube = useMemo(() => parseYouTubeContent(content), [content]);
+  const composerVideoId = composerYouTube.videoId;
+  const hasTooManyYouTubeLinks = composerYouTube.youtubeLinkCount > 2;
   const publicationCareerOptions = careers;
   const mustSelectCareerForPost = isAdmin;
   const effectivePublicationSubjects = useMemo(() => {
@@ -377,6 +379,10 @@ export const Feed = () => {
   const handlePublish = async (event) => {
     event.preventDefault();
     if (!title.trim() || !content.trim() || !selectedSubject || attachmentError) return;
+    if (hasTooManyYouTubeLinks) {
+      showFeedback('error', 'Cada publicacion admite como maximo 2 enlaces de YouTube.');
+      return;
+    }
 
     let attachments = [];
 
@@ -560,6 +566,11 @@ export const Feed = () => {
     event.preventDefault();
     if (!editingPost?.title.trim() || !editingPost?.content.trim()) return;
 
+    if (parseYouTubeContent(editingPost.content).youtubeLinkCount > 2) {
+      showFeedback('error', 'Cada publicacion admite como maximo 2 enlaces de YouTube.');
+      return;
+    }
+
     try {
       let uploadedAttachments = [];
       if (editingPost.newFiles.length > 0) {
@@ -714,6 +725,20 @@ export const Feed = () => {
           onChange={(event) => setContent(event.target.value)}
           className="min-h-24 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-slate-700/75 dark:text-slate-100 dark:placeholder:text-slate-300"
         />
+        {composerYouTube.youtubeLinkCount >= 2 && (
+          <p
+            role={hasTooManyYouTubeLinks ? 'alert' : 'status'}
+            className={`rounded-lg border px-3 py-2 text-xs font-semibold ${
+              hasTooManyYouTubeLinks
+                ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-300/20 dark:bg-red-500/10 dark:text-red-200'
+                : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-300/20 dark:bg-amber-500/10 dark:text-amber-200'
+            }`}
+          >
+            {hasTooManyYouTubeLinks
+              ? `Detectamos ${composerYouTube.youtubeLinkCount} enlaces. Elimina los adicionales para publicar.`
+              : 'Alcanzaste el limite de 2 enlaces de YouTube por publicacion.'}
+          </p>
+        )}
         <AttachmentDraftPicker
           files={selectedFiles}
           onChange={setSelectedFiles}
@@ -783,7 +808,7 @@ export const Feed = () => {
           </select>
           <button
             type="submit"
-            disabled={isPublishing || isUploading || Boolean(attachmentError) || !title.trim() || !content.trim() || !selectedSubject}
+            disabled={isPublishing || isUploading || Boolean(attachmentError) || hasTooManyYouTubeLinks || !title.trim() || !content.trim() || !selectedSubject}
             className="w-full shrink-0 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 sm:w-auto"
           >
             {isUploading ? 'Subiendo...' : isPublishing ? 'Publicando...' : 'Publicar'}
@@ -984,6 +1009,9 @@ export const Feed = () => {
                     onChange={(event) => setEditingPost((current) => ({ ...current, content: event.target.value }))}
                     className="min-h-24 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  {parseYouTubeContent(editingPost.content).youtubeLinkCount > 2 && (
+                    <p role="alert" className="text-xs font-semibold text-red-600 dark:text-red-300">Cada publicacion admite como maximo 2 enlaces de YouTube.</p>
+                  )}
                   {editingPost.attachments.length > 0 && (
                     <ul className="grid gap-2 sm:grid-cols-2">
                       {editingPost.attachments.map((attachment) => (
@@ -1005,7 +1033,7 @@ export const Feed = () => {
                   />
                   {editingPost.attachmentError && <p className="text-xs font-semibold text-red-600">{editingPost.attachmentError}</p>}
                   <div className="flex gap-2">
-                    <button type="submit" disabled={Boolean(editingPost.attachmentError) || isUploading} className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{isUploading ? 'Subiendo...' : 'Guardar'}</button>
+                    <button type="submit" disabled={Boolean(editingPost.attachmentError) || isUploading || parseYouTubeContent(editingPost.content).youtubeLinkCount > 2} className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{isUploading ? 'Subiendo...' : 'Guardar'}</button>
                     <button type="button" onClick={() => setEditingPost(null)} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">Cancelar</button>
                   </div>
                 </form>

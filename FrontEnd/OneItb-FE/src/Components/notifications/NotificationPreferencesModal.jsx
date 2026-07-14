@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_MY_NOTIFICATION_PREFERENCES, UPDATE_NOTIFICATION_PREFERENCE } from '../../data/graphql/notifications';
 
@@ -60,7 +61,7 @@ export const NotificationPreferencesModal = ({ isOpen, onClose }) => {
     }
   };
 
-  return (
+  return createPortal(
     <div role="presentation" className="fixed inset-0 z-[130] flex bg-transparent" onMouseDown={(event) => { if (event.target === event.currentTarget && !pendingType) onClose(); }}>
       <section role="dialog" aria-modal="true" aria-labelledby={titleId} className="ml-auto flex h-full w-full max-w-sm flex-col overflow-hidden border-l border-slate-200 bg-slate-100/98 shadow-[-24px_0_70px_rgba(15,23,42,0.16)] sm:rounded-l-2xl dark:border-white/10 dark:bg-slate-800/98 dark:shadow-[-24px_0_70px_rgba(15,23,42,0.38)]">
         <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 dark:border-white/10">
@@ -91,6 +92,7 @@ export const NotificationPreferencesModal = ({ isOpen, onClose }) => {
           )}
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 };

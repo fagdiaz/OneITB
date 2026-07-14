@@ -140,14 +140,16 @@ export const MediaViewerModal = ({
 
         <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto bg-slate-950 p-2 sm:p-4">
           {activeType === 'youtube' && youtubeSrc && (
-            <iframe
-              src={youtubeSrc}
-              title={activeTitle}
-              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
-              className="aspect-video w-full max-w-5xl rounded-xl border-0"
-            />
+            <div className="relative aspect-video w-full max-w-5xl max-h-[calc(100dvh-8rem)] overflow-hidden rounded-xl bg-black">
+              <iframe
+                src={youtubeSrc}
+                title={activeTitle}
+                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="absolute inset-0 h-full w-full border-0"
+              />
+            </div>
           )}
           {activeType === 'image' && activeSrc && (
             <img src={activeSrc} alt={activeTitle} className="max-h-[80vh] max-w-full object-contain" />

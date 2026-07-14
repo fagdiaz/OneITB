@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MediaGrid } from './MediaGrid';
@@ -33,5 +33,40 @@ describe('MediaGrid', () => {
     const tiles = screen.getAllByTestId('media-tile');
     expect(tiles[0]).toHaveTextContent('Portada');
     expect(screen.getByText('Video YouTube')).toBeInTheDocument();
+  });
+
+  it('promotes both accepted YouTube videos into a crowded grid', () => {
+    const mixedItems = [
+      { key: 'cover', kind: 'attachment', label: 'Portada' },
+      ...Array.from({ length: 5 }, (_, index) => ({ key: `image-${index}`, kind: 'attachment', label: `Imagen ${index}` })),
+      { key: 'youtube-1', kind: 'youtube', label: 'Video uno' },
+      { key: 'youtube-2', kind: 'youtube', label: 'Video dos' },
+    ];
+
+    render(<MediaGrid items={mixedItems} renderItem={renderItem} />);
+
+    expect(screen.getByText('Video uno')).toBeInTheDocument();
+    expect(screen.getByText('Video dos')).toBeInTheDocument();
+  });
+
+  it('uses a full-width top row after a landscape cover reports its dimensions', () => {
+    const LandscapeProbe = ({ reportDimensions }) => {
+      useEffect(() => reportDimensions?.(1600, 700), [reportDimensions]);
+      return <span>Portada apaisada</span>;
+    };
+    const landscapeItems = [
+      { key: 'cover', kind: 'attachment', label: 'Portada apaisada' },
+      { key: 'secondary', kind: 'attachment', label: 'Secundaria' },
+    ];
+    const renderLandscape = (item, _index, _compact, metadata) => (
+      item.key === 'cover'
+        ? <LandscapeProbe reportDimensions={metadata.reportDimensions} />
+        : <span>{item.label}</span>
+    );
+
+    render(<MediaGrid items={landscapeItems} renderItem={renderLandscape} />);
+
+    expect(screen.getByTestId('media-grid')).toHaveAttribute('data-layout', 'landscape-cover');
+    expect(screen.getByText('Portada apaisada').closest('[data-testid="media-tile"]')).toHaveClass('col-span-full');
   });
 });

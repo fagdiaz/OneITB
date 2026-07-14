@@ -11,6 +11,7 @@ describe('BrandLogo', () => {
     expect(logo).toHaveAttribute('src', expect.stringContaining('only-logo.png'));
     expect(logo).toHaveAttribute('decoding', 'async');
     expect(logo).toHaveAttribute('fetchpriority', 'high');
+    expect(logo.className).toContain('dark:drop-shadow');
   });
 
   it('uses the approved full mark and supports decorative rendering', () => {

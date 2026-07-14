@@ -195,6 +195,7 @@ public sealed class NotificationServiceTests
         Assert.Contains("2 Me gusta", second.Message, StringComparison.Ordinal);
         Assert.Equal($"/feed?inquiryId={inquiry.Id:D}", second.ActionUrl);
         Assert.Single(context.Notifications);
+        Assert.Equal(1, await service.GetUnreadCountAsync(ServiceTestData.StudentUserId));
     }
 
     [Fact]

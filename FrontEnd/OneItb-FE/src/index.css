@@ -57,13 +57,14 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   pointer-events: none;
   background-image: url('./assets/Background.png');
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  opacity: 0.055;
+  opacity: 0.075;
+  mix-blend-mode: multiply;
 }
 
 #root {
@@ -78,8 +79,29 @@ body::before {
 }
 
 .dark body::before {
-  opacity: 0.08;
-  filter: saturate(0.85) brightness(0.8);
+  opacity: 0.1;
+  filter: saturate(0.9) brightness(1.15);
+  mix-blend-mode: soft-light;
+}
+
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning body::before,
+html.theme-transitioning #root,
+html.theme-transitioning #root * {
+  transition-duration: 800ms !important;
+  transition-property: background-color, border-color, color, box-shadow, filter, opacity !important;
+  transition-timing-function: ease-in-out !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning body,
+  html.theme-transitioning body::before,
+  html.theme-transitioning #root,
+  html.theme-transitioning #root * {
+    transition-duration: 0ms !important;
+  }
 }
 
 /* Print Optimization */
@@ -96,6 +118,10 @@ body::before {
     padding: 0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  body::before {
+    display: none !important;
   }
 
   /* Hide editor chrome and control buttons during printing */

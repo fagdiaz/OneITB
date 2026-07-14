@@ -101,7 +101,20 @@ export const NotificationBell = () => {
   const handleMarkRead = async (notificationId) => {
     try {
       setActionError(null);
-      await markNotificationRead({ variables: { notificationId } });
+      const notification = notifications.find((item) => item.id === notificationId);
+      await markNotificationRead({
+        variables: { notificationId },
+        optimisticResponse: {
+          markNotificationRead: { __typename: 'Notification', id: notificationId, isRead: true },
+        },
+        update: (cache) => {
+          if (notification?.isRead) return;
+          cache.writeQuery({
+            query: GET_UNREAD_NOTIFICATION_COUNT,
+            data: { unreadNotificationCount: Math.max(0, unreadCount - 1) },
+          });
+        },
+      });
       await refresh();
     } catch (error) {
       setActionError(error.message || 'No se pudo actualizar la notificacion.');
@@ -111,7 +124,12 @@ export const NotificationBell = () => {
   const handleMarkAllRead = async () => {
     try {
       setActionError(null);
-      await markAllNotificationsRead();
+      await markAllNotificationsRead({
+        optimisticResponse: { markAllNotificationsRead: unreadCount },
+        update: (cache) => {
+          cache.writeQuery({ query: GET_UNREAD_NOTIFICATION_COUNT, data: { unreadNotificationCount: 0 } });
+        },
+      });
       await refresh();
     } catch (error) {
       setActionError(error.message || 'No se pudieron marcar las notificaciones.');

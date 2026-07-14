@@ -5,6 +5,29 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-13] - Spec 185: Media, Notifications and Theme Polish
+
+* **Objetivo**: Corregir el calculo dinamico del mosaico multimedia, acotar YouTube, recuperar legibilidad dual-theme y separar con precision los eventos agrupados del contador real de notificaciones sin leer.
+* **Resultado**:
+  - El parser multimedia extrae hasta dos videos de YouTube en orden y conserva compatibilidad con `videoId`. El compositor advierte al alcanzar el limite, bloquea un tercer enlace y el backend aplica la misma regla en creacion y edicion antes de persistir cambios.
+  - `MediaGrid` detecta las dimensiones intrinsecas de la portada. Las imagenes apaisadas ocupan una fila superior completa sin relleno lateral; los medios secundarios permanecen acotados y ambos videos aceptados se promueven al conjunto visible.
+  - Los PDF usan la primera hoja renderizada por PDF.js como portada superior y muestran nombre/acciones en un pie independiente. Los tiles y el visor de YouTube respetan un contenedor `aspect-video` con alto acotado.
+  - `BrandLogo` suma tratamiento de borde claro solo en modo oscuro; los nombres de autores recuperan contraste por rol. El cambio de tema usa una transicion visual de 800 ms con exclusion para `prefers-reduced-motion`, y `Background.png` queda visible como textura global sin interceptar eventos ni imprimirse.
+  - Preferencias de notificacion se renderiza mediante portal en `document.body`, fuera del stacking context del Header. Marcar una o todas como leidas actualiza la cache de Apollo inmediatamente y luego reconcilia con servidor; `AggregateCount` sigue describiendo el historial agrupado, mientras el badge cuenta exclusivamente filas `IsRead == false`.
+* **Validaciones ejecutadas**:
+  - Speckit QA preflight: PASS; EF Core sin cambios pendientes.
+  - Backend Release: PASS, 0 warnings / 0 errores; tests backend: PASS, 65/65.
+  - Frontend: tests PASS, 21 archivos / 49 tests; Vite build PASS, 374 modulos en 858 ms en el gate final.
+  - `npm audit --omit=dev --audit-level=high`: PASS, 0 vulnerabilidades; `git diff --check`: PASS.
+  - Runtime Release aislado contra SQL Server Docker: GraphQL `{ __typename }` HTTP 200 y `addInquiry` conserva autorizacion previa a la regla de dominio. La instancia temporal fue detenida.
+* **Estado**:
+  - Implementado y validado por tests, builds, EF drift, audit y runtime GraphQL. La aprobacion visual manual de mosaico apaisado, PDF, textura y drawer queda como gate explicito de navegador.
+* **Archivos principales**:
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `FrontEnd/OneItb-FE/src/Components/publication/{Feed,MediaGrid,MediaAttachment,MediaComponent,MediaViewerModal,PdfFirstPageThumbnail}.*`
+  - `FrontEnd/OneItb-FE/src/Components/notifications/{NotificationBell,NotificationPreferencesModal}.*`
+  - `FrontEnd/OneItb-FE/src/Components/branding/BrandLogo.jsx`, `context/ThemeContext.jsx` e `index.css`
+
 ## [2026-07-12] - Spec 184: QA Master Polish and Layout
 
 * **Objetivo**: Cerrar la auditoria visual de Header, Footer, compositor y multimedia; mejorar contraste dual-theme y completar navegacion dirigida de menciones y empleos sin incorporar dependencias ni relajar controles de seguridad.

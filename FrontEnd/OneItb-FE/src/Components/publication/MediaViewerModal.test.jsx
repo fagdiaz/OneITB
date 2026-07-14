@@ -48,4 +48,20 @@ describe('MediaViewerModal', () => {
     unmount();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:pdf-preview');
   });
+
+  it('keeps the YouTube iframe inside a bounded aspect-ratio viewport', () => {
+    render(
+      <MediaViewerModal
+        isOpen
+        onClose={vi.fn()}
+        type="youtube"
+        videoId="dQw4w9WgXcQ"
+        title="Video de prueba"
+      />,
+    );
+
+    const iframe = screen.getByRole('dialog').querySelector('iframe');
+    expect(iframe).toHaveClass('absolute', 'inset-0', 'h-full', 'w-full');
+    expect(iframe.parentElement).toHaveClass('aspect-video', 'overflow-hidden');
+  });
 });
