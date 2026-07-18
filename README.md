@@ -29,6 +29,7 @@ Consultar el [roadmap unico](docs/project_docs/ROADMAP.md) para estado, evidenci
 API Graphql/             backend, dominio, servicios y migraciones
 FrontEnd/OneItb-FE/      cliente React
 docs/academic/           entregables academicos resumidos
+docs/entrega_final/      memoria tecnica final para la practica profesionalizante
 docs/project_docs/       alcance, arquitectura y roadmap
 docs/audit/              runbook, estado, historial y auditoria consolidada
 ```
@@ -39,6 +40,7 @@ Las carpetas de trabajo de agentes (`specs/`, `.specify/`, `.agents/`, `core-web
 
 | Documento | Uso |
 |---|---|
+| [Documento base de Practica Profesionalizante III](docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md) | Memoria tecnica integral lista para conversion a Word/PDF |
 | [Roadmap](docs/project_docs/ROADMAP.md) | Unica fuente de avance, pendientes y prioridades |
 | [Alcance y requerimientos](docs/project_docs/scope-and-requirements.md) | Capacidades y roles |
 | [Arquitectura](docs/project_docs/architecture-and-design.md) | Stack, dominio y flujos |
