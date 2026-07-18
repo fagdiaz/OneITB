@@ -41,6 +41,7 @@ Las carpetas de trabajo de agentes (`specs/`, `.specify/`, `.agents/`, `core-web
 | Documento | Uso |
 |---|---|
 | [Documento base de Practica Profesionalizante III](docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md) | Memoria tecnica integral lista para conversion a Word/PDF |
+| [Guia de maquetacion final](docs/entrega_final/GUIA_MAQUETACION_FINAL.md) | Flujo definitivo para diagramas UML, DOCX, PDF y controles APA 7 |
 | [Roadmap](docs/project_docs/ROADMAP.md) | Unica fuente de avance, pendientes y prioridades |
 | [Alcance y requerimientos](docs/project_docs/scope-and-requirements.md) | Capacidades y roles |
 | [Arquitectura](docs/project_docs/architecture-and-design.md) | Stack, dominio y flujos |

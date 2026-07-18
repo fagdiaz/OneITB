@@ -7,7 +7,7 @@
 **Alumno/a:** [Completar nombre y apellido]<br>
 **Docente/s:** [Completar]<br>
 **Ciclo lectivo:** 2026<br>
-**Versión del documento:** 1.1 - Adaptación a normas APA, 7.ª edición<br>
+**Versión del documento:** 1.2 - Normalización UML, metodología híbrida y cierre APA 7<br>
 **Fecha de cierre documental:** 18 de julio de 2026
 
 > **Alcance de esta memoria.** Este documento describe el estado comprobable del repositorio OneITB23 al momento de su redacción. Distingue entre funcionalidades implementadas, validaciones automatizadas y verificaciones externas todavía pendientes. Los nombres y versiones se corresponden con el código fuente: .NET 8 (Microsoft, 2023a), Entity Framework Core 8.0.6 (Microsoft, 2023b), Hot Chocolate 14.2.0 (ChilliCream, s. f.), GraphQL (GraphQL Foundation, 2021), React 18 (React Team, 2022), Apollo Client 3.7 (Apollo GraphQL, s. f.), Vite 8 (Vite Team, 2026), Tailwind CSS 4 (Wathan, 2025) y SQL Server 2022 (Microsoft, 2025).
@@ -82,6 +82,7 @@ Los diagramas de esta memoria utilizan Mermaid, una herramienta de definición t
 **A) Código Mermaid renderizable**
 
 ```mermaid
+%%{init: {"flowchart": {"curve": "step"}}}%%
 flowchart LR
     A["Estudiante"] -->|"crea su perfil y elige carreras"| P["OneITB23"]
     P --> M["Muro por materias"]
@@ -229,32 +230,24 @@ Administradores y moderadores disponen de herramientas diferentes. El autor cons
 
 Los actores principales son Estudiante, Egresado, Profesor, Empleador, Moderador y Administrador. Todos derivan de una cuenta autenticada, pero sus permisos se resuelven en backend; la ocultación visual de un botón no constituye autorización.
 
-**A) Código Mermaid renderizable**
+**A) Códigos Mermaid renderizables**
 
-> Mermaid no incluye una primitiva UML nativa para casos de uso. El siguiente `flowchart` representa actores, límite del sistema y casos de uso con nodos ovalados compatibles con los renderizadores Mermaid actuales.
+> Mermaid no incluye una primitiva UML nativa para casos de uso. Los tres `flowchart` siguientes representan actores, límites del sistema y casos de uso con nodos ovalados compatibles con los renderizadores Mermaid actuales.
 
 ```mermaid
+%%{init: {"flowchart": {"curve": "step"}}}%%
 flowchart LR
     EST["Estudiante"]:::actor
     EGR["Egresado"]:::actor
     PRO["Profesor"]:::actor
-    EMP["Empleador"]:::actor
-    MOD["Moderador"]:::actor
-    ADM["Administrador"]:::actor
 
-    subgraph SYS["Sistema OneITB23"]
+    subgraph SYS["A) Módulo Social y Académico"]
         UC1(["Autenticarse y administrar perfil"])
         UC2(["Participar en el muro"])
         UC3(["Consultar materias y recursos"])
         UC4(["Consultar progreso académico"])
         UC5(["Enviar mensajes privados"])
-        UC6(["Postularse a una oferta"])
         UC7(["Publicar recursos y asignar progreso"])
-        UC8(["Publicar ofertas"])
-        UC9(["Gestionar postulaciones"])
-        UC10(["Moderar contenido reportado"])
-        UC11(["Administrar usuarios y catálogo"])
-        UC12(["Auditar y probar infraestructura"])
     end
 
     EST --> UC1
@@ -262,19 +255,61 @@ flowchart LR
     EST --> UC3
     EST --> UC4
     EST --> UC5
-    EST --> UC6
     EGR --> UC1
     EGR --> UC2
     EGR --> UC5
-    EGR --> UC6
     PRO --> UC1
     PRO --> UC2
     PRO --> UC3
     PRO --> UC5
     PRO --> UC7
-    EMP --> UC1
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a;
+    class EST,EGR,PRO actor;
+    class UC1,UC2,UC3,UC4,UC5,UC7 usecase;
+    style SYS fill:#f1f5f9,stroke:#0f172a,stroke-width:2px
+```
+
+```mermaid
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    EMP["Empleador"]:::actor
+    EST["Estudiante"]:::actor
+    EGR["Egresado"]:::actor
+
+    subgraph SYS["B) Módulo de Bolsa de Trabajo"]
+        UC6(["Postularse a una oferta"])
+        UC8(["Publicar ofertas"])
+        UC9(["Gestionar postulaciones"])
+    end
+
     EMP --> UC8
     EMP --> UC9
+    EST --> UC6
+    EGR --> UC6
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a;
+    class EMP,EST,EGR actor;
+    class UC6,UC8,UC9 usecase;
+    style SYS fill:#f1f5f9,stroke:#0f172a,stroke-width:2px
+```
+
+```mermaid
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    MOD["Moderador"]:::actor
+    ADM["Administrador"]:::actor
+
+    subgraph SYS["C) Módulo de Administración"]
+        UC7(["Publicar recursos y asignar progreso"])
+        UC8(["Publicar ofertas"])
+        UC10(["Moderar contenido reportado"])
+        UC11(["Administrar usuarios y catálogo"])
+        UC12(["Auditar y probar infraestructura"])
+    end
+
     MOD --> UC10
     ADM --> UC7
     ADM --> UC8
@@ -284,16 +319,89 @@ flowchart LR
 
     classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
     classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a;
-    class EST,EGR,PRO,EMP,MOD,ADM actor;
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12 usecase;
+    class MOD,ADM actor;
+    class UC7,UC8,UC10,UC11,UC12 usecase;
     style SYS fill:#f1f5f9,stroke:#0f172a,stroke-width:2px
 ```
 
 **B) Descripción descriptiva exhaustiva**
 
-El lienzo se divide en dos zonas. A la izquierda se dibujan seis actores con silueta humana o tarjetas: Estudiante, Egresado, Profesor, Empleador, Moderador y Administrador. Deben compartir un fondo celeste suave y borde azul para indicar que son usuarios externos al límite de la aplicación. A la derecha se traza un rectángulo grande gris muy claro titulado “Sistema OneITB23”. Dentro se ubican doce óvalos blancos con borde pizarra, uno por caso de uso.
+El modelo se divide en tres vistas UML complementarias para reducir cruces y conservar legibilidad. En cada vista, los actores se ubican a la izquierda con fondo celeste y borde azul; a la derecha se traza un límite de sistema gris claro que contiene casos de uso ovalados. La vista A reúne el Módulo Social y Académico para Estudiante, Profesor y Egresado; la vista B representa el Módulo de Bolsa de Trabajo para Empleador, Estudiante y Egresado; y la vista C concentra el Módulo de Administración para Administrador y Moderador.
 
-Las flechas no representan una secuencia temporal, sino participación. Estudiante se conecta con autenticación, muro, materias, progreso, mensajes y postulaciones. Egresado se conecta con autenticación, muro, mensajes y postulaciones. Profesor se conecta con autenticación, muro, recursos, mensajes y asignación de progreso. Empleador se conecta con publicación de ofertas y gestión de postulaciones. Moderador se conecta únicamente con moderación. Administrador se conecta con recursos, ofertas, moderación, catálogo, auditoría y prueba de infraestructura. En una versión UML manual pueden utilizarse asociaciones sin punta de flecha.
+Las líneas representan asociaciones de participación, no una secuencia temporal. La división conserva todas las responsabilidades del modelo original: interacción social y académica, publicación y postulación laboral, moderación, administración de catálogo y auditoría. En una recreación UML manual deben utilizarse asociaciones rectas u ortogonales sin punta de flecha.
+
+### Diagramas de Secuencia (Interacción de Usuario)
+
+Los diagramas siguientes describen el orden temporal de las interacciones de autenticación entre el usuario, el cliente web, la API y la persistencia. Las activaciones indican el período durante el cual cada participante procesa una operación.
+
+**A) Registro de usuario**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant F as Frontend (React)
+    participant C as API (Controlador Auth)
+    participant DB as SQL Server
+
+    rect rgb(15, 23, 42)
+    note right of U: Flujo de Registro de Usuario
+    end
+
+    U->>F: registrarUsuario(datos)
+    activate F
+    F->>C: POST /graphql (register mutation)
+    activate C
+    C->>C: hashear password (BCrypt)
+    C->>DB: guardarUsuario(datos, hash)
+    activate DB
+    DB-->>C: confirmación de creación
+    deactivate DB
+    C-->>F: retorna usuario creado (sin JWT)
+    deactivate C
+    F->>U: redirigir a /login con mensaje de éxito
+    deactivate F
+```
+
+**Nota descriptiva.** La secuencia representa un registro sin inicio de sesión implícito. La contraseña se transforma mediante BCrypt antes de la persistencia y la respuesta excluye el token de sesión; por ello, el cliente redirige a la pantalla de acceso con una confirmación de alta exitosa.
+
+**B) Inicio de sesión**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant F as Frontend (React)
+    participant C as API (Controlador Auth)
+    participant DB as SQL Server
+
+    rect rgb(15, 23, 42)
+    note right of U: Flujo de Inicio de Sesión (Login)
+    end
+
+    U->>F: iniciarSesion(email, password)
+    activate F
+    F->>C: POST /graphql (login mutation)
+    activate C
+    C->>DB: buscarUsuario(email)
+    activate DB
+    DB-->>C: retorna usuario y hash
+    deactivate DB
+
+    C->>C: verificar BCrypt(password, hash)
+
+    alt Credenciales válidas
+        C-->>F: retorna JWT Token
+        F->>U: redirigir a /feed principal
+    else Credenciales inválidas
+        C-->>F: error (Invalid credentials)
+        F->>U: mostrar alert("Error de acceso")
+    end
+    deactivate C
+    deactivate F
+```
+
+**Nota descriptiva.** La secuencia de acceso incorpora una decisión condicional posterior a la verificación del hash. Las credenciales válidas producen el token JWT y habilitan la navegación autenticada; las inválidas generan un error controlado y mantienen al usuario fuera del área privada.
 
 ### Modelo de Dominio (DER)
 
@@ -618,6 +726,7 @@ La arquitectura sigue una separación cliente-servidor. React no accede a SQL Se
 **A) Código Mermaid renderizable**
 
 ```mermaid
+%%{init: {"flowchart": {"curve": "step"}}}%%
 flowchart TB
     subgraph CLIENT["Cliente web"]
         UI["React 18 + Tailwind CSS v4"]
@@ -694,6 +803,7 @@ El despliegue productivo utiliza imágenes multi-stage y una red de Docker Compo
 **A) Código Mermaid renderizable**
 
 ```mermaid
+%%{init: {"flowchart": {"curve": "step"}}}%%
 flowchart LR
     USER["Navegador del usuario"] -->|"HTTPS"| WEB["Contenedor Frontend<br/>Nginx Alpine"]
 
@@ -741,6 +851,8 @@ Debajo de SQL Server se representa un cilindro “Volumen SQL”; debajo de la A
 
 ## 5. GESTIÓN Y PRUEBAS
 
+El ciclo de vida adoptó un enfoque híbrido **Water-Scrum-Fall**, entendido como la combinación de etapas predictivas iniciales, construcción iterativa y cierre formal de entrega (West et al., 2011). El proyecto se inició en 2023 mediante un modelo predictivo en cascada para el relevamiento de requerimientos y el diseño de arquitectura, siguiendo una organización por fases asociada históricamente con el desarrollo secuencial (Royce, 1970). Después de una pausa operativa, la construcción y codificación se retomaron en 2026 bajo el marco de trabajo ágil Scrum, mediante Sprints, objetivos acotados e incrementos funcionales verificables (Schwaber & Sutherland, 2020). Esta evolución hacia prácticas ágiles permitió maximizar la eficiencia, reforzar el control de cambios y mejorar la comodidad operativa del equipo de desarrollo, sin perder los hitos documentales y de aprobación propios del contexto académico.
+
 ### Calendarización del proyecto
 
 La calendarización reconstruye una secuencia humana razonable entre el relevamiento inicial y el cierre de calidad. Las actividades se superponen porque arquitectura, backend, frontend, documentación y QA evolucionaron de manera iterativa.
@@ -748,6 +860,7 @@ La calendarización reconstruye una secuencia humana razonable entre el relevami
 **A) Código Mermaid renderizable**
 
 ```mermaid
+%%{init: {"theme": "default"}}%%
 gantt
     title Calendarización OneITB23 - Abril a Julio de 2026
     dateFormat YYYY-MM-DD
@@ -783,6 +896,49 @@ gantt
 El gráfico debe ocupar una página horizontal. El eje superior comienza el 15 de abril de 2026 y finaliza el 17 de julio de 2026. Se agrupa en cuatro bandas: Descubrimiento y diseño, Núcleo técnico, Módulos funcionales, y Hardening y entrega. Cada banda utiliza un tono diferente: gris azulado para análisis, azul para núcleo, verde para módulos y naranja para cierre.
 
 Relevamiento, requerimientos y arquitectura se superponen entre la segunda mitad de abril y la primera semana de mayo. Autenticación, GraphQL y base React comienzan en mayo. El muro es la barra funcional más extensa; mensajería, perfil y módulo académico se desarrollan en paralelo. Moderación comienza cuando el núcleo social ya es utilizable. La Bolsa de Trabajo aparece entre fines de junio y comienzos de julio. Docker, seguridad, pruebas y documentación se solapan durante las últimas dos semanas. La superposición debe comunicar iteración realista, no ejecución lineal instantánea.
+
+### Gráficos de gestión detallada para anexos
+
+Por su densidad temporal y cantidad de relaciones, el **Cronograma Macro en Cascada**, la **Red PERT** y el **Calendario Scrum** deben maquetarse como gráficos independientes y adjuntarse en los Anexos. Las especificaciones siguientes constituyen el guion obligatorio para su recreación en Mermaid, Draw.io u otra herramienta de modelado, sin sustituir el Gantt ejecutivo incluido en esta sección.
+
+#### Cronograma Macro en Cascada (2023-2026)
+
+El gráfico debe adoptar el formato de tabla temporal o Gantt horizontal, con un eje dividido por trimestres desde `Q1 2023` hasta `Q3 2026`. Debe mostrar cuatro filas de fase, una leyenda cromática y líneas verticales que separen años y trimestres:
+
+1. **Fase 1 - Planificación y Diseño (`Q1-Q2 2023`):** comprende relevamiento institucional, identificación de actores, especificación inicial de requerimientos, delimitación del alcance, diseño de arquitectura y primera versión del modelo de dominio. Debe representarse en azul institucional.
+2. **Fase 2 - Standby del proyecto (`Q3 2023-Q4 2025`):** representa la pausa operativa sin construcción activa. Debe ocupar de forma continua los diez trimestres involucrados, utilizar gris neutro y mostrar una trama discontinua para diferenciarla de una fase productiva.
+3. **Fase 3 - Ejecución Ágil por Módulos (`Q1-Q2 2026`):** incluye reactivación técnica, desarrollo por Sprints, backend, frontend, módulos social y académico, mensajería, moderación y Bolsa de Trabajo. Debe representarse en verde y contener marcadores internos por incremento funcional.
+4. **Fase 4 - Testing, Ajustes APA y Defensa (`Q3 2026`):** incluye regresión, hardening, normalización UML, referencias APA, maquetación y preparación de la defensa. Debe representarse en naranja y finalizar con un hito romboidal denominado “Defensa académica”.
+
+Las cuatro fases deben presentarse en orden cronológico. La transición de la Fase 1 a la Fase 2 y de la Fase 2 a la Fase 3 debe indicarse mediante hitos de pausa y reactivación, evitando que el período de standby se interprete como esfuerzo de desarrollo continuo.
+
+#### Calendario Scrum (Sprint de dos semanas)
+
+El gráfico debe representarse como una grilla de cinco columnas, de lunes a viernes, y dos filas principales, una por semana. Cada celda debe identificar ceremonia, duración cuando corresponda y tipo de trabajo:
+
+| Período | Lunes | Martes | Miércoles | Jueves | Viernes |
+|---|---|---|---|---|---|
+| **Semana 1** | Sprint Planning de 4 horas y definición del Sprint Goal | Daily Standup de 15 minutos y desarrollo Backend/API | Daily Standup de 15 minutos y desarrollo Backend/API | Daily Standup de 15 minutos y desarrollo Backend/API | Refinamiento del Product Backlog |
+| **Semana 2** | Daily Standup, desarrollo Frontend React y pruebas unitarias | Daily Standup, desarrollo Frontend React y pruebas unitarias | Daily Standup, desarrollo Frontend React y pruebas unitarias | Testing QA y Sprint Review con demostración funcional | Sprint Retrospective y merge a la rama principal |
+
+Las ceremonias deben diferenciarse mediante color violeta, el desarrollo backend mediante azul, el frontend mediante celeste, las pruebas mediante naranja y el cierre mediante verde. Una flecha continua debe recorrer las diez celdas para comunicar la progresión del Sprint, mientras que un marcador al final del segundo viernes debe identificar el incremento potencialmente entregable.
+
+#### Diagrama de Red PERT (Ruta Crítica)
+
+La red debe utilizar nodos rectangulares divididos en tres campos: **Inicio Temprano (IT)** en la esquina superior izquierda, **Fin Temprano (FT)** en la esquina superior derecha y **Duración** en la franja inferior. Los tiempos se expresan en semanas desde el inicio del proyecto:
+
+| Nodo | Actividad | IT | FT | Duración |
+|---|---|---:|---:|---:|
+| A | Relevamiento Institucional | 0 | 2 | 2 semanas |
+| B | Diseño DER y Arquitectura | 2 | 5 | 3 semanas |
+| C | Setup de Entorno y CI/CD | 5 | 6 | 1 semana |
+| D | API Auth & Core | 6 | 9 | 3 semanas |
+| E | UI React & Módulo Social | 9 | 13 | 4 semanas |
+| F | Bolsa de Trabajo | 9 | 11 | 2 semanas |
+| G | QA y Regresión | 13 | 15 | 2 semanas |
+| H | Documentación APA y Despliegue | 15 | 16 | 1 semana |
+
+La precedencia debe comenzar con `A -> B -> C -> D`. Desde `D` se abren dos ramas paralelas: `D -> E` y `D -> F`. Ambas convergen en `G`, pero `F` dispone de dos semanas de holgura porque finaliza antes que `E`; finalmente, `G -> H` cierra la red. La **Ruta Crítica**, destacada mediante flechas rojas de mayor grosor, debe marcar explícitamente `A -> B -> C -> D -> E -> G -> H`, con una duración total de 16 semanas. Las conexiones `D -> F -> G` deben mostrarse en gris para indicar que la rama no controla la fecha final mientras conserve su holgura.
 
 ### Pruebas
 
@@ -1096,6 +1252,10 @@ React Team. (2022, 29 de marzo). *React v18.0*. https://react.dev/blog/2022/03/2
 
 Redis Ltd. (s. f.). *Get started with Redis Open Source*. Recuperado el 18 de julio de 2026, de https://redis.io/docs/latest/get-started/
 
+Royce, W. W. (1970). Managing the development of large software systems. En *Proceedings of IEEE WESCON* (pp. 1-9). https://www.praxisframework.org/files/royce1970.pdf
+
+Schwaber, K., & Sutherland, J. (2020). *The Scrum guide: The definitive guide to Scrum: The rules of the game*. https://scrumguides.org/docs/scrumguide/v2020/2020-Scrum-Guide-US.pdf
+
 Sistema de Información Universitaria. (s. f.). *SIU-Guaraní: Módulo de gestión académica*. Recuperado el 18 de julio de 2026, de https://www.siu.edu.ar/siu-guarani
 
 Testing Library. (2024, 3 de junio). *React Testing Library*. https://testing-library.com/docs/react-testing-library/intro/
@@ -1105,5 +1265,7 @@ Vite Team. (2026, 12 de marzo). *Vite 8.0 is out!* https://vite.dev/blog/announc
 Vitest. (s. f.). *Getting started*. Recuperado el 18 de julio de 2026, de https://vitest.dev/guide/
 
 Wathan, A. (2025, 22 de enero). *Tailwind CSS v4.0*. Tailwind CSS. https://tailwindcss.com/blog/tailwindcss-v4
+
+West, D., Gilpin, M., Grant, T., & Anderson, A. (2011, 26 de julio). *Water-Scrum-Fall is the reality of Agile for most organizations today*. Forrester Research. https://www.forrester.com/report/WaterScrumFall-Is-The-Reality-Of-Agile-For-Most-Organizations-Today/RES60109
 
 xUnit.net. (s. f.). *Home*. Recuperado el 18 de julio de 2026, de https://xunit.net/

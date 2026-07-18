@@ -7,7 +7,7 @@
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con diagramas Mermaid, guiones visuales, citas y referencias APA 7 | Vigente; version 1.1 lista para revision de datos personales y conversion a Word/PDF |
+| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.2 lista para revision de datos personales y conversion a Word/PDF |
 | `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 106/108 (98%); core funcional Feature Complete |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
@@ -23,7 +23,7 @@
 | `docs/academic/02-software-requirements.md` | Resumen academico de requisitos |
 | `docs/academic/03-use-cases.md` | Casos de uso principales |
 | `docs/academic/04-design-diagrams.md` | Diagramas resumidos |
-| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Procedimiento reproducible y gratuito para renderizar Mermaid, convertir la memoria a DOCX/PDF y aplicar APA 7 |
+| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Guia 2.0 definitiva para producir 10 diagramas Mermaid, 3 graficos de gestion, convertir a DOCX/PDF y auditar APA 7 |
 | `docs/audit/HISTORICAL_AUDITS.md` | Archivo compacto de auditorias supersedidas; conservar como respaldo historico, no usar como fuente actual |
 | `core-web/` | Paquete compacto de contexto para Gemini/external AI; no es fuente canonica |
 | `.specify/`, `.agents/`, `AGENTS.md`, `specs/` | Tooling local de agentes y evidencia granular; ignorado en el repo profesional |

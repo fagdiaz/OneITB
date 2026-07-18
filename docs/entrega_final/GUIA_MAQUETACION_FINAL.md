@@ -3,6 +3,8 @@
 **Proyecto:** OneITB23<br>
 **Documento fuente:** `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`<br>
 **Resultado esperado:** archivo `.docx` editable y archivo `.pdf` listo para presentar<br>
+**Versión de la guía:** 2.0 - Cierre UML, metodología híbrida y control editorial<br>
+**Inventario gráfico vigente:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos
 **Criterio editorial:** APA 7, sujeto a los requisitos particulares del Instituto Tecnológico Beltrán
 
 > El documento Markdown es la fuente canónica. No debe reemplazarse ni editarse destructivamente durante la maquetación. Se recomienda trabajar sobre una copia y conservar los diagramas originales en formato Mermaid.
@@ -56,22 +58,47 @@ pandoc --version
 
 ### 1.2 Nomenclatura recomendada
 
-El documento contiene seis bloques Mermaid. Para evitar confusiones, exportarlos con estos nombres:
+El documento contiene diez bloques Mermaid en su cuerpo principal. Deben exportarse en este orden para que la numeración de figuras coincida con su aparición:
 
 1. `01-infografia-interaccion-alumno.png`
-2. `02-casos-de-uso.png`
-3. `03-modelo-dominio-der.png`
-4. `04-arquitectura-componentes.png`
-5. `05-arquitectura-despliegue.png`
-6. `06-calendarizacion-gantt.png`
+2. `02-casos-uso-social-academico.png`
+3. `03-casos-uso-bolsa-trabajo.png`
+4. `04-casos-uso-administracion.png`
+5. `05-secuencia-registro.png`
+6. `06-secuencia-inicio-sesion.png`
+7. `07-modelo-dominio-der.png`
+8. `08-arquitectura-componentes.png`
+9. `09-arquitectura-despliegue.png`
+10. `10-calendarizacion-gantt.png`
 
-Conservar además una copia `.svg` de cada diagrama como archivo maestro. El PNG se utiliza para maximizar la compatibilidad con editores y exportadores de Word.
+Además, la sección 5 especifica tres gráficos de gestión que deben recrearse e incorporarse en los Anexos:
+
+11. `11-cronograma-macro-2023-2026.png`
+12. `12-calendario-scrum-dos-semanas.png`
+13. `13-red-pert-ruta-critica.png`
+
+Conservar una copia `.svg` de cada figura y el archivo `.drawio` de los gráficos recreados manualmente. El PNG se utiliza para maximizar la compatibilidad con editores y exportadores de Word; el SVG o `.drawio` permanece como fuente maestra editable.
+
+### 1.3 Actualizaciones técnicas incorporadas
+
+La versión actual del documento ya incluye las siguientes decisiones. No deben revertirse durante la maquetación:
+
+| Actualización | Criterio de cierre |
+|---|---|
+| Líneas UML normalizadas | Los seis `flowchart` utilizan `curve: step`; no deben reaparecer curvas Bézier |
+| Casos de uso modularizados | Se presentan tres vistas independientes: Social y Académica, Bolsa de Trabajo y Administración |
+| Interacciones autenticadas | Se incorporaron secuencias separadas para registro e inicio de sesión |
+| DER normalizado | Debe recrearse con notación Crow's Foot, relaciones ortogonales y nota XOR para `SOCIAL_ATTACHMENT` |
+| Calendarización legible | El Gantt utiliza tema claro y documenta la ejecución abril-julio de 2026 |
+| Metodología híbrida | Se justificó el ciclo Water-Scrum-Fall: diseño predictivo en 2023, pausa y construcción ágil en 2026 |
+| Gestión para anexos | Se definieron Cronograma Macro, Calendario Scrum y Red PERT con ruta crítica |
+| Rigor académico | Se agregaron citas y referencias APA para Cascada, Scrum y Water-Scrum-Fall |
 
 ---
 
 ## 2. GESTIÓN DE DIAGRAMAS MERMAID
 
-Antes de convertir el documento, cada bloque comprendido entre ` ```mermaid ` y ` ``` ` debe transformarse en una imagen. La descripción exhaustiva ubicada debajo de cada diagrama debe conservarse: forma parte de la memoria técnica y permite interpretar el gráfico de manera accesible.
+Antes de convertir el documento, cada uno de los diez bloques comprendidos entre ` ```mermaid ` y ` ``` ` debe transformarse en una imagen. La descripción exhaustiva ubicada debajo de cada familia de diagramas debe conservarse: forma parte de la memoria técnica, aporta accesibilidad y permite reconstruir el gráfico sin depender del renderizador.
 
 ### Alternativa A: Renderizado y exportación rápida
 
@@ -80,20 +107,21 @@ Antes de convertir el documento, cada bloque comprendido entre ` ```mermaid ` y 
 #### Opción A1: Mermaid Live Editor
 
 1. Abrir [Mermaid Live Editor](https://mermaid.live/).
-2. Copiar únicamente el contenido interno del primer bloque `mermaid`; no copiar las tres comillas invertidas.
+2. Copiar únicamente el contenido interno del primer bloque `mermaid`; no copiar las tres comillas invertidas. Incluir siempre la directiva `%%{init...}%%` cuando exista.
 3. Pegar el contenido en el panel **Code**.
-4. Verificar que el panel de vista previa no muestre errores de sintaxis ni textos cortados.
-5. Elegir un tema claro y de alto contraste para que el diagrama sea legible al imprimir.
+4. Verificar que el panel de vista previa no muestre errores de sintaxis, textos cortados, conectores superpuestos ni curvas en los `flowchart`.
+5. Elegir un tema claro y de alto contraste. El Gantt debe conservar `theme: default`; las secuencias deben mantener legibles las activaciones, notas y ramas `alt`.
 6. Exportar primero como **SVG** y luego como **PNG**.
 7. Guardar ambos archivos en `docs/entrega_final/diagramas/` con la nomenclatura de la sección 1.2.
-8. Repetir el proceso para los seis bloques.
+8. Repetir el proceso para los diez bloques Mermaid.
+9. No corregir el DER dentro de Mermaid: utilizarlo como inventario lógico y recrearlo en Draw.io conforme a Crow's Foot.
 
 #### Opción A2: Vista previa local en VS Code
 
 1. Abrir `DOCUMENTO_MAQUETACION.md` y presionar `Ctrl+Shift+V` para probar la vista previa Markdown integrada.
 2. En VS Code 1.121 o posterior, Mermaid ya está integrado. No instalar extensiones adicionales.
 3. Solo en una versión anterior que no renderice los bloques, instalar la extensión gratuita **Markdown Preview Mermaid Support**.
-4. Confirmar que los seis diagramas se rendericen.
+4. Confirmar que los diez diagramas se rendericen sin errores ni textos truncados.
 5. Para una exportación limpia, copiar cada bloque a Mermaid Live Editor y descargarlo. Usar una captura solamente como último recurso.
 6. Si se realiza una captura, configurar el zoom del sistema al 100 %, ampliar el diagrama y evitar que aparezcan menús, cursores o fondos del editor.
 
@@ -115,8 +143,9 @@ Antes de convertir el documento, cada bloque comprendido entre ` ```mermaid ` y 
 1. Abrir [Draw.io / diagrams.net](https://app.diagrams.net/).
 2. Elegir almacenamiento local mediante **Device** para no depender de una cuenta externa.
 3. Crear un archivo por diagrama con página A4:
-   - orientación vertical para infografía y casos de uso;
-   - orientación horizontal para DER, componentes, despliegue y Gantt.
+   - orientación vertical para las secuencias cuando conserven una anchura legible;
+   - orientación horizontal para infografía, casos de uso, DER, componentes, despliegue, Gantt, Cronograma Macro y Red PERT;
+   - orientación según prueba de impresión para el Calendario Scrum.
 4. Leer la **Descripción descriptiva exhaustiva** correspondiente en el documento base.
 5. Crear todos los nodos, grupos y conexiones indicados en esa descripción.
 6. Mantener una paleta institucional consistente, por ejemplo:
@@ -143,9 +172,41 @@ Antes de convertir el documento, cada bloque comprendido entre ` ```mermaid ` y 
 
 ### Criterio recomendado para OneITB23
 
-Usar Mermaid Live Editor y SVG/PNG para los diagramas técnicos. Reservar Draw.io para la infografía, el diagrama de casos de uso o cualquier gráfico que necesite iconos institucionales. La exactitud técnica debe prevalecer sobre la decoración.
+Usar Mermaid Live Editor y SVG/PNG para la infografía, los tres casos de uso, las dos secuencias, componentes, despliegue y Gantt. Recrear el DER en Draw.io para aplicar Crow's Foot y relaciones ortogonales con control preciso. Utilizar también Draw.io para los tres gráficos de gestión de anexos. La exactitud técnica, la legibilidad impresa y la trazabilidad deben prevalecer sobre la decoración.
 
-### 2.1 Reemplazar los bloques Mermaid
+### 2.1 Controles UML y visuales obligatorios
+
+| Familia | Control requerido antes de exportar |
+|---|---|
+| Infografía y arquitectura | Conservar `curve: step`; las conexiones deben ser rectas u ortogonales y no deben cruzar títulos ni nodos |
+| Casos de uso | Mantener tres vistas; actores fuera del límite del sistema, casos de uso ovalados y asociaciones sin punta en la versión UML manual |
+| Secuencias | Respetar el orden vertical, activaciones, llamadas continuas, respuestas discontinuas y fragmento `alt` del login |
+| DER | Aplicar Crow's Foot, distinguir PK/FK, agrupar por dominios y representar el propietario XOR de `SOCIAL_ATTACHMENT` |
+| Componentes | Separar cliente, entrada, API y persistencia; las flechas indican dependencias, no secuencia temporal |
+| Despliegue | Diferenciar host, contenedores, volúmenes, servicios externos y flujo HTTPS; no representar secretos |
+| Gantt | Mantener tema claro `default`, fechas visibles y página horizontal |
+
+Controles comunes:
+
+1. Evitar curvas, sombras intensas, fondos oscuros y degradados que pierdan contraste al imprimir.
+2. Utilizar una sola tipografía sans serif dentro de los gráficos.
+3. Mantener un tamaño mínimo equivalente a 10 puntos en el PDF final.
+4. Evitar cruces de líneas; cuando sean inevitables, reorganizar nodos antes de agregar conectores decorativos.
+5. Conservar la dirección lógica de cada flecha y no invertir relaciones para mejorar únicamente la estética.
+6. Probar cada figura a color y en escala de grises.
+7. Verificar que siglas, tildes, nombres de roles y tecnologías coincidan con el documento.
+
+### 2.2 Gráficos de gestión para anexos
+
+Los gráficos 11 a 13 no tienen un bloque Mermaid embebido. Deben construirse a partir de las descripciones hiperdetalladas de la sección 5:
+
+1. **Cronograma Macro:** cuatro fases entre `Q1 2023` y `Q3 2026`, con el standby claramente diferenciado y un hito final de defensa.
+2. **Calendario Scrum:** grilla de dos semanas por cinco días, ceremonias con duración, actividades técnicas y marcador de incremento.
+3. **Red PERT:** nodos con Inicio Temprano, Fin Temprano y duración. La ruta crítica `A -> B -> C -> D -> E -> G -> H` debe destacarse en rojo; la rama `D -> F -> G` debe mostrar dos semanas de holgura.
+
+En `DOCUMENTO_MAQUETACION.md`, insertar estas tres figuras bajo un nuevo apartado `7.9 Gráficos de gestión del proyecto`. La descripción técnica permanece en la sección 5 y las láminas de mayor tamaño se concentran en Anexos para no interrumpir la lectura principal.
+
+### 2.3 Reemplazar los bloques Mermaid
 
 En `DOCUMENTO_MAQUETACION.md`, reemplazar cada bloque de código Mermaid por una figura Markdown. Ejemplo:
 
@@ -168,12 +229,14 @@ Reglas para todas las figuras:
 5. Añadir debajo una nota de elaboración propia cuando corresponda.
 6. Conservar la descripción exhaustiva que sigue a la figura.
 7. Mencionar cada figura en el texto antes de su aparición.
+8. Mantener numeración continua del 1 al 13, incluida la serie ubicada en Anexos.
+9. No incluir el código Mermaid visible en la versión Word/PDF destinada a evaluación.
 
 ---
 
 ## 3. CONVERSIÓN DE MARKDOWN A WORD (.docx)
 
-La conversión debe ejecutarse sobre `DOCUMENTO_MAQUETACION.md`, después de reemplazar los seis bloques Mermaid. Pandoc no convierte automáticamente esos bloques en imágenes dentro de Word.
+La conversión debe ejecutarse sobre `DOCUMENTO_MAQUETACION.md`, después de reemplazar los diez bloques Mermaid e insertar los tres gráficos de gestión en el apartado 7.9 de Anexos. Pandoc no convierte automáticamente los bloques Mermaid en imágenes dentro de Word.
 
 ### Alternativa A: Método automatizado con Pandoc
 
@@ -192,13 +255,13 @@ pandoc `
   --toc `
   --toc-depth=3 `
   --resource-path=".\docs\entrega_final" `
-  --output=".\docs\entrega_final\salida\OneITB23_Practica_Profesionalizante_III.docx"
+  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx"
 ```
 
 El equivalente mínimo es:
 
 ```powershell
-pandoc ".\docs\entrega_final\DOCUMENTO_MAQUETACION.md" -o ".\docs\entrega_final\salida\OneITB23_Practica_Profesionalizante_III.docx"
+pandoc ".\docs\entrega_final\DOCUMENTO_MAQUETACION.md" -o ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx"
 ```
 
 #### Conversión profesional con documento de referencia
@@ -228,7 +291,7 @@ pandoc `
   --toc-depth=3 `
   --resource-path=".\docs\entrega_final" `
   --reference-doc=".\docs\entrega_final\salida\REFERENCIA_APA.docx" `
-  --output=".\docs\entrega_final\salida\OneITB23_Practica_Profesionalizante_III.docx"
+  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx"
 ```
 
 6. Abrir el resultado y actualizar la tabla de contenido completa para recalcular títulos y páginas.
@@ -260,7 +323,7 @@ pandoc `
    - subsecciones: `Título 2`;
    - apartados menores: `Título 3`;
    - desarrollo: `Texto del cuerpo` o `Normal`.
-7. Insertar manualmente las seis imágenes mediante **Insertar > Imagen**.
+7. Insertar manualmente las diez imágenes correspondientes a Mermaid y las tres láminas de gestión mediante **Insertar > Imagen**.
 8. Volver a aplicar las leyendas y notas de cada figura.
 9. Insertar una tabla de contenido automática basada en los estilos de título.
 
@@ -338,7 +401,7 @@ Procedimiento:
 3. Conservar los SVG y archivos `.drawio` como fuentes editables, aunque no se inserten en Word.
 4. Mantener cada imagen dentro de los márgenes y bloquear su relación de aspecto.
 5. No estirar una imagen de manera independiente en ancho y alto.
-6. Aplicar el formato APA definido en la sección 2.1: número, título, imagen y nota.
+6. Aplicar el formato APA definido en la sección 2.3: número, título, imagen y nota.
 7. Activar la opción **Mantener con el siguiente** para que el número y el título no queden separados de la figura.
 8. Agregar texto alternativo a cada imagen para mejorar la accesibilidad.
 9. Comprobar la legibilidad al 100 % de zoom y en una impresión de prueba.
@@ -385,14 +448,50 @@ Antes de entregar, comprobar:
 - [ ] Los párrafos tienen interlineado doble y sangría de primera línea de 1,27 cm.
 - [ ] Las referencias tienen sangría francesa de 1,27 cm.
 - [ ] No quedan bloques `mermaid`, rutas locales ni instrucciones editoriales visibles.
-- [ ] Las seis figuras están numeradas, tituladas, citadas en el texto y son legibles.
+- [ ] Las trece figuras están numeradas, tituladas, citadas en el texto y son legibles.
+- [ ] Los seis `flowchart` usan conexiones ortogonales sin curvas Bézier.
+- [ ] Los casos de uso permanecen divididos en tres módulos y sin cruces innecesarios.
+- [ ] Las secuencias conservan activaciones, respuestas discontinuas y la alternativa del login.
+- [ ] El DER utiliza Crow's Foot, PK/FK visibles y la restricción XOR de adjuntos.
+- [ ] El Gantt conserva contraste claro y la Red PERT destaca correctamente la ruta crítica.
+- [ ] Water-Scrum-Fall, Cascada y Scrum tienen su cita y referencia bibliográfica correspondiente.
 - [ ] Las tablas no se cortan y repiten su encabezado cuando ocupan más de una página.
 - [ ] Todos los enlaces funcionan.
 - [ ] No aparecen comentarios, control de cambios ni metadatos personales innecesarios.
 - [ ] El corrector ortográfico está configurado en español.
+- [ ] Cada figura tiene texto alternativo y una nota de elaboración propia cuando corresponde.
+- [ ] Las imágenes mantienen nitidez al 100 % y no fueron deformadas al redimensionarlas.
 - [ ] El PDF conserva acentos, símbolos, imágenes y numeración.
 - [ ] El PDF fue revisado página por página al 100 % de zoom.
 - [ ] Se conservaron el Markdown fuente, el `.docx`, el PDF y los archivos editables de los diagramas.
+
+### 4.9 Auditoría final en cuatro pasadas
+
+No intentar revisar todo simultáneamente. Ejecutar cuatro recorridos independientes:
+
+1. **Contenido y trazabilidad:** comparar títulos, requisitos, cifras, nombres de módulos, citas y referencias contra `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`. La maquetación no debe introducir funcionalidades ni cambiar afirmaciones técnicas.
+2. **UML y gráficos:** comprobar conectores, cardinalidades, actores, límites de sistema, secuencias, ruta crítica y correspondencia entre cada figura y su descripción exhaustiva.
+3. **APA y edición:** revisar portada, jerarquía de títulos, tipografía, interlineado, sangrías, figuras, tablas, citas y bibliografía.
+4. **PDF y defensa:** revisar página por página, probar enlaces, buscar texto, verificar índice, marcadores, calidad de imágenes, peso del archivo y legibilidad proyectada en pantalla.
+
+Usar nombres de entrega estables, por ejemplo:
+
+```text
+OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx
+OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf
+```
+
+Evitar nombres como `final_final`, `nuevo`, `corregido2` o equivalentes. Después de aprobar el PDF, generar una huella de integridad:
+
+```powershell
+Get-FileHash `
+  ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf" `
+  -Algorithm SHA256 |
+  Format-List |
+  Out-File ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.sha256.txt"
+```
+
+La huella no necesita adjuntarse salvo solicitud institucional; se conserva como evidencia de que el archivo revisado coincide con el archivo entregado.
 
 ### Archivos finales sugeridos
 
@@ -404,12 +503,27 @@ docs/entrega_final/
 |-- diagramas/
 |   |-- 01-infografia-interaccion-alumno.svg
 |   |-- 01-infografia-interaccion-alumno.png
-|   |-- ...
-|   `-- 06-calendarizacion-gantt.png
+|   |-- 02-casos-uso-social-academico.png
+|   |-- 03-casos-uso-bolsa-trabajo.png
+|   |-- 04-casos-uso-administracion.png
+|   |-- 05-secuencia-registro.png
+|   |-- 06-secuencia-inicio-sesion.png
+|   |-- 07-modelo-dominio-der.drawio
+|   |-- 07-modelo-dominio-der.png
+|   |-- 08-arquitectura-componentes.png
+|   |-- 09-arquitectura-despliegue.png
+|   |-- 10-calendarizacion-gantt.png
+|   |-- 11-cronograma-macro-2023-2026.drawio
+|   |-- 11-cronograma-macro-2023-2026.png
+|   |-- 12-calendario-scrum-dos-semanas.drawio
+|   |-- 12-calendario-scrum-dos-semanas.png
+|   |-- 13-red-pert-ruta-critica.drawio
+|   `-- 13-red-pert-ruta-critica.png
 `-- salida/
     |-- REFERENCIA_APA.docx
-    |-- OneITB23_Practica_Profesionalizante_III.docx
-    `-- OneITB23_Practica_Profesionalizante_III.pdf
+    |-- OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx
+    |-- OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf
+    `-- OneITB23_Memoria_Tecnica_PP3_2026_v1.0.sha256.txt
 ```
 
 El `.docx` debe considerarse el archivo de edición final; el PDF es la versión de entrega. El Markdown permanece como respaldo técnico reproducible.
