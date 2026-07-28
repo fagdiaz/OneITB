@@ -8,7 +8,22 @@
 
 ---
 
-## 1. Resumen Ejecutivo y Riesgos Residuales
+## 1. Tareas Pendientes (Post-Code Freeze / Producción)
+
+Si bien la auditoría local puede darse por cerrada a nivel de código (Code Freeze operativo local alcanzado), quedan explícitamente registradas las siguientes tareas pendientes. Estas se encuentran bloqueadas por entorno, dependencias de secretos reales o validaciones institucionales, y son requisitos previos para el paso a producción pública:
+
+1. **Smokes con Proveedores Reales `[B]`**: Validar SMTP, Redis administrado y Cloudinary en un ambiente seguro que cuente con secretos reales no versionados. La Spec 195 valida los adaptadores Redis/SMTP contra infraestructura Docker local, no contra proveedores públicos.
+2. **Aprobación y Configuración de Google SSO**: Completar la aprobación institucional y configurar las credenciales y callbacks necesarios para habilitar el inicio de sesión.
+3. **Validación Operativa de Criptografía `[I]`**: Medir el costo y rendimiento de `BCrypt` (Work Factor) sobre el hardware productivo objetivo antes del despliegue público (referencia A-2).
+4. **Validaciones manuales o de red pendientes**:
+   - **Rol Moderador**: La identidad, JWT, permisos y auditoría están automatizados; resta el recorrido visual manual previo a la defensa.
+   - **Prueba Realtime**: Redis cross-provider y aislamiento de topic están verificados; resta el handshake WebSocket de red con dos navegadores aislados.
+5. **Observabilidad en Producción**: Configurar las políticas de monitoreo para que el `UploadCleanupHostedService` eleve a nivel de error/alerta los fallos persistentes de I/O, que localmente se registran como warnings.
+6. **Defensa en Profundidad Adicional**: Incorporar una solución de escaneo de antivirus/CDR externo para la subida de archivos, característica que quedó fuera del MVP pero es recomendada (referencia C-1).
+
+---
+
+## 2. Resumen Ejecutivo y Riesgos Residuales
 
 ### Matriz consolidada de cierre (Specs 186-193)
 
@@ -62,7 +77,8 @@ validación de hardware productivo.
 Se recomienda declarar **Code Freeze operativo local**, condicionado externamente:
 
 1. No incorporar nuevas features.
-2. Ejecutar el gate seguro `scripts/validate-predefense.ps1` antes de cada entrega.
+2. Ejecutar `scripts/validate-predefense.ps1` y el gate finito
+   `scripts/validate-local-infrastructure.ps1` antes de cada entrega relevante.
 3. Validar SMTP, Redis y Cloudinary solo en un ambiente seguro con secretos no versionados.
 4. Corregir únicamente defectos reproducibles y acompañarlos con prueba de regresión.
 5. Mantener como criterio de salida: suites, builds, EF drift y regresión de sesión en verde.
@@ -81,14 +97,25 @@ Empleador; además se comprobó `A -> logout -> B` sin identidad, mensajes ni
 notificaciones de la sesión anterior. El panel administrativo, el hub académico, chat,
 perfil y Gestor de Postulaciones cargaron sin errores o warnings propios en consola.
 
-El recorrido Moderador queda bloqueado porque el seeder canónico no crea esa identidad.
-La prueba realtime con dos contextos aislados y los smokes reales SMTP/Redis/Cloudinary
-también quedan bloqueados por ambiente/configuración. Estos límites están documentados,
-no alteran el cierre local y no se presentan como verificaciones realizadas.
+La Spec 195 resolvió el bloqueo local de identidad Moderador y verificó Redis entre dos
+proveedores independientes, SMTP contra Mailpit y la transición de sesión
+Estudiante -> Moderador. Permanecen bloqueados por ambiente/configuración los proveedores
+públicos SMTP/Redis/Cloudinary y el handshake WebSocket de red con dos navegadores. Estos
+límites no alteran el cierre local y no se presentan como verificaciones realizadas.
+
+### Spec 195 - Infraestructura local y aceptación Moderador
+
+La aceptación incorporó una identidad Moderador estable sin reset de passwords, JWT con
+rol canónico, operaciones hide/restore auditadas y denegaciones declarativas para
+operaciones exclusivas de Administrador. Redis 7.4.2 entregó exactamente un evento entre
+dos providers HotChocolate independientes y no lo filtró a un topic ajeno. Mailpit 1.29.7
+capturó tres correos del adaptador SMTP, cuyos destinatarios, asuntos y contenidos fueron
+inspeccionados sin encontrar secretos. El runner no inicia servidores web, conserva la
+huella del contenedor SQL y elimina servicios, mensajes y puertos de aceptación.
 
 ---
 
-## 2. Hallazgos de Auditoría Modular (Ordenados del más reciente al más antiguo)
+## 3. Hallazgos de Auditoría Modular (Ordenados del más reciente al más antiguo)
 
 Las descripciones de esta sección preservan la condición observada en el momento de cada auditoría. El campo **Estado posterior/actualizado** y la matriz de la sección 1 representan la situación vigente del código.
 
@@ -364,7 +391,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 
 ---
 
-## 3. Cierre verificado de las Specs 186-189
+## 4. Cierre verificado de las Specs 186-189
 
 ### Auditoría de cierre (2026-07-23)
 

@@ -43,10 +43,11 @@ const SessionProbe = () => {
       <span data-testid="loading">{String(session.isLoading)}</span>
       <span data-testid="authenticated">{String(session.isAuthenticated)}</span>
       <span data-testid="user-id">{session.auth?.id || 'none'}</span>
+      <span data-testid="user-role">{session.auth?.role || 'none'}</span>
       <button type="button" onClick={() => session.logout()}>logout</button>
       <button
         type="button"
-        onClick={() => session.login('token-b', { id: 'user-b', role: 'Estudiante' })}
+        onClick={() => session.login('token-b', { id: 'user-b', role: 'Moderador' })}
       >
         login-b
       </button>
@@ -95,6 +96,7 @@ describe('AuthContext session isolation', () => {
     expect(graphQlProviderMock.api.waitForSessionTermination).toHaveBeenCalled();
     expect(graphQlProviderMock.api.invalidateSessionTransport).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId('user-id')).toHaveTextContent('user-b');
+    expect(screen.getByTestId('user-role')).toHaveTextContent('Moderador');
     expect(localStorage.getItem('token')).toBe('token-b');
     expect(localStorage.getItem('user')).toContain('user-b');
   });

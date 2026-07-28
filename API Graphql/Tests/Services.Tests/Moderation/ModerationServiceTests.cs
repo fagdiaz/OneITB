@@ -75,4 +75,60 @@ public sealed class ModerationServiceTests
         Assert.False((await context.Inquiries.IgnoreQueryFilters().SingleAsync()).IsHiddenByModerator);
         Assert.Empty(context.ModerationAudits);
     }
+
+    [Fact]
+    public async Task ModerateInquiryVisibilityAsync_ModeratorCanHideAndRestoreWithAuditTrail()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        var inquiry = new Inquiry
+        {
+            Id = Guid.NewGuid(),
+            UserId = ServiceTestData.StudentUserId,
+            SubjectId = ServiceTestData.SubjectId,
+            Title = "Contenido bajo revision",
+            Content = "Contenido preservado",
+            PublishDate = DateTime.UtcNow,
+            IsActive = true
+        };
+        context.Inquiries.Add(inquiry);
+        await context.SaveChangesAsync();
+        var service = new ModerationService(context);
+
+        await service.ModerateInquiryVisibilityAsync(
+            ServiceTestData.ModeratorUserId,
+            inquiry.Id,
+            true,
+            "Reporte validado por moderacion.");
+        await service.ModerateInquiryVisibilityAsync(
+            ServiceTestData.ModeratorUserId,
+            inquiry.Id,
+            false,
+            "Contenido restaurado tras revision.");
+
+        context.ChangeTracker.Clear();
+        Inquiry restored = await context.Inquiries
+            .IgnoreQueryFilters()
+            .SingleAsync(item => item.Id == inquiry.Id);
+        ModerationAudit[] audits = await context.ModerationAudits
+            .AsNoTracking()
+            .Where(audit => audit.TargetInquiryId == inquiry.Id)
+            .OrderBy(audit => audit.CreatedAt)
+            .ToArrayAsync();
+
+        Assert.False(restored.IsHiddenByModerator);
+        Assert.Equal("Contenido preservado", restored.Content);
+        Assert.Collection(
+            audits,
+            audit =>
+            {
+                Assert.Equal("HideInquiry", audit.Action);
+                Assert.Equal(ServiceTestData.ModeratorUserId, audit.ActorUserId);
+            },
+            audit =>
+            {
+                Assert.Equal("RestoreInquiry", audit.Action);
+                Assert.Equal(ServiceTestData.ModeratorUserId, audit.ActorUserId);
+            });
+    }
 }

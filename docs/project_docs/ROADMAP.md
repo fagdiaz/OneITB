@@ -5,10 +5,10 @@
 **Estado global**: 99% (115 de 116 items)
 
 **Feature Complete funcional core**: 100%. Las remediaciones 186-193 cuentan con
-evidencia automatizada y aceptacion operativa local. La Spec 194 verifico los recorridos
-principales por rol, el aislamiento de sesion y el panel administrativo. El unico item
-funcional bloqueado es SSO Google, dependiente de credenciales, callbacks y aprobacion
-institucional externa.
+evidencia automatizada y aceptacion operativa local. Las Specs 194-195 verificaron los
+recorridos principales, el aislamiento de sesion, la identidad Moderador, Redis
+distribuido local y entrega SMTP capturada. El unico item funcional bloqueado es SSO
+Google, dependiente de credenciales, callbacks y aprobacion institucional externa.
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 El porcentaje global cuenta los items funcionales y de auditoria; P5/P6 describen
@@ -117,7 +117,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Vista `/empleos` con skeletons, empty state, tarjetas laborales, postulacion GraphQL, estado `Postulado` y deep-link que enfoca/resalta la oferta exacta.
 - [x] [I] Vista `/empleos/mis-ofertas` como Gestor de Postulaciones con postulantes, filtros por estado, perfil academico y acciones de revision/rechazo.
 - [x] [I] Badge realtime en Nav para nuevas ofertas laborales y limpieza al ingresar a `/empleos`.
-- [x] [I] Alertas por correo SMTP para cambios de estado de postulaciones, con fallback local sin romper desarrollo/CI.
+- [x] [V] Alertas por correo SMTP para cambios de estado de postulaciones: contrato de empleo cubierto y adaptador de red verificado contra Mailpit local; proveedor SMTP publico permanece como gate externo.
 - [x] [I] Seeder enterprise con empleadores, ofertas laborales, postulaciones y notificaciones persistentes.
 - [x] [I] QA/security del gestor: validacion por rol, ownership estricto de oferta, auditoria persistente y build/migracion sin errores.
 
@@ -184,7 +184,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P3 - Escalabilidad y operacion
 
-1. `[x] [I]` Pub/sub distribuido Redis, activado por `ConnectionStrings:Redis` y fallback InMemory local.
+1. `[x] [V]` Pub/sub distribuido Redis, activado por `ConnectionStrings:Redis` y fallback InMemory local; entrega exacta e aislamiento de topic verificados entre dos proveedores independientes contra Redis Docker.
 2. `[x] [I]` Almacenamiento compartido opcional con Cloudinary, activado por `CloudinarySettings:Url` y fallback local.
 3. `[x] [I]` Hardening operativo: rate limiting, security headers, healthcheck y auditoria npm sin hallazgos altos/criticos; dos avisos moderados upstream de React Router quedan documentados y el destino interno de notificaciones se sanitiza.
 4. `[x] [I]` Hardening GraphQL anti-DoS: profundidad maxima configurable y limites globales de paginacion.
@@ -225,10 +225,19 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 La Spec 194 cerro los gates locales controlables con 147 pruebas backend, 79 frontend,
 builds Release/Vite, modelo EF sincronizado, pruebas runtime focalizadas y recorridos de
-Estudiante, Profesor, Egresado, Administrador y Empleador. El recorrido Moderador y la
-prueba realtime con dos sesiones aisladas permanecen bloqueados por ausencia de identidad
-demo y transporte Redis configurado. SMTP, Redis y Cloudinary reales conservan estado
-`[B]`; sus fallbacks locales estan cubiertos y no se presentan como proveedores validados.
+Estudiante, Profesor, Egresado, Administrador y Empleador. Los bloqueos locales de
+identidad Moderador, Redis y SMTP capturado fueron tratados por la Spec 195.
+
+## Aceptacion de infraestructura local y Moderador - Spec 195
+
+La Spec 195 agrego una identidad Moderador canonica e idempotente, probo su JWT y sus
+limites de autorizacion, y verifico el reemplazo de sesion Estudiante -> Moderador. Un
+Compose de aceptacion efimero ejecuto Redis 7 y Mailpit con pruebas reales de entrega
+cross-provider, aislamiento de topics y tres correos inspeccionados sin secretos. El gate
+finito no inicia API/Vite, preserva SQL y elimina contenedores/puertos en `finally`.
+
+Permanecen `[B]` el SMTP publico, Cloudinary, Google SSO y el handshake WebSocket de red
+con dos navegadores; Redis local y Mailpit no se presentan como validacion cloud.
 
 ## Definition of Done por feature
 

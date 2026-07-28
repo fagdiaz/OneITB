@@ -5,6 +5,34 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-28] - Spec 195: Local Infrastructure and Moderator Acceptance
+
+* **Objetivo**: Cerrar los gates locales controlables de Moderador, Redis distribuido y
+  SMTP sin credenciales externas, sin iniciar servidores web y sin alterar SQL.
+* **Resultado**:
+  - `EnterpriseDemoSeeder` crea `moderador1@itbeltran.com.ar` con ID estable, rol
+    canonico e inicializacion idempotente que preserva hashes existentes; el grafo
+    historico de chats queda estable y las alertas laborales usan allowlist de roles.
+  - Las regresiones prueban JWT `Moderador`, hide/restore auditado, matriz declarativa
+    de permisos y reemplazo de sesion Estudiante -> Moderador sin cache protegida previa.
+  - `docker-compose.acceptance.yml` incorpora Redis 7.4.2 y Mailpit 1.29.7 fijados,
+    efimeros, saludables y expuestos en puertos de aceptacion configurables.
+  - Las pruebas de infraestructura ejercitan dos proveedores HotChocolate independientes,
+    entrega exacta/aislamiento de topics y tres correos SMTP inspeccionados por la API de
+    Mailpit, con limpieza de fixtures.
+  - `scripts/validate-local-infrastructure.ps1` orquesta tests, builds, drift EF,
+    diff-check, huella SQL y cleanup en `finally`; no ejecuta `dotnet run` ni Vite.
+* **Validaciones ejecutadas**:
+  - Infraestructura: 2/2 tests reales Redis/Mailpit PASS.
+  - Backend: 152/152 tests PASS; Release build 0 warnings / 0 errores.
+  - Frontend: 31 archivos / 79 tests PASS; regresion focalizada de sesion PASS;
+    Vite 380 modulos / 0 errores.
+  - EF Core: sin cambios pendientes; Compose valido; contenedores y puertos de
+    aceptacion eliminados al finalizar; SQL no fue reiniciado ni recreado.
+* **Limites**: SMTP publico, Cloudinary, Google SSO y handshake WebSocket de red con dos
+  navegadores permanecen bloqueados por configuracion o aprobacion externa.
+* **Estado**: Verificada localmente `[V]`; Code Freeze funcional preservado.
+
 ## [2026-07-28] - Spec 194: Final Operational Acceptance
 
 * **Objetivo**: Convertir las remediaciones 190-193 en evidencia operativa reproducible,

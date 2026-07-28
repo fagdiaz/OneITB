@@ -1,0 +1,48 @@
+name: oneitb195acceptance
+
+services:
+  oneitb-redis:
+    image: redis:7.4.2-alpine
+    container_name: oneitb23-acceptance-redis
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+    ports:
+      - "${ONEITB_ACCEPTANCE_REDIS_PORT:-16379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 3s
+    restart: "no"
+    networks:
+      - oneitb-acceptance
+
+  oneitb-mailpit:
+    image: axllent/mailpit:v1.29.7
+    container_name: oneitb23-acceptance-mailpit
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+      MP_MAX_MESSAGES: "100"
+    ports:
+      - "${ONEITB_ACCEPTANCE_SMTP_PORT:-11025}:1025"
+      - "${ONEITB_ACCEPTANCE_MAILPIT_HTTP_PORT:-18025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 3s
+    restart: "no"
+    networks:
+      - oneitb-acceptance
+
+networks:
+  oneitb-acceptance:
+    name: oneitb195acceptance
+    driver: bridge

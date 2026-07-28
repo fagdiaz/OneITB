@@ -109,4 +109,28 @@ public sealed class JwtTokenServiceTests
 
         Assert.Throws<InvalidOperationException>(() => service.IssueAccessToken(user));
     }
+
+    [Fact]
+    public void IssueAccessToken_EmitsCanonicalModeratorRoleOnly()
+    {
+        var service = new JwtTokenService(
+            new JwtTokenOptions(SigningKey, Issuer, Audience, TimeSpan.FromHours(2)),
+            TimeProvider.System);
+        var user = ServiceTestData.CreateUser(
+            ServiceTestData.ModeratorUserId,
+            "Marta",
+            "Moderadora",
+            "Moderador",
+            true);
+        ServiceTestData.CreateAccount(user, "moderator@itbeltran.test");
+
+        string token = service.IssueAccessToken(user);
+        JwtSecurityToken jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+
+        string[] roles = jwt.Claims
+            .Where(claim => claim.Type == ClaimTypes.Role)
+            .Select(claim => claim.Value)
+            .ToArray();
+        Assert.Equal(["Moderador"], roles);
+    }
 }

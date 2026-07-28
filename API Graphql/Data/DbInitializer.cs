@@ -12,7 +12,7 @@ namespace OneItb.Data
         public static readonly Guid AdminId = EnterpriseDemoSeeder.Admin1Id;
         public static readonly Guid StudentId = EnterpriseDemoSeeder.StudentAds1Id;
         public static readonly Guid TeacherId = EnterpriseDemoSeeder.ProfessorAds1Id;
-        public static readonly Guid ModeratorId = EnterpriseDemoSeeder.Admin2Id;
+        public static readonly Guid ModeratorId = EnterpriseDemoSeeder.Moderator1Id;
         public static readonly Guid EmployerId = EnterpriseDemoSeeder.Employer1Id;
 
         public static void Initialize(OneItbContext context, DbSeedOptions? options = null)

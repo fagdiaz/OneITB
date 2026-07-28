@@ -12,6 +12,7 @@ namespace OneItb.Data
 
         public static readonly Guid Admin1Id = StableGuid("enterprise-user:admin1@itbeltran.com.ar");
         public static readonly Guid Admin2Id = StableGuid("enterprise-user:admin2@itbeltran.com.ar");
+        public static readonly Guid Moderator1Id = StableGuid("enterprise-user:moderador1@itbeltran.com.ar");
         public static readonly Guid ProfessorAds1Id = StableGuid("enterprise-user:profesor1.ads@itbeltran.com.ar");
         public static readonly Guid StudentAds1Id = StableGuid("enterprise-user:estudiante1.ads@itbeltran.com.ar");
         public static readonly Guid Employer1Id = StableGuid("enterprise-user:empleador1@itbeltran.com.ar");
@@ -36,6 +37,7 @@ namespace OneItb.Data
         {
             new("admin1@itbeltran.com.ar", "Admin", "Uno", "Administrador", "Administrador principal de la plataforma academica.", Array.Empty<string>()),
             new("admin2@itbeltran.com.ar", "Admin", "Dos", "Administrador", "Administrador de soporte institucional y auditoria.", Array.Empty<string>()),
+            new("moderador1@itbeltran.com.ar", "Moderador", "Institucional", "Moderador", "Responsable de convivencia, reportes y trazabilidad de moderacion.", Array.Empty<string>()),
             new("profesor1.ads@itbeltran.com.ar", "Profesor", "Sistemas Uno", "Profesor", "Docente de programacion, bases de datos y arquitectura.", new[] { "ADS" }),
             new("profesor2.ads@itbeltran.com.ar", "Profesor", "Sistemas Dos", "Profesor", "Docente de ingenieria de software y gestion de proyectos.", new[] { "ADS" }),
             new("profesor1.cdia@itbeltran.com.ar", "Profesor", "Datos Uno", "Profesor", "Docente de estadistica aplicada y ciencia de datos.", new[] { "CDIA" }),
@@ -541,12 +543,14 @@ namespace OneItb.Data
                 .ToListAsync(cancellationToken);
             HashSet<Guid> existingIds = existingIdList.ToHashSet();
 
-            for (int userIndex = 0; userIndex < Users.Length; userIndex++)
+            EnterpriseUser[] messagingUsers = MessagingUsers();
+            for (int userIndex = 0; userIndex < messagingUsers.Length; userIndex++)
             {
-                EnterpriseUser owner = Users[userIndex];
+                EnterpriseUser owner = messagingUsers[userIndex];
                 for (int partnerOffset = 1; partnerOffset <= 2; partnerOffset++)
                 {
-                    EnterpriseUser partner = Users[(userIndex + partnerOffset) % Users.Length];
+                    EnterpriseUser partner =
+                        messagingUsers[(userIndex + partnerOffset) % messagingUsers.Length];
                     for (int messageIndex = 0; messageIndex < 10; messageIndex++)
                     {
                         Guid messageId = StableGuid($"enterprise-message:{owner.Email}:{partner.Email}:{messageIndex}");
@@ -645,7 +649,7 @@ namespace OneItb.Data
                 .OrderBy(offer => offer.CreatedAt)
                 .ToListAsync(cancellationToken);
             Guid[] recipientIds = Users
-                .Where(user => user.Role is not ("Administrador" or "Empleador"))
+                .Where(user => user.Role is "Profesor" or "Estudiante" or "Egresado")
                 .Select(user => UserId(user.Email))
                 .ToArray();
 
@@ -799,18 +803,29 @@ namespace OneItb.Data
 
         private static IEnumerable<Guid> ManagedMessageIds()
         {
-            for (int userIndex = 0; userIndex < Users.Length; userIndex++)
+            EnterpriseUser[] messagingUsers = MessagingUsers();
+            for (int userIndex = 0; userIndex < messagingUsers.Length; userIndex++)
             {
-                EnterpriseUser owner = Users[userIndex];
+                EnterpriseUser owner = messagingUsers[userIndex];
                 for (int partnerOffset = 1; partnerOffset <= 2; partnerOffset++)
                 {
-                    EnterpriseUser partner = Users[(userIndex + partnerOffset) % Users.Length];
+                    EnterpriseUser partner =
+                        messagingUsers[(userIndex + partnerOffset) % messagingUsers.Length];
                     for (int messageIndex = 0; messageIndex < 10; messageIndex++)
                     {
                         yield return StableGuid($"enterprise-message:{owner.Email}:{partner.Email}:{messageIndex}");
                     }
                 }
             }
+        }
+
+        private static EnterpriseUser[] MessagingUsers()
+        {
+            // Keep the established demo conversation graph stable when operational
+            // identities such as Moderator are added to the canonical seed.
+            return Users
+                .Where(user => user.Role != "Moderador")
+                .ToArray();
         }
 
         private static string BuildInquiryTitle(string subjectName, int index)

@@ -11,6 +11,7 @@ internal static class ServiceTestData
     public static readonly Guid StudentUserId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     public static readonly Guid OtherStudentUserId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     public static readonly Guid InactiveUserId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    public static readonly Guid ModeratorUserId = Guid.Parse("88888888-8888-8888-8888-888888888888");
 
     public const int CareerId = 10;
     public const int OtherCareerId = 20;
@@ -60,13 +61,15 @@ internal static class ServiceTestData
         User student = CreateUser(StudentUserId, "Sofia", "Alumno", "Estudiante", true);
         User otherStudent = CreateUser(OtherStudentUserId, "Omar", "Alumno", "Estudiante", true);
         User inactive = CreateUser(InactiveUserId, "Ines", "Inactiva", "Estudiante", false);
+        User moderator = CreateUser(ModeratorUserId, "Marta", "Moderadora", "Moderador", true);
 
         context.Accounts.AddRange(
             CreateAccount(admin, "admin@itbeltran.test"),
             CreateAccount(teacher, "teacher@itbeltran.test"),
             CreateAccount(student, "student@itbeltran.test"),
             CreateAccount(otherStudent, "other.student@itbeltran.test"),
-            CreateAccount(inactive, "inactive@itbeltran.test"));
+            CreateAccount(inactive, "inactive@itbeltran.test"),
+            CreateAccount(moderator, "moderator@itbeltran.test"));
 
         context.Careers.AddRange(career, otherCareer);
         context.Subjects.Add(subject);

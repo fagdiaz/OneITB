@@ -8,12 +8,12 @@
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
 | `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.2 lista para revision de datos personales y conversion a Word/PDF |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 115/116 (99%); core funcional Feature Complete, Specs 186-193 verificadas localmente y SSO institucional bloqueado |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 115/116 (99%); core funcional Feature Complete, Specs 186-195 verificadas localmente y SSO institucional bloqueado |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; matriz 186-193 y aceptacion operacional Spec 194 alineadas, con resolucion, evidencia y gate residual por hallazgo |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; matriz 186-193 y aceptaciones 194-195 alineadas, con resolucion, evidencia y gate residual por hallazgo |
 
 ## Documentacion complementaria
 
@@ -31,6 +31,7 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/195-local-infrastructure-and-moderator-acceptance` | Moderador canonico/idempotente y JWT/limites cubiertos; Redis cross-provider y aislamiento de topic verificados; tres escenarios SMTP capturados en Mailpit; backend 152/152, frontend 79/79, builds y EF PASS; cleanup de contenedores/puertos y preservacion SQL comprobados. Proveedores publicos y WebSocket de red siguen `[B]` |
 | `specs/194-final-operational-acceptance` | Aceptacion local cerrada: backend 147/147, frontend 79/79, builds Release/Vite, EF sin drift, Compose y diff-check PASS. Runtime ya ejecutado para uploads, paginacion, silenciamiento y Magic Link; navegador limpio con Estudiante, Profesor, Egresado, Administrador y Empleador, incluido A -> logout -> B. Moderator, dos sesiones realtime y SMTP/Redis/Cloudinary reales quedan `[B]` por ambiente/configuracion |
 | `specs/193-social-bootstrap-hardening` | Verificada localmente: `MutedUntil` bloquea like/unlike con cero delta de reaccion/notificacion; Apollo y providers permanecen bajo frontera global. Backend 147/147, frontend 79/79 y navegador sin errores propios |
 | `specs/192-credential-crypto-hardening` | Verificada localmente: respuesta Magic Link generica, digest SHA-256, pickup, consumo unico/replay y limpieza de credencial ejecutados; BCrypt central y JWT externalizado cubiertos. SMTP real permanece `[B]` |
@@ -105,14 +106,15 @@
 
 - No quedan hallazgos criticos o altos de las Specs 186-193 en condicion vulnerable
   original. La Spec 194 cerro sus gates locales y la regresion A -> logout -> B.
-- El recorrido con rol Moderador queda bloqueado porque el seeder canonico no crea esa
-  identidad. La matriz declarativa de autorizacion continua cubierta por tests.
-- Realtime con dos sesiones aisladas y Redis distribuido no fue validado en navegador;
-  el contexto disponible no aporto un segundo storage independiente y Redis no esta
-  configurado.
-- SMTP, Redis y Cloudinary reales requieren secretos no versionados y un ambiente
-  aprobado. Pickup, pub/sub en memoria y storage local permanecen cubiertos como
-  fallbacks de Development.
+- La identidad Moderador, su JWT, permisos representativos y seed idempotente quedaron
+  verificados. El recorrido visual completo de ese rol sigue dentro de la auditoria
+  manual previa a la defensa, no como bloqueo de codigo.
+- Redis distribuido quedo verificado localmente entre dos proveedores independientes,
+  con entrega exacta y aislamiento de topic. El handshake WebSocket de red con dos
+  navegadores permanece bloqueado por la restriccion de no iniciar servidores.
+- SMTP local quedo verificado contra Mailpit y Cloudinary conserva su fallback local.
+  Los proveedores SMTP/Cloudinary publicos requieren secretos no versionados y ambiente
+  aprobado; no se presentan como smokes productivos.
 - Google SSO sigue bloqueado hasta disponer de Client ID/secret, callbacks y aprobacion
   institucional. Open Graph perfecto para crawlers exige SSR o HTML desde backend.
 - React Router 6.30.4 conserva dos advisories moderados upstream y cero altos/criticos.
