@@ -4,7 +4,7 @@ using OneItb.Data;
 using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
 using Services.Notifications;
-using System.Text;
+using Services.Pagination;
 using System.Text.RegularExpressions;
 
 namespace Services.Social
@@ -53,13 +53,15 @@ namespace Services.Social
             _logger = logger;
         }
 
-        public IQueryable<Inquiry> GetInquiries(
+        private IQueryable<Inquiry> BuildInquiriesQuery(
             Guid? currentUserId,
+            bool hasGlobalCareerVisibility,
             string? searchTerm,
             int? careerId,
             int[]? careerIds,
             int[]? subjectIds,
-            Guid? inquiryId = null)
+            Guid? inquiryId,
+            Guid? authorId)
         {
             IQueryable<Inquiry> query = _context.Inquiries
                 .AsNoTracking()
@@ -86,6 +88,12 @@ namespace Services.Social
             {
                 Guid selectedInquiryId = inquiryId.Value;
                 query = query.Where(inquiry => inquiry.Id == selectedInquiryId);
+            }
+
+            if (authorId.HasValue)
+            {
+                Guid selectedAuthorId = authorId.Value;
+                query = query.Where(inquiry => inquiry.UserId == selectedAuthorId);
             }
 
             string normalizedSearch = searchTerm?.Trim() ?? string.Empty;
@@ -129,14 +137,11 @@ namespace Services.Social
             {
                 return query
                     .Where(inquiry => false)
-                    .OrderByDescending(inquiry => inquiry.PublishDate);
+                    .OrderByDescending(inquiry => inquiry.PublishDate)
+                    .ThenByDescending(inquiry => inquiry.Id);
             }
 
             Guid observerId = currentUserId.Value;
-            bool hasGlobalCareerVisibility = _context.Users.Any(user =>
-                user.Id == observerId &&
-                (user.Role == "Administrador" || user.Role == "Moderador"));
-
             if (!hasGlobalCareerVisibility)
             {
                 IQueryable<int> observerCareerIds = _context.UserCareers
@@ -163,12 +168,15 @@ namespace Services.Social
 
             if (normalizedSearch.Length > 0)
             {
-                return visibleQuery.OrderByDescending(inquiry => inquiry.PublishDate);
+                return visibleQuery
+                    .OrderByDescending(inquiry => inquiry.PublishDate)
+                    .ThenByDescending(inquiry => inquiry.Id);
             }
 
             return visibleQuery
                 .OrderByDescending(inquiry => followedUsers.Contains(inquiry.UserId))
-                .ThenByDescending(inquiry => inquiry.PublishDate);
+                .ThenByDescending(inquiry => inquiry.PublishDate)
+                .ThenByDescending(inquiry => inquiry.Id);
         }
 
         public async Task<InquiryPage> GetInquiriesPageAsync(
@@ -179,17 +187,37 @@ namespace Services.Social
             int[]? subjectIds,
             int first,
             string? after,
-            Guid? inquiryId = null)
+            Guid? inquiryId = null,
+            Guid? authorId = null,
+            CancellationToken cancellationToken = default)
         {
             int pageSize = Math.Clamp(first, 1, 25);
-            int offset = DecodeOffset(after);
+            int offset = OffsetCursor.Decode(after);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            IQueryable<Inquiry> query = GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds, inquiryId);
-            int totalCount = await query.CountAsync();
+            bool hasGlobalCareerVisibility = currentUserId.HasValue &&
+                await _context.Users
+                    .AsNoTracking()
+                    .AnyAsync(
+                        user =>
+                            user.Id == currentUserId.Value &&
+                            (user.Role == "Administrador" || user.Role == "Moderador"),
+                        cancellationToken);
+
+            IQueryable<Inquiry> query = BuildInquiriesQuery(
+                currentUserId,
+                hasGlobalCareerVisibility,
+                searchTerm,
+                careerId,
+                careerIds,
+                subjectIds,
+                inquiryId,
+                authorId);
+            int totalCount = await query.CountAsync(cancellationToken);
             List<Inquiry> pageItems = await query
                 .Skip(offset)
                 .Take(pageSize + 1)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             bool hasNextPage = pageItems.Count > pageSize;
             if (hasNextPage)
@@ -201,7 +229,7 @@ namespace Services.Social
             {
                 Items = pageItems,
                 HasNextPage = hasNextPage,
-                NextCursor = hasNextPage ? EncodeOffset(offset + pageItems.Count) : string.Empty,
+                NextCursor = hasNextPage ? OffsetCursor.Encode(offset + pageItems.Count) : string.Empty,
                 TotalCount = totalCount
             };
         }
@@ -402,33 +430,6 @@ namespace Services.Social
                 ".webm" => "video/webm",
                 _ => "application/octet-stream"
             };
-        }
-
-        private static string EncodeOffset(int offset)
-        {
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes($"offset:{offset}"));
-        }
-
-        private static int DecodeOffset(string? cursor)
-        {
-            if (string.IsNullOrWhiteSpace(cursor))
-                return 0;
-
-            try
-            {
-                string decoded = Encoding.UTF8.GetString(Convert.FromBase64String(cursor));
-                if (!decoded.StartsWith("offset:", StringComparison.Ordinal))
-                    throw new FormatException();
-
-                if (!int.TryParse(decoded["offset:".Length..], out int offset) || offset < 0)
-                    throw new FormatException();
-
-                return offset;
-            }
-            catch (FormatException)
-            {
-                throw new InvalidOperationException("Cursor de paginacion invalido.");
-            }
         }
 
         public async Task<Inquiry> EditInquiryAsync(
@@ -706,21 +707,25 @@ namespace Services.Social
             return await LoadCommentGraphAsync(comment.Id, cancellationToken);
         }
 
-        public async Task<ToggleReactionPayload> ToggleReactionAsync(Guid userId, Guid inquiryId)
+        public async Task<ToggleReactionPayload> ToggleReactionAsync(
+            Guid userId,
+            Guid inquiryId,
+            CancellationToken cancellationToken = default)
         {
+            await EnsureUserCanCreateContentAsync(userId, "reaccionar", cancellationToken);
+
             Guid? inquiryOwnerId = await _context.Inquiries
                 .AsNoTracking()
                 .Where(inquiry => inquiry.Id == inquiryId)
                 .Select(inquiry => (Guid?)inquiry.UserId)
-                .SingleOrDefaultAsync();
+                .SingleOrDefaultAsync(cancellationToken);
             if (!inquiryOwnerId.HasValue)
                 throw new InvalidOperationException("La publicación no existe.");
 
-            if (!await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive))
-                throw new InvalidOperationException("El usuario autenticado no está disponible.");
-
             var existingReaction = await _context.Reactions
-                .SingleOrDefaultAsync(reaction => reaction.InquiryId == inquiryId && reaction.UserId == userId);
+                .SingleOrDefaultAsync(
+                    reaction => reaction.InquiryId == inquiryId && reaction.UserId == userId,
+                    cancellationToken);
 
             bool isReacted;
             Guid? reactionId;
@@ -744,7 +749,7 @@ namespace Services.Social
                 reactionId = existingReaction.Id;
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             if (isReacted && inquiryOwnerId.Value != userId)
             {
@@ -754,26 +759,34 @@ namespace Services.Social
                     inquiryId,
                     $"social-reaction:inquiry:{inquiryId:D}",
                     "Tu publicación recibió un Me gusta.",
-                    "Tu publicación recibió {count} Me gusta.");
+                    "Tu publicación recibió {count} Me gusta.",
+                    cancellationToken: cancellationToken);
             }
 
-            int reactionCount = await _context.Reactions.CountAsync(reaction => reaction.InquiryId == inquiryId);
+            int reactionCount = await _context.Reactions.CountAsync(
+                reaction => reaction.InquiryId == inquiryId,
+                cancellationToken);
             return new ToggleReactionPayload(inquiryId, isReacted, reactionCount, reactionId);
         }
 
-        public async Task<ToggleCommentReactionPayload> ToggleCommentReactionAsync(Guid userId, Guid commentId)
+        public async Task<ToggleCommentReactionPayload> ToggleCommentReactionAsync(
+            Guid userId,
+            Guid commentId,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureUserCanCreateContentAsync(userId, "reaccionar");
+            await EnsureUserCanCreateContentAsync(userId, "reaccionar", cancellationToken);
 
             var target = await _context.Comments
                 .AsNoTracking()
                 .Where(comment => comment.Id == commentId)
                 .Select(comment => new { comment.UserId, comment.InquiryId })
-                .SingleOrDefaultAsync()
+                .SingleOrDefaultAsync(cancellationToken)
                 ?? throw new InvalidOperationException("El comentario no existe.");
 
             CommentReaction? existingReaction = await _context.CommentReactions
-                .SingleOrDefaultAsync(reaction => reaction.CommentId == commentId && reaction.UserId == userId);
+                .SingleOrDefaultAsync(
+                    reaction => reaction.CommentId == commentId && reaction.UserId == userId,
+                    cancellationToken);
 
             bool isReacted;
             Guid? reactionId;
@@ -797,7 +810,7 @@ namespace Services.Social
                 reactionId = existingReaction.Id;
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             if (isReacted && target.UserId != userId)
             {
@@ -808,11 +821,14 @@ namespace Services.Social
                     $"social-reaction:comment:{commentId:D}",
                     "Tu comentario recibió un Me gusta.",
                     "Tu comentario recibió {count} Me gusta.",
-                    $"/feed?inquiryId={target.InquiryId:D}&commentId={commentId:D}");
+                    $"/feed?inquiryId={target.InquiryId:D}&commentId={commentId:D}",
+                    cancellationToken);
             }
 
             int reactionCount = await _context.CommentReactions
-                .CountAsync(reaction => reaction.CommentId == commentId);
+                .CountAsync(
+                    reaction => reaction.CommentId == commentId,
+                    cancellationToken);
             return new ToggleCommentReactionPayload(commentId, isReacted, reactionCount, reactionId);
         }
 
@@ -821,32 +837,33 @@ namespace Services.Social
             bool canModerate,
             Guid inquiryId,
             int first,
-            string? after)
+            string? after,
+            CancellationToken cancellationToken = default)
         {
             Guid? ownerId = await _context.Inquiries
                 .AsNoTracking()
                 .Where(inquiry => inquiry.Id == inquiryId)
                 .Select(inquiry => (Guid?)inquiry.UserId)
-                .SingleOrDefaultAsync();
+                .SingleOrDefaultAsync(cancellationToken);
             if (!ownerId.HasValue)
                 throw new InvalidOperationException("La publicación no existe.");
             if (ownerId.Value != userId && !canModerate)
                 throw new InvalidOperationException("No tenes permisos para ver las reacciones de esta publicación.");
 
             int pageSize = Math.Clamp(first, 1, 50);
-            int offset = DecodeOffset(after);
+            int offset = OffsetCursor.Decode(after);
             IQueryable<Reaction> reactions = _context.Reactions
                 .AsNoTracking()
                 .Where(reaction => reaction.InquiryId == inquiryId)
                 .OrderByDescending(reaction => reaction.CreatedAt)
                 .ThenByDescending(reaction => reaction.Id);
 
-            int totalCount = await reactions.CountAsync();
+            int totalCount = await reactions.CountAsync(cancellationToken);
             List<User> users = await reactions
                 .Skip(offset)
                 .Take(pageSize + 1)
                 .Select(reaction => reaction.User)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             bool hasNextPage = users.Count > pageSize;
             if (hasNextPage)
@@ -856,7 +873,7 @@ namespace Services.Social
             {
                 Items = users,
                 HasNextPage = hasNextPage,
-                NextCursor = hasNextPage ? EncodeOffset(offset + users.Count) : string.Empty,
+                NextCursor = hasNextPage ? OffsetCursor.Encode(offset + users.Count) : string.Empty,
                 TotalCount = totalCount
             };
         }
@@ -882,6 +899,10 @@ namespace Services.Social
                     pluralMessageTemplate,
                     cancellationToken,
                     actionUrl);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {

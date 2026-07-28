@@ -24,6 +24,7 @@ import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import { GET_INQUIRIES_PAGE } from '../../data/graphql/queries/inquiries';
 import { SEARCH_PUBLIC_PROFILES } from '../../data/graphql/queries/searchPublicProfiles';
 import { GET_MY_FOLLOWED_USER_IDS } from '../../data/graphql/social';
+import { mergeInquiryPages } from '../../hooks/useInquiryPage';
 import {
   ADD_COMMENT,
   CREATE_INQUIRY,
@@ -476,24 +477,7 @@ export const Feed = () => {
           ...inquiryVariables,
           after: feedPage.nextCursor,
         },
-        updateQuery: (previous, { fetchMoreResult }) => {
-          if (!fetchMoreResult?.inquiriesPage) return previous;
-          const existingItems = previous?.inquiriesPage?.items ?? [];
-          const incomingItems = fetchMoreResult.inquiriesPage.items ?? [];
-          const existingIds = new Set(existingItems.map((item) => item.id));
-          const mergedItems = [
-            ...existingItems,
-            ...incomingItems.filter((item) => !existingIds.has(item.id)),
-          ];
-
-          return {
-            ...previous,
-            inquiriesPage: {
-              ...fetchMoreResult.inquiriesPage,
-              items: mergedItems,
-            },
-          };
-        },
+        updateQuery: mergeInquiryPages,
       });
     } catch (error) {
       showFeedback('error', error.message);

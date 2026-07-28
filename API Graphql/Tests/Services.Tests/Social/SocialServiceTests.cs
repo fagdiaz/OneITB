@@ -17,27 +17,31 @@ public sealed class SocialServiceTests
     private const int OtherSubjectId = 202;
 
     [Fact]
-    public async Task GetInquiries_FiltersStudentFeedToOwnCareers()
+    public async Task GetInquiriesPageAsync_FiltersStudentFeedToOwnCareers()
     {
         await using var context = ServiceTestData.CreateContext();
         await SeedSocialGraphAsync(context);
         SocialService service = CreateService(context);
 
-        List<Inquiry> inquiries = await service.GetInquiries(
-                ServiceTestData.StudentUserId,
-                null,
-                null,
-                null,
-                null)
-            .ToListAsync();
+        InquiryPage page = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            null,
+            null,
+            null,
+            null,
+            25,
+            null);
 
-        Inquiry inquiry = Assert.Single(inquiries);
+        Inquiry inquiry = Assert.Single(page.Items);
         Assert.Equal(OwnCareerInquiryId, inquiry.Id);
         Assert.Equal(ServiceTestData.CareerId, inquiry.Subject.CareerId);
     }
 
-    [Fact]
-    public async Task GetInquiries_ExcludesBlockedOrMutedAuthors()
+    [Theory]
+    [InlineData(InteractionType.Block)]
+    [InlineData(InteractionType.Mute)]
+    public async Task GetInquiriesPageAsync_ExcludesBlockedOrMutedAuthors(
+        InteractionType interactionType)
     {
         await using var context = ServiceTestData.CreateContext();
         await SeedSocialGraphAsync(context);
@@ -46,24 +50,25 @@ public sealed class SocialServiceTests
             Id = Guid.NewGuid(),
             ObserverId = ServiceTestData.StudentUserId,
             TargetId = ServiceTestData.TeacherUserId,
-            Type = InteractionType.Block
+            Type = interactionType
         });
         await context.SaveChangesAsync();
         SocialService service = CreateService(context);
 
-        List<Inquiry> inquiries = await service.GetInquiries(
-                ServiceTestData.StudentUserId,
-                null,
-                null,
-                null,
-                null)
-            .ToListAsync();
+        InquiryPage page = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            null,
+            null,
+            null,
+            null,
+            25,
+            null);
 
-        Assert.Empty(inquiries);
+        Assert.Empty(page.Items);
     }
 
     [Fact]
-    public async Task GetInquiries_PrioritizesFollowedAuthorsBeforeChronology()
+    public async Task GetInquiriesPageAsync_PrioritizesFollowedAuthorsBeforeChronology()
     {
         await using var context = ServiceTestData.CreateContext();
         await SeedSocialGraphAsync(context);
@@ -89,43 +94,188 @@ public sealed class SocialServiceTests
         await context.SaveChangesAsync();
         SocialService service = CreateService(context);
 
-        List<Inquiry> inquiries = await service.GetInquiries(
-                ServiceTestData.StudentUserId,
-                null,
-                null,
-                null,
-                null)
-            .ToListAsync();
+        InquiryPage page = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            null,
+            null,
+            null,
+            null,
+            25,
+            null);
 
-        Assert.Equal(2, inquiries.Count);
-        Assert.Equal(OwnCareerInquiryId, inquiries[0].Id);
-        Assert.Equal(newerInquiryId, inquiries[1].Id);
+        Assert.Equal(2, page.Items.Count);
+        Assert.Equal(OwnCareerInquiryId, page.Items[0].Id);
+        Assert.Equal(newerInquiryId, page.Items[1].Id);
     }
 
     [Fact]
-    public async Task GetInquiries_SearchFindsCommentContentAndAuthorEmail()
+    public async Task GetInquiriesPageAsync_SearchFindsCommentContentAndAuthorEmail()
     {
         await using var context = ServiceTestData.CreateContext();
         await SeedSocialGraphAsync(context);
         SocialService service = CreateService(context);
 
-        List<Inquiry> byComment = await service.GetInquiries(
-                ServiceTestData.StudentUserId,
-                "respuesta clave",
-                null,
-                null,
-                null)
-            .ToListAsync();
-        List<Inquiry> byEmail = await service.GetInquiries(
-                ServiceTestData.StudentUserId,
-                "teacher@itbeltran.test",
-                null,
-                null,
-                null)
-            .ToListAsync();
+        InquiryPage byComment = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            "respuesta clave",
+            null,
+            null,
+            null,
+            25,
+            null);
+        InquiryPage byEmail = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            "teacher@itbeltran.test",
+            null,
+            null,
+            null,
+            25,
+            null);
 
-        Assert.Single(byComment);
-        Assert.Single(byEmail);
+        Assert.Single(byComment.Items);
+        Assert.Single(byEmail.Items);
+    }
+
+    [Fact]
+    public async Task GetInquiriesPageAsync_ReturnsStableBoundedPages()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+        DateTime publishDate = DateTime.UtcNow.AddMinutes(-5);
+        context.Inquiries.AddRange(
+            CreateInquiry(Guid.Parse("10000000-0000-0000-0000-000000000010"), ServiceTestData.AdminUserId, publishDate),
+            CreateInquiry(Guid.Parse("10000000-0000-0000-0000-000000000011"), ServiceTestData.AdminUserId, publishDate),
+            CreateInquiry(Guid.Parse("10000000-0000-0000-0000-000000000012"), ServiceTestData.AdminUserId, publishDate),
+            CreateInquiry(Guid.Parse("10000000-0000-0000-0000-000000000013"), ServiceTestData.AdminUserId, publishDate));
+        await context.SaveChangesAsync();
+        SocialService service = CreateService(context);
+
+        InquiryPage first = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            null,
+            null,
+            null,
+            null,
+            2,
+            null);
+        InquiryPage second = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            null,
+            null,
+            null,
+            null,
+            2,
+            first.NextCursor);
+        InquiryPage final = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            null,
+            null,
+            null,
+            null,
+            2,
+            second.NextCursor);
+
+        Assert.Equal(5, first.TotalCount);
+        Assert.Equal(2, first.Items.Count);
+        Assert.True(first.HasNextPage);
+        Assert.NotEmpty(first.NextCursor);
+        Assert.Equal(2, second.Items.Count);
+        Assert.True(second.HasNextPage);
+        Assert.Single(final.Items);
+        Assert.False(final.HasNextPage);
+        Assert.Empty(first.Items.Select(item => item.Id).Intersect(second.Items.Select(item => item.Id)));
+        Assert.Empty(first.Items.Select(item => item.Id).Intersect(final.Items.Select(item => item.Id)));
+        Assert.Empty(second.Items.Select(item => item.Id).Intersect(final.Items.Select(item => item.Id)));
+    }
+
+    [Fact]
+    public async Task GetInquiriesPageAsync_ClampsOversizedPageToTwentyFive()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+        DateTime publishDate = DateTime.UtcNow.AddMinutes(-5);
+        context.Inquiries.AddRange(Enumerable.Range(0, 29).Select(index =>
+            CreateInquiry(
+                Guid.Parse($"30000000-0000-0000-0000-{index:D12}"),
+                ServiceTestData.AdminUserId,
+                publishDate)));
+        await context.SaveChangesAsync();
+        SocialService service = CreateService(context);
+
+        InquiryPage page = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            null,
+            null,
+            null,
+            null,
+            100,
+            null);
+
+        Assert.Equal(30, page.TotalCount);
+        Assert.Equal(25, page.Items.Count);
+        Assert.True(page.HasNextPage);
+    }
+
+    [Fact]
+    public async Task GetInquiriesPageAsync_FiltersByAuthorBeforePaging()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+        SocialService service = CreateService(context);
+
+        InquiryPage page = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            null,
+            null,
+            null,
+            null,
+            10,
+            null,
+            authorId: ServiceTestData.TeacherUserId);
+
+        Inquiry inquiry = Assert.Single(page.Items);
+        Assert.Equal(ServiceTestData.TeacherUserId, inquiry.UserId);
+    }
+
+    [Fact]
+    public async Task GetInquiriesPageAsync_RejectsInvalidCursor()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+        SocialService service = CreateService(context);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetInquiriesPageAsync(
+                ServiceTestData.StudentUserId,
+                null,
+                null,
+                null,
+                null,
+                10,
+                "cursor-invalido"));
+
+        Assert.Contains("paginacion", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetInquiriesPageAsync_PropagatesCancellation()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+        SocialService service = CreateService(context);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.GetInquiriesPageAsync(
+                ServiceTestData.StudentUserId,
+                null,
+                null,
+                null,
+                null,
+                10,
+                null,
+                cancellationToken: cancellation.Token));
     }
 
     [Fact]
@@ -385,6 +535,113 @@ public sealed class SocialServiceTests
         Assert.False(second.IsReacted);
         Assert.Equal(0, second.ReactionCount);
         Assert.Empty(context.Reactions);
+    }
+
+    [Fact]
+    public async Task ToggleReactionAsync_RejectsMutedUserBeforeAddingReaction()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        SocialService service = CreateService(context, notifications);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Consulta sin reacciones silenciadas",
+            "Contenido base");
+        User mutedUser = await context.Users.SingleAsync(
+            user => user.Id == ServiceTestData.TeacherUserId);
+        mutedUser.MutedUntil = DateTime.UtcNow.AddHours(1);
+        await context.SaveChangesAsync();
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ToggleReactionAsync(ServiceTestData.TeacherUserId, inquiry.Id));
+
+        Assert.Contains("silenciada", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(await context.Reactions.ToListAsync());
+        notifications.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ToggleReactionAsync_RejectsMutedUserBeforeRemovingExistingReaction()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        SocialService service = CreateService(context, notifications);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Consulta con reaccion persistente",
+            "Contenido base");
+        ToggleReactionPayload existing = await service.ToggleReactionAsync(
+            ServiceTestData.TeacherUserId,
+            inquiry.Id);
+        User mutedUser = await context.Users.SingleAsync(
+            user => user.Id == ServiceTestData.TeacherUserId);
+        mutedUser.MutedUntil = DateTime.UtcNow.AddHours(1);
+        await context.SaveChangesAsync();
+        notifications.Invocations.Clear();
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ToggleReactionAsync(ServiceTestData.TeacherUserId, inquiry.Id));
+
+        Assert.Contains("silenciada", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Reaction persisted = Assert.Single(await context.Reactions.ToListAsync());
+        Assert.Equal(existing.ReactionId, persisted.Id);
+        notifications.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ToggleReactionAsync_PersonalMuteDoesNotSanctionTheTargetUser()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Consulta visible",
+            "Contenido base");
+        context.UserInteractions.Add(new UserInteraction
+        {
+            Id = Guid.NewGuid(),
+            ObserverId = ServiceTestData.StudentUserId,
+            TargetId = ServiceTestData.TeacherUserId,
+            Type = InteractionType.Mute,
+            CreatedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        ToggleReactionPayload result = await service.ToggleReactionAsync(
+            ServiceTestData.TeacherUserId,
+            inquiry.Id);
+
+        Assert.True(result.IsReacted);
+        Assert.Single(await context.Reactions.ToListAsync());
+    }
+
+    [Fact]
+    public async Task ToggleReactionAsync_PropagatesCancellationWithoutSideEffects()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        SocialService service = CreateService(context);
+        Inquiry inquiry = await service.AddInquiryAsync(
+            ServiceTestData.StudentUserId,
+            ServiceTestData.SubjectId,
+            "Consulta cancelable",
+            "Contenido base");
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.ToggleReactionAsync(
+                ServiceTestData.TeacherUserId,
+                inquiry.Id,
+                cancellation.Token));
+
+        Assert.Empty(await context.Reactions.ToListAsync());
     }
 
     [Fact]
@@ -789,6 +1046,20 @@ public sealed class SocialServiceTests
                 It.IsAny<string?>()))
             .ReturnsAsync((Notification?)null);
         return notifications;
+    }
+
+    private static Inquiry CreateInquiry(Guid id, Guid userId, DateTime publishDate)
+    {
+        return new Inquiry
+        {
+            Id = id,
+            UserId = userId,
+            SubjectId = ServiceTestData.SubjectId,
+            Title = $"Publicacion {id:N}",
+            Content = "Contenido paginado",
+            PublishDate = publishDate,
+            IsActive = true
+        };
     }
 
     private static async Task SeedSocialGraphAsync(OneItb.Data.OneItbContext context)

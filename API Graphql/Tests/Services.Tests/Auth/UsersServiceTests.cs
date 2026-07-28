@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OneITB.Core.Services.Interfaces;
+using Services.Auth;
 using Services.Repositories;
 using Services.Tests.TestSupport;
 using Services.Users;
@@ -15,7 +16,7 @@ public sealed class UsersServiceTests
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new UsersService(unitOfWork, context);
+        var service = CreateService(unitOfWork, context);
 
         UserPayload payload = await service.RegisterAsync(new RegisterInput(
             "  LU.PRUEBA@ITBELTRAN.COM.AR  ",
@@ -47,7 +48,7 @@ public sealed class UsersServiceTests
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new UsersService(unitOfWork, context);
+        var service = CreateService(unitOfWork, context);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.RegisterAsync(new RegisterInput(
@@ -66,7 +67,7 @@ public sealed class UsersServiceTests
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new UsersService(unitOfWork, context);
+        var service = CreateService(unitOfWork, context);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.RegisterAsync(new RegisterInput(
@@ -80,12 +81,38 @@ public sealed class UsersServiceTests
     }
 
     [Fact]
+    public async Task RegisterAsync_PreCancelledToken_DoesNotPersistUser()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        using var unitOfWork = new UnitOfWork(context);
+        var service = CreateService(unitOfWork, context);
+        using var cancellationSource = new CancellationTokenSource();
+        cancellationSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.RegisterAsync(
+                new RegisterInput(
+                    "cancelled@itbeltran.com.ar",
+                    "Test1234!",
+                    "Operacion",
+                    "Cancelada",
+                    "Estudiante",
+                    new[] { ServiceTestData.CareerId },
+                    null),
+                cancellationSource.Token));
+
+        Assert.False(await context.Accounts.AnyAsync(
+            account => account.Email == "cancelled@itbeltran.com.ar"));
+    }
+
+    [Fact]
     public async Task UpdateUserRoleAsync_RejectsChangesToAdministratorAccounts()
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new UsersService(unitOfWork, context);
+        var service = CreateService(unitOfWork, context);
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.UpdateUserRoleAsync(
@@ -103,12 +130,22 @@ public sealed class UsersServiceTests
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new UsersService(unitOfWork, context);
+        var service = CreateService(unitOfWork, context);
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.UpdateUserStatusAsync(ServiceTestData.AdminUserId, false));
 
         Assert.Contains("Administrador", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.True(context.Users.Single(user => user.Id == ServiceTestData.AdminUserId).IsActive);
+    }
+
+    private static UsersService CreateService(
+        IUnitOfWork unitOfWork,
+        OneItb.Data.OneItbContext context)
+    {
+        return new UsersService(
+            unitOfWork,
+            context,
+            new BcryptPasswordHasher(new PasswordHashingOptions(10)));
     }
 }

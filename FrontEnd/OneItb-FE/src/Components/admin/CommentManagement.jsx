@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
-import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
+import { useMutation } from '@apollo/client';
 import { TOGGLE_COMMENT_STATUS } from '../../data/graphql/mutations/inquiries';
+import { useInquiryPage } from '../../hooks/useInquiryPage';
 
 const shortId = (id) => `#${String(id ?? '').slice(-6).toUpperCase()}`;
 
 export const CommentManagement = () => {
   const [selectedComment, setSelectedComment] = useState(null);
-  const { data, loading, error, refetch } = useQuery(GET_INQUIRIES, {
-    variables: { searchTerm: null, careerId: null, subjectIds: null },
-    fetchPolicy: 'cache-and-network',
-  });
+  const {
+    items: posts,
+    totalCount: totalPostCount,
+    hasNextPage,
+    loading,
+    loadingMore,
+    error,
+    refetch,
+    loadMore,
+  } = useInquiryPage({ pageSize: 10 });
   const [toggleCommentStatus, { loading: updating }] = useMutation(TOGGLE_COMMENT_STATUS);
-  const comments = (data?.inquiries ?? []).flatMap((post) =>
+  const comments = posts.flatMap((post) =>
     (post.comments ?? []).map((comment) => ({
       ...comment,
       postId: post.id,
@@ -33,7 +39,9 @@ export const CommentManagement = () => {
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Comentarios</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">Moderacion rapida de respuestas y conversaciones.</p>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{comments.length} activos</span>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+          {comments.length} comentarios en {posts.length}/{totalPostCount} publicaciones
+        </span>
       </div>
       {loading && <p className="text-sm text-slate-500">Cargando comentarios...</p>}
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error.message}</p>}
@@ -71,6 +79,16 @@ export const CommentManagement = () => {
           </article>
         ))}
       </div>
+      {hasNextPage && (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
+        >
+          {loadingMore ? 'Cargando...' : 'Cargar mas publicaciones'}
+        </button>
+      )}
       {selectedComment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
           <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:border dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">

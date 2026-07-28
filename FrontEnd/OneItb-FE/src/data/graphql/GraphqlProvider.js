@@ -1,4 +1,11 @@
-import { ApolloClient, InMemoryCache, createHttpLink, split } from '@apollo/client';
+import {
+  ApolloClient,
+  ApolloLink,
+  InMemoryCache,
+  Observable,
+  createHttpLink,
+  split,
+} from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { onError } from '@apollo/client/link/error';
@@ -40,6 +47,9 @@ let socketStatus = 'disconnected';
 const socketListeners = new Set();
 let sessionExpirationHandled = false;
 let activeApolloClient = null;
+let sessionEpoch = 0;
+let sessionTerminationHandler = null;
+let sessionTerminationPromise = null;
 
 const clearActiveApolloStore = () => activeApolloClient?.clearStore?.() ?? Promise.resolve();
 
@@ -89,6 +99,28 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 const wsLink = new GraphQLWsLink(graphQLWsClient);
+const sessionBoundaryLink = new ApolloLink((operation, forward) => {
+  const operationEpoch = sessionEpoch;
+
+  return new Observable((observer) => {
+    const subscription = forward(operation).subscribe({
+      next: (value) => {
+        if (operationEpoch === sessionEpoch) observer.next(value);
+      },
+      error: (error) => {
+        if (operationEpoch === sessionEpoch) {
+          observer.error(error);
+        } else {
+          observer.complete();
+        }
+      },
+      complete: () => observer.complete(),
+    });
+
+    return () => subscription.unsubscribe();
+  });
+});
+
 const isAuthorizationFailure = (graphQLErrors, networkError) => {
   const graphQLAuthFailure = graphQLErrors?.some((error) => {
     const code = error?.extensions?.code;
@@ -108,15 +140,7 @@ const handleSessionExpired = () => {
   if (!hadToken || sessionExpirationHandled) return;
 
   sessionExpirationHandled = true;
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  void clearActiveApolloStore();
-  sessionStorage.setItem('oneitb-session-expired', '1');
-  alert('Tu sesión ha expirado');
-
-  if (window.location.pathname !== '/login') {
-    window.location.assign('/login');
-  }
+  void GraphQLProvider.requestSessionTermination('expired');
 };
 
 const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
@@ -142,13 +166,15 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   }));
 });
 
-const transportLink = split(
-  ({ query }) => {
-    const definition = getMainDefinition(query);
-    return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
-  },
-  wsLink,
-  authLink.concat(httpLink),
+const transportLink = sessionBoundaryLink.concat(
+  split(
+    ({ query }) => {
+      const definition = getMainDefinition(query);
+      return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
+    },
+    wsLink,
+    authLink.concat(httpLink),
+  ),
 );
 
 const replaceIncoming = (_existing, incoming) => incoming;
@@ -207,12 +233,8 @@ const createApolloClient = () => new ApolloClient({
           me: {
             merge: replaceIncoming,
           },
-          inquiries: {
-            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds', 'inquiryId'],
-            merge: replaceIncoming,
-          },
           inquiriesPage: {
-            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds', 'inquiryId'],
+            keyArgs: ['searchTerm', 'careerId', 'careerIds', 'subjectIds', 'inquiryId', 'authorId'],
             merge: replaceIncoming,
           },
           conversation: {
@@ -264,6 +286,10 @@ const createApolloClient = () => new ApolloClient({
             keyArgs: ['userId'],
             merge: replaceIncoming,
           },
+          academicStudents: {
+            keyArgs: ['subjectId'],
+            merge: replaceIncoming,
+          },
         },
       },
     },
@@ -281,6 +307,61 @@ export class GraphQLProvider extends GeneralDataProvider {
 
   static clearApolloStore() {
     return clearActiveApolloStore();
+  }
+
+  static async invalidateSessionTransport() {
+    sessionEpoch += 1;
+    graphQLWsClient.terminate();
+    publishSocketStatus('disconnected');
+    try {
+      await clearActiveApolloStore();
+    } catch (error) {
+      await activeApolloClient?.cache?.reset?.();
+      console.error('Apollo session cleanup failed; normalized cache was reset.', error);
+    }
+  }
+
+  static registerSessionTerminationHandler(handler) {
+    sessionTerminationHandler = handler;
+    return () => {
+      if (sessionTerminationHandler === handler) {
+        sessionTerminationHandler = null;
+      }
+    };
+  }
+
+  static requestSessionTermination(reason = 'manual') {
+    if (sessionTerminationPromise) {
+      return sessionTerminationPromise;
+    }
+
+    const handler = sessionTerminationHandler ?? (async (fallbackReason) => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      GraphQLProvider.resetToken();
+      GraphQLProvider.resetUser();
+      await GraphQLProvider.invalidateSessionTransport();
+
+      if (fallbackReason === 'expired') {
+        sessionStorage.setItem('oneitb-session-expired', '1');
+      }
+
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
+    });
+
+    sessionTerminationPromise = Promise.resolve()
+      .then(() => handler(reason))
+      .finally(() => {
+        sessionTerminationPromise = null;
+      });
+
+    return sessionTerminationPromise;
+  }
+
+  static waitForSessionTermination() {
+    return sessionTerminationPromise ?? Promise.resolve();
   }
 
   static resetSessionExpirationGuard() {

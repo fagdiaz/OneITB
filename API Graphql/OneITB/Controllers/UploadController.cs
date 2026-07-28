@@ -39,10 +39,14 @@ namespace OneItb.Controllers
         };
 
         private readonly IFileStorageService _storageService;
+        private readonly IFileContentInspector _contentInspector;
 
-        public UploadController(IFileStorageService storageService)
+        public UploadController(
+            IFileStorageService storageService,
+            IFileContentInspector contentInspector)
         {
             _storageService = storageService;
+            _contentInspector = contentInspector;
         }
 
         [HttpPost]
@@ -71,6 +75,19 @@ namespace OneItb.Controllers
                 originalFileName.Any(char.IsControl))
             {
                 return BadRequest(new { message = "El nombre del archivo no es valido." });
+            }
+
+            FileInspectionResult inspection = await _contentInspector.InspectAsync(
+                file,
+                extension,
+                cancellationToken);
+            if (!inspection.IsValid)
+            {
+                return BadRequest(new
+                {
+                    message = "El contenido real del archivo no coincide con un formato permitido.",
+                    code = "UPLOAD_CONTENT_INVALID"
+                });
             }
 
             string fileUrl = await _storageService.SaveAsync(file, extension, cancellationToken);

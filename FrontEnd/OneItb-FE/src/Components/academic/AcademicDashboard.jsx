@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
+import { NetworkStatus, useMutation, useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { useForm } from '../../hooks/useForm';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
@@ -18,6 +18,7 @@ import {
 } from '../../data/graphql/mutations/academic';
 import { UPLOAD_ACCEPT, uploadAttachment, apiBaseUrl } from '../../utils/uploadFile';
 import { CertificateExport } from './CertificateExport';
+import { AcademicStudentSelector } from './AcademicStudentSelector';
 
 const progressStatuses = [
   { value: 'IN_PROGRESS', label: 'En curso' },
@@ -160,11 +161,49 @@ export const AcademicDashboard = () => {
   });
   const myProgress = myProgressData?.myAcademicProgress ?? [];
 
-  const { data: studentsData, loading: studentsLoading } = useQuery(GET_ACADEMIC_STUDENTS, {
-    variables: { subjectId: selectedSubjectNumericId },
+  const {
+    data: studentsData,
+    loading: studentsLoading,
+    error: studentsError,
+    fetchMore: fetchMoreStudents,
+    networkStatus: studentsNetworkStatus,
+  } = useQuery(GET_ACADEMIC_STUDENTS, {
+    variables: { subjectId: selectedSubjectNumericId, first: 25, after: null },
     skip: !isManager || !selectedSubjectNumericId,
+    notifyOnNetworkStatusChange: true,
   });
-  const students = studentsData?.academicStudents ?? [];
+  const studentPage = studentsData?.academicStudents;
+  const students = studentPage?.items ?? [];
+  const studentsLoadingMore = studentsNetworkStatus === NetworkStatus.fetchMore;
+
+  const loadMoreStudents = async () => {
+    if (!studentPage?.hasNextPage || !studentPage.nextCursor || studentsLoadingMore) return;
+
+    await fetchMoreStudents({
+      variables: {
+        subjectId: selectedSubjectNumericId,
+        first: 25,
+        after: studentPage.nextCursor,
+      },
+      updateQuery: (previous, { fetchMoreResult }) => {
+        if (!fetchMoreResult?.academicStudents) return previous;
+        const existingItems = previous?.academicStudents?.items ?? [];
+        const incomingItems = fetchMoreResult.academicStudents.items ?? [];
+        const existingIds = new Set(existingItems.map((student) => student.id));
+
+        return {
+          ...previous,
+          academicStudents: {
+            ...fetchMoreResult.academicStudents,
+            items: [
+              ...existingItems,
+              ...incomingItems.filter((student) => !existingIds.has(student.id)),
+            ],
+          },
+        };
+      },
+    });
+  };
 
   const { data: selectedStudentProgressData, refetch: refetchSelectedStudentProgress } = useQuery(GET_ACADEMIC_PROGRESS_FOR_USER, {
     variables: { userId: progressForm.userId },
@@ -726,22 +765,18 @@ export const AcademicDashboard = () => {
                 </p>
 
                 <form onSubmit={submitProgress} className="mt-4 space-y-4">
-                  <label className="block">
-                    <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Estudiante</span>
-                    <select
-                      value={progressForm.userId}
-                      onChange={(event) => setProgressForm((current) => ({ ...current, userId: event.target.value }))}
-                      disabled={!selectedSubjectId || studentsLoading}
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200"
-                    >
-                      <option value="">{studentsLoading ? 'Cargando estudiantes...' : 'Selecciona un estudiante'}</option>
-                      {students.map((student) => (
-                        <option key={student.id} value={student.id}>
-                          {student.lastName}, {student.firstName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <AcademicStudentSelector
+                    value={progressForm.userId}
+                    onChange={(event) => setProgressForm((current) => ({ ...current, userId: event.target.value }))}
+                    students={students}
+                    totalCount={studentPage?.totalCount ?? 0}
+                    subjectSelected={Boolean(selectedSubjectId)}
+                    loading={studentsLoading}
+                    loadingMore={studentsLoadingMore}
+                    hasNextPage={Boolean(studentPage?.hasNextPage)}
+                    error={studentsError}
+                    onLoadMore={loadMoreStudents}
+                  />
 
                   <div className="grid grid-cols-2 gap-3">
                     <label className="block">

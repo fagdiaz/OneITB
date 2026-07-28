@@ -1,6 +1,6 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-07-18
+**Ultima verificacion**: 2026-07-28
 
 ## Fuentes canonicas
 
@@ -8,12 +8,12 @@
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
 | `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.2 lista para revision de datos personales y conversion a Word/PDF |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 106/108 (98%); core funcional Feature Complete |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 114/116 (98%); core funcional Feature Complete, etapa 186-189 verificada y Specs 190-193 implementadas |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente, actualizado hasta Spec 185 |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; remediaciones 186-189 verificadas y Specs 190-193 implementadas con evidencia automatizada |
 
 ## Documentacion complementaria
 
@@ -24,7 +24,6 @@
 | `docs/academic/03-use-cases.md` | Casos de uso principales |
 | `docs/academic/04-design-diagrams.md` | Diagramas resumidos |
 | `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Guia 2.0 definitiva para producir 10 diagramas Mermaid, 3 graficos de gestion, convertir a DOCX/PDF y auditar APA 7 |
-| `docs/audit/HISTORICAL_AUDITS.md` | Archivo compacto de auditorias supersedidas; conservar como respaldo historico, no usar como fuente actual |
 | `core-web/` | Paquete compacto de contexto para Gemini/external AI; no es fuente canonica |
 | `.specify/`, `.agents/`, `AGENTS.md`, `specs/` | Tooling local de agentes y evidencia granular; ignorado en el repo profesional |
 
@@ -32,6 +31,11 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/193-social-bootstrap-hardening` | Implementada: `MutedUntil` bloquea like/unlike sin cambios en reacciones ni notificaciones, `ToggleReaction` devuelve `USER_ERROR`, Apollo se crea de forma estable bajo un boundary exterior y el bootstrap tiene fallback React/DOM sin dependencias de providers. Backend 147/147, frontend 72/72, builds 0/0 y EF sin drift PASS. Smokes autenticado/browser diferidos |
+| `specs/192-credential-crypto-hardening` | Implementada: respuesta Magic Link generica, digest SHA-256, entrega SMTP/pickup sin body logs, consumo de fragmento y limpieza URL, BCrypt costo 12 central con upgrade/no downgrade, seeder inyectado y JWT externalizado. Backend 141/141, frontend 61/61, schema real, builds, compose y EF sin drift PASS. SMTP real/browser smoke pendientes |
+| `specs/191-query-pagination-hardening` | Implementada: unico contrato social acotado con cancelacion/filtro de autor, consumidores Apollo migrados y estudiantes academicos paginados. Backend 126/126, frontend 59/59, builds 0/0, schema real y EF sin drift PASS. Smokes autenticados y observacion runtime de cancelacion/logs diferidos |
+| `specs/190-upload-magiclink-hardening` | Implementada: inspeccion previa a storage, throttling Magic Link por origen/identidad con memoria/Redis y proxy confiable. Backend 115/115, build 0/0, EF sin drift, compose valido y upload runtime valido/hostil PASS. Magic Link runtime smoke diferido; umbral, recuperacion y concurrencia cubiertos por tests deterministas |
+| `specs/186-189` | Cierre de seguridad verificado: JWT central y Magic Link atomico; cancelacion end-to-end con guard automatizado; frontera de sesion Apollo/React/WebSocket; matriz declarativa de 42 mutaciones. Backend 82/82, frontend 54/54, builds PASS, EF sin drift, GraphQL runtime y browser smoke PASS |
 | `specs/185-media-notification-polish/` | Media Grid orientado por dimensiones, dos YouTube con limite UI/backend, PDF con primera hoja y pie de acciones, logo/nombres legibles en dark, transicion de tema accesible, textura global visible, preferencias en portal y badge estrictamente no leido. Backend 65/65, frontend 49/49, builds PASS, Vite 858 ms en el gate final, EF sin drift, npm audit 0 vulnerabilidades y runtime GraphQL HTTP 200; regresion visual manual pendiente |
 | `specs/184-qa-master-polish-and-layout/` | Header auto-hide defensivo, Footer unificado, textura global, dark mode suavizado, compositor acotado, mosaico mixto con portada/YouTube/overflow, menciones respaldadas por identidad, preferencias en drawer y deep-link laboral exacto. Backend 63/63, frontend 39/39, builds PASS, Vite 1.19 s, npm audit 0 vulnerabilidades y schema GraphQL runtime HTTP 200; regresion visual manual pendiente |
 | `specs/183-premium-branding-landing/` | Identidad final normalizada en cuatro assets canonicos, Header con isotipo aprobado y landing institucional unica Clean Tech/Tech Noir. Spotlight usa RAF sin re-render, reveals respetan reduced-motion y limpian observers; los PNG de fondo de 4.47/5.12 MB quedan fuera del bundle. Frontend 31/31, Vite build PASS en 941 ms, npm audit 0 vulnerabilidades y diff-check PASS; aprobacion visual responsive/manual pendiente |
@@ -41,8 +45,8 @@
 | `specs/179-social-polish-quick-wins/` | Quick wins del muro implementados: enlace copiable por publicacion con deep-link estable, drag-and-drop de adjuntos reutilizando validaciones existentes, restauracion de foco en visores/listado de reacciones, guard contra cargas duplicadas y fallback de preview de enlaces rotos. Frontend tests PASS 12/12 y Vite build PASS |
 | `specs/178-qa-session2-social-core-fixes/` | Nucleo social estabilizado: scoping de materias backend/UI, `SocialAttachment`, `CommentReaction`, adjuntos multiples con nombre original, galeria multimedia no excluyente, visores, autofocus, listado paginado de likes, notificaciones agrupadas con deep-link, footer y retiro del compositor legacy del sidebar. Migracion aplicada a Docker SQL, EF sin cambios pendientes, backend build PASS, tests 47/47, frontend tests 6/6, build Vite PASS y smoke GraphQL autenticado PASS. Browser QA fue parcial: detecto el sidebar duplicado y motivo el fix; la recarga post-fix quedo bloqueada por politica de URL de la herramienta |
 | `specs/175-privacy-controls-and-smoke-tests/` | Controles de privacidad implementados: `User.IsPublicProfile`, migracion `AddUserProfilePrivacy`, `toggleProfilePrivacy`, masking backend-side en `publicProfile`/`searchPublicProfiles`, switch en `/profile/edit` con toast local, badges de perfil privado en busqueda, y `testSmtpConnection` admin-only con errores controlados. Backend build PASS, backend tests 39/39, frontend build PASS, EF sin cambios pendientes y diff-check PASS; smoke runtime temporal bloqueado por revisor automatico del entorno Codex al iniciar proceso persistente |
-| `docs/` audit 2026-07-08 | Documentacion normalizada para presentacion institucional: `ROADMAP.md` alinea el modulo laboral como "Empleos y Gestor de Postulaciones", suma SMTP como item implementado y queda actualizado a 97/99; `scope-and-requirements.md`, `architecture-and-design.md` y `docs/academic/*` quedan alineados con empleos, postulaciones, SMTP, AuditLog, SIU mock, recursos academicos y limites pendientes; `docker-compose.prod.yml`, `.env.example` y `RUNBOOK_DEV.md` documentan variables SMTP opcionales |
-| `specs/174-ux-alignment-and-smtp/` | Code Freeze polish: terminologia de empleos alineada a "Gestor de Postulaciones" y "Perfil Academico"; `IEmailSender` con `SmtpEmailService` configurable y `ConsoleEmailService` fallback; `updateApplicationStatus` envia correo en estados `Reviewed`/`Rejected` sin rollback ante fallo SMTP. Backend build PASS, backend tests 38/38, frontend build PASS; Vitest bloqueado por EPERM en `node_modules/.vite-temp`; smoke SMTP real pendiente por falta de secretos/proveedor |
+| `docs/` audit 2026-07-08 | Registro historico de la normalizacion institucional. La configuracion de correo opcional documentada en ese corte fue reemplazada por la politica Production/pickup de Spec 192 |
+| `specs/174-ux-alignment-and-smtp/` | Registro historico del primer adaptador SMTP y terminologia laboral. Su fallback de consola fue retirado por Spec 192; actualmente Production exige SMTP y Development usa pickup `.eml` ignorado |
 | `specs/173-enterprise-jobs-ats-seeder-qa/` | Modulo de empleos y Gestor de Postulaciones implementado end-to-end: `JobOffer`, `JobApplication`, FKs restrictivas, indice unico por oferta/postulante, migraciones `AddJobOffers` y `AddJobApplications`, `jobOffers`, `myJobOffers`, `createJobOffer`, `applyToJob`, `updateApplicationStatus`, `jobOfferCreated`, `/empleos`, `/empleos/mis-ofertas`, badge realtime en Nav y seeder enterprise con postulaciones. Backend build PASS, EF sin cambios pendientes, backend tests 38/38 y frontend build PASS; Vitest bloqueado por EPERM en cache temporal de `node_modules/.vite-temp` y smoke runtime bloqueado por restriccion del entorno Codex al iniciar proceso temporal |
 | `specs/171-production-security-and-seeding/` | Hardening final de seguridad/backend: profundidad maxima GraphQL configurable, paging global, lockout persistente por cuenta, migracion `AddAccountLockout`, seeding demo/productivo configurable sin reset de passwords existentes, backend build PASS, backend tests 38/38, EF sin cambios pendientes y compose productivo validado con `ONEITB_SEED_DEMO_PASSWORD` efimero |
 | `specs/170-cloud-devops-scalability/` | Preparacion cloud/devops: Dockerfiles multi-stage API/Web, `docker-compose.prod.yml` con SQL Server/Redis/API/Nginx, Redis Pub/Sub condicional con fallback InMemory, Cloudinary opcional con fallback local, rate limiting, security headers, healthcheck, npm audit productivo 0 vulnerabilidades, backend build PASS, backend tests 35/35, frontend tests 3/3, frontend build PASS, compose config/build PASS |
@@ -98,11 +102,14 @@
 
 ## Brechas vigentes
 
+- Las Specs 186-189 estan verificadas y las Specs 190-193 estan implementadas `[I]`. El cierre tecnico automatizado esta completo; el Code Freeze operativo definitivo queda condicionado a la regresion manual final.
+- Spec 190 ya valida magic bytes/estructura antes de almacenar y aplica rate limiting especifico a Magic Link; solo queda el smoke runtime del throttle para elevarla a `[V]`.
+- Spec 193 ya aplica `MutedUntil` a reacciones de publicaciones y eleva la frontera de errores por encima de Apollo/Theme con guard previo a React. Falta elevarla de `[I]` a `[V]` mediante smoke autenticado y navegador.
 - Existen baselines de pruebas de componentes frontend y de integracion GraphQL con executor real; queda ampliar cobertura hacia regresion visual/browser y SQL Server/Testcontainers para CI avanzado.
 - El flujo social de Specs 178/179/181 quedo verificado por tests, schema y smoke REST/GraphQL donde aplica; falta una ultima regresion manual autenticada de portadas, reemplazo de adjuntos, carrusel/PDF, moderacion con motivo y preferencias en el navegador usado para la defensa.
 - Falta regresion autenticada en navegador del hub academico para elevar busqueda/categorias/versionado/modal de recursos desde `[I]` a `[V]`.
 - Falta regresion visual en navegador de `/empleos` y `/empleos/mis-ofertas`, mas validacion manual del badge realtime con dos sesiones para elevar la UI de empleos/Gestor de Postulaciones a `[V]`.
-- Redis Pub/Sub, Cloudinary y SMTP estan implementados de forma condicional; SMTP cuenta con smoke GraphQL admin-only, pero quedan pendientes pruebas productivas con secretos reales para elevar servicios externos a `[V]`.
+- Redis Pub/Sub y Cloudinary estan implementados de forma condicional. SMTP es obligatorio en Production, cuenta con smoke GraphQL admin-only y pickup local seguro; quedan pendientes pruebas con un proveedor real para elevarlo a `[V]`.
 - Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
 - El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validar specs.
 - Falta verificacion visual en navegador del panel admin completo contra SQL Docker.
@@ -112,7 +119,9 @@
 - Las miniaturas de YouTube usan imagen estatica y los adjuntos de imagen se resuelven contra el backend antes de renderizar inline.
 - La spec 170 restauro dependencias con red, ejecuto npm audit productivo y dejo 0 vulnerabilidades conocidas en dependencias frontend runtime.
 - Google SSO productivo queda bloqueado hasta disponer de Client ID/secret, callbacks y aprobacion institucional. La ruta publica de certificados usa meta tags runtime; Open Graph perfecto para crawlers exige SSR o HTML renderizado desde backend.
-- `HISTORICAL_AUDITS.md` no debe eliminarse antes de la defensa: reemplaza varios documentos viejos y deja claro que no es fuente vigente. El informe vigente para autoridades es `FINAL_AUDIT_REPORT.md`.
 - Las brechas de fuerza bruta de login y DoS por profundidad GraphQL quedaron mitigadas por Spec 171; queda pendiente aplicar la migracion en cada entorno real con secretos definitivos antes de smoke runtime productivo.
+- Magic Link devuelve un payload generico, entrega la credencial fuera de banda, almacena solo SHA-256 y limpia el fragmento en React. El flujo pickup automatizado pasa; falta smoke SMTP real/browser.
+- Upload valida extension/tipo/tamano y, desde Spec 190, firmas/estructura antes de invocar storage; fixtures validos y hostiles pasaron tests y smoke local.
+- Magic Link cuenta con throttling especifico por origen e identidad/credencial, memoria acotada en desarrollo y Redis atomico configurable. El smoke runtime de umbral queda diferido; tests deterministas cubren concurrencia, expiracion y recuperacion.
 
 Ante contradicciones, prevalecen codigo, esquema ejecutado y evidencia runtime. Los porcentajes se recalculan exclusivamente desde los checklists de `ROADMAP.md`.

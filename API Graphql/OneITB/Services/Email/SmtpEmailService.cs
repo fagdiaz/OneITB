@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using OneITB.Core.Services.Interfaces;
 
 namespace OneItb.GraphQL.Services.Email
 {
@@ -50,8 +51,7 @@ namespace OneItb.GraphQL.Services.Email
 
             await client.SendMailAsync(message, cancellationToken);
             _logger.LogInformation(
-                "SMTP email sent. To={Recipient}; Subject={Subject}",
-                recipient,
+                "SMTP email sent. Subject={Subject}",
                 subject);
         }
     }

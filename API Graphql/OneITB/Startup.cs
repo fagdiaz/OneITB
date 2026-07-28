@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
@@ -12,11 +14,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using OneItb.Data;
@@ -36,8 +40,10 @@ using Services.Academic;
 using Services.Notifications;
 using Services.Siu;
 using Services.Jobs;
+using Services.Auth;
 using OneItb.GraphQL.Services.Email;
 using OneItb.GraphQL.Services.Storage;
+using OneItb.GraphQL.Services.Security;
 using StackExchange.Redis;
 
 namespace OneItb.GraphQL
@@ -58,9 +64,18 @@ namespace OneItb.GraphQL
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            JwtTokenOptions jwtOptions = JwtTokenOptions.FromConfiguration(Configuration);
+            PasswordHashingOptions passwordHashingOptions =
+                PasswordHashingOptions.FromConfiguration(Configuration);
+            MagicLinkDeliveryOptions magicLinkDeliveryOptions =
+                MagicLinkDeliveryOptions.FromConfiguration(
+                    Configuration,
+                    Environment.IsProduction());
+
             services.AddControllers();
             services.AddHttpContextAccessor();
             services.AddHealthChecks();
+            ConfigureForwardedHeaders(services);
             services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -154,6 +169,7 @@ namespace OneItb.GraphQL
                 .AddSubscriptionType<Subscription>();
 
             ConfigureSubscriptionProvider(graphQlBuilder, services);
+            ConfigureMagicLinkRateLimiter(services, jwtOptions);
 
             graphQlBuilder
                 .AddSocketSessionInterceptor<AuthenticationSocketSessionInterceptor>()
@@ -285,6 +301,12 @@ namespace OneItb.GraphQL
                 }));
 
             services.AddScoped<IUnitOfWork, global::Services.Repositories.UnitOfWork>();
+            services.AddSingleton(jwtOptions);
+            services.AddSingleton(passwordHashingOptions);
+            services.AddSingleton(magicLinkDeliveryOptions);
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<IJwtTokenService, JwtTokenService>();
+            services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
             services.AddScoped<IEmployerAuthService, global::Services.Auth.EmployerAuthService>();
             services.AddScoped<IModerationService, global::Services.Moderation.ModerationService>();
             services.AddScoped<ISocialService, SocialService>();
@@ -340,9 +362,9 @@ namespace OneItb.GraphQL
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(1),
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = Configuration["Jwt:Issuer"],
-                    ValidAudience = Configuration["Jwt:Issuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]!))
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key))
                 };
             });
 
@@ -351,6 +373,8 @@ namespace OneItb.GraphQL
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseForwardedHeaders();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -407,13 +431,14 @@ namespace OneItb.GraphQL
                 return;
             }
 
-            services.AddSingleton<IConnectionMultiplexer>(_ =>
+            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConnectionString));
             graphQlBuilder.AddRedisSubscriptions(sp => sp.GetRequiredService<IConnectionMultiplexer>());
         }
 
         private void ConfigureFileStorage(IServiceCollection services)
         {
+            services.AddSingleton<IFileContentInspector, FileContentInspector>();
             services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
 
             string? cloudinaryUrl = Configuration["CloudinarySettings:Url"];
@@ -428,33 +453,102 @@ namespace OneItb.GraphQL
 
         private void ConfigureEmailSender(IServiceCollection services)
         {
-            string? host = Configuration["SmtpSettings:Host"];
-            string? user = Configuration["SmtpSettings:User"];
-            string? pass = Configuration["SmtpSettings:Pass"];
-            int port = Configuration.GetValue<int?>("SmtpSettings:Port") ?? 0;
+            EmailDeliveryConfiguration delivery =
+                EmailDeliveryConfiguration.FromConfiguration(
+                    Configuration,
+                    Environment);
 
-            if (string.IsNullOrWhiteSpace(host) ||
-                string.IsNullOrWhiteSpace(user) ||
-                string.IsNullOrWhiteSpace(pass) ||
-                port <= 0)
+            if (!delivery.UsesSmtp)
             {
-                services.AddSingleton<IEmailSender, ConsoleEmailService>();
+                services.AddSingleton<IEmailSender>(serviceProvider =>
+                    new PickupDirectoryEmailService(
+                        delivery.PickupDirectory!,
+                        serviceProvider.GetRequiredService<
+                            Microsoft.Extensions.Logging.ILogger<PickupDirectoryEmailService>>()));
                 return;
             }
 
-            bool enableSsl = Configuration.GetValue("SmtpSettings:EnableSsl", true);
-            string? from = Configuration["SmtpSettings:From"];
-            var settings = new SmtpEmailSettings(
-                host.Trim(),
-                port,
-                user.Trim(),
-                pass,
-                string.IsNullOrWhiteSpace(from) ? null : from.Trim(),
-                enableSsl);
-
             services.AddSingleton<IEmailSender>(sp => new SmtpEmailService(
-                settings,
+                delivery.Smtp!,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SmtpEmailService>>()));
+        }
+
+        private void ConfigureMagicLinkRateLimiter(
+            IServiceCollection services,
+            JwtTokenOptions jwtOptions)
+        {
+            MagicLinkRateLimitOptions options =
+                MagicLinkRateLimitOptions.FromConfiguration(Configuration);
+            byte[] fingerprintKey = SHA256.HashData(
+                Encoding.UTF8.GetBytes($"oneitb:magiclink-rate-limit:{jwtOptions.Key}"));
+
+            services.AddSingleton(options);
+            services.AddSingleton(new MagicLinkRateLimitFingerprintKey(fingerprintKey));
+
+            string? redisConnectionString = Configuration.GetConnectionString("Redis")
+                ?? Configuration["Redis:ConnectionString"];
+            if (string.IsNullOrWhiteSpace(redisConnectionString))
+            {
+                services.AddSingleton<IMagicLinkRateLimiter, InMemoryMagicLinkRateLimiter>();
+                return;
+            }
+
+            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString));
+            services.AddSingleton<IMagicLinkRateLimiter, RedisMagicLinkRateLimiter>();
+        }
+
+        private void ConfigureForwardedHeaders(IServiceCollection services)
+        {
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto;
+                options.ForwardLimit = 1;
+
+                foreach (string proxy in Configuration
+                             .GetSection("ReverseProxy:KnownProxies")
+                             .Get<string[]>() ?? Array.Empty<string>())
+                {
+                    if (!IPAddress.TryParse(proxy, out IPAddress? address))
+                    {
+                        throw new InvalidOperationException(
+                            $"ReverseProxy:KnownProxies contains an invalid IP address: {proxy}");
+                    }
+
+                    options.KnownProxies.Add(address);
+                }
+
+                foreach (string network in Configuration
+                             .GetSection("ReverseProxy:KnownNetworks")
+                             .Get<string[]>() ?? Array.Empty<string>())
+                {
+                    string[] parts = network.Split('/', 2, StringSplitOptions.TrimEntries);
+                    if (parts.Length != 2 ||
+                        !IPAddress.TryParse(parts[0], out IPAddress? prefix) ||
+                        !int.TryParse(parts[1], out int prefixLength))
+                    {
+                        throw new InvalidOperationException(
+                            $"ReverseProxy:KnownNetworks contains an invalid CIDR: {network}");
+                    }
+
+                    int maxPrefixLength = prefix.AddressFamily ==
+                        System.Net.Sockets.AddressFamily.InterNetwork
+                            ? 32
+                            : 128;
+                    if (prefixLength < 0 || prefixLength > maxPrefixLength)
+                    {
+                        throw new InvalidOperationException(
+                            $"ReverseProxy:KnownNetworks contains an invalid prefix length: {network}");
+                    }
+
+                    options.KnownNetworks.Add(
+                        new Microsoft.AspNetCore.HttpOverrides.IPNetwork(
+                            prefix,
+                            prefixLength));
+                }
+            });
         }
     }
 }

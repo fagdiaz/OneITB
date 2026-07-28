@@ -5,6 +5,135 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-28] - Spec 193: Social Policy and UI Bootstrap Resilience
+
+* **Objetivo**: Cerrar el bypass de silenciamiento administrativo en reacciones de publicaciones y extender la resiliencia global de React por encima de Apollo, Theme y los fallos previos al montaje.
+* **Resultado**:
+  - `SocialService.ToggleReactionAsync` reutiliza el guard central de `MutedUntil` antes de leer o mutar reacciones; una denegacion no inserta, no elimina y no emite notificaciones.
+  - El `Mute` personal continua siendo una preferencia del observador para filtrar el feed y no se confunde con la sancion administrativa.
+  - `Mutation.ToggleReaction` conserva un error GraphQL controlado `USER_ERROR` para rechazos de politica.
+  - `ApplicationRoot` coloca `GlobalErrorBoundary` por fuera de Apollo y Theme; `AppProviders` crea de forma perezosa una sola instancia de cliente por montaje.
+  - `bootstrapApplication` carga dinamicamente el arbol y ofrece fallback React o DOM si fallan la fabrica, los providers, el arbol de componentes o `createRoot`.
+  - El diagnostico usa un ID robusto y no registra mensajes de excepcion, tokens, cache ni datos personales.
+* **Validaciones ejecutadas**:
+  - Backend: 147/147 tests PASS, incluyendo like/unlike silenciado, cero efectos laterales, cancelacion, `Mute` personal y contrato `USER_ERROR`.
+  - Frontend: 30 archivos / 72 tests PASS, incluyendo fallos inyectados en fabrica Apollo, ApolloProvider, ThemeProvider, hijos y pre-mount; regresiones de cache, sesion y WebSocket incluidas.
+  - Release/Vite: 0 warnings / 0 errores; 379 modulos en 762 ms en el gate final.
+  - EF Core: sin cambios de modelo pendientes; `git diff --check` PASS.
+  - No se inicio servidor. Smokes autenticados y de navegador quedan diferidos por la restriccion operativa vigente.
+* **Archivos clave**:
+  - `API Graphql/Services/Social/SocialService.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `API Graphql/Tests/Services.Tests/{Social/SocialServiceTests.cs,GraphQL/SocialMutationErrorContractTests.cs}`
+  - `FrontEnd/OneItb-FE/src/{main.jsx,bootstrap.jsx,ApplicationRoot.jsx}`
+  - `FrontEnd/OneItb-FE/src/Components/layout/{GlobalErrorBoundary.tsx,InterfaceFailureView.tsx}`
+* **Estado**: Implementada `[I]`; M3-M1 y M4-M1 mitigados. Requiere smoke runtime/browser para elevar a `[V]`.
+
+## [2026-07-27] - Spec 192: Credential Delivery and Cryptographic Policy Hardening
+
+* **Objetivo**: Cerrar A-1/A-2 eliminando la credencial Magic Link de GraphQL/logs/almacenamiento reutilizable, centralizando BCrypt y retirando secretos JWT rastreados.
+* **Resultado**:
+  - `requestMagicLink` devuelve un payload generico; la credencial de 256 bits viaja por correo en un fragmento URL, SQL conserva SHA-256 y React limpia el fragmento antes del consumo.
+  - `IEmailSender` queda en la capa de contratos; Development usa pickup `.eml` ignorado y Production exige SMTP completo. No se registran cuerpos ni destinatarios.
+  - `IPasswordHasher` aplica BCrypt costo 12 configurable, actualiza hashes debiles tras login exitoso y evita degradar hashes mas fuertes.
+  - Registro, validacion administrativa, empleadores y seeder comparten la politica; el seeder recibe el hasher desde el composition root y ya no usa una contrasena fallback.
+  - La clave JWT fue retirada de `appsettings`; startup valida longitud/diversidad y compose exige secretos, URL HTTPS de frontend y SMTP.
+* **Validaciones ejecutadas**:
+  - Backend: 141/141 tests PASS, incluyendo schema HotChocolate real, digest/replay, fallo de entrega, pickup E2E, rehash/no-downgrade y configuracion fail-closed.
+  - Frontend: 27 archivos / 61 tests PASS; fragment cleanup y respuesta generica cubiertos. Vite build PASS, 376 modulos en 762 ms.
+  - Release build: 0 warnings/0 errores; EF Core sin cambios pendientes; compose productivo valido; `git diff --check` PASS.
+  - No se inicio servidor. SMTP real y browser smoke quedan pendientes por falta de secretos/proveedor y por la restriccion operativa vigente.
+* **Archivos clave**: `Services/Auth/*`, `Services/Email/IEmailSender.cs`, `OneITB/Services/Email/*`, `EmployerLogin.jsx`, `Startup.cs`, configuracion Docker/entornos y documentacion canonica.
+* **Estado**: Implementada `[I]`; A-1/A-2 mitigados. Requiere smoke SMTP real/browser para elevar a `[V]`.
+
+## [2026-07-27] - Spec 191: Async Query and Pagination Hardening
+
+* **Objetivo**: Cerrar los hallazgos C-3/A-3/A-4 eliminando I/O sincronico de EF, contratos sociales sin limite y carga completa de estudiantes academicos.
+* **Resultado**:
+  - `SocialService` resuelve visibilidad global con `AnyAsync`, propaga `CancellationToken` a todos los terminales y conserva un builder interno sin I/O terminal.
+  - `inquiriesPage` queda como unico contrato de coleccion social, acotado a 25, con cursor opaco, orden estable por ID y filtro opcional `authorId` aplicado antes de contar/paginar.
+  - Se retiro el resolver GraphQL `inquiries`, su operacion Apollo y su type policy; Feed, perfil y paneles administrativos comparten merge deduplicado y carga incremental.
+  - `AcademicStudentPage` limita a 50 estudiantes, valida actor/materia antes de consultar y ordena por apellido, nombre e ID.
+  - `AcademicDashboard` incorpora estados de carga, vacio, error y "Cargar mas" sin materializar la cohorte completa.
+* **Validaciones ejecutadas**:
+  - Backend: 126/126 tests PASS, incluyendo contrato SDL real, cursores, scoping, orden, clamp maximo y cancelacion; Release build PASS con 0 warnings/0 errores.
+  - Frontend: 26 archivos / 59 tests PASS; Vite build PASS, 376 modulos en 1.06 s.
+  - EF Core: sin cambios pendientes. No se genero migracion porque los indices existentes cubren los predicados principales y no hubo evidencia SQL runtime para justificar otro indice.
+  - No se inicio servidor. Los smokes autenticados de feed/perfil/admin/academico y la observacion runtime de logs cancelados quedan diferidos.
+* **Estado**: Implementada `[I]`; no corresponde marcarla `[V]` hasta completar los recorridos runtime.
+
+## [2026-07-27] - Spec 190: Upload and Magic Link Abuse Hardening
+
+* **Objetivo**: Cerrar los hallazgos C-1/C-2 de la auditoria mediante inspeccion real de archivos antes de persistir y limites especificos para las operaciones publicas de Magic Link.
+* **Resultado**:
+  - `FileContentInspector` valida de forma acotada PDF, imagenes, Office legacy/OOXML, ZIP, texto UTF-8, MP4 y WebM; rechaza truncados, paquetes incompatibles y contenido ejecutable/poliglota antes de cualquier storage.
+  - `UploadController` conserva el limite de 15 MB y responde `UPLOAD_CONTENT_INVALID` sin exponer detalles internos; las pruebas demuestran que un rechazo no invoca `IFileStorageService`.
+  - `IMagicLinkRateLimiter` combina origen con fingerprints HMAC de email/token, usa memoria acotada en Development/tests y Lua atomico sobre Redis cuando esta configurado.
+  - Request y redemption cortan antes del servicio/EF, devuelven `AUTH_RATE_LIMITED` o `AUTH_TEMPORARILY_UNAVAILABLE`, incluyen retry acotado y registran solo operacion/motivo.
+  - `UseForwardedHeaders` procesa origen antes del limiter y solo confia en proxies/redes configurados; compose y `.env.example` exponen limites sin secretos.
+* **Validaciones ejecutadas**:
+  - Tests focalizados upload/Magic Link: 38/38 PASS; suite backend completa: 115/115 PASS.
+  - Backend Release: PASS, 0 warnings / 0 errores; EF Core: sin cambios pendientes; compose productivo: valido.
+  - Runtime upload: PDF valido HTTP 200; ejecutable renombrado a PDF HTTP 400 con codigo estable; fixture valido eliminado al cerrar.
+  - El smoke runtime de throttling Magic Link no se ejecuto por instruccion operativa. Concurrencia, umbral, expiracion/recuperacion, claves independientes y fallo de provider quedaron cubiertos por tests deterministas.
+* **Estado**: Implementada `[I]`; no requiere migracion. La entrega de la credencial Magic Link fuera de GraphQL permanece en Spec 192.
+
+## [2026-07-23] - Spec 189: Declarative GraphQL Mutation Authorization
+
+* **Objetivo**: Completar la autorizacion declarativa de todas las mutaciones sin reemplazar controles contextuales de ownership, autor, carrera o estado.
+* **Resultado**:
+  - Las 42 mutaciones quedaron cubiertas por una matriz automatizada; solo registro, login y los dos pasos del acceso Magic Link permanecen publicos.
+  - Las operaciones administrativas, de moderacion, academicas y laborales usan roles canonicos en espanol mediante constantes compartidas.
+  - El Gestor de Postulaciones conserva validacion de propietario de oferta y rechaza aliases de rol historicos en ingles.
+  - Tests de rol incorrecto y empleador no propietario prueban rechazo sin modificar la postulación.
+* **Validaciones ejecutadas**:
+  - Runtime: `addSubject` anonimo -> `AUTH_NOT_AUTHENTICATED`; `applyToJob` con Empleador -> `AUTH_NOT_AUTHORIZED`; `createJobOffer` con Empleador alcanza validacion de dominio.
+  - Backend: 82/82 tests PASS; Release build PASS, 0 warnings / 0 errores.
+* **Estado**: Verificada.
+
+## [2026-07-23] - Spec 188: Apollo Logout Session Isolation
+
+* **Objetivo**: Eliminar el bleed de sesion entre identidades y unificar logout manual, expiracion, cierre remoto y reemplazo de cuenta.
+* **Resultado**:
+  - `GraphQLProvider` implementa una terminacion idempotente que invalida el epoch, termina el WebSocket y limpia Apollo sin refetch de queries protegidas.
+  - `AuthContext` elimina credenciales/identidad antes de purgar cache, espera limpiezas pendientes antes de login y maneja `storage` para logout entre pestanas.
+  - Resultados tardios de HTTP/subscriptions pertenecientes a la sesion anterior no pueden repoblar la cache.
+  - La hidratacion tolera JSON persistido corrupto y conserva un unico mensaje de expiracion.
+* **Validaciones ejecutadas**:
+  - Frontend: 23 archivos / 54 tests PASS; pruebas focalizadas de frontera de sesion 5/5.
+  - Vite: 374 modulos, build PASS en 797 ms.
+  - Browser smoke de `/employer-login`: render correcto y consola sin errores/warnings.
+* **Estado**: Verificada por contratos de estado/cache/transporte y smoke visual; la regresion manual completa con dos cuentas se mantiene en el checklist de presentacion.
+
+## [2026-07-23] - Spec 187: Mutation Cancellation Propagation
+
+* **Objetivo**: Propagar cancelacion desde HotChocolate hasta EF Core y efectos secundarios para evitar trabajo residual tras abortar solicitudes.
+* **Resultado**:
+  - Todas las mutaciones asincronas reciben `CancellationToken`; servicios, UnitOfWork y repositorios mutation-reachable lo propagan a operaciones terminales.
+  - `OperationCanceledException` se relanza antes de handlers genericos.
+  - Se agrego un guard por reflexion que falla si una futura mutacion asincrona omite el token.
+  - La prueba pre-cancelada de registro confirma que no se persiste ninguna cuenta.
+* **Validaciones ejecutadas**:
+  - Schema runtime: 42 mutation fields y cero argumentos de cancelacion expuestos.
+  - Scan de `Mutation.cs`: sin llamadas EF asincronas parameterless en alcance.
+  - Backend: 82/82 tests PASS; Release build PASS; EF sin drift.
+* **Estado**: Verificada.
+
+## [2026-07-23] - Spec 186: Employer Authentication JWT Remediation
+
+* **Objetivo**: Sustituir emisores mock/duplicados por un contrato JWT unico y asegurar el consumo de credenciales Magic Link.
+* **Resultado**:
+  - `JwtTokenService` centraliza HS256, claims, issuer, audience y expiracion; falla al iniciar con configuracion insegura.
+  - `AccountsService` y `EmployerAuthService` usan el mismo emisor; `token_placeholder` y el generador obsoleto fueron eliminados.
+  - Magic Link usa 32 bytes aleatorios, vence a los 15 minutos y se consume atomicamente con `ExecuteUpdateAsync` en SQL Server.
+  - Cuentas inactivas/no Empleador y replays reciben `AUTH_MAGIC_LINK_INVALID` sin filtrar detalles.
+  - La UI empresarial no imprime el JWT y entrega la sesion a `AuthContext`.
+* **Validaciones ejecutadas**:
+  - Runtime Docker: JWT aceptado por bearer middleware, `me` devuelve `Empleador`, replay rechazado y carrera concurrente produce 1 exito + 1 rechazo.
+  - Backend: 82/82 tests PASS; Release build PASS; EF sin drift.
+* **Estado**: Verificada. Para produccion publica, la credencial de un solo uso debe enviarse fuera de banda por un proveedor institucional.
+
+
 ## [2026-07-13] - Spec 185: Media, Notifications and Theme Polish
 
 * **Objetivo**: Corregir el calculo dinamico del mosaico multimedia, acotar YouTube, recuperar legibilidad dual-theme y separar con precision los eventos agrupados del contador real de notificaciones sin leer.

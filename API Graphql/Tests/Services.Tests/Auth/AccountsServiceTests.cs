@@ -1,9 +1,8 @@
 using HotChocolate;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Moq;
 using OneITB.Core.Services.Interfaces;
 using Services.Accounts;
+using Services.Auth;
 using Services.Repositories;
 using Services.Tests.TestSupport;
 using Xunit;
@@ -18,7 +17,7 @@ public sealed class AccountsServiceTests
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new AccountsService(unitOfWork, CreateJwtConfiguration());
+        var service = CreateService(unitOfWork);
 
         AuthPayload payload = await service.Login(new LoginInput("student@itbeltran.test", "Test1234!"));
 
@@ -36,7 +35,7 @@ public sealed class AccountsServiceTests
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new AccountsService(unitOfWork, CreateJwtConfiguration());
+        var service = CreateService(unitOfWork);
 
         GraphQLException exception = await Assert.ThrowsAsync<GraphQLException>(() =>
             service.Login(new LoginInput("student@itbeltran.test", "Wrong1234!")));
@@ -55,7 +54,7 @@ public sealed class AccountsServiceTests
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new AccountsService(unitOfWork, CreateJwtConfiguration());
+        var service = CreateService(unitOfWork);
 
         GraphQLException exception = await Assert.ThrowsAsync<GraphQLException>(() =>
             service.Login(new LoginInput("inactive@itbeltran.test", "Test1234!")));
@@ -69,7 +68,7 @@ public sealed class AccountsServiceTests
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
         using var unitOfWork = new UnitOfWork(context);
-        var service = new AccountsService(unitOfWork, CreateJwtConfiguration());
+        var service = CreateService(unitOfWork);
 
         GraphQLException exception = null!;
         for (int attempt = 0; attempt < 5; attempt++)
@@ -100,7 +99,7 @@ public sealed class AccountsServiceTests
         context.ChangeTracker.Clear();
 
         using var unitOfWork = new UnitOfWork(context);
-        var service = new AccountsService(unitOfWork, CreateJwtConfiguration());
+        var service = CreateService(unitOfWork);
 
         GraphQLException exception = await Assert.ThrowsAsync<GraphQLException>(() =>
             service.Login(new LoginInput("student@itbeltran.test", "Test1234!")));
@@ -120,7 +119,7 @@ public sealed class AccountsServiceTests
         context.ChangeTracker.Clear();
 
         using var unitOfWork = new UnitOfWork(context);
-        var service = new AccountsService(unitOfWork, CreateJwtConfiguration());
+        var service = CreateService(unitOfWork);
 
         AuthPayload payload = await service.Login(new LoginInput("student@itbeltran.test", "Test1234!"));
 
@@ -131,11 +130,45 @@ public sealed class AccountsServiceTests
         Assert.Null(persisted.LockoutEnd);
     }
 
-    private static IConfiguration CreateJwtConfiguration()
+    [Fact]
+    public async Task Login_UpgradesLegacyBcryptHashAfterSuccessfulAuthentication()
     {
-        var configuration = new Mock<IConfiguration>(MockBehavior.Strict);
-        configuration.Setup(item => item["Jwt:Key"]).Returns("oneitb23-test-signing-key-32chars");
-        configuration.Setup(item => item["Jwt:Issuer"]).Returns("OneITB23.Tests");
-        return configuration.Object;
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        using var unitOfWork = new UnitOfWork(context);
+        var passwordHasher = new BcryptPasswordHasher(new PasswordHashingOptions(10));
+        var service = new AccountsService(
+            unitOfWork,
+            CreateJwtTokenService(),
+            passwordHasher);
+
+        AuthPayload payload = await service.Login(
+            new LoginInput("student@itbeltran.test", "Test1234!"));
+
+        Assert.True(payload.IsAuthenticated);
+        string upgradedHash = await context.Accounts
+            .AsNoTracking()
+            .Where(item => item.Id == ServiceTestData.StudentUserId)
+            .Select(item => item.PasswordHash)
+            .SingleAsync();
+        Assert.False(passwordHasher.NeedsRehash(upgradedHash));
+    }
+
+    private static AccountsService CreateService(IUnitOfWork unitOfWork)
+    {
+        return new AccountsService(
+            unitOfWork,
+            CreateJwtTokenService(),
+            new BcryptPasswordHasher(new PasswordHashingOptions(10)));
+    }
+
+    private static IJwtTokenService CreateJwtTokenService()
+    {
+        var options = new JwtTokenOptions(
+            "oneitb23-test-signing-key-with-at-least-32-bytes",
+            "OneITB23.Tests",
+            "OneITB23.Tests",
+            TimeSpan.FromHours(2));
+        return new JwtTokenService(options, TimeProvider.System);
     }
 }

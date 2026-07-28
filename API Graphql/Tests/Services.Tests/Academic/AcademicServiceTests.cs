@@ -86,7 +86,8 @@ public sealed class AcademicServiceTests
                 It.IsAny<IReadOnlyCollection<Guid>>(),
                 NotificationType.AcademicResource,
                 It.Is<string>(message => message.Contains("Guia de laboratorio", StringComparison.Ordinal)),
-                "/academic?subjectId=101"),
+                "/academic?subjectId=101",
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -151,8 +152,95 @@ public sealed class AcademicServiceTests
                 It.IsAny<IReadOnlyCollection<Guid>>(),
                 It.IsAny<NotificationType>(),
                 It.IsAny<string>(),
-                It.IsAny<string?>()),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAcademicStudentsPageAsync_ReturnsDeterministicBoundedPages()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Guid firstAdditionalId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+        Guid secondAdditionalId = Guid.Parse("77777777-7777-7777-7777-777777777777");
+        User firstAdditional = ServiceTestData.CreateUser(firstAdditionalId, "Ana", "Alumna", "Estudiante", true);
+        User secondAdditional = ServiceTestData.CreateUser(secondAdditionalId, "Berta", "Alumna", "Estudiante", true);
+        context.Accounts.AddRange(
+            ServiceTestData.CreateAccount(firstAdditional, "ana@itbeltran.test"),
+            ServiceTestData.CreateAccount(secondAdditional, "berta@itbeltran.test"));
+        context.UserCareers.AddRange(
+            new UserCareer { UserId = firstAdditionalId, CareerId = ServiceTestData.CareerId },
+            new UserCareer { UserId = secondAdditionalId, CareerId = ServiceTestData.CareerId });
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        AcademicStudentPage first = await service.GetAcademicStudentsPageAsync(
+            ServiceTestData.TeacherUserId,
+            "Profesor",
+            ServiceTestData.SubjectId,
+            2,
+            null);
+        AcademicStudentPage second = await service.GetAcademicStudentsPageAsync(
+            ServiceTestData.TeacherUserId,
+            "Profesor",
+            ServiceTestData.SubjectId,
+            2,
+            first.NextCursor);
+
+        Assert.Equal(3, first.TotalCount);
+        Assert.Collection(
+            first.Items,
+            student => Assert.Equal(firstAdditionalId, student.Id),
+            student => Assert.Equal(secondAdditionalId, student.Id));
+        Assert.True(first.HasNextPage);
+        Assert.Single(second.Items);
+        Assert.Equal(ServiceTestData.StudentUserId, second.Items[0].Id);
+        Assert.False(second.HasNextPage);
+    }
+
+    [Fact]
+    public async Task GetAcademicStudentsPageAsync_RejectsUnauthorizedRoleBeforeQuerying()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetAcademicStudentsPageAsync(
+                ServiceTestData.StudentUserId,
+                "Estudiante",
+                ServiceTestData.SubjectId,
+                25,
+                null));
+
+        Assert.Contains("permisos", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetAcademicStudentsPageAsync_PropagatesCancellation()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.GetAcademicStudentsPageAsync(
+                ServiceTestData.TeacherUserId,
+                "Profesor",
+                ServiceTestData.SubjectId,
+                25,
+                null,
+                cancellation.Token));
     }
 
     [Fact]
@@ -230,7 +318,8 @@ public sealed class AcademicServiceTests
                 It.Is<IReadOnlyCollection<Guid>>(ids => ids.SequenceEqual(new[] { ServiceTestData.StudentUserId })),
                 NotificationType.AcademicProgress,
                 It.Is<string>(message => message.Contains("Programacion I", StringComparison.Ordinal)),
-                "/academic"),
+                "/academic",
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -255,7 +344,8 @@ public sealed class AcademicServiceTests
                 It.IsAny<IReadOnlyCollection<Guid>>(),
                 It.IsAny<NotificationType>(),
                 It.IsAny<string>(),
-                It.IsAny<string?>()),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -301,7 +391,8 @@ public sealed class AcademicServiceTests
                 It.Is<IReadOnlyCollection<Guid>>(ids => ids.SequenceEqual(new[] { ServiceTestData.StudentUserId })),
                 NotificationType.SiuSync,
                 It.Is<string>(message => message.Contains("SIU Guarani", StringComparison.Ordinal)),
-                "/academic?subjectId=101"),
+                "/academic?subjectId=101",
+                It.IsAny<CancellationToken>()),
             Times.Exactly(2));
     }
 
@@ -313,7 +404,8 @@ public sealed class AcademicServiceTests
                 It.IsAny<IReadOnlyCollection<Guid>>(),
                 It.IsAny<NotificationType>(),
                 It.IsAny<string>(),
-                It.IsAny<string?>()))
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Notification>());
 
         return notifications;

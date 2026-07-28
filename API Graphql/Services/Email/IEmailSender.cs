@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OneItb.GraphQL.Services.Email
+namespace OneITB.Core.Services.Interfaces
 {
     public interface IEmailSender
     {

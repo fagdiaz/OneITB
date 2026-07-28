@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -123,9 +124,13 @@ namespace Services.Messaging
                 .ThenByDescending(message => message.Id);
         }
 
-        public async Task<Message> SendMessageAsync(Guid senderId, Guid receiverId, string content)
+        public async Task<Message> SendMessageAsync(
+            Guid senderId,
+            Guid receiverId,
+            string content,
+            CancellationToken cancellationToken = default)
         {
-            EnsureParticipantPair(senderId, receiverId);
+            await EnsureParticipantPairAsync(senderId, receiverId, cancellationToken);
 
             string normalizedContent = content?.Trim() ?? string.Empty;
             if (normalizedContent.Length == 0)
@@ -143,11 +148,15 @@ namespace Services.Messaging
                 IsRead = false
             };
 
-            await _unitOfWork.Messages.AddAsync(message);
-            await _unitOfWork.CompleteAsync();
+            await _unitOfWork.Messages.AddAsync(message, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken);
 
-            message.Sender = await _context.Users.AsNoTracking().SingleAsync(user => user.Id == senderId);
-            message.Receiver = await _context.Users.AsNoTracking().SingleAsync(user => user.Id == receiverId);
+            message.Sender = await _context.Users.AsNoTracking().SingleAsync(
+                user => user.Id == senderId,
+                cancellationToken);
+            message.Receiver = await _context.Users.AsNoTracking().SingleAsync(
+                user => user.Id == receiverId,
+                cancellationToken);
 
             _logger.LogInformation(
                 "Private message {MessageId} persisted from {SenderId} to {ReceiverId}.",
@@ -160,16 +169,19 @@ namespace Services.Messaging
 
         public async Task<MarkConversationReadPayload> MarkConversationReadAsync(
             Guid currentUserId,
-            Guid otherUserId)
+            Guid otherUserId,
+            CancellationToken cancellationToken = default)
         {
-            EnsureParticipantPair(currentUserId, otherUserId);
+            await EnsureParticipantPairAsync(currentUserId, otherUserId, cancellationToken);
 
             int markedCount = await _context.Messages
                 .Where(message =>
                     message.SenderId == otherUserId &&
                     message.ReceiverId == currentUserId &&
                     !message.IsRead)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(message => message.IsRead, true));
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(message => message.IsRead, true),
+                    cancellationToken);
 
             return new MarkConversationReadPayload(otherUserId, markedCount);
         }
@@ -186,6 +198,28 @@ namespace Services.Messaging
                 .Any(user => user.Id == otherUserId && user.IsActive);
             if (!otherUserIsActive)
                 throw new ArgumentException("El usuario destinatario no existe o está inactivo.");
+        }
+
+        private async Task EnsureParticipantPairAsync(
+            Guid currentUserId,
+            Guid otherUserId,
+            CancellationToken cancellationToken)
+        {
+            if (currentUserId == otherUserId)
+                throw new ArgumentException("No podes iniciar una conversacion con tu propio usuario.");
+
+            bool[] activeStates = await _context.Users
+                .AsNoTracking()
+                .Where(user =>
+                    (user.Id == currentUserId || user.Id == otherUserId) &&
+                    user.IsActive)
+                .Select(user => user.Id == currentUserId)
+                .ToArrayAsync(cancellationToken);
+
+            if (!activeStates.Contains(true))
+                throw new ArgumentException("El usuario autenticado no existe o esta inactivo.");
+            if (activeStates.Length < 2)
+                throw new ArgumentException("El usuario destinatario no existe o esta inactivo.");
         }
 
         private void EnsureActiveUser(Guid userId)

@@ -2,7 +2,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace OneItb.Data
 {
-    public sealed record DbSeedOptions(bool EnableDemoData = true, string? DemoPassword = null);
+    public sealed record DbSeedOptions(
+        bool EnableDemoData = false,
+        string? DemoPassword = null,
+        Func<string, string>? HashPassword = null);
 
     public static class DbInitializer
     {
@@ -24,7 +27,13 @@ namespace OneItb.Data
                 return;
 
             string demoPassword = NormalizeDemoPassword(seedOptions.DemoPassword);
-            EnterpriseDemoSeeder.SeedAsync(context, demoPassword).GetAwaiter().GetResult();
+            Func<string, string> hashPassword = seedOptions.HashPassword ??
+                throw new InvalidOperationException(
+                    "A password hashing policy must be supplied before seeding demo accounts.");
+            EnterpriseDemoSeeder
+                .SeedAsync(context, demoPassword, hashPassword)
+                .GetAwaiter()
+                .GetResult();
         }
 
         private static string NormalizeDemoPassword(string? password)

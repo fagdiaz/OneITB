@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
@@ -17,9 +18,9 @@ namespace Services.Repositories
             _context = context;
         }
 
-        public async Task AddAsync(User user)
+        public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         {
-            await _context.Users.AddAsync(user);
+            await _context.Users.AddAsync(user, cancellationToken);
         }
 
         public IQueryable<User> GetAll()
@@ -35,12 +36,12 @@ namespace Services.Repositories
                 .FirstOrDefault(u => u.Account.Email.ToLower() == normalizedEmail);
         }
 
-        public async Task<User?> GetByEmailAsync(string email)
+        public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             string normalizedEmail = email.Trim().ToLowerInvariant();
             return await _context.Users
                 .Include(u => u.Account)
-                .FirstOrDefaultAsync(u => u.Account.Email.ToLower() == normalizedEmail);
+                .FirstOrDefaultAsync(u => u.Account.Email.ToLower() == normalizedEmail, cancellationToken);
         }
 
         public User? GetById(Guid id)
@@ -48,6 +49,13 @@ namespace Services.Repositories
             return _context.Users
                 .Include(u => u.Account)
                 .FirstOrDefault(u => u.Id == id);
+        }
+
+        public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return _context.Users
+                .Include(u => u.Account)
+                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
     }
 
@@ -82,9 +90,9 @@ namespace Services.Repositories
             return _context.Messages.AsNoTracking();
         }
 
-        public async Task AddAsync(Message message)
+        public async Task AddAsync(Message message, CancellationToken cancellationToken = default)
         {
-            await _context.Messages.AddAsync(message);
+            await _context.Messages.AddAsync(message, cancellationToken);
         }
     }
 
@@ -106,9 +114,9 @@ namespace Services.Repositories
 
         public IMessageRepository Messages => _messages ??= new MessageRepository(_context);
 
-        public async Task<int> CompleteAsync()
+        public async Task<int> CompleteAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync(cancellationToken);
         }
 
         public void Dispose()

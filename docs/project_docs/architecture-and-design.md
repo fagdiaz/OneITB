@@ -1,6 +1,6 @@
 # Arquitectura y diseno de OneITB23
 
-**Ultima alineacion con codigo**: 2026-07-12
+**Ultima alineacion con codigo**: 2026-07-27
 
 ## 1. Stack vigente
 
@@ -14,7 +14,7 @@
 | UI | Tailwind CSS 4 / FontAwesome 6.6 |
 | Tiempo real | GraphQL Subscriptions sobre WebSocket; Redis Pub/Sub opcional en produccion |
 | Archivos | `/api/upload` con disco local o Cloudinary por configuracion |
-| Correo | SMTP configurable por `SmtpSettings` con fallback `ConsoleEmailService` |
+| Correo | SMTP obligatorio en produccion; pickup `.eml` local e ignorado en desarrollo |
 | Despliegue e Infra | Docker multi-stage / Nginx reverse proxy / Redis / Cloudinary opcional / GitHub Actions |
 
 ## 2. Estructura fisica
@@ -44,11 +44,15 @@ Mobile/OneItb-App/
 - `/graphql` por WebSocket: mensajes privados, notificaciones y eventos de ofertas laborales.
 - `POST /api/upload`: transferencia binaria autenticada y desacoplada, maximo 15 MB.
 - `/uploads/{file}`: lectura de archivos estaticos almacenados localmente cuando no se usa Cloudinary.
-- SMTP: salida de correo para eventos institucionales, actualmente cambios de estado de postulaciones.
+- SMTP/pickup: salida de correo para cambios de postulaciones y entrega fuera de banda del Magic Link de empleadores.
 
 Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/api/upload`; luego GraphQL persiste el descriptor en `SocialAttachment` para publicaciones/comentarios o la URL en `AcademicResource.FileUrl`. `Inquiry.FileUrl` y `Comment.FileUrl` se conservan como compatibilidad con clientes y datos historicos. El feed usa un mosaico acotado y, solo cuando una portada PDF entra en proximidad visual, carga un chunk PDF.js y worker locales para rasterizar la primera pagina en canvas con cancelacion/cleanup. El visor completo recupera el PDF con `fetch`, crea una Blob URL temporal, aborta la descarga y revoca la URL al cerrar; no se relaja `X-Frame-Options: DENY` ni se depende de CDN.
 
 Controles defensivos vigentes: `/graphql` y `/api/upload` tienen rate limiting fixed-window por IP; GraphQL aplica profundidad maxima configurable (`GraphQL:MaxExecutionDepth`, default 10) y limites globales de paginacion (`DefaultPageSize` 20, `MaxPageSize` 50). El login usa lockout persistente por cuenta (`FailedLoginAttempts`, `LockoutEnd`) para mitigar fuerza bruta aunque el atacante rote IPs. Los perfiles privados se enmascaran en el backend, no solo en React.
+
+El acceso de empleadores separa solicitud y consumo. `requestMagicLink` responde un payload generico sin revelar existencia ni credencial; el token aleatorio de 256 bits viaja por correo dentro de un fragmento URL, mientras SQL conserva solamente su digest SHA-256. React elimina el fragmento mediante `history.replaceState` antes de usarlo. El consumo atomico, expiracion y proteccion de replay permanecen vigentes.
+
+Las contrasenas usan `IPasswordHasher` con BCrypt y costo configurable (`PasswordHashing:WorkFactor`, default 12, rango 10-14). Un login correcto actualiza hashes de costo inferior sin degradar hashes mas fuertes. Registro, promocion administrativa, cuentas de empleador y seeder comparten la politica. La clave JWT no existe en archivos rastreados y debe provenir de user-secrets o variables de entorno.
 
 ## 4. Modelo de dominio actual
 
@@ -207,8 +211,8 @@ El modulo academico permite exportar el progreso propio como CSV e imprimir una 
 
 ## 7. Estado y limites conocidos
 
-- Redis Pub/Sub, Cloudinary y SMTP estan implementados como adaptadores condicionales. SMTP cuenta con query de smoke admin-only; para elevar servicios externos a `[V]` se requiere ejecutarlos con secretos productivos reales.
+- Redis Pub/Sub y Cloudinary son adaptadores condicionales. SMTP cuenta con query de smoke admin-only y es obligatorio en Production; Development usa un pickup local ignorado. Para elevar servicios externos a `[V]` se requiere ejecutarlos con secretos productivos reales.
 - La regresion autenticada en navegador del hub academico y del Gestor de Postulaciones sigue pendiente para elevar esos modulos de `[I]` a `[V]`.
 - El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validacion de specs.
-- El seeding demo/productivo es idempotente y configurable. En produccion requiere `Seed:DemoPassword`/`ONEITB_SEED_DEMO_PASSWORD`; no resetea passwords existentes en reinicios.
+- El seeding demo es idempotente, configurable y deshabilitado por defecto en produccion. Cuando se habilita requiere `Seed:DemoPassword`/`ONEITB_SEED_DEMO_PASSWORD`, recibe `IPasswordHasher` desde el composition root y no resetea passwords existentes.
 - El cliente mobile React Native/Expo esta planificado, pero no existe codigo versionado; antes de implementarlo se deben definir queries/fragments compartidos con el cliente Web para no duplicar logica de Apollo Cache.

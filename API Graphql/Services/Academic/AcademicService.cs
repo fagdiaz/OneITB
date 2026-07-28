@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using Services.Notifications;
+using Services.Pagination;
 using Services.Siu;
 
 namespace Services.Academic
@@ -31,10 +32,11 @@ namespace Services.Academic
             string? actorRole,
             int subjectId,
             string? searchTerm,
-            AcademicResourceCategory? category)
+            AcademicResourceCategory? category,
+            CancellationToken cancellationToken = default)
         {
-            Subject subject = await LoadActiveSubjectAsync(subjectId);
-            await EnsureCanViewSubjectAsync(actorUserId, actorRole, subject.CareerId);
+            Subject subject = await LoadActiveSubjectAsync(subjectId, cancellationToken);
+            await EnsureCanViewSubjectAsync(actorUserId, actorRole, subject.CareerId, cancellationToken);
 
             string? normalizedSearch = OptionalText(searchTerm, 120, "La busqueda");
             IQueryable<AcademicResource> query = ResourceGraph()
@@ -57,7 +59,7 @@ namespace Services.Academic
             return await query
                 .OrderByDescending(resource => resource.CreatedAt)
                 .ThenBy(resource => resource.Title)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<AcademicResource> AddAcademicResourceAsync(
@@ -69,11 +71,12 @@ namespace Services.Academic
             AcademicResourceCategory? category,
             int? version,
             string? fileUrl,
-            string? externalUrl)
+            string? externalUrl,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(actorUserId);
-            Subject subject = await LoadActiveSubjectAsync(subjectId);
-            await EnsureCanCreateResourceAsync(actorUserId, actorRole, subject.CareerId);
+            await EnsureActiveUserAsync(actorUserId, cancellationToken);
+            Subject subject = await LoadActiveSubjectAsync(subjectId, cancellationToken);
+            await EnsureCanCreateResourceAsync(actorUserId, actorRole, subject.CareerId, cancellationToken);
 
             string normalizedTitle = RequireText(title, 200, "El titulo");
             string? normalizedDescription = OptionalText(description, 1000, "La descripcion");
@@ -101,83 +104,113 @@ namespace Services.Academic
             };
 
             _context.AcademicResources.Add(resource);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
-            AcademicResource persisted = await LoadResourceGraphAsync(resource.Id);
-            Guid[] recipients = await GetAcademicAudienceAsync(subject.CareerId, actorUserId);
+            AcademicResource persisted = await LoadResourceGraphAsync(resource.Id, cancellationToken: cancellationToken);
+            Guid[] recipients = await GetAcademicAudienceAsync(subject.CareerId, actorUserId, cancellationToken);
             await _notificationService.CreateNotificationsAsync(
                 recipients,
                 NotificationType.AcademicResource,
                 $"Nuevo recurso en {subject.Name}: {persisted.Title}",
-                $"/academic?subjectId={subject.Id}");
+                $"/academic?subjectId={subject.Id}",
+                cancellationToken);
 
             return persisted;
         }
 
-        public async Task<AcademicResource> DeleteResourceAsync(Guid actorUserId, string? actorRole, Guid resourceId)
+        public async Task<AcademicResource> DeleteResourceAsync(
+            Guid actorUserId,
+            string? actorRole,
+            Guid resourceId,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(actorUserId);
+            await EnsureActiveUserAsync(actorUserId, cancellationToken);
 
             AcademicResource resource = await _context.AcademicResources
                 .IgnoreQueryFilters()
-                .SingleOrDefaultAsync(item => item.Id == resourceId)
+                .SingleOrDefaultAsync(item => item.Id == resourceId, cancellationToken)
                 ?? throw new InvalidOperationException("Recurso academico no encontrado.");
 
             EnsureCanDeleteResource(actorUserId, actorRole, resource.UploaderId);
 
             resource.IsActive = false;
             resource.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return await LoadResourceGraphAsync(resource.Id, ignoreFilters: true);
+            await _context.SaveChangesAsync(cancellationToken);
+            return await LoadResourceGraphAsync(
+                resource.Id,
+                ignoreFilters: true,
+                cancellationToken: cancellationToken);
         }
 
-        public async Task<AcademicResource> ToggleAcademicResourceStatusAsync(Guid actorUserId, string? actorRole, Guid resourceId)
+        public async Task<AcademicResource> ToggleAcademicResourceStatusAsync(
+            Guid actorUserId,
+            string? actorRole,
+            Guid resourceId,
+            CancellationToken cancellationToken = default)
         {
             EnsureCanManageAcademics(actorRole);
-            await EnsureActiveUserAsync(actorUserId);
+            await EnsureActiveUserAsync(actorUserId, cancellationToken);
 
             AcademicResource resource = await _context.AcademicResources
                 .IgnoreQueryFilters()
-                .SingleOrDefaultAsync(item => item.Id == resourceId)
+                .SingleOrDefaultAsync(item => item.Id == resourceId, cancellationToken)
                 ?? throw new InvalidOperationException("Recurso academico no encontrado.");
 
             resource.IsActive = !resource.IsActive;
             resource.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return await LoadResourceGraphAsync(resource.Id, ignoreFilters: true);
+            await _context.SaveChangesAsync(cancellationToken);
+            return await LoadResourceGraphAsync(
+                resource.Id,
+                ignoreFilters: true,
+                cancellationToken: cancellationToken);
         }
 
-        public async Task<IReadOnlyList<AcademicProgress>> GetMyAcademicProgressAsync(Guid actorUserId)
+        public async Task<IReadOnlyList<AcademicProgress>> GetMyAcademicProgressAsync(
+            Guid actorUserId,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(actorUserId);
+            await EnsureActiveUserAsync(actorUserId, cancellationToken);
 
             return await ProgressGraph()
                 .Where(progress => progress.UserId == actorUserId)
                 .OrderBy(progress => progress.Subject.Career.Name)
                 .ThenBy(progress => progress.Subject.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<AcademicProgress>> GetAcademicProgressForUserAsync(Guid actorUserId, string? actorRole, Guid userId)
+        public async Task<IReadOnlyList<AcademicProgress>> GetAcademicProgressForUserAsync(
+            Guid actorUserId,
+            string? actorRole,
+            Guid userId,
+            CancellationToken cancellationToken = default)
         {
             EnsureAdmin(actorRole);
-            await EnsureActiveUserAsync(actorUserId);
-            await EnsureActiveUserAsync(userId);
+            await EnsureActiveUserAsync(actorUserId, cancellationToken);
+            await EnsureActiveUserAsync(userId, cancellationToken);
 
             return await ProgressGraph()
                 .Where(progress => progress.UserId == userId)
                 .OrderBy(progress => progress.Subject.Career.Name)
                 .ThenBy(progress => progress.Subject.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<User>> GetAcademicStudentsAsync(Guid actorUserId, string? actorRole, int subjectId)
+        public async Task<AcademicStudentPage> GetAcademicStudentsPageAsync(
+            Guid actorUserId,
+            string? actorRole,
+            int subjectId,
+            int first,
+            string? after,
+            CancellationToken cancellationToken = default)
         {
             EnsureCanManageAcademics(actorRole);
-            await EnsureActiveUserAsync(actorUserId);
-            Subject subject = await LoadActiveSubjectAsync(subjectId);
+            int pageSize = Math.Clamp(first, 1, 50);
+            int offset = OffsetCursor.Decode(after);
+            cancellationToken.ThrowIfCancellationRequested();
+            await EnsureActiveUserAsync(actorUserId, cancellationToken);
+            Subject subject = await LoadActiveSubjectAsync(subjectId, cancellationToken);
 
-            return await _context.UserCareers
+            IQueryable<User> query = _context.UserCareers
                 .AsNoTracking()
                 .Where(link =>
                     link.CareerId == subject.CareerId &&
@@ -186,7 +219,24 @@ namespace Services.Academic
                 .Select(link => link.User)
                 .OrderBy(user => user.LastName)
                 .ThenBy(user => user.FirstName)
-                .ToListAsync();
+                .ThenBy(user => user.Id);
+
+            int totalCount = await query.CountAsync(cancellationToken);
+            List<User> students = await query
+                .Skip(offset)
+                .Take(pageSize + 1)
+                .ToListAsync(cancellationToken);
+            bool hasNextPage = students.Count > pageSize;
+            if (hasNextPage)
+                students.RemoveAt(students.Count - 1);
+
+            return new AcademicStudentPage
+            {
+                Items = students,
+                HasNextPage = hasNextPage,
+                NextCursor = hasNextPage ? OffsetCursor.Encode(offset + students.Count) : string.Empty,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<AcademicProgress> UpsertAcademicProgressAsync(
@@ -196,22 +246,25 @@ namespace Services.Academic
             int subjectId,
             decimal? score,
             AcademicProgressStatus status,
-            string? notes)
+            string? notes,
+            CancellationToken cancellationToken = default)
         {
             EnsureCanManageAcademics(actorRole);
-            await EnsureActiveUserAsync(actorUserId);
+            await EnsureActiveUserAsync(actorUserId, cancellationToken);
 
             User targetUser = await _context.Users
                 .AsNoTracking()
-                .SingleOrDefaultAsync(user => user.Id == userId && user.IsActive)
+                .SingleOrDefaultAsync(user => user.Id == userId && user.IsActive, cancellationToken)
                 ?? throw new InvalidOperationException("Usuario objetivo no encontrado o inactivo.");
 
             if (!string.Equals(targetUser.Role, "Estudiante", StringComparison.Ordinal))
                 throw new InvalidOperationException("Solo se puede cargar progreso academico para estudiantes.");
 
-            Subject subject = await LoadActiveSubjectAsync(subjectId);
+            Subject subject = await LoadActiveSubjectAsync(subjectId, cancellationToken);
             bool belongsToCareer = await _context.UserCareers
-                .AnyAsync(link => link.UserId == userId && link.CareerId == subject.CareerId);
+                .AnyAsync(
+                    link => link.UserId == userId && link.CareerId == subject.CareerId,
+                    cancellationToken);
             if (!belongsToCareer)
                 throw new InvalidOperationException("El estudiante no pertenece a la carrera de la materia seleccionada.");
 
@@ -219,7 +272,9 @@ namespace Services.Academic
             string? normalizedNotes = OptionalText(notes, 1000, "Las observaciones");
 
             AcademicProgress? progress = await _context.AcademicProgressRecords
-                .SingleOrDefaultAsync(item => item.UserId == userId && item.SubjectId == subjectId);
+                .SingleOrDefaultAsync(
+                    item => item.UserId == userId && item.SubjectId == subjectId,
+                    cancellationToken);
 
             if (progress is null)
             {
@@ -245,19 +300,25 @@ namespace Services.Academic
                 progress.UpdatedAt = DateTime.UtcNow;
             }
 
-            await _context.SaveChangesAsync();
-            AcademicProgress persisted = await LoadProgressGraphAsync(progress.Id);
-            await NotifyAcademicProgressAsync(userId, persisted.Subject.Name);
+            await _context.SaveChangesAsync(cancellationToken);
+            AcademicProgress persisted = await LoadProgressGraphAsync(progress.Id, cancellationToken);
+            await NotifyAcademicProgressAsync(userId, persisted.Subject.Name, cancellationToken);
             return persisted;
         }
 
-        public async Task<SiuSyncResult> SyncSiuGradesAsync(Guid actorUserId, string? actorRole, int subjectId)
+        public async Task<SiuSyncResult> SyncSiuGradesAsync(
+            Guid actorUserId,
+            string? actorRole,
+            int subjectId,
+            CancellationToken cancellationToken = default)
         {
             EnsureAdmin(actorRole);
-            await EnsureActiveUserAsync(actorUserId);
-            Subject subject = await LoadActiveSubjectAsync(subjectId);
+            await EnsureActiveUserAsync(actorUserId, cancellationToken);
+            Subject subject = await LoadActiveSubjectAsync(subjectId, cancellationToken);
 
-            IReadOnlyList<SiuGradeRecord> records = await _siuIntegrationService.GetGradesAsync(subjectId);
+            IReadOnlyList<SiuGradeRecord> records = await _siuIntegrationService.GetGradesAsync(
+                subjectId,
+                cancellationToken);
             var skippedItems = new List<string>();
 
             string[] emails = records
@@ -272,7 +333,7 @@ namespace Services.Academic
                 : await _context.Accounts
                     .Include(account => account.User)
                     .Where(account => emails.Contains(account.Email.ToLower()))
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
 
             var accountsByEmail = accounts
                 .GroupBy(account => NormalizeEmailKey(account.Email), StringComparer.OrdinalIgnoreCase)
@@ -290,14 +351,14 @@ namespace Services.Academic
                     .AsNoTracking()
                     .Where(link => candidateUserIds.Contains(link.UserId) && link.CareerId == subject.CareerId)
                     .Select(link => link.UserId)
-                    .ToListAsync())
+                    .ToListAsync(cancellationToken))
                     .ToHashSet();
 
             Dictionary<Guid, AcademicProgress> progressByUserId = eligibleUserIds.Count == 0
                 ? new Dictionary<Guid, AcademicProgress>()
                 : await _context.AcademicProgressRecords
                     .Where(progress => eligibleUserIds.Contains(progress.UserId) && progress.SubjectId == subjectId)
-                    .ToDictionaryAsync(progress => progress.UserId);
+                    .ToDictionaryAsync(progress => progress.UserId, cancellationToken);
 
             int created = 0;
             int updated = 0;
@@ -371,7 +432,7 @@ namespace Services.Academic
             }
 
             if (created + updated > 0)
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
             if (notificationUserIds.Count > 0)
             {
@@ -379,7 +440,8 @@ namespace Services.Academic
                     notificationUserIds,
                     NotificationType.SiuSync,
                     $"Tus notas de {subject.Name} fueron sincronizadas desde SIU Guarani.",
-                    $"/academic?subjectId={subject.Id}");
+                    $"/academic?subjectId={subject.Id}",
+                    cancellationToken);
             }
 
             string message = $"Sincronizacion SIU finalizada: {created} altas, {updated} actualizaciones, {skippedItems.Count} omitidos.";
@@ -411,59 +473,87 @@ namespace Services.Academic
                 .ThenInclude(subject => subject.Career);
         }
 
-        private async Task<AcademicResource> LoadResourceGraphAsync(Guid resourceId, bool ignoreFilters = false)
+        private async Task<AcademicResource> LoadResourceGraphAsync(
+            Guid resourceId,
+            bool ignoreFilters = false,
+            CancellationToken cancellationToken = default)
         {
             return await ResourceGraph(ignoreFilters)
-                .SingleOrDefaultAsync(resource => resource.Id == resourceId)
+                .SingleOrDefaultAsync(resource => resource.Id == resourceId, cancellationToken)
                 ?? throw new InvalidOperationException("Recurso academico no encontrado.");
         }
 
-        private async Task<AcademicProgress> LoadProgressGraphAsync(Guid progressId)
+        private async Task<AcademicProgress> LoadProgressGraphAsync(
+            Guid progressId,
+            CancellationToken cancellationToken)
         {
             return await ProgressGraph()
-                .SingleOrDefaultAsync(progress => progress.Id == progressId)
+                .SingleOrDefaultAsync(progress => progress.Id == progressId, cancellationToken)
                 ?? throw new InvalidOperationException("Progreso academico no encontrado.");
         }
 
-        private async Task<Subject> LoadActiveSubjectAsync(int subjectId)
+        private async Task<Subject> LoadActiveSubjectAsync(
+            int subjectId,
+            CancellationToken cancellationToken)
         {
             return await _context.Subjects
                 .AsNoTracking()
                 .Include(subject => subject.Career)
-                .SingleOrDefaultAsync(subject => subject.Id == subjectId && subject.IsActive && subject.Career.IsActive)
+                .SingleOrDefaultAsync(
+                    subject => subject.Id == subjectId && subject.IsActive && subject.Career.IsActive,
+                    cancellationToken)
                 ?? throw new InvalidOperationException("Materia no encontrada o inactiva.");
         }
 
-        private async Task EnsureCanViewSubjectAsync(Guid actorUserId, string? actorRole, int careerId)
+        private async Task EnsureCanViewSubjectAsync(
+            Guid actorUserId,
+            string? actorRole,
+            int careerId,
+            CancellationToken cancellationToken)
         {
             if (CanManageAcademics(actorRole))
                 return;
 
             bool belongsToCareer = await _context.UserCareers
-                .AnyAsync(link => link.UserId == actorUserId && link.CareerId == careerId);
+                .AnyAsync(
+                    link => link.UserId == actorUserId && link.CareerId == careerId,
+                    cancellationToken);
             if (!belongsToCareer)
                 throw new InvalidOperationException("No tenes acceso a los recursos de esta materia.");
         }
 
-        private async Task EnsureCanCreateResourceAsync(Guid actorUserId, string? actorRole, int careerId)
+        private async Task EnsureCanCreateResourceAsync(
+            Guid actorUserId,
+            string? actorRole,
+            int careerId,
+            CancellationToken cancellationToken)
         {
             if (CanManageAcademics(actorRole))
                 return;
 
             bool belongsToCareer = await _context.UserCareers
-                .AnyAsync(link => link.UserId == actorUserId && link.CareerId == careerId);
+                .AnyAsync(
+                    link => link.UserId == actorUserId && link.CareerId == careerId,
+                    cancellationToken);
             if (!belongsToCareer)
                 throw new InvalidOperationException("No tenes permisos para publicar recursos en esta materia.");
         }
 
-        private async Task EnsureActiveUserAsync(Guid userId)
+        private async Task EnsureActiveUserAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
         {
-            bool exists = await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive);
+            bool exists = await _context.Users.AnyAsync(
+                user => user.Id == userId && user.IsActive,
+                cancellationToken);
             if (!exists)
                 throw new InvalidOperationException("Usuario no encontrado o inactivo.");
         }
 
-        private async Task<Guid[]> GetAcademicAudienceAsync(int careerId, Guid excludedUserId)
+        private async Task<Guid[]> GetAcademicAudienceAsync(
+            int careerId,
+            Guid excludedUserId,
+            CancellationToken cancellationToken)
         {
             return await _context.UserCareers
                 .AsNoTracking()
@@ -474,16 +564,20 @@ namespace Services.Academic
                     link.User.Role == "Estudiante")
                 .Select(link => link.UserId)
                 .Distinct()
-                .ToArrayAsync();
+                .ToArrayAsync(cancellationToken);
         }
 
-        private async Task NotifyAcademicProgressAsync(Guid userId, string subjectName)
+        private async Task NotifyAcademicProgressAsync(
+            Guid userId,
+            string subjectName,
+            CancellationToken cancellationToken)
         {
             await _notificationService.CreateNotificationsAsync(
                 new[] { userId },
                 NotificationType.AcademicProgress,
                 $"Se actualizo tu progreso academico en {subjectName}.",
-                "/academic");
+                "/academic",
+                cancellationToken);
         }
 
         private static void EnsureCanManageAcademics(string? role)

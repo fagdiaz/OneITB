@@ -3,13 +3,13 @@ import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { GET_PUBLIC_PROFILE } from '../../data/graphql/queries/publicProfile';
-import { GET_INQUIRIES } from '../../data/graphql/queries/inquiries';
 import { GET_MY_ACADEMIC_PROGRESS } from '../../data/graphql/queries/academic';
 import { apiBaseUrl } from '../../utils/uploadFile';
 import { CVPrintTemplate } from '../resume/CVPrintTemplate';
 import { CVData } from '../../types/resume';
 import { GET_MY_FOLLOWED_USER_IDS } from '../../data/graphql/social';
 import { FollowButton } from '../social/FollowButton';
+import { useInquiryPage } from '../../hooks/useInquiryPage';
 
 const roleStyles: Record<string, string> = {
   Administrador: 'bg-blue-50 text-blue-800 ring-blue-200',
@@ -91,10 +91,16 @@ export const UserProfile = () => {
     fetchPolicy: 'cache-and-network',
   });
 
-  const { data: inquiriesData } = useQuery(GET_INQUIRIES, {
-    variables: { searchTerm: null, careerId: null, careerIds: null, subjectIds: null },
-    skip: !auth.id,
-    fetchPolicy: 'cache-and-network',
+  const {
+    items: userPosts,
+    loading: userPostsLoading,
+    loadingMore: loadingMorePosts,
+    hasNextPage: hasMorePosts,
+    loadMore: loadMorePosts,
+  } = useInquiryPage({
+    authorId: targetUserId,
+    pageSize: 8,
+    skip: !auth.id || !targetUserId,
   });
 
   const { data: progressData, error: progressError } = useQuery(GET_MY_ACADEMIC_PROGRESS, {
@@ -108,22 +114,18 @@ export const UserProfile = () => {
 
   useEffect(() => {
     setFollowOverride(null);
+    setShowAllPosts(false);
   }, [targetUserId]);
 
   const profile = data?.publicProfile;
   const canViewSensitiveProfile = profile?.canViewSensitiveProfile !== false;
   const isFollowing = followOverride ?? Boolean(targetUserId && followedData?.myFollowedUserIds?.includes(targetUserId));
 
-  const userPosts = useMemo(() => {
-    if (!canViewSensitiveProfile) return [];
-    const posts = inquiriesData?.inquiries ?? [];
-    if (!targetUserId) return [];
-    return posts
-      .filter((post: any) => post.user?.id === targetUserId)
-      .sort((left: any, right: any) => new Date(right.publishDate).getTime() - new Date(left.publishDate).getTime());
-  }, [canViewSensitiveProfile, targetUserId, inquiriesData]);
-
-  const visiblePosts = showAllPosts ? userPosts : userPosts.slice(0, 4);
+  const visiblePosts = canViewSensitiveProfile
+    ? showAllPosts
+      ? userPosts
+      : userPosts.slice(0, 4)
+    : [];
 
   const activitySubjects = useMemo(() => {
     const names = userPosts
@@ -706,7 +708,7 @@ export const UserProfile = () => {
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Portfolio social</p>
                   <h2 className="mt-1 text-2xl font-black text-slate-950 dark:text-white">Publicaciones recientes</h2>
                 </div>
-                {userPosts.length > 4 && (
+                {(userPosts.length > 4 || hasMorePosts) && (
                   <button
                     type="button"
                     onClick={() => setShowAllPosts((current) => !current)}
@@ -717,7 +719,9 @@ export const UserProfile = () => {
                 )}
               </div>
 
-              {visiblePosts.length === 0 ? (
+              {userPostsLoading && visiblePosts.length === 0 ? (
+                <p className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">Cargando publicaciones...</p>
+              ) : visiblePosts.length === 0 ? (
                 <p className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">Todavia no hay publicaciones para mostrar.</p>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
@@ -734,6 +738,16 @@ export const UserProfile = () => {
                     </article>
                   ))}
                 </div>
+              )}
+              {showAllPosts && hasMorePosts && (
+                <button
+                  type="button"
+                  onClick={loadMorePosts}
+                  disabled={loadingMorePosts}
+                  className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
+                >
+                  {loadingMorePosts ? 'Cargando...' : 'Cargar mas publicaciones'}
+                </button>
               )}
             </section>
           </main>

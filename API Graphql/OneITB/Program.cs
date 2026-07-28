@@ -24,15 +24,19 @@ namespace OneItb.GraphQL
                     var context = services.GetRequiredService<OneItb.Data.OneItbContext>();
                     var configuration = services.GetRequiredService<IConfiguration>();
                     var environment = services.GetRequiredService<IHostEnvironment>();
+                    var passwordHasher = services.GetRequiredService<
+                        OneITB.Core.Services.Interfaces.IPasswordHasher>();
                     string? demoPassword = configuration["Seed:DemoPassword"];
 
-                    if (string.IsNullOrWhiteSpace(demoPassword) && environment.IsDevelopment())
-                        demoPassword = "Test1234!";
-
-                    bool enableDemoData = configuration.GetValue("Seed:EnableDemoData", true);
+                    bool enableDemoData = configuration.GetValue(
+                        "Seed:EnableDemoData",
+                        environment.IsDevelopment());
                     OneItb.Data.DbInitializer.Initialize(
                         context,
-                        new OneItb.Data.DbSeedOptions(enableDemoData, demoPassword));
+                        new OneItb.Data.DbSeedOptions(
+                            enableDemoData,
+                            demoPassword,
+                            passwordHasher.Hash));
                 }
                 catch (Exception ex)
                 {

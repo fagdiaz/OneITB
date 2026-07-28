@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using OneItb.Entities.Models;
 
@@ -31,7 +32,14 @@ namespace OneITB.Core.Services.Interfaces
         IQueryable<Message> GetConversation(Guid currentUserId, Guid otherUserId);
         IQueryable<ActiveConversationDto> GetActiveConversations(Guid currentUserId);
         IQueryable<Message> SearchMyMessages(Guid currentUserId, string searchTerm);
-        Task<Message> SendMessageAsync(Guid senderId, Guid receiverId, string content);
-        Task<MarkConversationReadPayload> MarkConversationReadAsync(Guid currentUserId, Guid otherUserId);
+        Task<Message> SendMessageAsync(
+            Guid senderId,
+            Guid receiverId,
+            string content,
+            CancellationToken cancellationToken = default);
+        Task<MarkConversationReadPayload> MarkConversationReadAsync(
+            Guid currentUserId,
+            Guid otherUserId,
+            CancellationToken cancellationToken = default);
     }
 }

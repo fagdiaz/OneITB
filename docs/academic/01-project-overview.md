@@ -29,7 +29,7 @@ Construir una red social educativa institucional que permita:
 - Frontend Web: React 18, Apollo Client, Vite 8 y Tailwind CSS 4.
 - Tiempo real: GraphQL Subscriptions por WebSocket; Redis Pub/Sub opcional en produccion.
 - Archivos: `/api/upload` desacoplado, disco local por defecto y Cloudinary opcional.
-- Correo: SMTP configurable con fallback local de consola.
+- Correo: SMTP obligatorio en produccion y pickup `.eml` local, ignorado y sin secretos en logs para desarrollo.
 - Infraestructura: Docker multi-stage, Nginx, GitHub Actions y compose productivo.
 - Frontend Movil: React Native + Expo planificado; no existe codigo mobile versionado.
 

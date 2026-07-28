@@ -205,9 +205,7 @@ namespace Services.Jobs
         private static void EnsureCanCreateJobOffer(string? role)
         {
             if (string.Equals(role, "Administrador", StringComparison.Ordinal) ||
-                string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(role, "Empleador", StringComparison.Ordinal) ||
-                string.Equals(role, "Employer", StringComparison.OrdinalIgnoreCase))
+                string.Equals(role, "Empleador", StringComparison.Ordinal))
             {
                 return;
             }
@@ -218,9 +216,7 @@ namespace Services.Jobs
         private static void EnsureCanApplyToJob(string? role)
         {
             if (string.Equals(role, "Estudiante", StringComparison.Ordinal) ||
-                string.Equals(role, "Student", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(role, "Egresado", StringComparison.Ordinal) ||
-                string.Equals(role, "Graduate", StringComparison.OrdinalIgnoreCase))
+                string.Equals(role, "Egresado", StringComparison.Ordinal))
             {
                 return;
             }

@@ -53,9 +53,11 @@ namespace OneItb.Data
         public static async Task SeedAsync(
             OneItbContext context,
             string demoPassword,
+            Func<string, string> hashPassword,
             CancellationToken cancellationToken = default)
         {
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(demoPassword);
+            ArgumentNullException.ThrowIfNull(hashPassword);
+            string passwordHash = hashPassword(demoPassword);
 
             await SeedCareersAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);

@@ -131,7 +131,7 @@ El módulo académico organiza materias, correlatividades, recursos, calificacio
 
 La mensajería privada conserva historial en SQL Server y utiliza suscripciones GraphQL por WebSocket para entregar nuevos mensajes. Las notificaciones persistentes, sus preferencias y los recordatorios de mensajes no leídos complementan la comunicación en tiempo real.
 
-La Bolsa de Trabajo permite que empleadores y administradores publiquen ofertas. Estudiantes y egresados pueden postularse una sola vez por oferta. El propietario de la oferta consulta candidatos y actualiza el estado a pendiente, revisado o rechazado desde el Gestor de Ofertas y Postulaciones. Los cambios relevantes pueden generar correo mediante SMTP configurable, con fallback de consola en desarrollo.
+La Bolsa de Trabajo permite que empleadores y administradores publiquen ofertas. Estudiantes y egresados pueden postularse una sola vez por oferta. El propietario de la oferta consulta candidatos y actualiza el estado a pendiente, revisado o rechazado desde el Gestor de Ofertas y Postulaciones. Los cambios relevantes pueden generar correo mediante SMTP; en desarrollo se utiliza un buzón local `.eml` ignorado por el repositorio, sin registrar cuerpos sensibles en consola.
 
 Administradores y moderadores disponen de herramientas diferentes. El autor conserva la edición de su texto; la moderación puede ocultar o restaurar contenido con motivo y registro auditable, pero no reescribir contenido ajeno. Las cuentas administrativas están protegidas frente a degradación o desactivación desde la interfaz habitual.
 
@@ -763,7 +763,7 @@ flowchart TB
         SQL[("SQL Server 2022")]
         REDIS[("Redis Pub/Sub opcional")]
         FILES["Disco local / Cloudinary opcional"]
-        SMTP["SMTP / Consola local"]
+        SMTP["SMTP / Pickup local"]
         SIU["Adaptador SIU mock"]
     end
 
@@ -794,7 +794,7 @@ El diagrama se divide en cuatro franjas horizontales. La primera, azul claro, re
 
 La segunda franja contiene Nginx en producción o Vite en desarrollo. Nginx debe mostrarse como proxy de entrada que enruta `/graphql`, `/api/upload` y `/uploads`, además de resolver el fallback de la SPA. La tercera franja, celeste, contiene la API .NET 8. HotChocolate recibe GraphQL; UploadController recibe multipart; los servicios aplican reglas; DataLoaders y proyecciones evitan N+1; los Background Services ejecutan limpieza y recordatorios; Entity Framework persiste; y el interceptor de auditoría registra cambios críticos.
 
-La cuarta franja, verde, representa dependencias: SQL Server como fuente persistente; Redis como bus distribuido opcional; disco local o Cloudinary como estrategias intercambiables; SMTP o consola como envío de correo; y el adaptador SIU mock como frontera externa. Redis, Cloudinary y SMTP deben dibujarse con borde discontinuo para indicar que son condicionales. Todas las flechas hacia datos parten del backend, nunca del navegador.
+La cuarta franja, verde, representa dependencias: SQL Server como fuente persistente; Redis como bus distribuido opcional; disco local o Cloudinary como estrategias intercambiables; SMTP productivo o pickup `.eml` de desarrollo como envío de correo; y el adaptador SIU mock como frontera externa. Redis y Cloudinary deben dibujarse con borde discontinuo por ser condicionales; SMTP es obligatorio en producción. Todas las flechas hacia datos parten del backend, nunca del navegador.
 
 ### Diagrama de Despliegue
 
@@ -844,7 +844,7 @@ Debajo de SQL Server se representa un cilindro “Volumen SQL”; debajo de la A
 | Base de datos | SQL Server 2022 en Docker | SQL Server 2022 con volumen persistente |
 | Pub/Sub | Memoria | Redis si existe connection string; memoria como fallback |
 | Archivos | `wwwroot/uploads` | Cloudinary si está configurado; disco local como fallback |
-| Correo | Consola | SMTP si existen host, puerto y credenciales |
+| Correo | Pickup `.eml` local ignorado | SMTP obligatorio con host, puerto y credenciales |
 | Secretos | `dotnet user-secrets` | Variables/secret manager del entorno |
 
 ---

@@ -1,6 +1,6 @@
 # Runbook de desarrollo - OneITB23
 
-**Ultima revision**: 2026-07-08
+**Ultima revision**: 2026-07-27
 
 ## Requisitos
 
@@ -21,10 +21,13 @@ docker compose up -d
 $password = ((Get-Content .env | Where-Object { $_ -like 'ONEITB_SQL_SA_PASSWORD=*' }) -replace '^ONEITB_SQL_SA_PASSWORD=', '')
 $connection = "Server=localhost,1433;Database=OneItb;User Id=sa;Password=$password;Encrypt=False;TrustServerCertificate=True;"
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" $connection --project "API Graphql/OneITB/GraphQL.csproj"
+$jwtKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+dotnet user-secrets set "Jwt:Key" $jwtKey --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "Seed:DemoPassword" "<password-demo-local-fuerte>" --project "API Graphql/OneITB/GraphQL.csproj"
 dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
 ```
 
-`appsettings.Development.json` contiene un placeholder no usable. La cadena real de Development debe venir de `dotnet user-secrets` o de `ConnectionStrings__DefaultConnection`.
+`appsettings.Development.json` contiene un placeholder no usable para SQL. La cadena real, la clave JWT y la contrasena del seeder deben venir de `dotnet user-secrets` o de variables de entorno. La clave JWT rastreada fue retirada: el host falla de forma explicita si falta o no alcanza 32 bytes y diversidad suficiente.
 
 ```powershell
 dotnet restore "API Graphql/OneITB/GraphQL.csproj"
@@ -40,7 +43,7 @@ Endpoints locales esperados:
 
 ### Credenciales de acceso por defecto (Data Seeder)
 
-Una vez levantada la base de datos con el Seeder (requiere `ONEITB_SEED_DEMO_PASSWORD` en produccion/demo), puedes iniciar sesion usando usuarios generados por `EnterpriseDemoSeeder`. Todos comparten la contrasena configurada en `Seed:DemoPassword` / `ONEITB_SEED_DEMO_PASSWORD`; en Development existe fallback local `Test1234!`.
+Una vez levantada la base de datos con el Seeder, puedes iniciar sesion usando usuarios generados por `EnterpriseDemoSeeder`. Todos comparten la contrasena configurada de forma externa en `Seed:DemoPassword` / `ONEITB_SEED_DEMO_PASSWORD`. No existe una contrasena fallback hardcodeada.
 
 | Rol | Usuario demo |
 |---|---|
@@ -78,13 +81,17 @@ El entorno local de desarrollo sigue usando `docker-compose.yml` solo para SQL S
 
 ```powershell
 $env:ONEITB_SQL_SA_PASSWORD = "<password-fuerte>"
+$env:ONEITB_JWT_ISSUER = "https://oneitb.example.edu/"
+$env:ONEITB_JWT_AUDIENCE = "https://oneitb.example.edu/"
 $env:ONEITB_JWT_KEY = "<clave-jwt-de-32-caracteres-o-mas>"
-$env:ONEITB_SEED_DEMO_PASSWORD = "<password-demo-fuerte>"
+$env:ONEITB_MAGIC_LINK_FRONTEND_URL = "https://oneitb.example.edu"
 $env:ONEITB_CORS_ORIGIN = "http://localhost"
 
-# Opcionales para produccion/cloud
+# Redis y Cloudinary son opcionales
 $env:ONEITB_REDIS_CONNECTION = "oneitb-redis:6379,abortConnect=false"
 $env:ONEITB_CLOUDINARY_URL = "cloudinary://api_key:api_secret@cloud_name"
+
+# SMTP es obligatorio en Production
 $env:ONEITB_SMTP_HOST = "smtp.example.edu"
 $env:ONEITB_SMTP_PORT = "587"
 $env:ONEITB_SMTP_USER = "oneitb@example.edu"
@@ -92,14 +99,17 @@ $env:ONEITB_SMTP_PASS = "<smtp-secret>"
 $env:ONEITB_SMTP_FROM = "oneitb@example.edu"
 $env:ONEITB_SMTP_ENABLE_SSL = "true"
 
+# Demo data queda deshabilitada por defecto en Production
+$env:ONEITB_SEED_ENABLE_DEMO_DATA = "false"
+
 docker compose -f docker-compose.prod.yml config
 docker compose -f docker-compose.prod.yml build
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-Si `ConnectionStrings:Redis` no existe, HotChocolate usa Pub/Sub en memoria. Si `CloudinarySettings:Url` no existe, `/api/upload` escribe en disco local bajo `wwwroot/uploads`. Si las variables `SmtpSettings` no estan completas, el backend usa `ConsoleEmailService` y no intenta SMTP real.
+Si `ConnectionStrings:Redis` no existe, HotChocolate usa Pub/Sub en memoria. Si `CloudinarySettings:Url` no existe, `/api/upload` escribe en disco local bajo `wwwroot/uploads`. En Development, la ausencia total de SMTP activa `PickupDirectoryEmailService` y escribe archivos `.eml` ignorados bajo `API Graphql/OneITB/App_Data/MailDrop`; una configuracion SMTP parcial falla para evitar falsos positivos. En Production, SMTP completo es obligatorio.
 
-`ONEITB_SEED_DEMO_PASSWORD` es obligatorio para `docker-compose.prod.yml` porque la API inicializa cuentas demo/productivas en bases vacias sin versionar contrasenas. En Development, el host conserva el fallback local `Test1234!`; no usar ese fallback para produccion real.
+`ONEITB_SEED_DEMO_PASSWORD` solo es obligatorio cuando `ONEITB_SEED_ENABLE_DEMO_DATA=true`. El seeder usa la misma politica BCrypt inyectada que el registro y no contiene contrasenas por defecto.
 
 ### SMTP real para cambios de postulacion
 
@@ -114,7 +124,19 @@ dotnet user-secrets set "SmtpSettings:From" "oneitb@example.edu" --project "API 
 dotnet user-secrets set "SmtpSettings:EnableSsl" "true" --project "API Graphql/OneITB/GraphQL.csproj"
 ```
 
-No versionar credenciales SMTP. Para demo sin proveedor real, dejar las claves vacias y verificar el fallback por logs.
+No versionar credenciales SMTP. Para una demo local sin proveedor real, dejar todas las claves SMTP vacias y abrir el archivo `.eml` mas reciente de `App_Data/MailDrop`. El cuerpo y las credenciales temporales nunca se escriben en logs.
+
+### Magic Link de empleadores
+
+`requestMagicLink` devuelve solamente `{ accepted, message }`. La credencial aleatoria se envia en el fragmento `#token=` del enlace, se persiste como digest SHA-256 y se consume una sola vez. Al abrir el enlace, React retira el fragmento de la barra de direcciones antes de permitir el login.
+
+En Development:
+
+1. solicitar el enlace desde `/employer-login`;
+2. abrir el `.eml` nuevo de `API Graphql/OneITB/App_Data/MailDrop`;
+3. navegar al enlace incluido;
+4. confirmar el acceso;
+5. comprobar que el mismo enlace falla al reutilizarse.
 
 Si el certificado HTTPS local no esta instalado o confiado:
 

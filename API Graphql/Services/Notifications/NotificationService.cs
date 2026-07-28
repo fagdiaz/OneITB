@@ -23,9 +23,12 @@ namespace Services.Notifications
             _logger = logger;
         }
 
-        public async Task<IReadOnlyList<Notification>> GetNotificationsAsync(Guid userId, int first)
+        public async Task<IReadOnlyList<Notification>> GetNotificationsAsync(
+            Guid userId,
+            int first,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(userId);
+            await EnsureActiveUserAsync(userId, cancellationToken);
             int take = Math.Clamp(first, 1, MaxNotificationPageSize);
 
             return await NotificationGraph()
@@ -33,25 +36,31 @@ namespace Services.Notifications
                 .OrderByDescending(notification => notification.UpdatedAt ?? notification.CreatedAt)
                 .ThenByDescending(notification => notification.Id)
                 .Take(take)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<int> GetUnreadCountAsync(Guid userId)
+        public async Task<int> GetUnreadCountAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(userId);
+            await EnsureActiveUserAsync(userId, cancellationToken);
             return await _context.Notifications
                 .AsNoTracking()
-                .CountAsync(notification => notification.UserId == userId && !notification.IsRead);
+                .CountAsync(
+                    notification => notification.UserId == userId && !notification.IsRead,
+                    cancellationToken);
         }
 
-        public async Task<IReadOnlyList<NotificationPreference>> GetPreferencesAsync(Guid userId)
+        public async Task<IReadOnlyList<NotificationPreference>> GetPreferencesAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(userId);
+            await EnsureActiveUserAsync(userId, cancellationToken);
             NotificationType[] types = Enum.GetValues<NotificationType>();
             List<NotificationPreference> existing = await _context.NotificationPreferences
                 .Where(preference => preference.UserId == userId)
                 .OrderBy(preference => preference.Type)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var missing = types
                 .Where(type => existing.All(preference => preference.Type != type))
@@ -68,19 +77,25 @@ namespace Services.Notifications
             if (missing.Count > 0)
             {
                 _context.NotificationPreferences.AddRange(missing);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
                 existing.AddRange(missing);
             }
 
             return existing.OrderBy(preference => preference.Type).ToList();
         }
 
-        public async Task<NotificationPreference> UpdatePreferenceAsync(Guid userId, NotificationType type, bool isEnabled)
+        public async Task<NotificationPreference> UpdatePreferenceAsync(
+            Guid userId,
+            NotificationType type,
+            bool isEnabled,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(userId);
+            await EnsureActiveUserAsync(userId, cancellationToken);
 
             NotificationPreference? preference = await _context.NotificationPreferences
-                .SingleOrDefaultAsync(item => item.UserId == userId && item.Type == type);
+                .SingleOrDefaultAsync(
+                    item => item.UserId == userId && item.Type == type,
+                    cancellationToken);
 
             if (preference is null)
             {
@@ -95,41 +110,50 @@ namespace Services.Notifications
 
             preference.IsEnabled = isEnabled;
             preference.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return preference;
         }
 
-        public async Task<Notification> MarkReadAsync(Guid userId, Guid notificationId)
+        public async Task<Notification> MarkReadAsync(
+            Guid userId,
+            Guid notificationId,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(userId);
+            await EnsureActiveUserAsync(userId, cancellationToken);
 
             Notification notification = await _context.Notifications
-                .SingleOrDefaultAsync(item => item.Id == notificationId && item.UserId == userId)
+                .SingleOrDefaultAsync(
+                    item => item.Id == notificationId && item.UserId == userId,
+                    cancellationToken)
                 ?? throw new InvalidOperationException("Notificacion no encontrada.");
 
             if (!notification.IsRead)
             {
                 notification.IsRead = true;
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
 
             return await NotificationGraph()
-                .SingleAsync(item => item.Id == notificationId && item.UserId == userId);
+                .SingleAsync(
+                    item => item.Id == notificationId && item.UserId == userId,
+                    cancellationToken);
         }
 
-        public async Task<int> MarkAllReadAsync(Guid userId)
+        public async Task<int> MarkAllReadAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
         {
-            await EnsureActiveUserAsync(userId);
+            await EnsureActiveUserAsync(userId, cancellationToken);
 
             List<Notification> unread = await _context.Notifications
                 .Where(notification => notification.UserId == userId && !notification.IsRead)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             foreach (Notification notification in unread)
                 notification.IsRead = true;
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return unread.Count;
         }
 
@@ -137,7 +161,8 @@ namespace Services.Notifications
             IReadOnlyCollection<Guid> userIds,
             NotificationType type,
             string message,
-            string? actionUrl)
+            string? actionUrl,
+            CancellationToken cancellationToken = default)
         {
             string normalizedMessage = RequireText(message, 500, "El mensaje de notificacion");
             string? normalizedActionUrl = NormalizeActionUrl(actionUrl);
@@ -154,7 +179,7 @@ namespace Services.Notifications
                 .AsNoTracking()
                 .Where(user => distinctUserIds.Contains(user.Id) && user.IsActive)
                 .Select(user => user.Id)
-                .ToArrayAsync();
+                .ToArrayAsync(cancellationToken);
 
             if (activeUserIds.Length == 0)
                 return Array.Empty<Notification>();
@@ -166,7 +191,7 @@ namespace Services.Notifications
                     preference.Type == type &&
                     !preference.IsEnabled)
                 .Select(preference => preference.UserId)
-                .ToArrayAsync();
+                .ToArrayAsync(cancellationToken);
 
             var notifications = activeUserIds
                 .Where(userId => !disabledUserIds.Contains(userId))
@@ -186,19 +211,26 @@ namespace Services.Notifications
                 return Array.Empty<Notification>();
 
             _context.Notifications.AddRange(notifications);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             Guid[] notificationIds = notifications.Select(notification => notification.Id).ToArray();
             List<Notification> persisted = await NotificationGraph()
                 .Where(notification => notificationIds.Contains(notification.Id))
                 .OrderByDescending(notification => notification.CreatedAt)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             foreach (Notification notification in persisted)
             {
                 try
                 {
-                    await _eventSender.SendAsync(NotificationTopics.ForUser(notification.UserId), notification);
+                    await _eventSender.SendAsync(
+                        NotificationTopics.ForUser(notification.UserId),
+                        notification,
+                        cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -426,6 +458,10 @@ namespace Services.Notifications
                     notification,
                     cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogWarning(
@@ -450,9 +486,13 @@ namespace Services.Notifications
             return RequireText(message, 500, "El mensaje agrupado");
         }
 
-        private async Task EnsureActiveUserAsync(Guid userId)
+        private async Task EnsureActiveUserAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
         {
-            bool exists = await _context.Users.AnyAsync(user => user.Id == userId && user.IsActive);
+            bool exists = await _context.Users.AnyAsync(
+                user => user.Id == userId && user.IsActive,
+                cancellationToken);
             if (!exists)
                 throw new InvalidOperationException("Usuario no encontrado o inactivo.");
         }

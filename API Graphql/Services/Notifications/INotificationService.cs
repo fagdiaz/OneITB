@@ -4,17 +4,18 @@ namespace Services.Notifications
 {
     public interface INotificationService
     {
-        Task<IReadOnlyList<Notification>> GetNotificationsAsync(Guid userId, int first);
-        Task<int> GetUnreadCountAsync(Guid userId);
-        Task<IReadOnlyList<NotificationPreference>> GetPreferencesAsync(Guid userId);
-        Task<NotificationPreference> UpdatePreferenceAsync(Guid userId, NotificationType type, bool isEnabled);
-        Task<Notification> MarkReadAsync(Guid userId, Guid notificationId);
-        Task<int> MarkAllReadAsync(Guid userId);
+        Task<IReadOnlyList<Notification>> GetNotificationsAsync(Guid userId, int first, CancellationToken cancellationToken = default);
+        Task<int> GetUnreadCountAsync(Guid userId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<NotificationPreference>> GetPreferencesAsync(Guid userId, CancellationToken cancellationToken = default);
+        Task<NotificationPreference> UpdatePreferenceAsync(Guid userId, NotificationType type, bool isEnabled, CancellationToken cancellationToken = default);
+        Task<Notification> MarkReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default);
+        Task<int> MarkAllReadAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Notification>> CreateNotificationsAsync(
             IReadOnlyCollection<Guid> userIds,
             NotificationType type,
             string message,
-            string? actionUrl);
+            string? actionUrl,
+            CancellationToken cancellationToken = default);
         Task<Notification?> UpsertGroupedNotificationAsync(
             Guid userId,
             NotificationType type,

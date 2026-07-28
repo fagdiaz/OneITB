@@ -1,194 +1,398 @@
-# Reporte final de auditoria tecnica - OneITB23
+# Reporte final de auditoria tecnica y seguridad - OneITB23
 
-**Fecha**: 2026-07-13
-**Specs de referencia**: `specs/171-production-security-and-seeding/`, `specs/173-enterprise-jobs-ats-seeder-qa/`, `specs/174-ux-alignment-and-smtp/`, `specs/175-privacy-controls-and-smoke-tests/`, `specs/178-qa-session2-social-core-fixes/`, `specs/179-social-polish-quick-wins/`, `specs/180-final-release-candidate-audit/`, `specs/181-qa-session3-media-moderation/`, `specs/182-qa-session4-feed-hierarchy-and-media-grid/`, `specs/183-premium-branding-landing/`, `specs/184-qa-master-polish-and-layout/`, `specs/185-media-notification-polish/`
-**Estado global del roadmap**: 98% (106/108 items); core funcional Feature Complete
+**Fecha de corte**: 2026-07-28
+**Alcance**: .NET 8, EF Core 8, HotChocolate 14, React 18, Apollo Client 3, SQL Server Docker
+**Estado del roadmap**: 98% (114 de 116 items)
+**Decision tecnica**: cierre de remediaciones 186-189 aprobado y Specs 190-193 implementadas; Code Freeze tecnico automatizado completo, condicionado operativamente a smokes externos diferidos y regresion manual final.
 
-## 1. Resumen ejecutivo
+---
 
-OneITB23 se encuentra en fase avanzada de cierre tecnico y se aproxima al Code Freeze funcional. La plataforma ya cubre autenticacion, perfiles/CV, feed social, multimedia, mensajeria privada, administracion/moderacion, recursos academicos, progreso academico, adaptador SIU mock, notificaciones, empleabilidad y un set de over-delivery institucional: Audit Trail EF, constancias academicas, credenciales publicas aprobadas y toasts globales.
+## 1. Resumen Ejecutivo y Riesgos Residuales
 
-Esta iteracion no intenta inflar artificialmente el estado a 100%. La Spec 169 cerro baselines reales de testing y resiliencia sin agregar features nuevas. La Spec 170 cerro la brecha de infraestructura productiva: Docker multicontenedor, Redis Pub/Sub, Cloudinary opcional, rate limiting y security headers. La Spec 171 cerro brechas finales de seguridad de API y demo readiness: profundidad maxima GraphQL, lockout persistente por cuenta y seeding productivo configurable sin secretos versionados. La Spec 173 agrego empleos y postulaciones; la Spec 174 alineo la terminologia hacia Gestor de Postulaciones e incorporo SMTP real con fallback local. La Spec 175 cerro controles de privacidad de perfil y agrego un smoke SMTP admin-only. Las Specs 178, 179, 181 y 182 consolidaron el muro: adjuntos multiples, mosaico/portada PDF segura, nesting dirigido acotado, ownership estricto, moderacion reversible auditada, seguidores explicitos, notificaciones exactas y recordatorios de mensajes. La Spec 180 ejecuto auditoria Release Candidate y corrigio un bug real de idempotencia en el seeder enterprise. La Spec 183 retiro el laboratorio visual temporal y adopto la identidad OneITB definitiva. La Spec 184 cerro el polish tecnico verificable de Header/Footer, contraste, mosaico multimedia, menciones dirigidas, preferencias y navegacion laboral exacta, con lifecycle cleanup y pruebas de regresion. La Spec 185 completo el ajuste del mosaico por orientacion, limito YouTube de forma defensiva en ambas capas, corrigio el stacking de preferencias y separo el contador no leido del historial agrupado. Google SSO, despliegue Azure real y mobile quedan bloqueados/pendientes hasta contar con credenciales, recursos cloud y alcance aprobado.
+### Tabla consolidada de hallazgos Críticos y Altos (Módulos 1, 2, 3 y 4)
 
-## 2. Acciones ejecutadas
+| # | Severidad | Hallazgo | Origen |
+|---|---|---|---|
+| C-1 | **CRÍTICO** | Ausencia de validación por Magic Bytes en subida de archivos | Módulo 1 (2026-07-27) |
+| C-2 | **CRÍTICO** | Mutaciones `RequestMagicLink` / `LoginWithMagicLink` sin rate limiting específico | Módulo 1 (2026-07-27) |
+| C-3 | **CRÍTICO** | `GetInquiries`: llamada síncrona bloqueante `.Any()` en Thread Pool de ASP.NET Core | Módulo 2 (2026-07-27) |
+| A-1 | **ALTO** | Token de Magic Link devuelto en la respuesta GraphQL (debe ir por SMTP) | Módulo 1 (2026-07-27) |
+| A-2 | **ALTO** | BCrypt sin work factor explícito en flujos de producción | Módulo 1 (2026-07-27) |
+| A-3 | **ALTO** | `GetInquiries` sin `[UsePaging]` — feed potencialmente ilimitado | Módulo 2 (2026-07-27) |
+| A-4 | **ALTO** | `GetAcademicStudents` sin paginación en entidad de crecimiento lineal | Módulo 2 (2026-07-27) |
 
-### Observabilidad y trazabilidad
+### Estado de remediación posterior
 
-- Se agrego `CorrelationIdMiddleware` para aceptar o generar `X-Correlation-ID`.
-- Cada request devuelve el correlation id en el header de respuesta.
-- El backend registra metodo, path, status code, duracion y correlation id en el log operativo.
-- Se configuro logging de consola simple, una linea por evento, apto para entorno local y CI.
+| Hallazgo | Estado actual | Evidencia |
+|---|---|---|
+| C-1 | **Mitigado por Spec 190 `[I]`** | Inspección binaria/estructural previa a storage, fixtures válidos/hostiles, 115 tests y smoke upload HTTP 200/400. |
+| C-2 | **Mitigado por Spec 190 `[I]`** | Límites por IP e identidad/credencial, fingerprints HMAC, memoria acotada/Redis atómico y tests deterministas de concurrencia/recuperación. El smoke runtime del throttle fue diferido por instrucción operativa. |
+| C-3, A-3, A-4 | **Mitigados por Spec 191 `[I]`** | `AnyAsync` cancelable, campo social sin limite retirado, consumidores bounded y estudiantes paginados; 126 tests backend, 59 frontend, schema real, builds y EF drift PASS. Smokes autenticados diferidos. |
+| A-1, A-2 | **Mitigados por Spec 192 `[I]`** | Respuesta generica, entrega fuera de banda, digest SHA-256, BCrypt central con costo 12/rehash no degradante y JWT sin clave rastreada; 141 tests backend, 61 frontend, schema real, builds y EF drift PASS. SMTP real/browser diferidos. |
+| M3-M1, M4-M1 | **Mitigados por Spec 193 `[I]`** | Guard central de silenciamiento antes de like/unlike, cero efectos laterales, error GraphQL controlado y bootstrap con boundary exterior mas fallback pre-React; 147 tests backend, 72 frontend, builds y EF drift PASS. Smokes autenticados/browser diferidos. |
 
-### Rendimiento GraphQL
+> **Nota Módulo 3**: La auditoría de lógica de negocio y moderación no arrojó hallazgos Críticos ni Altos. El hallazgo **MEDIO** M3-M1 fue mitigado por Spec 193; el detalle y su estado posterior se conservan en la sección §2.
 
-- Se reemplazaron resolvers de metricas sociales por DataLoaders:
-  - `UserPostCountDataLoader`
-  - `UserCommentCountDataLoader`
-  - `UserLikesReceivedCountDataLoader`
-  - `UserReportsReceivedCountDataLoader`
-  - `InquiryReportCountDataLoader`
-- Los conteos ahora se resuelven con consultas agrupadas por lote, evitando un conteo por cada usuario/publicacion de la respuesta.
+> **Nota Módulo 4**: La auditoría de arquitectura frontend y React no arrojó hallazgos Críticos ni Altos. El hallazgo **MEDIO** M4-M1 fue mitigado por Spec 193; el detalle y su estado posterior se conservan en la sección §2.
 
-### Gobernanza Speckit
+### Medio
 
-- Se creo la spec `168-wow-production-polish` con especificacion, plan, tareas y evidencia.
-- Se actualizo el roadmap solo por evidencia ejecutada.
-- Se mantuvieron como pendientes las brechas que exigen browser runtime, pruebas frontend o infraestructura distribuida.
+1. **M4-M1 — mitigado `[I]`**: `GlobalErrorBoundary` envuelve ahora la fábrica Apollo, `ApolloProvider`, `ThemeProvider` y `<App/>`; un guard asincrónico cubre además carga de módulos y creación del root. (Módulo 4)
+2. **M3-M1 — mitigado `[I]`**: `ToggleReactionAsync` aplica `EnsureUserCanCreateContentAsync` antes de consultar o mutar reacciones y el resolver conserva `USER_ERROR`. (Módulo 3)
+3. **Entrega de Magic Link — mitigada `[I]`**: el contrato devuelve solo confirmación genérica, la credencial se entrega fuera de banda y SQL conserva su digest. Queda el smoke SMTP real antes de elevar a `[V]`. (Módulo 1)
+4. **Regresión visual integral**: panel administrativo, hub académico y Gestor de Postulaciones requieren el recorrido manual final contra la base Docker de presentación. (Módulo 1)
 
-### Over-delivery institucional
+### Bajo/operativo
 
-- Se agrego `AuditLog` con `SaveChangesInterceptor` para registrar cambios de `User`, `AcademicProgress`, `AcademicResource`, `Inquiry` y `Comment`.
-- Se expuso `auditLogs(first, entityName, actorUserId)` solo para administradores.
-- Se agrego `publicCertificate(id)` para certificados publicos de progreso aprobado.
-- `/academic` permite exportar progreso academico en CSV e imprimir una constancia formal.
-- `/certificate/{id}` muestra una credencial publica compartible y limitada a aprobaciones.
-- `NotificationProvider` muestra toasts globales deduplicados desde `notificationReceived`.
+1. `UploadCleanupHostedService` registra fallos de limpieza como warning; en producción se recomienda elevar errores persistentes de I/O a error/alerta.
+2. Redis y Cloudinary tienen fallback local. SMTP es obligatorio en Production y usa pickup local solo en Development; los tres requieren smoke con secretos reales en el ambiente de destino.
+3. Google SSO continúa bloqueado por credenciales, callbacks y aprobación institucional.
 
-### Code Freeze y hardening final
+### Recomendación de cierre
 
-- Se agrego un `GlobalErrorBoundary` en React para evitar pantalla blanca ante crasheos no controlados y ofrecer una salida institucional al usuario.
-- Se agrego `GraphQLErrorFilter` para sanitizar errores inesperados del backend sin romper el contrato GraphQL existente.
-- Se incorporo baseline de pruebas frontend con Vitest/Testing Library.
-- Se incorporo baseline de integracion GraphQL con executor real de HotChocolate sobre EF Core de prueba.
-- El workflow `quality-gates.yml` ejecuta los tests frontend antes del build.
+Se recomienda declarar **Code Freeze técnico automatizado**, condicionado operativamente:
 
-### Preparacion Cloud y DevOps
+1. No incorporar nuevas features.
+2. Ejecutar el checklist manual de presentación con cuentas por rol.
+3. Validar servicios externos solo en un ambiente seguro con secretos no versionados.
+4. Corregir únicamente defectos reproducibles y acompañarlos con prueba de regresión.
+5. Mantener como criterio de salida: backend/frontend tests, builds, EF drift y smoke GraphQL en verde.
 
-- Se agregaron imagenes productivas multi-stage para backend .NET 8 y frontend React/Vite servido por Nginx.
-- `docker-compose.prod.yml` orquesta SQL Server 2022, Redis 7, API y frontend, usando variables de entorno para todos los secretos.
-- Nginx sirve la SPA con fallback a `index.html` y proxyea `/graphql`, `/api` y `/uploads` hacia la API, incluyendo soporte WebSocket para subscriptions.
-- HotChocolate selecciona Redis Subscriptions si existe configuracion Redis y conserva InMemory Pub/Sub como fallback local.
-- `/api/upload` quedo desacoplado por `IFileStorageService`: disco local por defecto y Cloudinary cuando se define `CloudinarySettings:Url`.
-- La API agrega rate limiting fixed-window por IP, endpoint `/health`, HSTS en produccion y headers HTTP defensivos.
-- La auditoria npm productiva quedo en cero vulnerabilidades conocidas tras actualizar dependencias compatibles.
+Con estas condiciones, OneITB23 se encuentra estable para la defensa académica controlada. El paso a producción pública requiere completar smokes con proveedores reales y la regresión manual por rol, sin modificar la lógica funcional ya congelada.
 
-### Seguridad final de API y demo readiness
+---
 
-- HotChocolate quedo configurado con `AddMaxExecutionDepthRule` y limite default de profundidad 10 para bloquear queries GraphQL abusivamente anidadas antes de ejecutar resolvers.
-- Se agregaron limites globales de paginacion (`DefaultPageSize` 20 y `MaxPageSize` 50) para reducir respuestas no acotadas en campos paginados.
-- `Account` persiste `FailedLoginAttempts` y `LockoutEnd`; el login bloquea por 15 minutos al quinto intento fallido y resetea el estado al autenticar correctamente.
-- La respuesta de login mantiene el contrato `AuthPayload`, pero las fallas controladas usan codigos GraphQL estables (`AUTH_INVALID_CREDENTIALS`, `ACCOUNT_LOCKED`).
-- El seeder demo/productivo exige password por configuracion en produccion y ya no resetea passwords de cuentas existentes en cada arranque.
+## 2. Hallazgos de Auditoría Modular (Ordenados del más reciente al más antiguo)
 
-### Empleabilidad y correo institucional
+### Módulo 4 — Arquitectura Frontend y React (NUEVO — 2026-07-27)
 
-- Se agrego `JobOffer` y `JobApplication` con ownership estricto del empleador y estados `Pending`, `Reviewed`, `Rejected`.
-- El Gestor de Postulaciones permite revisar postulantes y cambiar estado sin exponer privilegios a terceros.
-- El cambio de estado genera notificacion interna y, si SMTP esta configurado, correo institucional al postulante.
-- Si SMTP no esta configurado, `ConsoleEmailService` conserva la experiencia local/CI sin secretos ni fallos de arranque.
+**Fecha de auditoría**: 2026-07-27
+**Auditor**: Lead Frontend Architect / Especialista en Seguridad React (automatizado)
+**Alcance**: `FrontEnd/OneItb-FE/src/` — Apollo Client, flujos de Autenticación/Logout, renderizado de contenido rico, Error Boundaries.
 
-### Privacidad y operabilidad SMTP
+---
 
-- `User.IsPublicProfile` permite a cada usuario decidir si su perfil extendido es publico o privado.
-- `publicProfile` y `searchPublicProfiles` aplican masking backend-side para bio, contacto, carreras, CV y metricas cuando el visor no esta autorizado.
-- `/profile/edit` incorpora switch de privacidad con feedback visual y toast institucional.
-- `testSmtpConnection(targetEmail)` permite a administradores probar la salida de correo con validacion de email y errores GraphQL controlados sin exponer secretos.
+#### MEDIO-1: `GlobalErrorBoundary` ubicado dentro de los proveedores raíz (cobertura parcial)
 
-### Estabilizacion del nucleo social
-
-- `SocialAttachment` normaliza varios adjuntos por publicacion o comentario y conserva nombre original, MIME, tamano y orden sin eliminar `FileUrl` historico.
-- `CommentReaction` agrega Me gusta persistente y unico sobre comentarios/respuestas con FKs restrictivas y filtro de contenido activo.
-- El backend valida que la materia de una publicacion pertenezca a una carrera activa del autor; Administrador conserva alcance institucional explicito.
-- Las notificaciones de comentarios y reacciones se agrupan en escritura con clave unica, contador persistente, `RowVersion` y deep-link al post.
-- React muestra previews locales, galeria mixta YouTube/adjuntos, visores de imagen/video/PDF, autofocus de comentarios, modal paginado de likes y footer institucional.
-- Se elimino el compositor legacy duplicado del sidebar y sus metricas hardcodeadas; queda un resumen real de `me` y accesos rapidos.
-
-## 3. Evidencia ejecutada
-
-| Validacion | Resultado |
+| Campo | Detalle |
 |---|---|
-| Backend build Release con cache NuGet local | PASS, 0 errores |
-| Backend tests `Services.Tests` | PASS, 34/34 |
-| GraphQL smoke `{ __typename }` | PASS, HTTP 200 |
-| Introspeccion `auditLogs` / `publicCertificate` | PASS, HTTP 200 |
-| Migracion `AddAuditLogs` | PASS, generada y aplicada |
-| Frontend build Vite | PASS, 346 modulos, 1.21 s |
-| Frontend component tests | PASS, 3/3 |
-| Backend tests con integracion GraphQL | PASS, 35/35 |
-| Backend build tras Spec 170 | PASS, 0 errores |
-| Docker compose productivo `config` | PASS |
-| Docker compose productivo `build` | PASS, imagenes API/Web construidas |
-| Frontend tests tras audit fix | PASS, 3/3 |
-| Frontend build tras audit fix | PASS, 349 modulos, 1.25 s |
-| NPM audit productivo | PASS, 0 vulnerabilidades |
-| Header `X-Correlation-ID` | PASS |
-| Log operativo con correlation id | PASS |
-| Smoke autenticado de metricas de usuarios | PASS, 53 usuarios |
-| Smoke autenticado de metricas de publicaciones | PASS, 5 items sobre 154 |
-| Backend build tras Spec 171 | PASS, 0 warnings, 0 errores |
-| Migracion `AddAccountLockout` | PASS, generada |
-| EF modelo sin cambios pendientes | PASS |
-| Backend tests con lockout de cuenta | PASS, 38/38 |
-| Docker compose productivo con seed password requerido | PASS, `config` con variables efimeras |
-| Migracion `AddUserProfilePrivacy` | PASS, generada y aplicada contra SQL Server Docker |
-| Backend build tras Spec 175 | PASS, 0 warnings, 0 errores |
-| Backend tests tras Spec 175 | PASS, 39/39 |
-| Frontend build tras Spec 175 | PASS, 352 modulos |
-| EF modelo sin cambios pendientes tras Spec 175 | PASS |
-| Runtime smoke temporal tras Spec 175 | BLOQUEADO por revisor automatico del entorno Codex al iniciar proceso persistente |
-| Migracion `AddSocialAttachmentsCommentReactionsAndNotificationGrouping` | PASS, aplicada contra SQL Server Docker |
-| EF modelo sin cambios pendientes tras Spec 178 | PASS |
-| Backend build tras Spec 178 | PASS, 0 warnings, 0 errores |
-| Backend tests tras Spec 178 | PASS, 47/47 |
-| Frontend component tests tras Spec 178 | PASS, 6/6 |
-| Frontend build tras Spec 178 | PASS, 356 modulos, 1.07 s |
-| Smoke GraphQL autenticado Spec 178 | PASS: scoping, adjuntos, comentarios, reacciones, listado de likes, agrupacion y deep-link |
-| Browser QA Spec 178 | PARCIAL: inspeccion autenticada ejecutada y sidebar legacy corregido; recarga final bloqueada por politica de URL de la herramienta |
-| Backend build Spec 180 | PASS, 0 warnings, 0 errores |
-| Backend tests Spec 180 | PASS, 47/47 |
-| EF drift Spec 180 | PASS, sin cambios pendientes |
-| Frontend tests Spec 180 | PASS, 4 archivos / 12 tests |
-| Frontend build Spec 180 | PASS, 357 modulos, 743 ms |
-| Runtime GraphQL smoke Spec 180 | PASS, backend Release inicia en Development y `{ __typename }` responde HTTP 200 |
-| Seeder enterprise Spec 180 | PASS, `JobApplications` idempotente por `Id` y por `JobOfferId + ApplicantId` |
-| Migracion `AddMediaModerationState` Spec 181 | PASS, aplicada a Docker SQL y EF sin drift |
-| Backend build/tests Spec 181 | PASS, 0 warnings/0 errores y 55/55 tests |
-| Frontend build/tests Spec 181 | PASS, Vite 360 modulos/879 ms y 8 archivos/18 tests |
-| Runtime schema Spec 181 | PASS, `/health` Healthy, GraphQL HTTP 200 y mutaciones sociales/moderacion introspectadas |
-| Migracion `AddDirectedRepliesAndSocialGraphIndex` Spec 182 | PASS, aplicada a Docker SQL; EF sin drift y FKs restrictivas |
-| Backend tests Spec 182 | PASS, 62/62 |
-| Frontend tests/build Spec 182 | PASS, 12 archivos/25 tests; 368 modulos en 1.12 s con PDF.js separado |
-| NPM audit productivo Spec 182 | PASS, 0 vulnerabilidades |
-| Runtime GraphQL autenticado Spec 182 | PASS: login, follow/query/unfollow, respuesta dirigida con raiz/destinatario y cleanup por soft-delete |
-| Frontend tests/build Spec 183 | PASS, 16 archivos/31 tests y Vite 373 modulos/941 ms |
-| Frontend/backend tests Spec 184 | PASS, 18 archivos/39 tests y 63/63 tests .NET |
-| Builds Release Spec 184 | PASS, backend 0 warnings/0 errores y Vite 374 modulos/1.07 s en la ejecucion final |
-| NPM audit Spec 184 | PASS, 0 vulnerabilidades |
-| Runtime schema Spec 184 | PASS, GraphQL HTTP 200 y `Comment.replyToUser` expuesto en el schema real |
-| Backend/tests Spec 185 | PASS, Release 0 warnings/0 errores y 65/65 tests |
-| Frontend Spec 185 | PASS, 21 archivos/49 tests y Vite 374 modulos/858 ms en el gate final |
-| EF/npm/runtime Spec 185 | PASS, sin model drift, 0 vulnerabilidades productivas y GraphQL Release HTTP 200 |
+| **Archivo** | [`main.jsx`](file:///F:/React/OneITB23/FrontEnd/OneItb-FE/src/main.jsx#L15-L23) |
+| **Líneas** | 15–23 |
+| **Categoría** | Resiliencia de UI / Error Boundary |
 
-Advertencia de entorno: `NU1900` aparece porque el runner local no puede consultar metadata de vulnerabilidades en `https://api.nuget.org/v3/index.json`. No es una advertencia de codigo fuente.
+**Descripción**: El `GlobalErrorBoundary` envuelve correctamente `<App/>`, pero en el árbol de renderizado se encuentra *dentro* de `<ApolloProvider>` y `<ThemeProvider>`:
 
-## 4. Estado pendiente honesto
+```jsx
+// main.jsx — orden actual
+<ApolloProvider client={new GraphQLProvider().apolloInstance}>
+  <ThemeProvider>
+    <GlobalErrorBoundary>   {/* ← boundary aquí */}
+      <App />
+    </GlobalErrorBoundary>
+  </ThemeProvider>
+</ApolloProvider>
+```
 
-Quedan items funcionales/de despliegue abiertos o bloqueados:
+Esto significa que un error de renderizado que se origine en `ApolloProvider` o en `ThemeProvider` no será capturado por el boundary, y propagará hasta el root de React, produciendo una pantalla en blanco sin mensaje de error al usuario.
 
-1. Regresion visual/runtime del panel admin contra SQL Docker.
-2. Regresion autenticada en navegador del hub academico y del Gestor de Postulaciones.
-3. Smoke SMTP real con proveedor institucional configurado, usando la query admin-only ya implementada.
-4. Google SSO productivo, bloqueado por credenciales OAuth, callbacks y aprobacion institucional.
-5. Provisioning Azure real y aplicacion movil nativa.
+**Impacto**: Bajo en condiciones normales (esos proveedores rara vez lanzan excepciones de render), pero representa una brecha en la cobertura de la red de seguridad de UI. En producción, un fallo de configuración del cliente Apollo (por ejemplo, un `cache` inválido) dejaría la aplicación irrecuperable sin feedback.
 
-Ademas, el despliegue Azure App Service/Azure SQL real queda como tarea operativa pendiente: la infraestructura Docker/cloud-ready existe, pero no se debe declarar desplegada hasta ejecutar provisionamiento, migracion y smoke test en Azure.
+**Remediación**: Mover `GlobalErrorBoundary` para que envuelva a todos los proveedores, o agregar un segundo boundary mínimo en el nivel raíz:
 
-Estos puntos no deben presentarse como cerrados hasta tener implementacion y evidencia runtime/CI correspondiente.
+```jsx
+// Opción recomendada: boundary como primer hijo de createRoot
+<GlobalErrorBoundary>
+  <ApolloProvider client={...}>
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
+  </ApolloProvider>
+</GlobalErrorBoundary>
+```
 
-## 5. Riesgos residuales
+**Estado posterior (Spec 193)**: **MITIGADO `[I]`**. `main.jsx` usa un bootstrap asincrónico que carga el árbol de aplicación dentro de `try/catch`; `GlobalErrorBoundary` queda por fuera de `AppProviders`, la fábrica Apollo se evalúa perezosamente una sola vez por montaje y un fallback DOM cubre incluso el fallo de `createRoot`. Las pruebas inyectan fallos en fábrica, Apollo, Theme, hijo y pre-mount.
 
-- Redis Pub/Sub y Cloudinary estan implementados, pero requieren variables/secretos productivos y smoke runtime con esos servicios activos antes de elevarlos a `[V]`.
-- SMTP esta implementado con fallback seguro y smoke admin-only, pero requiere proveedor/secretos reales y prueba de entrega para elevarlo a `[V]`.
-- El compose productivo fue construido y validado estaticamente; la ejecucion completa contra migraciones y trafico real debe hacerse con secretos definitivos.
-- La validacion visual completa del panel admin, hub academico, `/empleos` y `/empleos/mis-ofertas` sigue dependiendo de una sesion de navegador autenticada.
-- Las Specs 178/179/181/182 tienen validacion funcional por tests, schema y smoke REST/GraphQL donde aplica; resta confirmar manualmente portada/mosaico PDF, reemplazo de adjuntos, carrusel, highlight dirigido, badge minimizado, Follow en feed/perfil, moderacion con motivo y preferencias en una sesion autenticada del navegador de presentacion.
-- El seeder enterprise ya no bloquea el arranque al reejecutarse sobre una base demo existente; queda recomendado ejecutar una regeneracion completa de base antes de la defensa solo si se necesita partir de datos limpios.
-- El entorno necesita restauracion NuGet con red para ejecutar auditoria de vulnerabilidades sin warnings `NU1900`.
-- Open Graph perfecto para LinkedIn requiere SSR o HTML renderizado desde backend; la SPA actual actualiza meta tags en runtime y ofrece URL publica compartible, pero los crawlers pueden no ejecutar JavaScript.
-- El badge rojo de "Empleos nuevos" en la navegacion es deliberadamente efimero: depende del estado WebSocket/Apollo en memoria, se limpia al ingresar a `/empleos` y no persiste tras recargar la pagina. Si se requiere contador persistente, debe modelarse como notificacion leida/no leida en base de datos.
-- El proyecto entra en Code Freeze funcional: la Spec 169 mitigo el riesgo de pantalla blanca con un Error Boundary global y agrego baselines automatizados frontend/GraphQL. La cobertura todavia no debe confundirse con una suite exhaustiva de regresion visual ni con pruebas distribuidas de infraestructura.
-- Las vulnerabilidades de DoS por profundidad GraphQL y fuerza bruta por cuenta quedaron mitigadas a nivel backend; faltan pruebas de penetracion externas para elevarlas de hardening implementado a certificacion formal.
+---
 
-## 6. Recomendacion de cierre hacia produccion
+#### Aspectos verificados como SEGUROS
 
-Para una presentacion academica final, el sistema es demostrable si se usa el runtime local Docker SQL documentado, se configura `ONEITB_SEED_DEMO_PASSWORD` para la base demo y se conserva el Code Freeze: no agregar features nuevas antes de la defensa, ejecutar los gates documentados y limitar cambios a bugs bloqueantes. Para produccion real, antes de declarar 100%, se recomienda cerrar regresion browser admin, configurar secretos reales de Redis/Cloudinary/Azure, ejecutar migraciones y smoke tests en el entorno cloud definitivo, y extender la suite SQL Server/Testcontainers como continuidad del baseline GraphQL incorporado en la Spec 169.
+| Aspecto | Veredicto | Evidencia |
+|---|---|---|
+| **Fuga de caché Apollo en Logout (Cross-Account Data Leak)** | ✅ Seguro | `GraphqlProvider.js` línea 54: `clearActiveApolloStore` invoca `activeApolloClient.clearStore()`. Esta función es llamada en `invalidateSessionTransport()` (línea 317), que a su vez es invocada tanto en `terminateLocalSession` (`AuthContext.jsx` línea 58) como en el handler de terminación de sesión fallback (línea 343). La caché Apollo se limpia **antes** de que el nuevo usuario pueda autenticarse, ya que `login()` (línea 91) llama a `waitForSessionTermination()` y luego a `invalidateSessionTransport()`. El WebSocket también se termina (`graphQLWsClient.terminate()`, línea 314) y el `sessionEpoch` se incrementa, descartando respuestas tardías en vuelo. |
+| **XSS vía `dangerouslySetInnerHTML`** | ✅ Seguro | Búsqueda exhaustiva en todo `src/`: **cero usos** de `dangerouslySetInnerHTML`. El contenido de publicaciones se renderiza como texto plano en JSX (`{post.content}`, `Feed.jsx` línea 1045); los comentarios usan `<MentionText>` que genera nodos `<Link>` y `<React.Fragment>` — nunca HTML crudo. No existe ningún renderer de Markdown ni de HTML en el árbol de componentes. |
+| **Ausencia de DOMPurify (no requerida)** | ✅ Seguro | No se instaló `dompurify` ni ninguna biblioteca de sanitización de HTML (`package.json`). Esto es correcto porque la aplicación **no renderiza HTML de usuario**. El único `escapeHtml` encontrado está en `CertificateExport.jsx` (línea 15), que opera sobre datos propios del usuario en un contexto de exportación PDF controlado. |
+| **GlobalErrorBoundary y bootstrap** | ✅ Seguro `[I]` | La frontera envuelve Apollo, Theme y App; el arranque dinámico captura fallos previos al montaje. El fallback no depende de providers, genera un ID robusto y el diagnóstico excluye mensajes, tokens, cache y datos personales. Once pruebas focalizadas cubren fábrica, providers, hijo, `createRoot`, correlación y singleton por montaje. |
+| **Logout: limpieza de credenciales en localStorage** | ✅ Seguro | `terminateLocalSession` (`AuthContext.jsx` líneas 47–66) elimina `token` y `user` de `localStorage` **antes** de limpiar Apollo. El handler de storage cross-tab (líneas 72–84) detecta el logout remoto y propaga la terminación de sesión al tab sibling. |
+| **Protección contra payloads tardíos (session epoch)** | ✅ Seguro | `sessionBoundaryLink` (`GraphqlProvider.js` líneas 102–122) captura el `sessionEpoch` al inicio de cada operación y descarta silenciosamente cualquier respuesta que llegue tras un cambio de epoch (logout/login). Previene que datos de una sesión anterior contaminen la UI de la sesión siguiente. |
+
+---
+
+### Módulo 3 — Lógica de Negocio y Moderación (2026-07-27)
+
+**Fecha de auditoría**: 2026-07-27
+**Auditor**: Auditor de QA / Especialista en Lógica de Negocio (automatizado)
+**Alcance**: `SocialService.cs`, `ModerationService.cs`, `AcademicService.cs`, `MockSiuIntegrationService.cs`, `OneItbContext.cs` (query filters)
+
+---
+
+#### MEDIO-1: Bypass de mute en `ToggleReactionAsync` (reacciones a publicaciones)
+
+| Campo | Detalle |
+|---|---|
+| **Archivo** | [`SocialService.cs`](file:///F:/React/OneITB23/API%20Graphql/Services/Social/SocialService.cs#L709-L772) |
+| **Líneas** | 709–772 |
+| **Categoría** | Bypass de moderación |
+
+**Descripción**: El método `ToggleReactionAsync` verifica que el usuario exista y esté activo (líneas 722–725) pero **no invoca** `EnsureUserCanCreateContentAsync`, que es el guard centralizado que rechaza usuarios con `MutedUntil > DateTime.UtcNow`.
+
+Las otras tres mutaciones de creación de contenido sí invocan esta validación:
+- `AddInquiryAsync` (línea 219): `await EnsureUserCanCreateContentAsync(userId, "publicar", ...)`
+- `AddCommentAsync` (línea 596): `await EnsureUserCanCreateContentAsync(userId, "comentar", ...)`
+- `ToggleCommentReactionAsync` (línea 779): `await EnsureUserCanCreateContentAsync(userId, "reaccionar", ...)`
+
+**Impacto**: Un usuario silenciado puede continuar generando reacciones (likes) en publicaciones durante el período de sanción. Esto no le permite crear contenido visible (publicaciones/comentarios), pero sí participar activamente en métricas de engagement que podrían ser visibles para el autor de la publicación.
+
+**Remediación**: Agregar `await EnsureUserCanCreateContentAsync(userId, "reaccionar", cancellationToken);` al inicio de `ToggleReactionAsync`, inmediatamente antes de la verificación de existencia de la publicación (línea 714).
+
+**Estado posterior (Spec 193)**: **MITIGADO `[I]`**. El guard se ejecuta antes de toda lectura/escritura de reacción; tests prueban que el like denegado no inserta, el unlike denegado no elimina, no se invoca notificación y la cancelación no deja efectos. `Mutation.ToggleReaction` transforma el rechazo en `USER_ERROR`.
+
+---
+
+#### Aspectos verificados como SEGUROS
+
+| Aspecto | Veredicto | Evidencia |
+|---|---|---|
+| **Soft-delete en Inquiries** | ✅ Seguro | `OneItbContext.cs` línea 641: `entity.HasQueryFilter(e => e.IsActive && !e.IsHiddenByModerator)` — EF Core aplica el filtro global automáticamente a **todas** las consultas sobre `Inquiries` que no llamen `.IgnoreQueryFilters()`. Las consultas del feed (`GetInquiries`) operan sin `.IgnoreQueryFilters()`, por lo que los registros inactivos o moderados son invisibles de forma declarativa. Solo los métodos de edición propios (`EditInquiryAsync`, `ToggleInquiryStatusAsync`) y los métodos de moderación administrativa usan `.IgnoreQueryFilters()`, lo cual es correcto por diseño. |
+| **Soft-delete en Comments** | ✅ Seguro | `OneItbContext.cs` línea 674: `entity.HasQueryFilter(e => e.IsActive && !e.IsHiddenByModerator)`. Mismo patrón que Inquiries. Los `Include(inquiry => inquiry.Comments)` en el feed heredan el filtro global automáticamente. |
+| **Cascada de filtros en Reactions** | ✅ Seguro | `OneItbContext.cs` línea 714: `entity.HasQueryFilter(e => e.Inquiry.IsActive && !e.Inquiry.IsHiddenByModerator)` — las reacciones de publicaciones moderadas quedan excluidas automáticamente. |
+| **Cascada de filtros en CommentReactions** | ✅ Seguro | `OneItbContext.cs` líneas 739–743: filtro compuesto que verifica `Comment.IsActive`, `!Comment.IsHiddenByModerator`, `Comment.Inquiry.IsActive` y `!Comment.Inquiry.IsHiddenByModerator`. Cobertura completa de la cadena de moderación. |
+| **Mute enforcement social** | ✅ Seguro `[I]` | `EnsureUserCanCreateContentAsync` consulta `MutedUntil` y rechaza una sanción activa. Se aplica a publicaciones, comentarios, reacciones de comentarios y, desde Spec 193, reacciones de publicaciones; pruebas cubren insert, delete, notificación, cancelación y separación respecto del `Mute` personal. |
+| **Moderación administrativa** | ✅ Seguro | `ModerationService.cs`: `EnsureModeratorAsync` valida rol "Administrador" o "Moderador" antes de permitir hide/restore. Todas las operaciones de moderación generan `ModerationAudit` con `ActorUserId`, `Action`, `Summary` y timestamp. |
+| **SIU Mock: validación de notas** | ✅ Seguro | `AcademicService.cs` líneas 670–680: `ValidateScore` aplica `Math.Round(score, 2)` y rechaza con `ArgumentException` si `score < 0 || score > 10`. La sincronización SIU (`SyncSiuGradesAsync`, línea 372–381) envuelve cada registro en try/catch y registra el skip sin abortar el batch. Un mock que devolviera un 15 sería rechazado y registrado en `skippedItems`. |
+| **SIU Mock: datos hardcodeados** | ✅ Seguro | `MockSiuIntegrationService.cs`: devuelve 3 registros fijos con notas 8.75, 7.50 y 6.00 — todos dentro del rango válido [0, 10]. El registro con email inexistente es correctamente descartado por `SyncSiuGradesAsync` ("sin cuenta local"). |
+| **Exclusión de usuarios silenciados del feed** | ✅ Seguro | `GetInquiries` (líneas 149–153) excluye publicaciones de usuarios muteados o bloqueados **por el observador** vía `UserInteractions` (tipo `Mute`/`Block`). Esto es aislamiento social entre usuarios, distinto del mute administrativo (`MutedUntil`), y ambos mecanismos están correctamente implementados. |
+
+---
+
+### Módulo 2 — Rendimiento y Persistencia (2026-07-27)
+
+**Fecha de auditoría**: 2026-07-27
+**Auditor**: Arquitecto de Software Senior / DB Performance Specialist (automatizado)
+**Alcance**: `Query.cs`, `Mutation.cs`, `SocialService.cs`, `JobService.cs`, `AcademicService.cs`, `NotificationService.cs`, `GraphQLMetricsDataLoaders.cs`
+
+---
+
+#### CRÍTICO-3: Llamada síncrona bloqueante al hilo en `GetInquiries` (Thread-Pool Starvation)
+
+| Campo | Detalle |
+|---|---|
+| **Archivo** | [`SocialService.cs`](file:///F:/React/OneITB23/API%20Graphql/Services/Social/SocialService.cs#L136-L138) |
+| **Líneas** | 136–138 |
+| **Categoría** | Bloqueo de hilo / Concurrencia |
+
+**Descripción**: El método `GetInquiries` retorna un `IQueryable<Inquiry>` (no es async), por lo que no puede hacer `await`. Sin embargo, en la línea 136 ejecuta `_context.Users.Any(...)` de forma **síncrona** — una llamada de red a SQL Server que bloquea el hilo del Thread Pool de ASP.NET Core mientras espera la respuesta de la base de datos.
+
+```csharp
+// SocialService.cs línea 136 — BLOQUEANTE
+bool hasGlobalCareerVisibility = _context.Users.Any(user =>
+    user.Id == observerId &&
+    (user.Role == "Administrador" || user.Role == "Moderador"));
+```
+
+**Impacto**: Bajo carga concurrente (múltiples usuarios cargando el feed simultáneamente), los hilos del Thread Pool quedan bloqueados esperando I/O de red. ASP.NET Core no puede usar esos hilos para otras solicitudes. Puede provocar inanición del Thread Pool (thread starvation), degradando el throughput general del servidor y aumentando la latencia de todas las rutas de la aplicación.
+
+**Remediación**: Refactorizar `GetInquiries` para ser `async Task<IQueryable<...>>` o materializar la subquery de roles como un parámetro booleano resuelto previamente por el resolver `Query.cs` (que sí puede usar `await`):
+```csharp
+// En Query.cs resolver (que ya es async):
+bool hasGlobalVisibility = await context.Users.AnyAsync(u => u.Id == userId && (u.Role == "Administrador" || u.Role == "Moderador"), ct);
+// Pasar hasGlobalVisibility como parámetro a GetInquiries(...)
+```
+
+---
+
+#### ALTO-3: `GetInquiries` retorna `IQueryable` sin paginación declarativa — feed potencialmente ilimitado
+
+| Campo | Detalle |
+|---|---|
+| **Archivo** | [`Query.cs`](file:///F:/React/OneITB23/API%20Graphql/OneITB/GraphQL/Query.cs#L98-L110) |
+| **Líneas** | 98–110 |
+| **Categoría** | Paginación ineficiente |
+
+**Descripción**: El resolver `GetInquiries` expone un `IQueryable<Inquiry>` con `[UseProjection]` pero **sin** `[UsePaging]` ni ninguna cláusula `Take(n)` aplicada al `IQueryable` devuelto. El resolver gemelo `GetInquiriesPage` (líneas 130–162) sí implementa paginación manual con cursor. Sin embargo, `GetInquiries` permanece como endpoint alternativo sin límite de resultados.
+
+```csharp
+// Query.cs línea 98 — SIN paginación
+[UseProjection]
+public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que pasen el filtro
+```
+
+**Impacto**: Un cliente puede ejecutar `getInquiries` sin filtros y forzar al servidor a materializar toda la tabla `Inquiries` (que crecerá indefinidamente). Las Inquiries tienen múltiples `Include` (`Comments`, `Reactions`, `Attachments`, etc.) vía `SocialService.GetInquiries`, lo que amplifica el volumen de datos transferidos de la BD.
+
+**Remediación**: Agregar `[UsePaging(MaxPageSize = 25)]` al resolver `GetInquiries` o eliminarlo del schema y consolidar el uso en `GetInquiriesPage`.
+
+---
+
+#### ALTO-4: `GetAcademicStudents` sin paginación en entidad de crecimiento lineal
+
+| Campo | Detalle |
+|---|---|
+| **Archivo** | [`Query.cs`](file:///F:/React/OneITB23/API%20Graphql/OneITB/GraphQL/Query.cs#L560-L577) / [`AcademicService.cs`](file:///F:/React/OneITB23/API%20Graphql/Services/Academic/AcademicService.cs#L197-L217) |
+| **Líneas** | Query: 560–577 / Service: 207–216 |
+| **Categoría** | Paginación ineficiente |
+
+**Descripción**: `GetAcademicStudents` devuelve `IReadOnlyList<User>` con todos los estudiantes de una carrera sin límite. En instituciones con cientos de alumnos por carrera, esta consulta materializará y transmitirá la totalidad de los registros `User` (incluyendo todos sus campos) en una sola respuesta.
+
+**Impacto**: Crecimiento de memoria proporcional al tamaño del plantel estudiantil. La entidad `User` incluye campos CV (experiencias, educación, proyectos, etc.) que no son necesarios en este listado académico.
+
+**Remediación**: Introducir paginación (offset o cursor-based) y proyectar únicamente los campos necesarios (Id, FirstName, LastName, Email).
+
+---
+
+#### Aspectos verificados como SEGUROS
+
+| Aspecto | Veredicto | Evidencia |
+|---|---|---|
+| **AsNoTracking en consultas de lectura** | ✅ Seguro | `GetInquiries`, `GetJobOffers`, `GetMe`, `GetPublicProfile`, `ResourceGraph()`, `ProgressGraph()`, `NotificationGraph()` — todas las rutas de solo lectura aplican `.AsNoTracking()`. Sin fugas de tracking en las rutas principales del feed. |
+| **DataLoaders (anti-N+1)** | ✅ Seguro | `GraphQLMetricsDataLoaders.cs`: cinco DataLoaders (`UserPostCount`, `UserCommentCount`, `UserLikesReceived`, `UserReportsReceived`, `InquiryReportCount`) usando `BatchDataLoader<Guid, int>` con `IDbContextFactory` y `GroupBy` + `ToDictionaryAsync`. Patrón correcto para evitar N+1 en métricas de usuario. |
+| **CancellationToken en SaveChangesAsync** | ✅ Seguro | Todos los `SaveChangesAsync` en `SocialService`, `JobService`, `AcademicService` y `NotificationService` reciben el `CancellationToken`. Sin bloqueos en escrituras. |
+| **Paginación en Jobs** | ✅ Seguro | `GetJobOffers` y `GetMyJobOffers` usan `[UsePaging(MaxPageSize = 50)]` + `[UseFiltering]` + `[UseSorting]` (Query.cs líneas 580–603). Cursor-based pagination de HotChocolate correctamente aplicada. |
+| **Paginación en Mensajería** | ✅ Seguro | `GetConversation`, `GetActiveConversations`, `GetMessagingContacts`, `SearchMyMessages` usan `[UsePaging(MaxPageSize = 50)]` (líneas 656–724). |
+| **Paginación en Admin** | ✅ Seguro | `GetAuditLogs` aplica `Math.Clamp(first, 1, 200)` + `.Take(take)`. `GetNotificationsAsync` aplica `Math.Clamp(first, 1, 50)` + `.Take(take)`. Límites duros respetados. |
+| **AsSplitQuery en grafos complejos** | ✅ Seguro | Consultas con múltiples `Include` anidados en `SocialService`, `JobService`, y `AcademicService` usan `.AsSplitQuery()`, evitando el producto cartesiano por joins múltiples. |
+| **Manejo de concurrencia en notificaciones** | ✅ Seguro | `UpsertGroupedNotificationAsync` implementa retry loop (3 intentos) con captura de `DbUpdateConcurrencyException` y `DbUpdateException`, protegiéndose contra inserciones duplicadas concurrentes. |
+| **SiuSyncGrades: batch insert** | ✅ Seguro | `SyncSiuGradesAsync` carga todas las cuentas, carreras elegibles y progresos existentes en memoria con consultas por lotes (`Contains(emails)`, `Contains(userIds)`) antes del bucle `foreach`, evitando N+1 en la sincronización masiva. |
+
+---
+
+### Módulo 1 — Seguridad & Auth (2026-07-27)
+
+**Fecha de auditoría**: 2026-07-27
+**Auditor**: Red Team / Senior .NET Developer (automatizado)
+**Alcance**: Auth services, JWT, UploadController, Mutation.cs (políticas de acceso)
+
+#### CRÍTICO-1: Ausencia de validación por Magic Bytes en subida de archivos
+
+**Estado actualizado (Spec 190)**: **MITIGADO `[I]`**. `FileContentInspector` valida firmas y estructura antes de storage; pruebas focalizadas y smoke runtime confirman aceptación de PDF válido y rechazo de contenido ejecutable renombrado sin persistencia.
+
+- **Archivo**: [`UploadController.cs`](file:///F:/React/OneITB23/API%20Graphql/OneITB/Controllers/UploadController.cs#L60-L66)
+- **Líneas**: 60–66
+- **Descripción**: La validación de archivos se basa exclusivamente en la **extensión del nombre de archivo** (línea 60) y en el **Content-Type HTTP** enviado por el cliente (línea 64–65). Ambos valores son controlados por el atacante y trivialmente falsificables.
+- **No existe inspección de las firmas binarias (magic bytes)** del contenido real del archivo. Esto permite subir archivos políglotas (por ejemplo, un ejecutable renombrado a `.pdf` con `Content-Type: application/pdf`) que pasarían ambas validaciones.
+- **Impacto**: Inyección de contenido malicioso en el almacenamiento. Un archivo `.html` disfrazado de imagen podría servirse a otros usuarios y ejecutar JavaScript en contexto de la aplicación (XSS almacenado). Un binario ejecutable disfrazado de documento podría usarse como vector de distribución de malware.
+- **Remediación**: Leer los primeros N bytes del stream (`IFormFile.OpenReadStream()`) y compararlos contra las firmas binarias conocidas para cada tipo permitido antes de aceptar el archivo.
+
+#### CRÍTICO-2: Mutaciones `RequestMagicLink` y `LoginWithMagicLink` expuestas sin rate limiting específico
+
+**Estado actualizado (Spec 190)**: **MITIGADO `[I]`**. Ambas operaciones aplican límites por origen e identidad/credencial antes del servicio, con fingerprints HMAC, provider en memoria/Redis y errores genéricos. La concurrencia, expiración y recuperación se verificaron por tests; el smoke runtime fue diferido por instrucción operativa.
+
+- **Archivo**: [`Mutation.cs`](file:///F:/React/OneITB23/API%20Graphql/OneITB/GraphQL/Mutation.cs#L207-L222)
+- **Líneas**: 207–222
+- **Descripción**: Ambas mutaciones son **públicas** (sin `[Authorize]`), lo cual es correcto por diseño (pre-autenticación). Sin embargo, `RequestMagicLink` **crea usuarios automáticamente** si no existen (línea 49–71 de `EmployerAuthService.cs`), y `LoginWithMagicLink` permite intentos de fuerza bruta contra tokens activos.
+- **Impacto**: Sin rate limiting dedicado, un atacante puede:
+  1. Generar creación masiva de cuentas de empleador (DoS en la base de datos).
+  2. Intentar fuerza bruta contra tokens de magic link de 64 caracteres hex (bajo riesgo práctico por entropía, pero el principio de defensa en profundidad exige limitación).
+- **Nota**: El reporte anterior menciona rate limiting global activo. Si cubre estas mutaciones específicas, el riesgo baja a **ALTO**. Se debe verificar la configuración exacta del middleware de rate limiting para confirmar cobertura.
+
+#### ALTO-1: Token de Magic Link devuelto en la respuesta GraphQL
+
+- **Archivo**: [`EmployerAuthService.cs`](file:///F:/React/OneITB23/API%20Graphql/Services/Auth/EmployerAuthService.cs#L95-L97)
+- **Líneas**: 95–97
+- **Descripción**: El método `RequestMagicLinkAsync` retorna el token directamente al cliente como valor de retorno de la mutación GraphQL. Este token es una **credencial de un solo uso** equivalente a una contraseña temporal.
+- **Impacto**: Si los logs de GraphQL, APM o algún proxy intermedio registran payloads de respuesta, la credencial queda expuesta en texto plano. Además, cualquier actor con acceso a la respuesta HTTP (MITM sobre HTTP, extensiones de navegador, cache de proxy) obtiene la credencial.
+- **Estado posterior (Spec 192)**: **MITIGADO `[I]`**. `requestMagicLink` devuelve `MagicLinkRequestPayload`, el token se envía por SMTP/pickup dentro de un fragmento, SQL guarda SHA-256 y React elimina el fragmento antes del consumo. Schema real y tests prueban ausencia de campos de credencial.
+
+#### ALTO-2: BCrypt sin work factor explícito en flujos de producción
+
+- **Archivos**:
+  - [`UsersService.cs`](file:///F:/React/OneITB23/API%20Graphql/Services/Users/UsersService.cs#L59) — línea 59
+  - [`EmployerAuthService.cs`](file:///F:/React/OneITB23/API%20Graphql/Services/Auth/EmployerAuthService.cs#L54-L55) — línea 54
+- **Descripción**: Las llamadas a `BCrypt.Net.BCrypt.HashPassword()` en registro de usuarios y creación de cuentas de empleador **no especifican explícitamente el work factor**. El valor por defecto de la biblioteca BCrypt.Net es 11, lo cual es aceptable hoy, pero:
+  1. Una actualización de la biblioteca podría cambiar el default.
+  2. No hay un estándar organizacional documentado ni centralizado.
+- **Nota positiva**: El test data usa `workFactor: 4` solo en tests (apropiado para velocidad). El modelo `Account.cs` valida formato BCrypt (`$2*` y 60 chars) correctamente en la línea 43.
+- **Impacto**: Riesgo de regresión silenciosa. Si el default baja, los hashes serían más débiles sin que nadie lo detecte.
+- **Estado posterior (Spec 192)**: **MITIGADO `[I]`**. `IPasswordHasher` centraliza BCrypt con costo 12 configurable (rango 10-14), actualiza hashes de costo inferior tras login válido, preserva hashes más fuertes y cubre registro, validación administrativa, empleadores y seeder.
+
+#### Aspectos verificados como SEGUROS
+
+| Aspecto | Veredicto | Evidencia |
+|---|---|---|
+| **Emisión JWT** | ✅ Seguro | `JwtTokenService.cs`: firma HS256, clave ≥32 bytes validada, issuer/audience requeridos, lifetime acotado (1–1440 min), claims canónicos sin datos sensibles más allá de email/nombre/rol. No hay tokens mock ni hardcodeados. |
+| **Validación JWT (opciones)** | ✅ Seguro | `JwtTokenOptions.cs`: falla cerrada si key <32 bytes o con baja diversidad, issuer vacío, audience vacío, o lifetime fuera de rango. La clave fue retirada de `appsettings` y debe llegar por secrets/environment. |
+| **Consumo atómico de Magic Link** | ✅ Seguro | `EmployerAuthService.cs` líneas 137–168: `ExecuteUpdateAsync` con cláusula `WHERE !IsUsed AND ExpiresAt > utcNow` garantiza consumo atómico y previene replay. Fallback para providers no-relacionales también implementado. |
+| **Token de Magic Link: entropía** | ✅ Seguro | 32 bytes de `RandomNumberGenerator` (256 bits de entropía). Expiración de 15 minutos. Inviable por fuerza bruta. |
+| **Login: protección contra fuerza bruta** | ✅ Seguro | `AccountsService.cs`: lockout de 15 minutos tras 5 intentos fallidos. Contadores reseteados en login exitoso. Mensajes de error genéricos (`AUTH_INVALID_CREDENTIALS`). |
+| **Autorización de mutaciones** | ✅ Seguro | 42 mutaciones verificadas: 4 públicas (register, login, requestMagicLink, loginWithMagicLink), todas las demás con `[Authorize]` o `[Authorize(Roles = ...)]` declarativo. Roles usan constantes canónicas en `GraphQlRoles`. No hay validación manual insegura de roles. |
+| **Upload: autenticación** | ✅ Seguro | `UploadController.cs` línea 12: `[Authorize]` a nivel de clase. Límite de 15 MB por archivo, 16 MB por request. Nombre de archivo sanitizado. |
+| **Upload: contenido real** | ✅ Mitigado `[I]` | Inspección binaria/estructural previa a storage para todos los formatos permitidos, con rechazo genérico y tests que prueban ausencia de escritura. |
+| **Magic Link: abuso de operaciones públicas** | ✅ Mitigado `[I]` | Límites configurables por origen y fingerprint de identidad/credencial; memoria acotada en local y operación Lua atómica en Redis. |
+| **Exposición de datos en JWT** | ✅ Seguro | Claims contienen: sub (userId), name, role, email. No hay datos financieros, CUIT, ni información sensible adicional. |
+
+---
+
+## 3. Auditoría de cierre original (Histórico)
+
+### Auditoría de cierre original (2026-07-23)
+
+#### Resumen ejecutivo
+
+La auditoría de cierre verificó las cuatro brechas críticas/altas que impedían declarar estable la frontera de autenticación, cancelación, sesión frontend y autorización GraphQL. La evaluación se respaldó con pruebas automatizadas, builds Release/Vite, revisión de modelo EF, schema GraphQL ejecutado y smokes contra SQL Server 2022 en Docker.
+
+No se declara un despliegue cloud productivo ya validado. Permanecen fuera de este cierre las credenciales de proveedores externos, SSO institucional y la aprobación visual integral del panel administrativo. Esas condiciones están registradas en `ROADMAP.md` y no se contabilizan como verificadas.
+
+#### Críticos resueltos
+
+##### Emisión JWT y acceso de empleadores - RESUELTO
+
+- Se eliminó el token mock y el `token_placeholder`.
+- `JwtTokenService` centraliza firma HS256, issuer, audience, expiración y claims canónicos para cuentas y empleadores.
+- La configuración falla de forma cerrada si la clave tiene menos de 32 bytes o faltan issuer/audience.
+- La credencial Magic Link usa aleatoriedad criptográfica, expira en 15 minutos y se consume atómicamente.
+- Runtime SQL Server: JWT aceptado, `me` autenticado como `Empleador`, replay rechazado y dos consumos simultáneos producen exactamente un éxito.
+
+##### Autorización de mutaciones GraphQL - RESUELTO
+
+- La matriz automatizada cubre los 42 campos de `Mutation`.
+- Solo cuatro operaciones son públicas: registro, login, solicitud y consumo de Magic Link.
+- Las operaciones por rol usan atributos declarativos con valores canónicos en español.
+- Los controles contextuales de ownership, autor, inscripción y estado se conservaron dentro de servicios.
+- Runtime: una mutación administrativa anónima y una postulación con rol incorrecto fueron rechazadas por middleware.
+
+#### Altos resueltos
+
+##### Propagación de `CancellationToken` - RESUELTO
+
+- Todas las mutaciones asíncronas reciben el token de la solicitud.
+- Servicios, UnitOfWork y repositorios alcanzados propagan el token hasta EF Core y efectos soportados.
+- Un guard por reflexión impide regresiones futuras.
+- Una prueba pre-cancelada demuestra ausencia de escritura.
+- El schema runtime conserva el contrato externo: 42 mutaciones y cero argumentos de cancelación visibles.
+
+##### Aislamiento de sesión Apollo/React/WebSocket - RESUELTO
+
+- Logout manual, expiración, cierre remoto y cambio de identidad convergen en un coordinador idempotente.
+- La identidad y credenciales se eliminan antes de limpiar Apollo.
+- El WebSocket se termina y un epoch de sesión descarta respuestas tardías.
+- Login espera cualquier limpieza pendiente antes de persistir al usuario siguiente.
+- Las pruebas cubren purge de entidades privadas, concurrencia, A -> B y payloads tardíos.
+
+#### Controles previamente verificados y sin regresión
+
+- Proyecciones/DataLoaders y consultas agrupadas mitigan N+1 en grafos principales.
+- Rate limiting, headers HTTP, healthcheck y límite de profundidad GraphQL permanecen activos.
+- EF Core no presenta cambios de modelo pendientes.
+- Los builds afectados terminan con cero warnings y cero errores.
+
+#### Evidencia consolidada
+
+| Gate | Resultado |
+|---|---|
+| Backend tests | PASS, 82/82 |
+| Frontend tests | PASS, 23 archivos / 54 tests |
+| Backend Release | PASS, 0 warnings / 0 errores |
+| Frontend Vite | PASS, 374 módulos / 797 ms |
+| EF model drift | PASS, sin cambios pendientes |
+| GraphQL runtime | PASS, SQL Server Docker |
+| Magic Link concurrente | PASS, 1 éxito / 1 replay rechazado |
+| Browser smoke | PASS, `/employer-login` sin errores ni warnings |
+| `npm audit` del corte | No reejecutado: el entorno rechazó transmitir metadata al registro npm; el último gate registrado fue 0 vulnerabilidades y no cambiaron dependencias |

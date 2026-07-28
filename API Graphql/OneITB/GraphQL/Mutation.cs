@@ -22,10 +22,20 @@ using Services.Academic;
 using Services.Notifications;
 using Services.Siu;
 using Services.Jobs;
-using OneItb.GraphQL.Services.Email;
+using OneItb.GraphQL.Services.Security;
 
 namespace OneITB.GraphQL.Mutations
 {
+    internal static class GraphQlRoles
+    {
+        public const string Administrator = "Administrador";
+        public const string Moderator = "Moderador";
+        public const string Professor = "Profesor";
+        public const string Student = "Estudiante";
+        public const string Graduate = "Egresado";
+        public const string Employer = "Empleador";
+    }
+
     public class Mutation
     {
         /// <summary>
@@ -33,12 +43,13 @@ namespace OneITB.GraphQL.Mutations
         /// </summary>
         public async Task<UserPayload> RegisterUserAsync(
             RegisterInput input,
-            [Service] IUsersService usersService)
+            [Service] IUsersService usersService,
+            CancellationToken cancellationToken)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
             try
             {
-                var userDto = await usersService.RegisterAsync(input);
+                var userDto = await usersService.RegisterAsync(input, cancellationToken);
                 return userDto;
             }
             catch (ArgumentException ex)
@@ -52,10 +63,11 @@ namespace OneITB.GraphQL.Mutations
         /// </summary>
         public async Task<AuthPayload> Login(
             LoginInput input,
-            [Service] IAccountService accountService)
+            [Service] IAccountService accountService,
+            CancellationToken cancellationToken)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
-            var authResult = await accountService.Login(input);
+            var authResult = await accountService.Login(input, cancellationToken);
             return authResult;
         }
 
@@ -63,7 +75,8 @@ namespace OneITB.GraphQL.Mutations
         public async Task<UpdateProfilePayload> UpdateProfile(
             UpdateProfileInput input,
             [Service] IUsersService usersService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
             Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
@@ -73,7 +86,7 @@ namespace OneITB.GraphQL.Mutations
 
             try
             {
-                var payload = await usersService.UpdateProfileAsync(input);
+                var payload = await usersService.UpdateProfileAsync(input, cancellationToken);
                 return payload;
             }
             catch (InvalidOperationException ex)
@@ -86,12 +99,16 @@ namespace OneITB.GraphQL.Mutations
         public async Task<UserPayload> ToggleProfilePrivacy(
             bool isPublic,
             [Service] IUsersService usersService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 Guid actorUserId = GetAuthenticatedUserId(httpContextAccessor);
-                return await usersService.ToggleProfilePrivacyAsync(actorUserId, isPublic);
+                return await usersService.ToggleProfilePrivacyAsync(
+                    actorUserId,
+                    isPublic,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -99,14 +116,15 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
         public async Task<UserPayload> UpdateUserRole(
             Guid userId,
             string newRole,
             string? adminPassword,
             [Service] IUsersService usersService,
             [Service] IModerationService moderationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -115,12 +133,14 @@ namespace OneITB.GraphQL.Mutations
                     actorUserId,
                     userId,
                     newRole,
-                    adminPassword);
+                    adminPassword,
+                    cancellationToken);
                 await moderationService.RecordAuditAsync(
                     actorUserId,
                     "UpdateUserRole",
                     $"Rol actualizado a {newRole}.",
-                    targetUserId: userId);
+                    targetUserId: userId,
+                    cancellationToken: cancellationToken);
                 return payload;
             }
             catch (InvalidOperationException ex)
@@ -129,22 +149,27 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
         public async Task<UserPayload> UpdateUserStatus(
             Guid userId,
             bool isActive,
             [Service] IUsersService usersService,
             [Service] IModerationService moderationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
-                UserPayload payload = await usersService.UpdateUserStatusAsync(userId, isActive);
+                UserPayload payload = await usersService.UpdateUserStatusAsync(
+                    userId,
+                    isActive,
+                    cancellationToken);
                 await moderationService.RecordAuditAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
                     "UpdateUserStatus",
                     isActive ? "Usuario activado." : "Usuario desactivado.",
-                    targetUserId: userId);
+                    targetUserId: userId,
+                    cancellationToken: cancellationToken);
                 return payload;
             }
             catch (InvalidOperationException ex)
@@ -153,35 +178,63 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Moderator })]
         public async Task<UserPayload> SilenceUser(
             Guid userId,
             int hours,
             [Service] IUsersService usersService,
             [Service] IModerationService moderationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
-            UserPayload payload = await usersService.SilenceUserAsync(userId, hours);
+            UserPayload payload = await usersService.SilenceUserAsync(
+                userId,
+                hours,
+                cancellationToken);
             if (payload.Success)
             {
                 await moderationService.RecordAuditAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
                     "SilenceUser",
                     $"Usuario silenciado por {hours} horas.",
-                    targetUserId: userId);
+                    targetUserId: userId,
+                    cancellationToken: cancellationToken);
             }
 
             return payload;
         }
 
-        public async Task<string> RequestMagicLink(string email, string cuit, [Service] IEmployerAuthService authService)
+        public async Task<MagicLinkRequestPayload> RequestMagicLink(
+            string email,
+            string cuit,
+            [Service] IEmployerAuthService authService,
+            [Service] IMagicLinkRateLimiter rateLimiter,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ILogger<Mutation> logger,
+            CancellationToken cancellationToken)
         {
-            return await authService.RequestMagicLinkAsync(email, cuit);
+            MagicLinkRateLimitDecision decision = await rateLimiter.TryAcquireRequestAsync(
+                GetClientSource(httpContextAccessor),
+                email,
+                cancellationToken);
+            EnsureMagicLinkRequestAllowed(decision, "request", logger);
+            return await authService.RequestMagicLinkAsync(email, cuit, cancellationToken);
         }
 
-        public async Task<string> LoginWithMagicLink(string token, [Service] IEmployerAuthService authService)
+        public async Task<string> LoginWithMagicLink(
+            string token,
+            [Service] IEmployerAuthService authService,
+            [Service] IMagicLinkRateLimiter rateLimiter,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ILogger<Mutation> logger,
+            CancellationToken cancellationToken)
         {
-            return await authService.LoginWithMagicLinkAsync(token);
+            MagicLinkRateLimitDecision decision = await rateLimiter.TryAcquireRedemptionAsync(
+                GetClientSource(httpContextAccessor),
+                token,
+                cancellationToken);
+            EnsureMagicLinkRequestAllowed(decision, "redemption", logger);
+            return await authService.LoginWithMagicLinkAsync(token, cancellationToken);
         }
 
         [Authorize]
@@ -189,50 +242,60 @@ namespace OneITB.GraphQL.Mutations
             Guid inquiryId,
             string reason,
             [Service] IModerationService moderationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             return await moderationService.ReportInquiryAsync(
                 GetAuthenticatedUserId(httpContextAccessor),
                 inquiryId,
-                reason);
+                reason,
+                cancellationToken);
         }
 
-        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Moderator })]
         public async Task<CommunityReport> UpdateReportStatus(
             Guid reportId,
             string status,
             [Service] OneItbContext context,
             [Service] IModerationService moderationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
-            var report = await context.CommunityReports.FindAsync(reportId);
+            var report = await context.CommunityReports.FindAsync(
+                new object[] { reportId },
+                cancellationToken);
             if (report == null) throw new GraphQLException("Reporte no encontrado.");
             report.Status = status;
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
             await moderationService.RecordAuditAsync(
                 GetAuthenticatedUserId(httpContextAccessor),
                 "UpdateReportStatus",
                 $"Reporte actualizado a {status}.",
                 targetReportId: reportId,
-                targetInquiryId: report.InquiryId);
+                targetInquiryId: report.InquiryId,
+                cancellationToken: cancellationToken);
             return report;
         }
 
-        [Authorize(Roles = new[] { "Administrador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
         public async Task<Subject> AddSubject(
             string name,
             string code,
             int careerId,
             int? year,
             IReadOnlyList<int>? prerequisiteIds,
-            [Service] OneItbContext context)
+            [Service] OneItbContext context,
+            CancellationToken cancellationToken)
         {
             string normalizedCode = code.Trim().ToUpperInvariant();
             string normalizedName = name.Trim();
             ValidateSubjectYear(year);
 
-            if (await context.Subjects.AnyAsync(subject =>
-                subject.Code == normalizedCode || subject.Name == normalizedName))
+            if (await context.Subjects.AnyAsync(
+                    subject =>
+                        subject.Code == normalizedCode ||
+                        subject.Name == normalizedName,
+                    cancellationToken))
                 throw new GraphQLException("Ya existe una materia con el mismo codigo o nombre.");
 
             (Career career, List<Subject> prerequisites) = await LoadSubjectAcademicDataAsync(
@@ -240,7 +303,8 @@ namespace OneITB.GraphQL.Mutations
                 careerId,
                 year,
                 prerequisiteIds,
-                null);
+                null,
+                cancellationToken);
 
             var subject = new Subject
             {
@@ -254,11 +318,11 @@ namespace OneITB.GraphQL.Mutations
             };
 
             context.Subjects.Add(subject);
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
             return subject;
         }
 
-        [Authorize(Roles = new[] { "Administrador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
         public async Task<Subject> UpdateSubject(
             int id,
             string name,
@@ -266,20 +330,24 @@ namespace OneITB.GraphQL.Mutations
             int careerId,
             int? year,
             IReadOnlyList<int>? prerequisiteIds,
-            [Service] OneItbContext context)
+            [Service] OneItbContext context,
+            CancellationToken cancellationToken)
         {
             var subject = await context.Subjects
                 .Include(item => item.Career)
                 .Include(item => item.Prerequisites)
-                .SingleOrDefaultAsync(item => item.Id == id);
+                .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
             if (subject == null) throw new GraphQLException("Materia no encontrada.");
 
             string normalizedCode = code.Trim().ToUpperInvariant();
             string normalizedName = name.Trim();
             ValidateSubjectYear(year);
 
-            if (await context.Subjects.AnyAsync(item =>
-                item.Id != id && (item.Code == normalizedCode || item.Name == normalizedName)))
+            if (await context.Subjects.AnyAsync(
+                    item =>
+                        item.Id != id &&
+                        (item.Code == normalizedCode || item.Name == normalizedName),
+                    cancellationToken))
                 throw new GraphQLException("Ya existe otra materia con el mismo codigo o nombre.");
 
             (Career career, List<Subject> prerequisites) = await LoadSubjectAcademicDataAsync(
@@ -287,7 +355,8 @@ namespace OneITB.GraphQL.Mutations
                 careerId,
                 year,
                 prerequisiteIds,
-                id);
+                id,
+                cancellationToken);
 
             subject.Code = normalizedCode;
             subject.Name = normalizedName;
@@ -298,19 +367,22 @@ namespace OneITB.GraphQL.Mutations
             foreach (Subject prerequisite in prerequisites)
                 subject.Prerequisites.Add(prerequisite);
 
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
             return subject;
         }
 
-        [Authorize(Roles = new[] { "Administrador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
         public async Task<Subject> ToggleSubjectStatus(
             int id,
-            [Service] OneItbContext context)
+            [Service] OneItbContext context,
+            CancellationToken cancellationToken)
         {
-            var subject = await context.Subjects.FindAsync(id);
+            var subject = await context.Subjects.FindAsync(
+                new object[] { id },
+                cancellationToken);
             if (subject == null) throw new GraphQLException("Materia no encontrada.");
             subject.IsActive = !subject.IsActive;
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
             return subject;
         }
 
@@ -386,29 +458,41 @@ namespace OneITB.GraphQL.Mutations
         public async Task<ToggleReactionPayload> ToggleReaction(
             Guid inquiryId,
             [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
-            return await socialService.ToggleReactionAsync(
-                GetAuthenticatedUserId(httpContextAccessor),
-                inquiryId);
+            try
+            {
+                return await socialService.ToggleReactionAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    inquiryId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateUserError(ex.Message);
+            }
         }
 
         [Authorize]
         public async Task<ToggleCommentReactionPayload> ToggleCommentReaction(
             Guid commentId,
             [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             return await socialService.ToggleCommentReactionAsync(
                 GetAuthenticatedUserId(httpContextAccessor),
-                commentId);
+                commentId,
+                cancellationToken);
         }
 
         [Authorize]
         public async Task<IReadOnlyList<Career>> LinkUserToCareers(
             IReadOnlyList<int> careerIds,
             [Service] OneItbContext context,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             Guid userId = GetAuthenticatedUserId(httpContextAccessor);
             int[] normalizedIds = careerIds?.Distinct().ToArray() ?? Array.Empty<int>();
@@ -418,14 +502,14 @@ namespace OneITB.GraphQL.Mutations
             var careers = await context.Careers
                 .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
                 .OrderBy(career => career.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             if (careers.Count != normalizedIds.Length)
                 throw new GraphQLException("Una o mÃ¡s carreras seleccionadas no existen.");
 
             var existingLinks = await context.UserCareers
                 .Where(link => link.UserId == userId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             context.UserCareers.RemoveRange(existingLinks);
             context.UserCareers.AddRange(careers.Select(career => new UserCareer
@@ -434,7 +518,7 @@ namespace OneITB.GraphQL.Mutations
                 CareerId = career.Id
             }));
 
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
             return careers;
         }
 
@@ -489,7 +573,8 @@ namespace OneITB.GraphQL.Mutations
                     actorUserId,
                     "ToggleInquiryStatus",
                     inquiry.IsActive ? "Publicacion reactivada." : "Publicacion desactivada.",
-                    targetInquiryId: inquiryId);
+                    targetInquiryId: inquiryId,
+                    cancellationToken: cancellationToken);
                 return inquiry;
             }
             catch (InvalidOperationException ex)
@@ -546,7 +631,8 @@ namespace OneITB.GraphQL.Mutations
                     "ToggleCommentStatus",
                     comment.IsActive ? "Comentario reactivado." : "Comentario desactivado.",
                     targetCommentId: commentId,
-                    targetInquiryId: comment.InquiryId);
+                    targetInquiryId: comment.InquiryId,
+                    cancellationToken: cancellationToken);
                 return comment;
             }
             catch (InvalidOperationException ex)
@@ -555,7 +641,7 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Moderator })]
         public async Task<Inquiry> ModerateInquiryVisibility(
             Guid inquiryId,
             bool isHidden,
@@ -583,7 +669,7 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Moderator })]
         public async Task<Comment> ModerateCommentVisibility(
             Guid commentId,
             bool isHidden,
@@ -685,7 +771,7 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador", "Profesor" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Professor })]
         public async Task<AcademicResource> AddAcademicResource(
             int subjectId,
             string title,
@@ -695,7 +781,8 @@ namespace OneITB.GraphQL.Mutations
             string? fileUrl,
             string? externalUrl,
             [Service] IAcademicService academicService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -708,7 +795,8 @@ namespace OneITB.GraphQL.Mutations
                     category,
                     version,
                     fileUrl,
-                    externalUrl);
+                    externalUrl,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -720,7 +808,7 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Professor })]
         public async Task<AcademicResource> UploadAcademicResource(
             int subjectId,
             string title,
@@ -730,7 +818,8 @@ namespace OneITB.GraphQL.Mutations
             string? fileUrl,
             string? externalUrl,
             [Service] IAcademicService academicService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -743,7 +832,8 @@ namespace OneITB.GraphQL.Mutations
                     category,
                     version,
                     fileUrl,
-                    externalUrl);
+                    externalUrl,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -755,18 +845,20 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Professor })]
         public async Task<AcademicResource> DeleteResource(
             Guid resourceId,
             [Service] IAcademicService academicService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await academicService.DeleteResourceAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
                     GetAuthenticatedRole(httpContextAccessor),
-                    resourceId);
+                    resourceId,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -774,18 +866,20 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador", "Profesor" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Professor })]
         public async Task<AcademicResource> ToggleAcademicResourceStatus(
             Guid resourceId,
             [Service] IAcademicService academicService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await academicService.ToggleAcademicResourceStatusAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
                     GetAuthenticatedRole(httpContextAccessor),
-                    resourceId);
+                    resourceId,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -793,7 +887,7 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador", "Profesor" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Professor })]
         public async Task<AcademicProgress> UpsertAcademicProgress(
             Guid userId,
             int subjectId,
@@ -801,7 +895,8 @@ namespace OneITB.GraphQL.Mutations
             AcademicProgressStatus status,
             string? notes,
             [Service] IAcademicService academicService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -812,7 +907,8 @@ namespace OneITB.GraphQL.Mutations
                     subjectId,
                     score,
                     status,
-                    notes);
+                    notes,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -824,18 +920,20 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize(Roles = new[] { "Administrador" })]
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
         public async Task<SiuSyncResult> SyncSiuGrades(
             int subjectId,
             [Service] IAcademicService academicService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await academicService.SyncSiuGradesAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
                     GetAuthenticatedRole(httpContextAccessor),
-                    subjectId);
+                    subjectId,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -851,13 +949,15 @@ namespace OneITB.GraphQL.Mutations
         public async Task<Notification> MarkNotificationRead(
             Guid notificationId,
             [Service] INotificationService notificationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await notificationService.MarkReadAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
-                    notificationId);
+                    notificationId,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -868,12 +968,14 @@ namespace OneITB.GraphQL.Mutations
         [Authorize]
         public async Task<int> MarkAllNotificationsRead(
             [Service] INotificationService notificationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await notificationService.MarkAllReadAsync(
-                    GetAuthenticatedUserId(httpContextAccessor));
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -886,14 +988,16 @@ namespace OneITB.GraphQL.Mutations
             NotificationType type,
             bool isEnabled,
             [Service] INotificationService notificationService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await notificationService.UpdatePreferenceAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
                     type,
-                    isEnabled);
+                    isEnabled,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -901,7 +1005,7 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = new[] { GraphQlRoles.Employer, GraphQlRoles.Administrator })]
         public async Task<JobOffer> CreateJobOffer(
             string title,
             string company,
@@ -931,6 +1035,10 @@ namespace OneITB.GraphQL.Mutations
                 {
                     await eventSender.SendAsync(JobOfferTopics.Created, jobOffer, cancellationToken);
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     logger.LogWarning(
@@ -946,7 +1054,8 @@ namespace OneITB.GraphQL.Mutations
                     recipients,
                     NotificationType.JobOffer,
                     $"Nueva oferta laboral: {jobOffer.Title} en {jobOffer.Company}.",
-                    $"/empleos?jobOfferId={jobOffer.Id:D}");
+                    $"/empleos?jobOfferId={jobOffer.Id:D}",
+                    cancellationToken);
 
                 return jobOffer;
             }
@@ -960,7 +1069,7 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = new[] { GraphQlRoles.Student, GraphQlRoles.Graduate })]
         public async Task<JobApplication> ApplyToJob(
             Guid jobOfferId,
             [Service] IJobService jobService,
@@ -981,7 +1090,8 @@ namespace OneITB.GraphQL.Mutations
                     new[] { application.JobOffer.EmployerId },
                     NotificationType.JobApplication,
                     $"{application.Applicant.FirstName} {application.Applicant.LastName} se postulo a {application.JobOffer.Title}.",
-                    "/empleos/mis-ofertas");
+                    "/empleos/mis-ofertas",
+                    cancellationToken);
 
                 return application;
             }
@@ -995,7 +1105,7 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = new[] { GraphQlRoles.Employer, GraphQlRoles.Administrator })]
         public async Task<JobApplication> UpdateApplicationStatus(
             Guid applicationId,
             JobApplicationStatus status,
@@ -1027,7 +1137,8 @@ namespace OneITB.GraphQL.Mutations
                     new[] { application.ApplicantId },
                     NotificationType.JobApplication,
                     $"Tu postulacion a {application.JobOffer.Title} fue {statusLabel}.",
-                    $"/empleos?jobOfferId={application.JobOfferId:D}");
+                    $"/empleos?jobOfferId={application.JobOfferId:D}",
+                    cancellationToken);
 
                 if (status is JobApplicationStatus.Reviewed or JobApplicationStatus.Rejected)
                 {
@@ -1058,17 +1169,32 @@ namespace OneITB.GraphQL.Mutations
             [Service] IMessagingService messagingService,
             [Service] ITopicEventSender eventSender,
             [Service] IHttpContextAccessor httpContextAccessor,
-            [Service] ILogger<Mutation> logger)
+            [Service] ILogger<Mutation> logger,
+            CancellationToken cancellationToken)
         {
             try
             {
                 Guid senderId = GetAuthenticatedUserId(httpContextAccessor);
-                Message message = await messagingService.SendMessageAsync(senderId, receiverId, content);
+                Message message = await messagingService.SendMessageAsync(
+                    senderId,
+                    receiverId,
+                    content,
+                    cancellationToken);
 
                 try
                 {
-                    await eventSender.SendAsync(PrivateMessageTopics.ForUser(senderId), message);
-                    await eventSender.SendAsync(PrivateMessageTopics.ForUser(receiverId), message);
+                    await eventSender.SendAsync(
+                        PrivateMessageTopics.ForUser(senderId),
+                        message,
+                        cancellationToken);
+                    await eventSender.SendAsync(
+                        PrivateMessageTopics.ForUser(receiverId),
+                        message,
+                        cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -1090,13 +1216,15 @@ namespace OneITB.GraphQL.Mutations
         public async Task<MarkConversationReadPayload> MarkConversationRead(
             Guid otherUserId,
             [Service] IMessagingService messagingService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
                 return await messagingService.MarkConversationReadAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
-                    otherUserId);
+                    otherUserId,
+                    cancellationToken);
             }
             catch (ArgumentException ex)
             {
@@ -1110,6 +1238,44 @@ namespace OneITB.GraphQL.Mutations
             if (!Guid.TryParse(value, out Guid userId))
                 throw new GraphQLException("No se pudo identificar al usuario autenticado.");
             return userId;
+        }
+
+        private static string GetClientSource(IHttpContextAccessor httpContextAccessor)
+        {
+            return httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+        }
+
+        private static void EnsureMagicLinkRequestAllowed(
+            MagicLinkRateLimitDecision decision,
+            string operation,
+            ILogger<Mutation> logger)
+        {
+            if (decision.IsAllowed)
+                return;
+
+            logger.LogWarning(
+                "Magic Link {Operation} rejected by the operation-specific limiter. Reason: {ReasonCode}.",
+                operation,
+                decision.ReasonCode);
+            string code = decision.ReasonCode == "provider-unavailable"
+                ? "AUTH_TEMPORARILY_UNAVAILABLE"
+                : "AUTH_RATE_LIMITED";
+            string message = decision.ReasonCode == "provider-unavailable"
+                ? "El acceso temporal no esta disponible en este momento. Intenta nuevamente mas tarde."
+                : "Se alcanzo el limite temporal de intentos. Intenta nuevamente mas tarde.";
+
+            IErrorBuilder builder = ErrorBuilder.New()
+                .SetMessage(message)
+                .SetCode(code);
+            if (decision.RetryAfter.HasValue)
+            {
+                builder.SetExtension(
+                    "retryAfterSeconds",
+                    Math.Max(1, (int)Math.Ceiling(decision.RetryAfter.Value.TotalSeconds)));
+            }
+
+            throw new GraphQLException(builder.Build());
         }
 
         private static bool CanModerate(IHttpContextAccessor httpContextAccessor)
@@ -1159,6 +1325,10 @@ namespace OneITB.GraphQL.Mutations
             {
                 await emailSender.SendAsync(recipient, subject, body, cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 logger.LogWarning(
@@ -1194,12 +1364,15 @@ namespace OneITB.GraphQL.Mutations
             int careerId,
             int? year,
             IReadOnlyList<int>? prerequisiteIds,
-            int? subjectId)
+            int? subjectId,
+            CancellationToken cancellationToken)
         {
             ValidateSubjectYear(year);
 
             Career career = await context.Careers
-                .SingleOrDefaultAsync(item => item.Id == careerId && item.IsActive)
+                .SingleOrDefaultAsync(
+                    item => item.Id == careerId && item.IsActive,
+                    cancellationToken)
                 ?? throw new GraphQLException("La carrera seleccionada no existe o esta inactiva.");
 
             int[] normalizedIds = prerequisiteIds?
@@ -1212,7 +1385,7 @@ namespace OneITB.GraphQL.Mutations
             List<Subject> prerequisites = await context.Subjects
                 .Where(item => normalizedIds.Contains(item.Id) && item.IsActive && item.CareerId == careerId)
                 .OrderBy(item => item.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             if (prerequisites.Count != normalizedIds.Length)
                 throw new GraphQLException("Todas las correlativas deben existir, estar activas y pertenecer a la carrera seleccionada.");

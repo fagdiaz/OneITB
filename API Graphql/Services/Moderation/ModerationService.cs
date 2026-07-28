@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
@@ -110,7 +111,11 @@ namespace Services.Moderation
                 .Take(limit);
         }
 
-        public async Task<CommunityReport> ReportInquiryAsync(Guid reporterId, Guid inquiryId, string reason)
+        public async Task<CommunityReport> ReportInquiryAsync(
+            Guid reporterId,
+            Guid inquiryId,
+            string reason,
+            CancellationToken cancellationToken = default)
         {
             string normalizedReason = reason?.Trim() ?? string.Empty;
             if (normalizedReason.Length == 0)
@@ -118,16 +123,22 @@ namespace Services.Moderation
             if (normalizedReason.Length > 500)
                 throw new ArgumentException("El motivo del reporte no puede superar 500 caracteres.");
 
-            if (!await _context.Inquiries.AnyAsync(inquiry => inquiry.Id == inquiryId))
+            if (!await _context.Inquiries.AnyAsync(
+                    inquiry => inquiry.Id == inquiryId,
+                    cancellationToken))
                 throw new InvalidOperationException("La publicaciÃ³n no existe.");
 
-            if (!await _context.Users.AnyAsync(user => user.Id == reporterId && user.IsActive))
+            if (!await _context.Users.AnyAsync(
+                    user => user.Id == reporterId && user.IsActive,
+                    cancellationToken))
                 throw new InvalidOperationException("El usuario autenticado no estÃ¡ disponible.");
 
-            bool alreadyPending = await _context.CommunityReports.AnyAsync(report =>
-                report.ReporterId == reporterId &&
-                report.InquiryId == inquiryId &&
-                report.Status == "Pending");
+            bool alreadyPending = await _context.CommunityReports.AnyAsync(
+                report =>
+                    report.ReporterId == reporterId &&
+                    report.InquiryId == inquiryId &&
+                    report.Status == "Pending",
+                cancellationToken);
 
             if (alreadyPending)
                 throw new InvalidOperationException("Ya enviaste un reporte pendiente para esta publicaciÃ³n.");
@@ -140,7 +151,7 @@ namespace Services.Moderation
             };
 
             _context.CommunityReports.Add(report);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return report;
         }
 
@@ -151,7 +162,8 @@ namespace Services.Moderation
             Guid? targetUserId = null,
             Guid? targetInquiryId = null,
             Guid? targetCommentId = null,
-            Guid? targetReportId = null)
+            Guid? targetReportId = null,
+            CancellationToken cancellationToken = default)
         {
             string normalizedAction = action?.Trim() ?? string.Empty;
             string normalizedSummary = summary?.Trim() ?? string.Empty;
@@ -174,7 +186,7 @@ namespace Services.Moderation
                 CreatedAt = DateTime.UtcNow
             });
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         private async Task EnsureModeratorAsync(Guid actorUserId, CancellationToken cancellationToken)

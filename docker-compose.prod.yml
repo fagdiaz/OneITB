@@ -52,24 +52,33 @@ services:
       ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__DefaultConnection: "Server=oneitb-sql,1433;Database=OneItb;User Id=sa;Password=${ONEITB_SQL_SA_PASSWORD:?Set ONEITB_SQL_SA_PASSWORD};Encrypt=True;TrustServerCertificate=True;"
       ConnectionStrings__Redis: "${ONEITB_REDIS_CONNECTION:-oneitb-redis:6379,abortConnect=false}"
-      Jwt__Issuer: "${ONEITB_JWT_ISSUER:-http://localhost/}"
-      Jwt__Audience: "${ONEITB_JWT_AUDIENCE:-http://localhost/}"
+      Jwt__Issuer: "${ONEITB_JWT_ISSUER:?Set ONEITB_JWT_ISSUER}"
+      Jwt__Audience: "${ONEITB_JWT_AUDIENCE:?Set ONEITB_JWT_AUDIENCE}"
       Jwt__Key: "${ONEITB_JWT_KEY:?Set ONEITB_JWT_KEY with at least 32 characters}"
+      PasswordHashing__WorkFactor: "${ONEITB_PASSWORD_HASHING_WORK_FACTOR:-12}"
+      MagicLink__FrontendBaseUrl: "${ONEITB_MAGIC_LINK_FRONTEND_URL:?Set ONEITB_MAGIC_LINK_FRONTEND_URL}"
       Cors__AllowedOrigins__0: "${ONEITB_CORS_ORIGIN:-http://localhost}"
       CloudinarySettings__Url: "${ONEITB_CLOUDINARY_URL:-}"
-      SmtpSettings__Host: "${ONEITB_SMTP_HOST:-}"
-      SmtpSettings__Port: "${ONEITB_SMTP_PORT:-0}"
-      SmtpSettings__User: "${ONEITB_SMTP_USER:-}"
-      SmtpSettings__Pass: "${ONEITB_SMTP_PASS:-}"
+      SmtpSettings__Host: "${ONEITB_SMTP_HOST:?Set ONEITB_SMTP_HOST}"
+      SmtpSettings__Port: "${ONEITB_SMTP_PORT:-587}"
+      SmtpSettings__User: "${ONEITB_SMTP_USER:?Set ONEITB_SMTP_USER}"
+      SmtpSettings__Pass: "${ONEITB_SMTP_PASS:?Set ONEITB_SMTP_PASS}"
       SmtpSettings__From: "${ONEITB_SMTP_FROM:-}"
       SmtpSettings__EnableSsl: "${ONEITB_SMTP_ENABLE_SSL:-true}"
       RateLimiting__PermitLimit: "${ONEITB_RATE_LIMIT_PER_MINUTE:-100}"
       RateLimiting__WindowMinutes: "${ONEITB_RATE_LIMIT_WINDOW_MINUTES:-1}"
+      MagicLinkRateLimiting__RequestIpLimit: "${ONEITB_MAGIC_LINK_REQUEST_IP_LIMIT:-10}"
+      MagicLinkRateLimiting__RequestIdentityLimit: "${ONEITB_MAGIC_LINK_REQUEST_IDENTITY_LIMIT:-3}"
+      MagicLinkRateLimiting__RedemptionIpLimit: "${ONEITB_MAGIC_LINK_REDEMPTION_IP_LIMIT:-20}"
+      MagicLinkRateLimiting__RedemptionCredentialLimit: "${ONEITB_MAGIC_LINK_REDEMPTION_CREDENTIAL_LIMIT:-5}"
+      MagicLinkRateLimiting__WindowMinutes: "${ONEITB_MAGIC_LINK_WINDOW_MINUTES:-15}"
+      MagicLinkRateLimiting__MaxTrackedKeys: "${ONEITB_MAGIC_LINK_MAX_TRACKED_KEYS:-100000}"
+      ReverseProxy__KnownNetworks__0: "${ONEITB_DOCKER_SUBNET:-172.30.0.0/24}"
       GraphQL__MaxExecutionDepth: "${ONEITB_GRAPHQL_MAX_DEPTH:-10}"
       GraphQL__DefaultPageSize: "${ONEITB_GRAPHQL_DEFAULT_PAGE_SIZE:-20}"
       GraphQL__MaxPageSize: "${ONEITB_GRAPHQL_MAX_PAGE_SIZE:-50}"
-      Seed__EnableDemoData: "${ONEITB_SEED_ENABLE_DEMO_DATA:-true}"
-      Seed__DemoPassword: "${ONEITB_SEED_DEMO_PASSWORD:?Set ONEITB_SEED_DEMO_PASSWORD}"
+      Seed__EnableDemoData: "${ONEITB_SEED_ENABLE_DEMO_DATA:-false}"
+      Seed__DemoPassword: "${ONEITB_SEED_DEMO_PASSWORD:-}"
     volumes:
       - oneitb23_prod_uploads:/app/wwwroot/uploads
     expose:
@@ -100,6 +109,9 @@ services:
 networks:
   oneitb-prod:
     driver: bridge
+    ipam:
+      config:
+        - subnet: "${ONEITB_DOCKER_SUBNET:-172.30.0.0/24}"
 
 volumes:
   oneitb23_prod_sql_data:

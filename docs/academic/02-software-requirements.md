@@ -17,7 +17,7 @@ Este entregable resume el alcance vigente. La fuente completa y versionada es [s
 | Administracion | Usuarios, roles, carreras, materias, contenido y metricas |
 | Academico | Recursos por materia, categorias/versionado, progreso, SIU mock, constancias y credenciales |
 | Empleos | Ofertas, postulaciones, Gestor de Postulaciones, notificaciones y correo SMTP |
-| Operacion | Docker, CI, rate limiting, security headers, Redis/Cloudinary/SMTP opcionales |
+| Operacion | Docker, CI, rate limiting, security headers, Redis/Cloudinary opcionales, SMTP obligatorio en produccion |
 
 ## 2.2 Requerimientos no funcionales
 

@@ -281,7 +281,7 @@ sequenceDiagram
     GQL->>Jobs: Validar EmployerId == currentUserId
     Jobs->>DB: UPDATE JobApplication
     GQL->>Notify: Notificacion en plataforma
-    GQL->>Email: SMTP o fallback consola
+    GQL->>Email: SMTP o pickup local ignorado
 ```
 
 ## 4.5 Contexto de despliegue local y productivo
@@ -294,7 +294,7 @@ flowchart TB
     DockerSql["SQL Server 2022 Docker"]
     Redis["Redis opcional"]
     Storage["Local uploads o Cloudinary"]
-    Smtp["SMTP opcional"]
+    Smtp["SMTP productivo / pickup local"]
     Nginx["Nginx frontend productivo"]
 
     Developer --> Browser

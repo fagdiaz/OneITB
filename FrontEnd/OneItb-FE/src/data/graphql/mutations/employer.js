@@ -2,7 +2,10 @@ import { gql } from '@apollo/client';
 
 export const REQUEST_MAGIC_LINK = gql`
     mutation RequestMagicLink($email: String!, $cuit: String!) {
-        requestMagicLink(email: $email, cuit: $cuit)
+        requestMagicLink(email: $email, cuit: $cuit) {
+            accepted
+            message
+        }
     }
 `;
 

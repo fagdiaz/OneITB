@@ -80,8 +80,9 @@ El objetivo institucional es ofrecer una plataforma demostrable y mantenible par
 - **RF-028**: Publicar ofertas laborales y listarlas para estudiantes/egresados.
 - **RF-029**: Permitir postulaciones unicas por oferta para estudiantes y egresados.
 - **RF-030**: Permitir que el empleador propietario revise postulantes desde el Gestor de Postulaciones.
-- **RF-031**: Enviar alertas institucionales de cambio de estado de postulacion mediante SMTP configurable con fallback local.
+- **RF-031**: Enviar alertas institucionales de cambio de estado de postulacion mediante SMTP y conservar un pickup `.eml` local, explicito e ignorado solo para desarrollo.
 - **RF-031B**: Permitir a administradores ejecutar una prueba SMTP controlada desde GraphQL sin recorrer el flujo completo de postulaciones.
+- **RF-032**: Entregar el Magic Link de empleadores fuera de GraphQL, almacenar solo su digest y retirar el fragmento sensible de la URL antes del consumo.
 
 RF-020 a RF-031B estan implementados a nivel `[I]`. No deben presentarse como `[V]` hasta completar regresiones autenticadas en navegador, smoke SMTP real con proveedor configurado y pruebas productivas de servicios externos cuando aplique.
 
@@ -98,13 +99,13 @@ RF-020 a RF-031B estan implementados a nivel `[I]`. No deben presentarse como `[
 
 ## 5. Requerimientos no funcionales
 
-- **RNF-001 Seguridad**: JWT, BCrypt, autorizacion por rol, privacidad de perfil con masking server-side, validacion de inputs, CORS restringido, lockout por cuenta y limites anti-DoS en GraphQL.
+- **RNF-001 Seguridad**: JWT con clave externalizada, BCrypt con costo explicito y rehash no degradante, autorizacion por rol, privacidad de perfil con masking server-side, validacion de inputs, CORS restringido, lockout por cuenta y limites anti-DoS en GraphQL.
 - **RNF-002 Integridad**: FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
 - **RNF-003 Rendimiento**: evitar N+1, proyectar/precargar grafos, paginar historiales extensos y limitar profundidad GraphQL.
 - **RNF-004 Escalabilidad**: separar persistencia, API, frontend, Redis opcional y almacenamiento de archivos configurable.
 - **RNF-005 Usabilidad**: UI responsiva con Tailwind v4, feedback de carga, skeletons, estados vacios y manejo de errores.
 - **RNF-006 Trazabilidad**: specs, evidencia, roadmap, development log, audit trail y correlation id sincronizados.
-- **RNF-007 Operabilidad**: Docker SQL local canonico, compose productivo multi-contenedor, SMTP/Redis/Cloudinary configurables por entorno y fallback seguro para desarrollo.
+- **RNF-007 Operabilidad**: Docker SQL local canonico, compose productivo multi-contenedor, SMTP obligatorio en Production, pickup local seguro en Development y Redis/Cloudinary configurables por entorno.
 
 ## 6. Fuera de alcance actual
 

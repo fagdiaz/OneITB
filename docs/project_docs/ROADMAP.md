@@ -1,10 +1,10 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-07-13
+**Ultima revision**: 2026-07-28
 
-**Estado global**: 98% (106 de 108 items)
+**Estado global**: 98% (114 de 116 items)
 
-**Feature Complete funcional core**: 100%. Los pendientes restantes pertenecen a regresion visual, credenciales externas, despliegue cloud real o ecosistema mobile.
+**Feature Complete funcional core**: 100%. Las remediaciones tecnicas 186-189 estan verificadas y las Specs 190-193 quedaron implementadas con tests, builds y evidencia automatizada. Permanecen los smokes runtime diferidos, la regresion visual integral del panel administrativo y SSO Google con credenciales/aprobacion institucional externa.
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 
@@ -25,7 +25,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Expiracion JWT, pipeline de autenticacion y CORS restringido.
 - [x] [V] Sesion frontend normalizada sobre `token` y `user`.
 - [x] [V] Autorizacion por roles en operaciones sensibles.
-- [x] [I] Flujo Magic Link para empleadores.
+- [x] [V] Flujo Magic Link para empleadores con JWT firmado, expiracion y consumo atomico de un solo uso.
 - [x] [I] Suite automatizada backend de registro, login, cuentas inactivas y autorizacion administrativa.
 - [x] [I] Lockout persistente por cuenta ante fuerza bruta de login, con tests automatizados.
 
@@ -159,9 +159,10 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P0 - Estabilizacion inmediata
 
-1. Verificar visualmente el panel admin completo en navegador contra SQL Docker.
-2. Mantener Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
-3. Mantener y ampliar el baseline automatizado hacia SQL Server/Testcontainers y browser QA del panel admin.
+1. Completar los smokes runtime diferidos de 190-193 antes del Code Freeze operativo definitivo.
+2. Verificar visualmente el panel admin completo en navegador contra SQL Docker.
+3. Mantener Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
+4. Mantener y ampliar el baseline automatizado hacia SQL Server/Testcontainers y browser QA del panel admin.
 
 ### P1 - Cierre del nucleo social
 
@@ -199,6 +200,20 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 1. Inicializacion del proyecto movil con React Native + Expo.
 2. Sincronizacion del estado y cache Apollo entre Web y Mobile.
 3. Compilacion de APK y distribucion en entornos de prueba.
+
+## Auditoria de Cierre y Seguridad - Etapa 1: 100% (4/4)
+
+- [x] [V] **Spec 186 - Employer Authentication JWT Remediation**: emision JWT centralizada, sin tokens mock/placeholder, Magic Link atomico y validado contra SQL Server Docker.
+- [x] [V] **Spec 187 - Mutation Cancellation Propagation**: `CancellationToken` propagado desde todas las mutaciones asincronas hasta EF Core y efectos soportados, con guard automatizado.
+- [x] [V] **Spec 188 - Apollo Logout Session Isolation**: frontera de sesion idempotente para React, Apollo HTTP/cache y WebSocket, con regresion A -> B automatizada y browser smoke limpio.
+- [x] [V] **Spec 189 - Declarative GraphQL Mutation Authorization**: matriz declarativa completa para 42 mutaciones, cuatro entradas publicas y controles contextuales de ownership preservados.
+
+## Auditoria de Cierre y Seguridad - Etapa 2: 100% (4/4)
+
+- [x] [I] **Spec 190 - Upload and Magic Link Abuse Hardening**: inspeccion binaria/estructural previa a storage y limites especificos por operacion, origen e identidad; 115 tests, build/EF/compose y upload runtime PASS. El smoke runtime de throttling Magic Link queda diferido por instruccion operativa.
+- [x] [I] **Spec 191 - Async Query and Pagination Hardening**: I/O social asincronico y cancelable, campo `inquiries` no acotado retirado, filtro de autor previo al limite, consumidores Apollo migrados y estudiantes academicos paginados; 126 tests backend, 59 frontend, builds y EF sin drift. Smokes autenticados diferidos.
+- [x] [I] **Spec 192 - Credential Delivery and Cryptographic Policy Hardening**: Magic Link fuera de GraphQL y logs, digest SHA-256 en SQL, pickup `.eml` local, SMTP obligatorio en Production, BCrypt central con rehash no degradante y JWT externalizado; 141 tests backend, 61 frontend, schema real, builds, compose y EF sin drift PASS. SMTP real y browser smoke diferidos.
+- [x] [I] **Spec 193 - Social Policy and UI Bootstrap Resilience**: `MutedUntil` bloquea like/unlike sin persistencia ni notificacion, el resolver devuelve `USER_ERROR` y una frontera global cubre fabrica Apollo, providers, arbol React y fallos previos a `createRoot`; 147 tests backend, 72 frontend, builds y EF sin drift PASS. Smokes autenticados/browser diferidos por instruccion operativa.
 
 ## Definition of Done por feature
 

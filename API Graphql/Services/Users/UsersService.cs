@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
-using Microsoft.Extensions.Configuration;
 
 namespace Services.Users
 {
@@ -40,19 +39,28 @@ namespace Services.Users
 
         private readonly IUnitOfWork _uow;
         private readonly OneItbContext _context;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public UsersService(IUnitOfWork uow, OneItbContext context)
+        public UsersService(
+            IUnitOfWork uow,
+            OneItbContext context,
+            IPasswordHasher passwordHasher)
         {
             _uow = uow;
             _context = context;
+            _passwordHasher = passwordHasher;
         }
 
-        public async Task<UserPayload> RegisterAsync(RegisterInput input)
+        public async Task<UserPayload> RegisterAsync(
+            RegisterInput input,
+            CancellationToken cancellationToken = default)
         {
             var userId = Guid.NewGuid();
             string normalizedRole = NormalizePublicRegistrationRole(input.Role);
-            int[] activeCareerIds = GetActiveRegistrationCareerIds(input.CareerIds);
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
+            int[] activeCareerIds = await GetActiveRegistrationCareerIdsAsync(
+                input.CareerIds,
+                cancellationToken);
+            string passwordHash = _passwordHasher.Hash(input.Password);
             
             var account = new Account
             {
@@ -80,12 +88,14 @@ namespace Services.Users
                 });
             }
 
-            await _uow.Users.AddAsync(user);
-            await _uow.CompleteAsync();
+            await _uow.Users.AddAsync(user, cancellationToken);
+            await _uow.CompleteAsync(cancellationToken);
             return new UserPayload(user.Id, true, "Usuario registrado exitosamente en el sistema académico.");
         }
 
-        public async Task<UpdateProfilePayload> UpdateProfileAsync(UpdateProfileInput input)
+        public async Task<UpdateProfilePayload> UpdateProfileAsync(
+            UpdateProfileInput input,
+            CancellationToken cancellationToken = default)
         {
             var user = await _context.Users
                 .Include(item => item.CvExperiences)
@@ -94,7 +104,7 @@ namespace Services.Users
                 .Include(item => item.CvSkills)
                 .Include(item => item.CvLanguages)
                 .Include(item => item.UserCareers)
-                .SingleOrDefaultAsync(item => item.Id == input.Id);
+                .SingleOrDefaultAsync(item => item.Id == input.Id, cancellationToken);
 
             if (user == null)
             {
@@ -108,26 +118,31 @@ namespace Services.Users
             user.Phone = NormalizeOptional(input.Phone, 50, "telefono");
             user.AvatarUrl = NormalizeAvatarUrl(input.AvatarUrl);
 
-            ReplaceCareerLinks(user, input.CareerIds);
+            await ReplaceCareerLinksAsync(user, input.CareerIds, cancellationToken);
             ReplaceExperiences(user, input.CvExperiences);
             ReplaceEducations(user, input.CvEducations);
             ReplaceProjects(user, input.CvProjects);
             ReplaceSkills(user, input.CvSkills);
             ReplaceLanguages(user, input.CvLanguages);
 
-            await _uow.CompleteAsync();
+            await _uow.CompleteAsync(cancellationToken);
 
             return new UpdateProfilePayload(user.Id, true, "Perfil actualizado exitosamente.");
         }
 
-        public async Task<UserPayload> ToggleProfilePrivacyAsync(Guid userId, bool isPublic)
+        public async Task<UserPayload> ToggleProfilePrivacyAsync(
+            Guid userId,
+            bool isPublic,
+            CancellationToken cancellationToken = default)
         {
-            User? user = await _context.Users.SingleOrDefaultAsync(item => item.Id == userId && item.IsActive);
+            User? user = await _context.Users.SingleOrDefaultAsync(
+                item => item.Id == userId && item.IsActive,
+                cancellationToken);
             if (user is null)
                 return new UserPayload(userId, false, "Usuario no encontrado.");
 
             user.IsPublicProfile = isPublic;
-            await _uow.CompleteAsync();
+            await _uow.CompleteAsync(cancellationToken);
 
             string visibility = isPublic ? "publico" : "privado";
             return new UserPayload(user.Id, true, $"Perfil configurado como {visibility}.");
@@ -137,9 +152,10 @@ namespace Services.Users
             Guid operatorUserId,
             Guid userId,
             string newRole,
-            string? adminPassword)
+            string? adminPassword,
+            CancellationToken cancellationToken = default)
         {
-            var user = _uow.Users.GetById(userId);
+            var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
             if (user == null)
                 throw new InvalidOperationException("Usuario no encontrado.");
             if (IsAdministrator(user))
@@ -152,37 +168,45 @@ namespace Services.Users
                 if (string.IsNullOrWhiteSpace(adminPassword))
                     throw new InvalidOperationException("La contraseña del administrador es obligatoria.");
 
-                var operatorUser = _uow.Users.GetById(operatorUserId);
+                var operatorUser = await _uow.Users.GetByIdAsync(
+                    operatorUserId,
+                    cancellationToken);
                 if (operatorUser == null ||
                     !operatorUser.IsActive ||
                     !IsAdministrator(operatorUser) ||
                     operatorUser.Account == null)
                     throw new InvalidOperationException("No se pudo validar al administrador autenticado.");
 
-                if (!BCrypt.Net.BCrypt.Verify(adminPassword, operatorUser.Account.PasswordHash))
+                if (!_passwordHasher.Verify(adminPassword, operatorUser.Account.PasswordHash))
                     throw new InvalidOperationException("Contraseña de administrador incorrecta.");
             }
 
             user.Role = newRole;
-            await _uow.CompleteAsync();
+            await _uow.CompleteAsync(cancellationToken);
             return new UserPayload(user.Id, true, "Rol actualizado exitosamente.");
         }
 
-        public async Task<UserPayload> UpdateUserStatusAsync(Guid userId, bool isActive)
+        public async Task<UserPayload> UpdateUserStatusAsync(
+            Guid userId,
+            bool isActive,
+            CancellationToken cancellationToken = default)
         {
-            var user = _uow.Users.GetById(userId);
+            var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
             if (user == null)
                 throw new InvalidOperationException("Usuario no encontrado.");
             if (IsAdministrator(user))
                 throw new InvalidOperationException("No se puede desactivar la cuenta de un Administrador.");
             user.IsActive = isActive;
-            await _uow.CompleteAsync();
+            await _uow.CompleteAsync(cancellationToken);
             return new UserPayload(user.Id, true, "Estado actualizado exitosamente.");
         }
 
-        public async Task<UserPayload> SilenceUserAsync(Guid userId, int hours)
+        public async Task<UserPayload> SilenceUserAsync(
+            Guid userId,
+            int hours,
+            CancellationToken cancellationToken = default)
         {
-            var user = _uow.Users.GetById(userId);
+            var user = await _uow.Users.GetByIdAsync(userId, cancellationToken);
             if (user == null) return new UserPayload(userId, false, "Usuario no encontrado.");
             if (IsAdministrator(user)) return new UserPayload(user.Id, false, "Las cuentas administradoras no pueden silenciarse.");
             if (hours <= 0 || hours > 168) return new UserPayload(user.Id, false, "La duracion del silencio debe estar entre 1 y 168 horas.");
@@ -193,15 +217,17 @@ namespace Services.Users
                 : now;
 
             user.MutedUntil = baseTime.AddHours(hours);
-            await _uow.CompleteAsync();
+            await _uow.CompleteAsync(cancellationToken);
 
             return new UserPayload(user.Id, true, $"Usuario silenciado hasta {user.MutedUntil:yyyy-MM-dd HH:mm} UTC.");
         }
 
-        public async Task<User> CreateAsync(User user)
+        public async Task<User> CreateAsync(
+            User user,
+            CancellationToken cancellationToken = default)
         {
-            await _uow.Users.AddAsync(user);
-            await _uow.CompleteAsync();
+            await _uow.Users.AddAsync(user, cancellationToken);
+            await _uow.CompleteAsync(cancellationToken);
             return user;
         }
 
@@ -214,11 +240,6 @@ namespace Services.Users
         public User? GetByEmail(string email)
         {
             return _uow.Users.GetByEmail(email);
-        }
-
-        public string GenerateToken(User user, IConfiguration configuration)
-        {
-            return "token_placeholder";
         }
 
         public User? GetById(Guid id)
@@ -250,7 +271,9 @@ namespace Services.Users
             return allowed;
         }
 
-        private int[] GetActiveRegistrationCareerIds(IReadOnlyList<int>? careerIds)
+        private async Task<int[]> GetActiveRegistrationCareerIdsAsync(
+            IReadOnlyList<int>? careerIds,
+            CancellationToken cancellationToken)
         {
             int[] normalizedIds = careerIds?
                 .Where(id => id > 0)
@@ -262,11 +285,11 @@ namespace Services.Users
                 throw new ArgumentException("Selecciona al menos una carrera.");
             }
 
-            int[] activeCareerIds = _context.Careers
+            int[] activeCareerIds = await _context.Careers
                 .AsNoTracking()
                 .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
                 .Select(career => career.Id)
-                .ToArray();
+                .ToArrayAsync(cancellationToken);
 
             if (activeCareerIds.Length != normalizedIds.Length)
             {
@@ -276,7 +299,10 @@ namespace Services.Users
             return activeCareerIds;
         }
 
-        private void ReplaceCareerLinks(User user, IReadOnlyList<int>? careerIds)
+        private async Task ReplaceCareerLinksAsync(
+            User user,
+            IReadOnlyList<int>? careerIds,
+            CancellationToken cancellationToken)
         {
             if (careerIds == null) return;
 
@@ -290,10 +316,10 @@ namespace Services.Users
                 throw new InvalidOperationException("Selecciona al menos una carrera.");
             }
 
-            List<int> activeCareerIds = _context.Careers
+            List<int> activeCareerIds = await _context.Careers
                 .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
                 .Select(career => career.Id)
-                .ToList();
+                .ToListAsync(cancellationToken);
 
             if (activeCareerIds.Count != normalizedIds.Length)
             {

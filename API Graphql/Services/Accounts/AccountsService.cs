@@ -1,11 +1,7 @@
 using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using HotChocolate;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
 
@@ -17,17 +13,26 @@ namespace Services.Accounts
         private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
         private readonly IUnitOfWork _uow;
-        private readonly IConfiguration _configuration;
+        private readonly IJwtTokenService _jwtTokenService;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public AccountsService(IUnitOfWork uow, IConfiguration configuration)
+        public AccountsService(
+            IUnitOfWork uow,
+            IJwtTokenService jwtTokenService,
+            IPasswordHasher passwordHasher)
         {
             _uow = uow;
-            _configuration = configuration;
+            _jwtTokenService = jwtTokenService;
+            _passwordHasher = passwordHasher;
         }
 
-        public async Task<AuthPayload> Login(LoginInput input)
+        public async Task<AuthPayload> Login(
+            LoginInput input,
+            CancellationToken cancellationToken = default)
         {
-            var user = await _uow.Users.GetByEmailAsync(input.Email.ToLowerInvariant());
+            var user = await _uow.Users.GetByEmailAsync(
+                input.Email.ToLowerInvariant(),
+                cancellationToken);
             if (user == null || !user.IsActive || user.Account == null)
                 throw CreateAuthenticationError();
 
@@ -41,16 +46,16 @@ namespace Services.Accounts
 
                 account.LockoutEnd = null;
                 account.FailedLoginAttempts = 0;
-                await _uow.CompleteAsync();
+                await _uow.CompleteAsync(cancellationToken);
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(input.Password, account.PasswordHash))
+            if (!_passwordHasher.Verify(input.Password, account.PasswordHash))
             {
                 account.FailedLoginAttempts++;
                 if (account.FailedLoginAttempts >= MaxFailedLoginAttempts)
                     account.LockoutEnd = utcNow.Add(LockoutDuration);
 
-                await _uow.CompleteAsync();
+                await _uow.CompleteAsync(cancellationToken);
 
                 if (account.LockoutEnd.HasValue)
                     throw CreateLockoutError(account.LockoutEnd.Value, utcNow);
@@ -58,41 +63,28 @@ namespace Services.Accounts
                 throw CreateAuthenticationError();
             }
 
-            if (account.FailedLoginAttempts != 0 || account.LockoutEnd.HasValue)
+            bool accountChanged =
+                account.FailedLoginAttempts != 0 ||
+                account.LockoutEnd.HasValue;
+            account.FailedLoginAttempts = 0;
+            account.LockoutEnd = null;
+
+            if (_passwordHasher.NeedsRehash(account.PasswordHash))
             {
-                account.FailedLoginAttempts = 0;
-                account.LockoutEnd = null;
-                await _uow.CompleteAsync();
+                account.PasswordHash = _passwordHasher.Hash(input.Password);
+                accountChanged = true;
             }
 
-            string token = GenerateJwtToken(user);
+            if (accountChanged)
+                await _uow.CompleteAsync(cancellationToken);
+
+            string token = _jwtTokenService.IssueAccessToken(user);
             return new AuthPayload(token, user.FirstName, true, user.Id, user.Role);
         }
 
         public Account? GetById(Guid id)
         {
             return _uow.Accounts.GetById(id);
-        }
-
-        private string GenerateJwtToken(User user)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.FirstName),
-                    new Claim(ClaimTypes.Role, user.Role)
-                }),
-                Expires = DateTime.UtcNow.AddHours(2),
-                Issuer = _configuration["Jwt:Issuer"],
-                Audience = _configuration["Jwt:Issuer"],
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
         }
 
         private static GraphQLException CreateAuthenticationError()

@@ -125,12 +125,17 @@ export const GET_ACADEMIC_PROGRESS_FOR_USER = gql`
 `;
 
 export const GET_ACADEMIC_STUDENTS = gql`
-  query GetAcademicStudents($subjectId: Int!) {
-    academicStudents(subjectId: $subjectId) {
-      id
-      firstName
-      lastName
-      role
+  query GetAcademicStudents($subjectId: Int!, $first: Int!, $after: String) {
+    academicStudents(subjectId: $subjectId, first: $first, after: $after) {
+      items {
+        id
+        firstName
+        lastName
+        role
+      }
+      totalCount
+      hasNextPage
+      nextCursor
     }
   }
 `;

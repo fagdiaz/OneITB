@@ -103,6 +103,8 @@ API Graphql/OneITB/App_Data/DataProtection-Keys/*
 !API Graphql/OneITB/App_Data/DataProtection-Keys/.gitkeep
 # Development key-ring versions are runtime secrets; keep only explicit .gitkeep files.
 API Graphql/OneITB/App_Data/DataProtection-Keys*/key-*.xml
+API Graphql/OneITB/App_Data/MailDrop/
+*.eml
 
 # ------------------------------------------
 # 4. Node / React / Frontend Specifics

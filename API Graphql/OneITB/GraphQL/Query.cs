@@ -20,7 +20,6 @@ using Services.Social;
 using Services.Academic;
 using Services.Notifications;
 using Services.Jobs;
-using OneItb.GraphQL.Services.Email;
 
 namespace GraphQL.GraphQL
 {
@@ -95,20 +94,6 @@ namespace GraphQL.GraphQL
             return query.OrderBy(subject => subject.Name);
         }
 
-        [UseProjection]
-        public IQueryable<Inquiry> GetInquiries(
-            string? searchTerm,
-            int? careerId,
-            int[]? careerIds,
-            int[]? subjectIds,
-            Guid? inquiryId,
-            [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
-        {
-            Guid? currentUserId = TryGetAuthenticatedUserId(httpContextAccessor);
-            return socialService.GetInquiries(currentUserId, searchTerm, careerId, careerIds, subjectIds, inquiryId);
-        }
-
         [Authorize]
         public async Task<IReadOnlyList<Guid>> GetMyFollowedUserIds(
             [Service] ISocialGraphService socialGraphService,
@@ -133,10 +118,12 @@ namespace GraphQL.GraphQL
             int[]? careerIds,
             int[]? subjectIds,
             Guid? inquiryId,
+            Guid? authorId,
             int first,
             string? after,
             [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -149,7 +136,9 @@ namespace GraphQL.GraphQL
                     subjectIds,
                     first,
                     after,
-                    inquiryId);
+                    inquiryId,
+                    authorId,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -167,7 +156,8 @@ namespace GraphQL.GraphQL
             int first,
             string? after,
             [Service] ISocialService socialService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -178,7 +168,8 @@ namespace GraphQL.GraphQL
                     canModerate,
                     inquiryId,
                     first,
-                    after);
+                    after,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -558,17 +549,23 @@ namespace GraphQL.GraphQL
         }
 
         [Authorize(Roles = new[] { "Administrador", "Profesor" })]
-        public async Task<IReadOnlyList<User>> GetAcademicStudents(
+        public async Task<AcademicStudentPage> GetAcademicStudents(
             int subjectId,
+            int first,
+            string? after,
             [Service] IAcademicService academicService,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             try
             {
-                return await academicService.GetAcademicStudentsAsync(
+                return await academicService.GetAcademicStudentsPageAsync(
                     GetAuthenticatedUserId(httpContextAccessor),
                     GetAuthenticatedRole(httpContextAccessor),
-                    subjectId);
+                    subjectId,
+                    first,
+                    after,
+                    cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
