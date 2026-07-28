@@ -3,11 +3,18 @@
 **Proyecto:** OneITB23<br>
 **Documento fuente:** `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`<br>
 **Resultado esperado:** archivo `.docx` editable y archivo `.pdf` listo para presentar<br>
-**Versión de la guía:** 2.0 - Cierre UML, metodología híbrida y control editorial<br>
+**Versión de la guía:** 2.1 - Plan operativo, cierre de evidencia y control editorial<br>
 **Inventario gráfico vigente:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos
 **Criterio editorial:** APA 7, sujeto a los requisitos particulares del Instituto Tecnológico Beltrán
 
 > El documento Markdown es la fuente canónica. No debe reemplazarse ni editarse destructivamente durante la maquetación. Se recomienda trabajar sobre una copia y conservar los diagramas originales en formato Mermaid.
+
+> **Estado de entrada (28 de julio de 2026).** La memoria fuente está alineada con el
+> Release Candidate académico: 152 pruebas backend, 79 frontend, builds limpios, EF sin
+> drift, Redis local y SMTP Mailpit verificados. Todavía no existen en esta carpeta los
+> diagramas exportados, `DOCUMENTO_MAQUETACION.md`, el DOCX ni el PDF. Esta guía convierte
+> esos faltantes en una secuencia verificable y no debe utilizarse para declarar como
+> productivos los proveedores externos pendientes.
 
 ---
 
@@ -93,6 +100,28 @@ La versión actual del documento ya incluye las siguientes decisiones. No deben 
 | Metodología híbrida | Se justificó el ciclo Water-Scrum-Fall: diseño predictivo en 2023, pausa y construcción ágil en 2026 |
 | Gestión para anexos | Se definieron Cronograma Macro, Calendario Scrum y Red PERT con ruta crítica |
 | Rigor académico | Se agregaron citas y referencias APA para Cascada, Scrum y Water-Scrum-Fall |
+
+### 1.4 Plan de trabajo y tiempos realistas
+
+Las estimaciones presuponen que el contenido técnico no sufrirá cambios funcionales y
+que se dispone de una jornada sin interrupciones. Los identificadores corresponden al
+plan de cierre de `docs/project_docs/ROADMAP.md`.
+
+| Orden | ID | Trabajo | Estimación | Salida verificable |
+|---:|---|---|---:|---|
+| 1 | `DF-01` | Completar portada y datos institucionales | 20-30 min | No quedan marcadores `[Completar]` |
+| 2 | `DF-03` | Exportar los 9 diagramas Mermaid recomendados | 2-3 h | SVG y PNG numerados, legibles y sin errores |
+| 3 | `DF-04` | Recrear DER, Cronograma Macro, Calendario Scrum y PERT | 4-6 h | 4 archivos editables y 4 exportaciones |
+| 4 | `DF-05` | Crear documento de maquetación, DOCX e índice | 3-4 h | DOCX APA editable y completo |
+| 5 | `DF-06` | Auditar, corregir y exportar PDF | 2-3 h | PDF revisado página por página |
+| 6 | `DF-07` | Preparar paquete y ensayo de defensa | 2-3 h | Guion, respaldo y ensayo de 12-15 min |
+
+El tiempo documental pendiente es de **13 h 20 min a 19 h 30 min**. Debe reservarse
+una jornada adicional para los gates técnicos `CF-01` a `CF-06`; el cierre académico
+completo requiere aproximadamente **20-29 horas efectivas** o **3-4 jornadas**.
+
+**Ruta crítica documental:** `DF-01 -> DF-03/DF-04 -> DF-05 -> DF-06 -> DF-07`.
+Los diagramas Mermaid y los cuatro gráficos manuales pueden producirse en paralelo.
 
 ---
 
@@ -527,3 +556,88 @@ docs/entrega_final/
 ```
 
 El `.docx` debe considerarse el archivo de edición final; el PDF es la versión de entrega. El Markdown permanece como respaldo técnico reproducible.
+
+---
+
+## 5. CIERRE, ENTREGA Y DEFENSA
+
+### 5.1 Paquete mínimo entregable
+
+El paquete académico se considera completo cuando contiene:
+
+1. `OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx`, editable y sin comentarios.
+2. `OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf`, idéntico al DOCX aprobado.
+3. Las 13 figuras en formato de entrega y sus fuentes editables.
+4. El Markdown canónico utilizado para producir el documento.
+5. El archivo SHA-256 del PDF revisado.
+6. Un archivo o lámina breve con el SHA del código presentado, versión del sistema y
+   fecha del último gate.
+
+No incluir en el paquete contraseñas demo, secretos, cadenas de conexión, archivos
+`.env`, buzones SMTP capturados ni datos personales que no sean necesarios.
+
+### 5.2 Control de coherencia con el software
+
+Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
+
+| Afirmación documental | Fuente de comprobación |
+|---|---|
+| 99 % global y 115/116 ítems | `docs/project_docs/ROADMAP.md` |
+| 152 pruebas backend y 79 frontend | evidencia de Spec 195 y `DOCUMENTATION_STATUS.md` |
+| EF Core sin drift | salida del gate de predefensa |
+| Redis local y SMTP Mailpit verificados | evidencia de Spec 195 |
+| Google SSO bloqueado | Roadmap y auditoría final |
+| Feature Complete core | Roadmap, sin reinterpretar P5/P6 como deuda académica |
+| Release Candidate académico | sección 7.8 de la memoria |
+
+Si una nueva ejecución cambia una cifra, actualizar primero el Roadmap y la evidencia,
+después la memoria y por último el DOCX/PDF. Nunca corregir solo el archivo Word.
+
+### 5.3 Ensayo técnico de la defensa
+
+Preparar un recorrido de **12 a 15 minutos**:
+
+1. **Problema y objetivo (1-2 min):** fragmentación académica y propuesta OneITB23.
+2. **Arquitectura (2 min):** React/Apollo, GraphQL/Hot Chocolate, EF Core/SQL Server y
+   adaptadores externos.
+3. **Demostración funcional (6-7 min):** identidad, muro multimedia, módulo académico,
+   chat/notificaciones, moderación y Bolsa de Trabajo.
+4. **Calidad y seguridad (2 min):** autorización declarativa, uploads, paginación,
+   aislamiento de sesión, pruebas y auditoría.
+5. **Estado y evolución (1-2 min):** Release Candidate académico, gates externos y
+   próximos pasos.
+
+Ejecutar al menos un ensayo con cronómetro y otro utilizando únicamente el material de
+respaldo. La demostración debe poder continuar si falla Internet.
+
+### 5.4 Plan de contingencia
+
+Conservar localmente, en una carpeta separada de los secretos:
+
+- PDF final y una copia en almacenamiento removible;
+- presentación o índice de secciones;
+- capturas de los flujos por rol;
+- evidencia resumida de tests/builds;
+- exportación de los diagramas;
+- instrucciones para restaurar Docker SQL y ejecutar el seeder;
+- una copia del commit o tag presentado.
+
+No depender de Google SSO, SMTP público, Cloudinary ni Redis administrado durante la
+defensa. La demo controlada debe utilizar los fallbacks y contenedores locales ya
+verificados.
+
+### 5.5 Definition of Done documental
+
+- [ ] Portada e información institucional completadas.
+- [ ] Trece figuras exportadas, numeradas y revisadas.
+- [ ] DER y gráficos de gestión conservan fuentes editables.
+- [ ] Documento de maquetación generado desde el Markdown canónico.
+- [ ] DOCX validado con estilos APA 7 e índice actualizado.
+- [ ] PDF revisado en las cuatro pasadas y sin instrucciones editoriales visibles.
+- [ ] Cifras de pruebas, estado y pendientes coinciden con el Roadmap.
+- [ ] SHA-256 del PDF generado después de la última corrección.
+- [ ] Paquete de respaldo disponible sin secretos.
+- [ ] Ensayo cronometrado realizado y límites externos explicados correctamente.
+
+Solo después de completar esta lista debe utilizarse la palabra **final** en el nombre
+del paquete institucional.

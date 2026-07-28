@@ -197,15 +197,20 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P5 - Despliegue Cloud Gratuito
 
-1. `[ ] [P]` Migracion y despliegue del backend en Azure App Service F1.
-2. `[ ] [P]` Migracion y alojamiento de base de datos en Azure SQL Free Tier.
+1. `[ ] [P]` Migracion y despliegue del backend en Azure App Service F1. Estimacion:
+   **8-12 h**, una vez definida la suscripcion, region, variables y estrategia de rollback.
+2. `[ ] [P]` Migracion y alojamiento de base de datos en Azure SQL Free Tier. Estimacion:
+   **6-10 h**, incluyendo backup, migraciones, smoke de integridad y plan de retorno.
 3. `[x] [I]` Integracion de Cloudinary para el alojamiento de imagenes y archivos estaticos.
 
 ### P6 - Ecosistema Movil
 
-1. Inicializacion del proyecto movil con React Native + Expo.
-2. Sincronizacion del estado y cache Apollo entre Web y Mobile.
-3. Compilacion de APK y distribucion en entornos de prueba.
+1. `[ ] [P]` Inicializacion del proyecto movil con React Native + Expo. Estimacion:
+   **8-12 h** para estructura, autenticacion y navegacion base.
+2. `[ ] [P]` Sincronizacion del estado y cache Apollo entre Web y Mobile. Estimacion:
+   **16-24 h** para contratos, persistencia segura y pruebas de cambio de sesion.
+3. `[ ] [P]` Compilacion de APK y distribucion en entornos de prueba. Estimacion:
+   **6-10 h** luego de cerrar los dos puntos anteriores.
 
 ## Auditoria de Cierre y Seguridad - Etapa 1: 100% (4/4)
 
@@ -238,6 +243,73 @@ finito no inicia API/Vite, preserva SQL y elimina contenedores/puertos en `final
 
 Permanecen `[B]` el SMTP publico, Cloudinary, Google SSO y el handshake WebSocket de red
 con dos navegadores; Redis local y Mailpit no se presentan como validacion cloud.
+
+## Plan operativo de cierre para la defensa
+
+Este plan no agrega alcance funcional ni modifica el calculo de 115/116 items. Convierte
+el Release Candidate academico en un paquete reproducible de defensa. Las estimaciones
+representan tiempo efectivo de una persona con el entorno ya instalado; no incluyen
+esperas institucionales, aprobacion de credenciales ni incidentes de terceros.
+
+### A. Integracion, higiene y aceptacion final
+
+| ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
+|---|---|---|---:|---|---|
+| `CF-01` | Publicar y revisar el commit `dd2e7f2` de Spec 195; integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota, revision y merge sin perder evidencia |
+| `CF-02` | Resolver `prompt_modulo1.txt` y confirmar higiene del worktree | `[ ] [P]` | 15-30 min | Decision de conservar, mover o ignorar el archivo | `git status` limpio y sin artefactos de trabajo accidentalmente versionados |
+| `CF-03` | Ejecutar `scripts/validate-predefense.ps1` y `scripts/validate-local-infrastructure.ps1` | `[ ] [P]` | 60-90 min | Docker operativo | Tests, builds, EF drift, Redis, Mailpit y cleanup en PASS |
+| `CF-04` | Regresion manual guiada por roles: Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador | `[ ] [P]` | 3-4 h | `CF-03` | Checklist firmado, consola limpia y capturas de los flujos principales |
+| `CF-05` | Validar chat/notificaciones con dos navegadores o perfiles aislados | `[ ] [P]` | 60-90 min | API y frontend temporales, dos identidades | Handshake WebSocket, aislamiento de topic, badges y lectura comprobados |
+| `CF-06` | Consolidar evidencia, congelar el corte y etiquetar el commit presentado | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, resultados y limitaciones coinciden en todos los documentos |
+
+**Subtotal estimado:** **6 h 30 min a 9 h 15 min**. La ruta critica es
+`CF-01 -> CF-03 -> CF-04/CF-05 -> CF-06`.
+
+### B. Entrega final academica
+
+| ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
+|---|---|---|---:|---|---|
+| `DF-01` | Completar nombre, docentes, fecha y datos institucionales de portada | `[ ] [P]` | 20-30 min | Datos oficiales | Portada sin marcadores `[Completar]` |
+| `DF-02` | Sincronizar memoria y guia con Specs 194-195, 152/79 pruebas y riesgos vigentes | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown alineado con roadmap y auditoria al 2026-07-28 |
+| `DF-03` | Renderizar y revisar los 9 diagramas Mermaid exportables | `[ ] [P]` | 2-3 h | `DF-02` | SVG/PNG legibles, numerados y sin errores de sintaxis |
+| `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | 4 fuentes editables y 4 PNG/SVG consistentes con el modelo |
+| `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[ ] [P]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable, estilos APA, tablas/figuras dentro de margenes |
+| `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[ ] [P]` | 2-3 h | `DF-05` | PDF revisado pagina por pagina, enlaces y accesibilidad basica |
+| `DF-07` | Preparar paquete de defensa, guion y ensayo cronometrado | `[ ] [P]` | 2-3 h | `CF-06` y `DF-06` | Demo de 12-15 min, fallback y respuestas sobre limites reales |
+
+**Subtotal pendiente estimado:** **13 h 20 min a 19 h 30 min**, porque `DF-02` ya
+quedo implementado documentalmente. La entrega academica completa, incluyendo el cierre
+tecnico del bloque A, requiere aproximadamente **20-29 h efectivas**, equivalentes a
+**3-4 jornadas concentradas**.
+
+### C. Gates productivos externos
+
+Estos puntos no bloquean la defensa controlada y no deben presentarse como verificados
+hasta ejecutarse en el ambiente de destino.
+
+| ID | Gate | Estado | Estimacion tecnica | Condicion externa |
+|---|---|---|---:|---|
+| `PR-01` | Smoke con proveedor SMTP publico | `[ ] [B]` | 1-3 h | Host, puerto, cuenta y politica institucional |
+| `PR-02` | Smoke con Redis administrado | `[ ] [B]` | 1-3 h | Endpoint TLS, credenciales y red permitida |
+| `PR-03` | Smoke de Cloudinary y ciclo upload/delete | `[ ] [B]` | 1-3 h | Cuenta, URL firmada y cuota aprobada |
+| `PR-04` | Google SSO productivo | `[ ] [B]` | 6-12 h | Client ID/secret, callbacks y aprobacion institucional |
+| `PR-05` | Benchmark BCrypt en hardware objetivo | `[ ] [B]` | 1-2 h | Host productivo representativo |
+| `PR-06` | Alertas operativas y politica de I/O persistente | `[ ] [B]` | 2-4 h | Plataforma de monitoreo seleccionada |
+| `PR-07` | Antivirus/CDR externo para uploads | `[ ] [B]` | 8-16 h | Seleccion de proveedor, API, presupuesto y privacidad |
+
+**Esfuerzo tecnico estimado:** **20-43 h**, excluyendo tiempos de aprobacion y
+provisionamiento. Google SSO, cloud publico y antivirus/CDR son evolucion productiva;
+no forman parte del Definition of Done academico del MVP.
+
+### Definition of Done de la entrega academica
+
+1. `CF-01` a `CF-06` completados y evidenciados sobre un SHA inmutable.
+2. `DF-01` y `DF-03` a `DF-07` completados; DOCX/PDF coinciden con el Markdown canonico.
+3. Ningun gate externo figura como verificado sin credenciales y evidencia de destino.
+4. La exposicion utiliza la formula: **Release Candidate academico, Feature Complete
+   core y Code Freeze operativo local**.
+5. Los limites se explican como decisiones de alcance o gates externos, no como
+   funcionalidades productivas ya disponibles.
 
 ## Definition of Done por feature
 

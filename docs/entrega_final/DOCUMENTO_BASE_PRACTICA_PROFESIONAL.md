@@ -7,8 +7,8 @@
 **Alumno/a:** [Completar nombre y apellido]<br>
 **Docente/s:** [Completar]<br>
 **Ciclo lectivo:** 2026<br>
-**Versión del documento:** 1.2 - Normalización UML, metodología híbrida y cierre APA 7<br>
-**Fecha de cierre documental:** 18 de julio de 2026
+**Versión del documento:** 1.3 - Aceptación operacional, plan de defensa y cierre APA 7<br>
+**Fecha de corte técnico-documental:** 28 de julio de 2026
 
 > **Alcance de esta memoria.** Este documento describe el estado comprobable del repositorio OneITB23 al momento de su redacción. Distingue entre funcionalidades implementadas, validaciones automatizadas y verificaciones externas todavía pendientes. Los nombres y versiones se corresponden con el código fuente: .NET 8 (Microsoft, 2023a), Entity Framework Core 8.0.6 (Microsoft, 2023b), Hot Chocolate 14.2.0 (ChilliCream, s. f.), GraphQL (GraphQL Foundation, 2021), React 18 (React Team, 2022), Apollo Client 3.7 (Apollo GraphQL, s. f.), Vite 8 (Vite Team, 2026), Tailwind CSS 4 (Wathan, 2025) y SQL Server 2022 (Microsoft, 2025).
 
@@ -18,7 +18,7 @@ OneITB23 es una plataforma web institucional que integra comunicación académic
 
 La solución adopta una arquitectura desacoplada: una aplicación de página única o SPA (Mozilla, 2025) consume una API GraphQL desarrollada en .NET 8; Entity Framework Core administra la persistencia en SQL Server; las operaciones en tiempo real utilizan el protocolo WebSocket (Fette & Melnikov, 2011); y la carga binaria se resuelve mediante un endpoint basado en el estilo arquitectónico REST (Fielding, 2000). El despliegue productivo se modela con contenedores Docker (Docker, Inc., s. f.) para NGINX (NGINX, Inc., s. f.), la API, SQL Server y Redis (Redis Ltd., s. f.), con adaptadores opcionales para el protocolo SMTP (Klensin, 2008) y almacenamiento Cloudinary (Cloudinary, 2026). Cuando esas variables externas no existen, el entorno local mantiene mecanismos alternativos seguros y reproducibles.
 
-El núcleo funcional se encuentra implementado. La evidencia automatizada más reciente registra 65 pruebas backend y 49 pruebas frontend aprobadas, compilación Release sin errores, esquema de Entity Framework sin cambios pendientes, auditoría de dependencias frontend sin vulnerabilidades conocidas y smoke test GraphQL HTTP 200. Permanecen como controles de cierre la regresión visual manual completa y la validación con credenciales reales de servicios externos.
+El núcleo funcional se encuentra implementado y el roadmap registra un 99 % global (115 de 116 ítems), con el core funcional completo. La evidencia automatizada más reciente registra 152 pruebas backend y 79 pruebas frontend aprobadas, compilación Release con cero errores y cero advertencias, bundle Vite con 380 módulos y cero errores, y esquema de Entity Framework sin cambios pendientes. La aceptación local también verificó una identidad Moderador canónica, aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y entrega SMTP capturada mediante Mailpit. Permanecen como controles de cierre académico la regresión visual manual del rol Moderador, la prueba WebSocket de red con dos sesiones aisladas y la maquetación final. Los proveedores públicos, Cloudinary y Google SSO requieren credenciales o aprobación externa y no se presentan como verificados.
 
 **Índice**
 
@@ -862,7 +862,7 @@ La calendarización reconstruye una secuencia humana razonable entre el relevami
 ```mermaid
 %%{init: {"theme": "default"}}%%
 gantt
-    title Calendarización OneITB23 - Abril a Julio de 2026
+    title Calendarización OneITB23 - Abril a cierre de Julio de 2026
     dateFormat YYYY-MM-DD
     axisFormat %d/%m
     excludes weekends
@@ -887,15 +887,17 @@ gantt
 
     section Hardening y entrega
     Docker, seguridad y observabilidad         :done, d1, 2026-06-29, 2026-07-08
-    Pruebas automatizadas y QA visual          :done, d2, 2026-07-02, 2026-07-15
-    Normalización documental y memoria final   :done, d3, 2026-07-08, 2026-07-17
+    Pruebas y remediación de auditoría          :done, d2, 2026-07-02, 2026-07-27
+    Aceptación operacional local               :done, d3, 2026-07-24, 2026-07-28
+    Normalización documental y memoria final   :done, d4, 2026-07-08, 2026-07-28
+    Maquetación DOCX PDF y ensayo de defensa   :active, d5, 2026-07-28, 2026-07-31
 ```
 
 **B) Descripción descriptiva exhaustiva**
 
-El gráfico debe ocupar una página horizontal. El eje superior comienza el 15 de abril de 2026 y finaliza el 17 de julio de 2026. Se agrupa en cuatro bandas: Descubrimiento y diseño, Núcleo técnico, Módulos funcionales, y Hardening y entrega. Cada banda utiliza un tono diferente: gris azulado para análisis, azul para núcleo, verde para módulos y naranja para cierre.
+El gráfico debe ocupar una página horizontal. El eje superior comienza el 15 de abril de 2026 y finaliza el 31 de julio de 2026. Se agrupa en cuatro bandas: Descubrimiento y diseño, Núcleo técnico, Módulos funcionales, y Hardening y entrega. Cada banda utiliza un tono diferente: gris azulado para análisis, azul para núcleo, verde para módulos y naranja para cierre.
 
-Relevamiento, requerimientos y arquitectura se superponen entre la segunda mitad de abril y la primera semana de mayo. Autenticación, GraphQL y base React comienzan en mayo. El muro es la barra funcional más extensa; mensajería, perfil y módulo académico se desarrollan en paralelo. Moderación comienza cuando el núcleo social ya es utilizable. La Bolsa de Trabajo aparece entre fines de junio y comienzos de julio. Docker, seguridad, pruebas y documentación se solapan durante las últimas dos semanas. La superposición debe comunicar iteración realista, no ejecución lineal instantánea.
+Relevamiento, requerimientos y arquitectura se superponen entre la segunda mitad de abril y la primera semana de mayo. Autenticación, GraphQL y base React comienzan en mayo. El muro es la barra funcional más extensa; mensajería, perfil y módulo académico se desarrollan en paralelo. Moderación comienza cuando el núcleo social ya es utilizable. La Bolsa de Trabajo aparece entre fines de junio y comienzos de julio. Docker, seguridad, remediaciones 186-193, aceptación operacional y documentación se solapan durante julio. La última barra debe mostrarse como actividad de cierre en curso: comprende exportación de diagramas, maquetación APA, auditoría del PDF y ensayo. La superposición comunica iteración realista y no ejecución lineal instantánea.
 
 ### Gráficos de gestión detallada para anexos
 
@@ -958,13 +960,15 @@ La estrategia combina análisis estático, pruebas automatizadas, compilación, 
 
 | Control | Resultado documentado más reciente |
 |---|---|
-| Pruebas backend | 65/65 aprobadas |
-| Pruebas frontend | 49/49 aprobadas |
+| Pruebas backend | 152/152 aprobadas |
+| Pruebas frontend | 31 archivos y 79/79 pruebas aprobadas |
 | Build backend Release | 0 errores y 0 advertencias |
-| Build frontend Vite | 374 módulos; 858 ms en el gate de Spec 185 |
+| Build frontend Vite | 380 módulos; 669 ms; 0 errores |
 | Modelo EF Core | Sin cambios pendientes respecto de migraciones |
-| Auditoría npm | 0 vulnerabilidades conocidas al momento del control |
-| Runtime GraphQL | HTTP 200 contra backend y SQL Server Docker |
+| Sesión y roles | Reemplazo Estudiante -> Moderador sin fuga de identidad, caché ni transporte |
+| Redis local | Entrega exacta entre dos proveedores Hot Chocolate y aislamiento de topic |
+| SMTP local | Tres mensajes capturados e inspeccionados mediante Mailpit |
+| Runtime GraphQL | HTTP 200 y recorridos autenticados de cinco roles en Spec 194 |
 
 **Comandos canónicos de verificación**
 
@@ -995,15 +999,19 @@ npm.cmd run build
 
 **Riesgos residuales y criterio de honestidad técnica**
 
-- La regresión visual completa debe ejecutarse manualmente en el navegador y resolución usados durante la defensa.
-- El panel administrativo, el hub académico y el Gestor de Ofertas y Postulaciones requieren un último recorrido autenticado integral.
-- SMTP, Cloudinary y Redis distribuido deben probarse con secretos reales antes de declarar validación productiva.
+- La regresión visual final debe repetirse en el navegador y la resolución que se utilizarán durante la defensa. Estudiante, Profesor, Egresado, Administrador y Empleador fueron recorridos en la aceptación operacional; resta documentar el recorrido visual de Moderador.
+- Redis fue verificado localmente entre proveedores independientes. Falta el handshake WebSocket completo a través de la red con dos navegadores aislados.
+- SMTP local fue verificado con Mailpit. SMTP público, Redis administrado y Cloudinary deben probarse con secretos reales antes de declarar validación productiva.
 - La integración SIU es simulada; no debe presentarse como conexión oficial.
 - Google SSO permanece fuera del cierre hasta disponer de credenciales y aprobación institucional.
 - Open Graph para crawlers externos puede requerir renderizado del lado servidor para una previsualización universal.
+- El costo BCrypt debe medirse nuevamente sobre el hardware objetivo antes de un despliegue público.
 
 **Checklist manual previo a la defensa**
 
+- [ ] Publicar e integrar el corte de Spec 195 y confirmar `git status` limpio.
+- [ ] Ejecutar `scripts/validate-predefense.ps1`.
+- [ ] Ejecutar `scripts/validate-local-infrastructure.ps1` y comprobar que libere contenedores y puertos.
 - [ ] Ejecutar `docker compose up -d` y verificar salud de SQL Server.
 - [ ] Aplicar migraciones en una base limpia y ejecutar el seeder demo habilitado.
 - [ ] Iniciar API y frontend desde el runbook canónico.
@@ -1015,6 +1023,40 @@ npm.cmd run build
 - [ ] Publicar una oferta, postularse y cambiar estado desde el propietario.
 - [ ] Recorrer administración, reportes, ocultamiento y restauración con auditoría.
 - [ ] Verificar responsive, tema claro/oscuro y consola sin errores propios.
+
+### Plan de cierre y estimación de esfuerzo
+
+El estado defendible del sistema es **Release Candidate académico, Feature Complete core
+y Code Freeze operativo local**. La preparación restante se divide en tareas
+controlables y gates externos. El detalle operativo y el seguimiento vigente se
+mantienen en `docs/project_docs/ROADMAP.md`.
+
+**Cierre técnico y demostración**
+
+| Actividad | Estimación | Resultado esperado |
+|---|---:|---|
+| Integrar Spec 195 y limpiar el repositorio | 45-75 min | SHA remoto e inmutable, sin artefactos accidentales |
+| Ejecutar los dos gates automatizados de predefensa | 60-90 min | Tests, builds, EF, Redis, Mailpit y cleanup en verde |
+| Regresión manual por seis roles | 3-4 h | Evidencia visual y consola limpia |
+| Chat y notificaciones con dos sesiones aisladas | 60-90 min | WebSocket, badges, lectura y aislamiento comprobados |
+| Consolidar evidencia y congelar el corte | 45-60 min | Roadmap, auditoría y memoria alineados al mismo SHA |
+
+**Producción documental**
+
+| Actividad | Estimación | Resultado esperado |
+|---|---:|---|
+| Completar datos oficiales de portada | 20-30 min | Sin marcadores pendientes |
+| Exportar los nueve diagramas Mermaid recomendados | 2-3 h | SVG/PNG legibles y numerados |
+| Recrear DER y tres gráficos de gestión en Draw.io | 4-6 h | Fuentes editables y exportaciones consistentes |
+| Convertir a DOCX y aplicar APA 7 | 3-4 h | Documento editable con índice, estilos y figuras |
+| Auditar y exportar PDF final | 2-3 h | PDF revisado página por página |
+| Preparar guion, respaldo y ensayo | 2-3 h | Presentación de 12-15 minutos con contingencia |
+
+El cierre académico pendiente demanda aproximadamente **20 a 29 horas efectivas**,
+equivalentes a **tres o cuatro jornadas concentradas**. Los proveedores públicos,
+Google SSO, benchmark BCrypt y antivirus/CDR requieren entre **20 y 43 horas técnicas**
+adicionales, además de tiempos de aprobación; no bloquean la defensa controlada ni deben
+confundirse con funcionalidades ya verificadas.
 
 ---
 
@@ -1177,14 +1219,25 @@ El proyecto utiliza Spec Kit. Cada intervención relevante dispone, cuando corre
 
 ### 7.8 Declaración de estado para la defensa
 
-OneITB23 dispone de un núcleo funcional implementado, documentación canónica, pruebas automatizadas y una ruta reproducible de ejecución local. La presentación debe diferenciar con precisión:
+OneITB23 se presenta como un **Release Candidate académico**, con **Feature Complete del
+core** y **Code Freeze operativo local**. Dispone de documentación canónica, pruebas
+automatizadas, infraestructura de aceptación reproducible y una ruta controlada de
+ejecución. Esta denominación es deliberadamente más precisa que “producción completa”:
+reconoce que el software está preparado para la defensa y que los proveedores externos
+todavía requieren credenciales y smokes en el ambiente de destino.
+
+La presentación debe diferenciar con precisión:
 
 - **Implementado:** existe código integrado y compilable.
 - **Verificado:** existe evidencia de prueba o runtime sobre el flujo indicado.
 - **Condicional:** requiere variables, secretos o proveedor externo.
 - **Pendiente de validación manual:** requiere recorrido visual final en navegador.
 
-Esta distinción evita sobreafirmaciones, facilita preguntas técnicas y demuestra una gestión profesional de riesgos y evidencia.
+Al corte del 28 de julio de 2026, SMTP con Mailpit y Redis local poseen evidencia de
+integración; no equivalen a validación de proveedor público. Google SSO, Cloudinary
+productivo, Redis administrado, SMTP público y el handshake WebSocket con dos navegadores
+permanecen identificados como gates. Esta distinción evita sobreafirmaciones, facilita
+preguntas técnicas y demuestra una gestión profesional de riesgos y evidencia.
 
 ---
 

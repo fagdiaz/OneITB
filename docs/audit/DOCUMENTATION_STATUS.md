@@ -7,8 +7,8 @@
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.2 lista para revision de datos personales y conversion a Word/PDF |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 115/116 (99%); core funcional Feature Complete, Specs 186-195 verificadas localmente y SSO institucional bloqueado |
+| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.3 alineada a Specs 194-195 y 152/79 pruebas; portada, figuras, DOCX/PDF y ensayo permanecen pendientes |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 115/116 (99%); agrega plan de cierre academico de 20-29 h, gates productivos y estimaciones P5/P6 sin inflar el porcentaje funcional |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
@@ -23,7 +23,7 @@
 | `docs/academic/02-software-requirements.md` | Resumen academico de requisitos |
 | `docs/academic/03-use-cases.md` | Casos de uso principales |
 | `docs/academic/04-design-diagrams.md` | Diagramas resumidos |
-| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Guia 2.0 definitiva para producir 10 diagramas Mermaid, 3 graficos de gestion, convertir a DOCX/PDF y auditar APA 7 |
+| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Guia 2.1 para producir 10 diagramas Mermaid, 3 graficos de gestion, convertir a DOCX/PDF, auditar APA 7 y cerrar el paquete/ensayo con Definition of Done |
 | `core-web/` | Paquete compacto de contexto para Gemini/external AI; no es fuente canonica |
 | `.specify/`, `.agents/`, `AGENTS.md`, `specs/` | Tooling local de agentes y evidencia granular; ignorado en el repo profesional |
 
@@ -122,6 +122,9 @@
   evaluada se descarto porque introducia advisories altos en el corte de Code Freeze.
 - La medicion del costo BCrypt debe repetirse sobre el hardware objetivo antes de un
   despliegue publico.
+- La entrega final aun no contiene `DOCUMENTO_MAQUETACION.md`, exportaciones de los
+  13 graficos, DOCX ni PDF. El Roadmap estima 13 h 20 min a 19 h 30 min de produccion
+  documental y 20-29 h para el cierre academico completo con aceptacion tecnica.
 - El runtime local canonico sigue siendo SQL Server 2022 en Docker con SQL Auth por
   `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth no es un gate valido.
 - Azure App Service/SQL y el ecosistema movil permanecen como evolucion posterior a la

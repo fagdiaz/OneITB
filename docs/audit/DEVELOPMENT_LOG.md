@@ -5,6 +5,23 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-28] - Plan operativo de cierre académico y entrega final
+
+* **Objetivo**: Convertir el estado Release Candidate académico en un plan trazable de
+  integración, aceptación manual, maquetación APA 7 y preparación de la defensa.
+* **Resultado**:
+  - El Roadmap separa cierre académico, gates productivos externos y evolución P5/P6,
+    con estimación, dependencia y criterio de salida por tarea.
+  - La memoria técnica se actualizó a versión 1.3 con evidencia de Spec 195:
+    152 pruebas backend, 79 frontend, builds limpios, EF sin drift, Redis local y SMTP
+    Mailpit verificados.
+  - La guía de maquetación 2.1 incorpora ruta crítica, tiempos, paquete mínimo,
+    contingencia offline, ensayo y Definition of Done documental.
+  - El cierre académico pendiente se estima en 20-29 horas efectivas o 3-4 jornadas;
+    los proveedores externos permanecen como gates y no alteran el 99 % funcional.
+* **Estado**: Planificación documental implementada `[I]`; integración final, regresión
+  manual, figuras, DOCX, PDF y ensayo permanecen pendientes según el Roadmap.
+
 ## [2026-07-28] - Spec 195: Local Infrastructure and Moderator Acceptance
 
 * **Objetivo**: Cerrar los gates locales controlables de Moderador, Redis distribuido y
