@@ -2,11 +2,17 @@
 
 **Ultima revision**: 2026-07-28
 
-**Estado global**: 98% (114 de 116 items)
+**Estado global**: 99% (115 de 116 items)
 
-**Feature Complete funcional core**: 100%. Las remediaciones tecnicas 186-189 estan verificadas y las Specs 190-193 quedaron implementadas con tests, builds y evidencia automatizada. Permanecen los smokes runtime diferidos, la regresion visual integral del panel administrativo y SSO Google con credenciales/aprobacion institucional externa.
+**Feature Complete funcional core**: 100%. Las remediaciones 186-193 cuentan con
+evidencia automatizada y aceptacion operativa local. La Spec 194 verifico los recorridos
+principales por rol, el aislamiento de sesion y el panel administrativo. El unico item
+funcional bloqueado es SSO Google, dependiente de credenciales, callbacks y aprobacion
+institucional externa.
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
+El porcentaje global cuenta los items funcionales y de auditoria; P5/P6 describen
+evolucion futura de despliegue y ecosistema movil fuera del cierre academico.
 
 ## Convencion de estado
 
@@ -90,7 +96,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Reemplazar pub/sub en memoria por transporte distribuido Redis configurable.
 - [x] [I] Badges de no leidos independientes en navegacion/widget minimizado y recordatorio persistente, acotado e idempotente para mensajes con mas de una hora, respetando preferencias.
 
-## Modulo 6 - Administracion y moderacion: 90% (9/10)
+## Modulo 6 - Administracion y moderacion: 100% (10/10)
 
 - [x] [I] Gestion de usuarios, roles y estado.
 - [x] [I] Proteccion de cuentas administradoras y promocion con password.
@@ -101,7 +107,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Metricas, short IDs y jerarquia visual por rol.
 - [x] [V] Seed administrado e idempotente.
 - [x] [V] Auditoria persistente de acciones administrativas y moderacion reversible con motivo, separada de la edicion exclusiva del autor.
-- [ ] [P] Regresion runtime del panel tras cambios de materias y superadmin.
+- [x] [V] Regresion runtime del panel tras cambios de materias y superadmin.
 
 ## Modulo 7 - Empleos y Gestor de Postulaciones: 100% (9/9)
 
@@ -159,10 +165,10 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P0 - Estabilizacion inmediata
 
-1. Completar los smokes runtime diferidos de 190-193 antes del Code Freeze operativo definitivo.
-2. Verificar visualmente el panel admin completo en navegador contra SQL Docker.
-3. Mantener Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
-4. Mantener y ampliar el baseline automatizado hacia SQL Server/Testcontainers y browser QA del panel admin.
+1. Mantener el Code Freeze funcional: aceptar solo defectos reproducibles con prueba de regresion.
+2. Conservar Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
+3. Ejecutar `scripts/validate-predefense.ps1` antes de la defensa y de cada entrega.
+4. Validar SMTP, Redis y Cloudinary solo cuando existan secretos no versionados y un ambiente aprobado.
 
 ### P1 - Cierre del nucleo social
 
@@ -173,14 +179,14 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ### P2 - Alcance academico
 
-1. Cerrado a nivel de implementacion y hardening tecnico. El hub academico requiere regresion autenticada en navegador para elevar recursos a `[V]`.
-2. Empleos y Gestor de Postulaciones quedan implementados end-to-end y requieren regresion visual en navegador para elevar `/empleos` y `/empleos/mis-ofertas` de `[I]` a `[V]`.
+1. Cerrado a nivel de implementacion y hardening tecnico; el hub academico fue recorrido con Estudiante y Profesor durante la Spec 194.
+2. Empleos y Gestor de Postulaciones fueron recorridos con Egresado y Empleador durante la Spec 194.
 
 ### P3 - Escalabilidad y operacion
 
 1. `[x] [I]` Pub/sub distribuido Redis, activado por `ConnectionStrings:Redis` y fallback InMemory local.
 2. `[x] [I]` Almacenamiento compartido opcional con Cloudinary, activado por `CloudinarySettings:Url` y fallback local.
-3. `[x] [I]` Hardening operativo: rate limiting, security headers, healthcheck y auditoria npm productiva en cero vulnerabilidades conocidas.
+3. `[x] [I]` Hardening operativo: rate limiting, security headers, healthcheck y auditoria npm sin hallazgos altos/criticos; dos avisos moderados upstream de React Router quedan documentados y el destino interno de notificaciones se sanitiza.
 4. `[x] [I]` Hardening GraphQL anti-DoS: profundidad maxima configurable y limites globales de paginacion.
 5. `[ ] [B]` SSO Google productivo con credenciales institucionales y callback URLs definitivas.
 
@@ -210,10 +216,19 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 ## Auditoria de Cierre y Seguridad - Etapa 2: 100% (4/4)
 
-- [x] [I] **Spec 190 - Upload and Magic Link Abuse Hardening**: inspeccion binaria/estructural previa a storage y limites especificos por operacion, origen e identidad; 115 tests, build/EF/compose y upload runtime PASS. El smoke runtime de throttling Magic Link queda diferido por instruccion operativa.
-- [x] [I] **Spec 191 - Async Query and Pagination Hardening**: I/O social asincronico y cancelable, campo `inquiries` no acotado retirado, filtro de autor previo al limite, consumidores Apollo migrados y estudiantes academicos paginados; 126 tests backend, 59 frontend, builds y EF sin drift. Smokes autenticados diferidos.
-- [x] [I] **Spec 192 - Credential Delivery and Cryptographic Policy Hardening**: Magic Link fuera de GraphQL y logs, digest SHA-256 en SQL, pickup `.eml` local, SMTP obligatorio en Production, BCrypt central con rehash no degradante y JWT externalizado; 141 tests backend, 61 frontend, schema real, builds, compose y EF sin drift PASS. SMTP real y browser smoke diferidos.
-- [x] [I] **Spec 193 - Social Policy and UI Bootstrap Resilience**: `MutedUntil` bloquea like/unlike sin persistencia ni notificacion, el resolver devuelve `USER_ERROR` y una frontera global cubre fabrica Apollo, providers, arbol React y fallos previos a `createRoot`; 147 tests backend, 72 frontend, builds y EF sin drift PASS. Smokes autenticados/browser diferidos por instruccion operativa.
+- [x] [V] **Spec 190 - Upload and Magic Link Abuse Hardening**: inspeccion binaria/estructural previa a storage y limites especificos por operacion, origen e identidad; upload valido/hostil/truncado y limites de Magic Link con recuperacion cuentan con evidencia ejecutada.
+- [x] [V] **Spec 191 - Async Query and Pagination Hardening**: I/O social asincronico y cancelable, contrato ilimitado retirado y paginacion social/academica verificadas con orden, limite, deduplicacion, filtro de autor y autorizacion.
+- [x] [V] **Spec 192 - Credential Delivery and Cryptographic Policy Hardening**: respuesta generica, pickup local, digest SQL y consumo unico verificados; SMTP real permanece como gate externo bloqueado y no afecta la validacion del fallback de Development.
+- [x] [V] **Spec 193 - Social Policy and UI Bootstrap Resilience**: silenciamiento like/unlike verificado sin persistencia ni notificaciones; browser limpio y aislamiento A -> logout -> B comprobado.
+
+## Aceptacion operacional final - Spec 194
+
+La Spec 194 cerro los gates locales controlables con 147 pruebas backend, 79 frontend,
+builds Release/Vite, modelo EF sincronizado, pruebas runtime focalizadas y recorridos de
+Estudiante, Profesor, Egresado, Administrador y Empleador. El recorrido Moderador y la
+prueba realtime con dos sesiones aisladas permanecen bloqueados por ausencia de identidad
+demo y transporte Redis configurado. SMTP, Redis y Cloudinary reales conservan estado
+`[B]`; sus fallbacks locales estan cubiertos y no se presentan como proveedores validados.
 
 ## Definition of Done por feature
 

@@ -8,12 +8,12 @@
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
 | `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.2 lista para revision de datos personales y conversion a Word/PDF |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 114/116 (98%); core funcional Feature Complete, etapa 186-189 verificada y Specs 190-193 implementadas |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 115/116 (99%); core funcional Feature Complete, Specs 186-193 verificadas localmente y SSO institucional bloqueado |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; remediaciones 186-189 verificadas y Specs 190-193 implementadas con evidencia automatizada |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; matriz 186-193 y aceptacion operacional Spec 194 alineadas, con resolucion, evidencia y gate residual por hallazgo |
 
 ## Documentacion complementaria
 
@@ -31,10 +31,11 @@
 
 | Spec | Estado verificable |
 |---|---|
-| `specs/193-social-bootstrap-hardening` | Implementada: `MutedUntil` bloquea like/unlike sin cambios en reacciones ni notificaciones, `ToggleReaction` devuelve `USER_ERROR`, Apollo se crea de forma estable bajo un boundary exterior y el bootstrap tiene fallback React/DOM sin dependencias de providers. Backend 147/147, frontend 72/72, builds 0/0 y EF sin drift PASS. Smokes autenticado/browser diferidos |
-| `specs/192-credential-crypto-hardening` | Implementada: respuesta Magic Link generica, digest SHA-256, entrega SMTP/pickup sin body logs, consumo de fragmento y limpieza URL, BCrypt costo 12 central con upgrade/no downgrade, seeder inyectado y JWT externalizado. Backend 141/141, frontend 61/61, schema real, builds, compose y EF sin drift PASS. SMTP real/browser smoke pendientes |
-| `specs/191-query-pagination-hardening` | Implementada: unico contrato social acotado con cancelacion/filtro de autor, consumidores Apollo migrados y estudiantes academicos paginados. Backend 126/126, frontend 59/59, builds 0/0, schema real y EF sin drift PASS. Smokes autenticados y observacion runtime de cancelacion/logs diferidos |
-| `specs/190-upload-magiclink-hardening` | Implementada: inspeccion previa a storage, throttling Magic Link por origen/identidad con memoria/Redis y proxy confiable. Backend 115/115, build 0/0, EF sin drift, compose valido y upload runtime valido/hostil PASS. Magic Link runtime smoke diferido; umbral, recuperacion y concurrencia cubiertos por tests deterministas |
+| `specs/194-final-operational-acceptance` | Aceptacion local cerrada: backend 147/147, frontend 79/79, builds Release/Vite, EF sin drift, Compose y diff-check PASS. Runtime ya ejecutado para uploads, paginacion, silenciamiento y Magic Link; navegador limpio con Estudiante, Profesor, Egresado, Administrador y Empleador, incluido A -> logout -> B. Moderator, dos sesiones realtime y SMTP/Redis/Cloudinary reales quedan `[B]` por ambiente/configuracion |
+| `specs/193-social-bootstrap-hardening` | Verificada localmente: `MutedUntil` bloquea like/unlike con cero delta de reaccion/notificacion; Apollo y providers permanecen bajo frontera global. Backend 147/147, frontend 79/79 y navegador sin errores propios |
+| `specs/192-credential-crypto-hardening` | Verificada localmente: respuesta Magic Link generica, digest SHA-256, pickup, consumo unico/replay y limpieza de credencial ejecutados; BCrypt central y JWT externalizado cubiertos. SMTP real permanece `[B]` |
+| `specs/191-query-pagination-hardening` | Verificada localmente: contrato social acotado, orden/deduplicacion/next page/filtro de autor y paginacion academica con autorizacion ejecutados; cancelacion mantiene cobertura sin escritura |
+| `specs/190-upload-magiclink-hardening` | Verificada localmente: PDF valido aceptado, ejecutable renombrado y PDF truncado rechazados; limites Magic Link y recuperacion cuentan con evidencia previa. Redis distribuido permanece `[B]` |
 | `specs/186-189` | Cierre de seguridad verificado: JWT central y Magic Link atomico; cancelacion end-to-end con guard automatizado; frontera de sesion Apollo/React/WebSocket; matriz declarativa de 42 mutaciones. Backend 82/82, frontend 54/54, builds PASS, EF sin drift, GraphQL runtime y browser smoke PASS |
 | `specs/185-media-notification-polish/` | Media Grid orientado por dimensiones, dos YouTube con limite UI/backend, PDF con primera hoja y pie de acciones, logo/nombres legibles en dark, transicion de tema accesible, textura global visible, preferencias en portal y badge estrictamente no leido. Backend 65/65, frontend 49/49, builds PASS, Vite 858 ms en el gate final, EF sin drift, npm audit 0 vulnerabilidades y runtime GraphQL HTTP 200; regresion visual manual pendiente |
 | `specs/184-qa-master-polish-and-layout/` | Header auto-hide defensivo, Footer unificado, textura global, dark mode suavizado, compositor acotado, mosaico mixto con portada/YouTube/overflow, menciones respaldadas por identidad, preferencias en drawer y deep-link laboral exacto. Backend 63/63, frontend 39/39, builds PASS, Vite 1.19 s, npm audit 0 vulnerabilidades y schema GraphQL runtime HTTP 200; regresion visual manual pendiente |
@@ -102,26 +103,26 @@
 
 ## Brechas vigentes
 
-- Las Specs 186-189 estan verificadas y las Specs 190-193 estan implementadas `[I]`. El cierre tecnico automatizado esta completo; el Code Freeze operativo definitivo queda condicionado a la regresion manual final.
-- Spec 190 ya valida magic bytes/estructura antes de almacenar y aplica rate limiting especifico a Magic Link; solo queda el smoke runtime del throttle para elevarla a `[V]`.
-- Spec 193 ya aplica `MutedUntil` a reacciones de publicaciones y eleva la frontera de errores por encima de Apollo/Theme con guard previo a React. Falta elevarla de `[I]` a `[V]` mediante smoke autenticado y navegador.
-- Existen baselines de pruebas de componentes frontend y de integracion GraphQL con executor real; queda ampliar cobertura hacia regresion visual/browser y SQL Server/Testcontainers para CI avanzado.
-- El flujo social de Specs 178/179/181 quedo verificado por tests, schema y smoke REST/GraphQL donde aplica; falta una ultima regresion manual autenticada de portadas, reemplazo de adjuntos, carrusel/PDF, moderacion con motivo y preferencias en el navegador usado para la defensa.
-- Falta regresion autenticada en navegador del hub academico para elevar busqueda/categorias/versionado/modal de recursos desde `[I]` a `[V]`.
-- Falta regresion visual en navegador de `/empleos` y `/empleos/mis-ofertas`, mas validacion manual del badge realtime con dos sesiones para elevar la UI de empleos/Gestor de Postulaciones a `[V]`.
-- Redis Pub/Sub y Cloudinary estan implementados de forma condicional. SMTP es obligatorio en Production, cuenta con smoke GraphQL admin-only y pickup local seguro; quedan pendientes pruebas con un proveedor real para elevarlo a `[V]`.
-- Los aliases GraphQL historicos en espanol siguen como compatibilidad temporal.
-- El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validar specs.
-- Falta verificacion visual en navegador del panel admin completo contra SQL Docker.
-- Falta verificacion visual fina en navegador del perfil CV y `/profile/edit`; avatar, carreras y contrato GraphQL normalizado de guardado/lectura ya fueron verificados en runtime.
-- El frontend ya cuenta con baseline Vitest/Testing Library; la auditoria de dependencias no identifico una eliminacion segura durante la spec 163 y el vendor split de Vite permanece vigente.
-- YouTube ya no monta iframes en el render inicial; los warnings residuales posteriores al click pertenecen al proveedor/navegador.
-- Las miniaturas de YouTube usan imagen estatica y los adjuntos de imagen se resuelven contra el backend antes de renderizar inline.
-- La spec 170 restauro dependencias con red, ejecuto npm audit productivo y dejo 0 vulnerabilidades conocidas en dependencias frontend runtime.
-- Google SSO productivo queda bloqueado hasta disponer de Client ID/secret, callbacks y aprobacion institucional. La ruta publica de certificados usa meta tags runtime; Open Graph perfecto para crawlers exige SSR o HTML renderizado desde backend.
-- Las brechas de fuerza bruta de login y DoS por profundidad GraphQL quedaron mitigadas por Spec 171; queda pendiente aplicar la migracion en cada entorno real con secretos definitivos antes de smoke runtime productivo.
-- Magic Link devuelve un payload generico, entrega la credencial fuera de banda, almacena solo SHA-256 y limpia el fragmento en React. El flujo pickup automatizado pasa; falta smoke SMTP real/browser.
-- Upload valida extension/tipo/tamano y, desde Spec 190, firmas/estructura antes de invocar storage; fixtures validos y hostiles pasaron tests y smoke local.
-- Magic Link cuenta con throttling especifico por origen e identidad/credencial, memoria acotada en desarrollo y Redis atomico configurable. El smoke runtime de umbral queda diferido; tests deterministas cubren concurrencia, expiracion y recuperacion.
+- No quedan hallazgos criticos o altos de las Specs 186-193 en condicion vulnerable
+  original. La Spec 194 cerro sus gates locales y la regresion A -> logout -> B.
+- El recorrido con rol Moderador queda bloqueado porque el seeder canonico no crea esa
+  identidad. La matriz declarativa de autorizacion continua cubierta por tests.
+- Realtime con dos sesiones aisladas y Redis distribuido no fue validado en navegador;
+  el contexto disponible no aporto un segundo storage independiente y Redis no esta
+  configurado.
+- SMTP, Redis y Cloudinary reales requieren secretos no versionados y un ambiente
+  aprobado. Pickup, pub/sub en memoria y storage local permanecen cubiertos como
+  fallbacks de Development.
+- Google SSO sigue bloqueado hasta disponer de Client ID/secret, callbacks y aprobacion
+  institucional. Open Graph perfecto para crawlers exige SSR o HTML desde backend.
+- React Router 6.30.4 conserva dos advisories moderados upstream y cero altos/criticos.
+  OneITB no usa SSR y sanitiza destinos internos de notificaciones; la version 7.x
+  evaluada se descarto porque introducia advisories altos en el corte de Code Freeze.
+- La medicion del costo BCrypt debe repetirse sobre el hardware objetivo antes de un
+  despliegue publico.
+- El runtime local canonico sigue siendo SQL Server 2022 en Docker con SQL Auth por
+  `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth no es un gate valido.
+- Azure App Service/SQL y el ecosistema movil permanecen como evolucion posterior a la
+  entrega academica, no como deuda del core Feature Complete.
 
 Ante contradicciones, prevalecen codigo, esquema ejecutado y evidencia runtime. Los porcentajes se recalculan exclusivamente desde los checklists de `ROADMAP.md`.

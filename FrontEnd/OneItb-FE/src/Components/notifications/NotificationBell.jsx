@@ -10,6 +10,7 @@ import {
   NOTIFICATION_RECEIVED,
 } from '../../data/graphql/notifications';
 import { NotificationPreferencesModal } from './NotificationPreferencesModal';
+import { getSafeInternalPath } from '../../utils/safeInternalPath';
 
 const notificationLabels = {
   ACADEMIC_RESOURCE: 'Recursos',
@@ -191,6 +192,7 @@ export const NotificationBell = () => {
               <div className="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No tenes notificaciones.</div>
             ) : (
               notifications.map((notification) => {
+                const safeActionUrl = getSafeInternalPath(notification.actionUrl);
                 const content = (
                   <div className="flex gap-3 px-4 py-3 transition hover:bg-slate-50 dark:hover:bg-white/[0.04]">
                     <span
@@ -216,10 +218,10 @@ export const NotificationBell = () => {
                   </div>
                 );
 
-                return notification.actionUrl ? (
+                return safeActionUrl ? (
                   <Link
                     key={notification.id}
-                    to={notification.actionUrl}
+                    to={safeActionUrl}
                     onClick={() => {
                       handleMarkRead(notification.id);
                       setIsOpen(false);

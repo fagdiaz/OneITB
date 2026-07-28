@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSubscription } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { NOTIFICATION_RECEIVED } from '../../data/graphql/notifications';
+import { getSafeInternalPath } from '../../utils/safeInternalPath';
 
 const toastIcons = {
   ACADEMIC_RESOURCE: 'fa-solid fa-book-open',
@@ -101,6 +102,7 @@ export const NotificationProvider = ({ children }) => {
       {isAuthenticated && toasts.length > 0 && (
         <div className="pointer-events-none fixed right-4 top-20 z-[120] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3 print:hidden">
           {toasts.map((toast) => {
+            const safeActionUrl = getSafeInternalPath(toast.actionUrl);
             const content = (
               <div className="flex gap-3">
                 <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
@@ -119,8 +121,8 @@ export const NotificationProvider = ({ children }) => {
                 className="pointer-events-auto overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-4 text-slate-900 shadow-[0_24px_70px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-100 dark:shadow-[0_24px_70px_rgba(0,0,0,0.45)]"
               >
                 <div className="flex items-start gap-3">
-                  {toast.actionUrl ? (
-                    <Link to={toast.actionUrl} onClick={() => dismissToast(toast.id)} className="min-w-0 flex-1">
+                  {safeActionUrl ? (
+                    <Link to={safeActionUrl} onClick={() => dismissToast(toast.id)} className="min-w-0 flex-1">
                       {content}
                     </Link>
                   ) : (

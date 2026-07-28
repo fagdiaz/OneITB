@@ -162,6 +162,42 @@ git diff --check
 
 El workflow `.github/workflows/quality-gates.yml` ejecuta estos gates en CI y agrega una verificacion de modelo EF sin secretos versionados.
 
+### Gate predefensa reproducible
+
+El validador consolidado ejecuta tests, builds, consistencia del modelo EF, parseo de
+Compose, auditoria de dependencias y controles de higiene sin dejar servidores activos:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/validate-predefense.ps1
+```
+
+El modo runtime esta deshabilitado por defecto. Solo debe habilitarse en una ventana de
+mantenimiento expresamente aprobada, contra una base de demostracion respaldada:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/validate-predefense.ps1 -IncludeRuntime
+```
+
+Ese modo usa un puerto temporal configurable, datos acotados y un bloque `finally` para
+restaurar silenciamientos, eliminar uploads/correos de prueba y detener el proceso que
+inicio. No debe utilizarse para el ensayo ordinario de rate limiting si la politica
+operativa vigente prohibe levantar instancias.
+
+Interpretacion del resultado:
+
+- `PASS`: gate ejecutado y resultado observado.
+- `BLOCKED`: falta configuracion externa, acceso a Docker/registry o aprobacion
+  institucional; no equivale a un fallo del codigo.
+- `SKIPPED`: gate no solicitado en esa ejecucion.
+- `FAIL`: defecto reproducible que impide el cierre.
+
+Los proveedores SMTP, Redis y Cloudinary solo pueden elevarse a verificados usando
+secretos no versionados. La auditoria npm debe informar por severidad: en el corte
+2026-07-28 no hay vulnerabilidades altas o criticas; permanecen dos avisos moderados
+upstream de React Router 6.30.4. OneITB es SPA sin SSR y sanitiza destinos internos de
+notificaciones antes de entregarlos a React Router. La rama 7.x no se adopto durante
+Code Freeze porque su corte evaluado introducia vulnerabilidades altas.
+
 ### Backend o GraphQL
 
 1. Build Release sin errores.

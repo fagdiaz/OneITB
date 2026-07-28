@@ -1,35 +1,37 @@
-# Reporte final de auditoria tecnica y seguridad - OneITB23
+# Reporte final de auditoría técnica y seguridad - OneITB23
 
 **Fecha de corte**: 2026-07-28
 **Alcance**: .NET 8, EF Core 8, HotChocolate 14, React 18, Apollo Client 3, SQL Server Docker
-**Estado del roadmap**: 98% (114 de 116 items)
-**Decision tecnica**: cierre de remediaciones 186-189 aprobado y Specs 190-193 implementadas; Code Freeze tecnico automatizado completo, condicionado operativamente a smokes externos diferidos y regresion manual final.
+**Estado del roadmap**: 99% (115 de 116 items)
+**Corte de código base**: `25cdb9f`; aceptación final ejecutada en `codex/194-final-operational-acceptance`
+**Decisión técnica**: cierre de remediaciones 186-193 aprobado y Code Freeze operativo local alcanzado. Los proveedores reales y el SSO institucional permanecen como gates externos explícitos.
 
 ---
 
 ## 1. Resumen Ejecutivo y Riesgos Residuales
 
-### Tabla consolidada de hallazgos Críticos y Altos (Módulos 1, 2, 3 y 4)
+### Matriz consolidada de cierre (Specs 186-193)
 
-| # | Severidad | Hallazgo | Origen |
-|---|---|---|---|
-| C-1 | **CRÍTICO** | Ausencia de validación por Magic Bytes en subida de archivos | Módulo 1 (2026-07-27) |
-| C-2 | **CRÍTICO** | Mutaciones `RequestMagicLink` / `LoginWithMagicLink` sin rate limiting específico | Módulo 1 (2026-07-27) |
-| C-3 | **CRÍTICO** | `GetInquiries`: llamada síncrona bloqueante `.Any()` en Thread Pool de ASP.NET Core | Módulo 2 (2026-07-27) |
-| A-1 | **ALTO** | Token de Magic Link devuelto en la respuesta GraphQL (debe ir por SMTP) | Módulo 1 (2026-07-27) |
-| A-2 | **ALTO** | BCrypt sin work factor explícito en flujos de producción | Módulo 1 (2026-07-27) |
-| A-3 | **ALTO** | `GetInquiries` sin `[UsePaging]` — feed potencialmente ilimitado | Módulo 2 (2026-07-27) |
-| A-4 | **ALTO** | `GetAcademicStudents` sin paginación en entidad de crecimiento lineal | Módulo 2 (2026-07-27) |
+La matriz siguiente distingue la corrección implementada de su nivel de verificación.
+Ningún hallazgo crítico o alto permanece en su condición vulnerable original. El único
+estado `[I]` de seguridad conserva una medición operativa explícita y no se presenta como
+validación de hardware productivo.
 
-### Estado de remediación posterior
-
-| Hallazgo | Estado actual | Evidencia |
-|---|---|---|
-| C-1 | **Mitigado por Spec 190 `[I]`** | Inspección binaria/estructural previa a storage, fixtures válidos/hostiles, 115 tests y smoke upload HTTP 200/400. |
-| C-2 | **Mitigado por Spec 190 `[I]`** | Límites por IP e identidad/credencial, fingerprints HMAC, memoria acotada/Redis atómico y tests deterministas de concurrencia/recuperación. El smoke runtime del throttle fue diferido por instrucción operativa. |
-| C-3, A-3, A-4 | **Mitigados por Spec 191 `[I]`** | `AnyAsync` cancelable, campo social sin limite retirado, consumidores bounded y estudiantes paginados; 126 tests backend, 59 frontend, schema real, builds y EF drift PASS. Smokes autenticados diferidos. |
-| A-1, A-2 | **Mitigados por Spec 192 `[I]`** | Respuesta generica, entrega fuera de banda, digest SHA-256, BCrypt central con costo 12/rehash no degradante y JWT sin clave rastreada; 141 tests backend, 61 frontend, schema real, builds y EF drift PASS. SMTP real/browser diferidos. |
-| M3-M1, M4-M1 | **Mitigados por Spec 193 `[I]`** | Guard central de silenciamiento antes de like/unlike, cero efectos laterales, error GraphQL controlado y bootstrap con boundary exterior mas fallback pre-React; 147 tests backend, 72 frontend, builds y EF drift PASS. Smokes autenticados/browser diferidos. |
+| Caso | Severidad | Resolución aplicada | Estado y evidencia | Gate residual |
+|---|---|---|---|---|
+| **Spec 186 - token mock/duplicidad de emisores JWT** | Crítico | Se eliminó `token_placeholder`; `JwtTokenService` centralizó firma HS256, claims, issuer, audience y expiración. Magic Link pasó a credencial criptográfica de un uso con consumo atómico. | **Verificado `[V]`**: 82/82 tests, build Release, EF sin drift y smoke SQL Docker con JWT válido, replay rechazado y concurrencia 1 éxito/1 rechazo. | La entrega fuera de banda fue endurecida posteriormente por Spec 192. |
+| **Spec 187 - cancelación incompleta en mutaciones** | Alto | Todas las mutaciones asíncronas reciben `CancellationToken` y lo propagan por servicios, UnitOfWork, repositorios, EF Core y efectos compatibles; `OperationCanceledException` no se convierte en error de negocio. | **Verificado `[V]`**: guard por reflexión, prueba pre-cancelada sin escritura, 82/82 tests y schema runtime sin argumentos de infraestructura expuestos. | Sin gate funcional pendiente. |
+| **Spec 188 - session bleed en Apollo/React/WebSocket** | Alto | Logout, expiración, cambio de identidad y cierre entre pestañas convergen en una terminación idempotente: borra identidad, limpia Apollo, termina WebSocket e invalida respuestas tardías mediante epoch. | **Verificado `[V]`**: 79 tests frontend, build Vite, navegador limpio y recorrido real Estudiante -> logout -> Administrador sin datos cruzados. | Sin gate local pendiente. |
+| **Spec 189 - autorización mutacional incompleta** | Crítico | Se aplicó `[Authorize]` declarativo a toda mutación protegida, con roles canónicos; ownership, autoría e inscripción permanecen como controles contextuales en servicios. | **Verificado `[V]`**: matriz de 42 mutaciones, solo 4 públicas, tests de no-escritura y smokes anónimo/rol incorrecto. | Sin gate funcional pendiente. |
+| **C-1 - upload validado solo por extensión/MIME** | Crítico | `FileContentInspector` valida firmas y estructura antes de cualquier storage y rechaza contenido incompatible con código estable sin filtrar detalles. | **Verificado por Specs 190/194 `[V]`**: PDF válido aceptado; ejecutable renombrado y PDF truncado rechazados sin fixture retenido. | Antivirus/CDR externo queda fuera del MVP. |
+| **C-2 - Magic Link sin limitación específica** | Crítico | Se agregaron límites independientes por IP e identidad/credencial, fingerprints HMAC, memoria acotada en local y operación atómica Redis en producción. | **Verificado por Specs 190/194 `[V]`**: umbrales de solicitud/redención, recuperación, digest y single-use observados; tests deterministas cubren concurrencia/fail-closed. | El gate Redis distribuido requiere configuración externa. |
+| **C-3 - I/O síncrono en carga del feed** | Crítico | La consulta de visibilidad usa `AnyAsync` cancelable y el builder del feed no ejecuta I/O terminal síncrono. | **Verificado por Specs 191/194 `[V]`**: suite de cancelación y recorrido runtime paginado sin regresión. | Sin gate local pendiente. |
+| **A-3 - contrato social sin límite** | Alto | Se retiró el campo `inquiries` ilimitado; `inquiriesPage` quedó como contrato único, con máximo 25, cursor opaco, orden estable y filtro de autor previo al conteo. | **Verificado por Specs 191/194 `[V]`**: schema, límite, orden, deduplicación, next page y filtro de autor ejecutados. | Sin gate local pendiente. |
+| **A-4 - estudiantes académicos sin paginación** | Alto | `AcademicStudentPage` limita a 50, proyecta el selector necesario, preserva autorización y aplica orden determinista. | **Verificado por Specs 191/194 `[V]`**: límite, orden, next page y denegación ejecutados; hub recorrido con Estudiante/Profesor. | Sin gate local pendiente. |
+| **A-1 - credencial Magic Link expuesta por GraphQL** | Alto | La mutación devuelve confirmación genérica; la credencial viaja fuera de banda, SQL guarda SHA-256 y React elimina el fragmento URL antes del consumo. | **Verificado localmente por Specs 192/194 `[V]`**: respuesta genérica, pickup, digest, consumo y replay ejecutados. | SMTP real requiere secretos no versionados. |
+| **A-2 - BCrypt sin política explícita** | Alto | `IPasswordHasher` centraliza costo 12 configurable, eleva hashes débiles tras login y nunca degrada hashes más fuertes. | **Mitigado por Spec 192 `[I]`**: registro, administración, empleadores y seeder cubiertos; tests de rehash/no-downgrade PASS. | Medición operativa del costo por hardware antes del despliegue público. |
+| **M3-M1 - bypass de silenciamiento en reacciones** | Medio | `ToggleReactionAsync` ejecuta el guard de `MutedUntil` antes de leer o mutar; el rechazo no altera reacciones ni emite notificación y retorna `USER_ERROR`. | **Verificado por Specs 193/194 `[V]`**: like/unlike autenticados rechazados con cero delta de reacción/notificación. | Sin gate local pendiente. |
+| **M4-M1 - error boundary por debajo de providers** | Medio | `GlobalErrorBoundary` envuelve Apollo, Theme y App; el bootstrap asíncrono agrega fallback React/DOM incluso antes de `createRoot`. | **Verificado por Specs 193/194 `[V]`**: 79 tests frontend y recorridos de navegador sin errores/warnings propios. | Sin gate local pendiente. |
 
 > **Nota Módulo 3**: La auditoría de lógica de negocio y moderación no arrojó hallazgos Críticos ni Altos. El hallazgo **MEDIO** M3-M1 fue mitigado por Spec 193; el detalle y su estado posterior se conservan en la sección §2.
 
@@ -37,10 +39,17 @@
 
 ### Medio
 
-1. **M4-M1 — mitigado `[I]`**: `GlobalErrorBoundary` envuelve ahora la fábrica Apollo, `ApolloProvider`, `ThemeProvider` y `<App/>`; un guard asincrónico cubre además carga de módulos y creación del root. (Módulo 4)
-2. **M3-M1 — mitigado `[I]`**: `ToggleReactionAsync` aplica `EnsureUserCanCreateContentAsync` antes de consultar o mutar reacciones y el resolver conserva `USER_ERROR`. (Módulo 3)
-3. **Entrega de Magic Link — mitigada `[I]`**: el contrato devuelve solo confirmación genérica, la credencial se entrega fuera de banda y SQL conserva su digest. Queda el smoke SMTP real antes de elevar a `[V]`. (Módulo 1)
-4. **Regresión visual integral**: panel administrativo, hub académico y Gestor de Postulaciones requieren el recorrido manual final contra la base Docker de presentación. (Módulo 1)
+1. **M4-M1 — verificado `[V]`**: `GlobalErrorBoundary` cubre fábrica, providers,
+   árbol React y pre-mount; los recorridos de navegador no produjeron errores propios.
+2. **M3-M1 — verificado `[V]`**: el silenciamiento rechazó like/unlike sin modificar
+   reacciones ni notificaciones.
+3. **Entrega Magic Link local — verificada `[V]`**: respuesta genérica, pickup, digest,
+   consumo único y replay se observaron. SMTP real permanece bloqueado por secretos
+   externos y no invalida el fallback de Development.
+4. **React Router — riesgo moderado aceptado**: 6.30.4 conserva dos avisos upstream,
+   sin hallazgos altos/críticos. La aplicación no usa SSR y sanitiza las rutas internas
+   provenientes de notificaciones. La actualización 7.x evaluada introducía hallazgos
+   altos y fue descartada durante Code Freeze.
 
 ### Bajo/operativo
 
@@ -50,19 +59,38 @@
 
 ### Recomendación de cierre
 
-Se recomienda declarar **Code Freeze técnico automatizado**, condicionado operativamente:
+Se recomienda declarar **Code Freeze operativo local**, condicionado externamente:
 
 1. No incorporar nuevas features.
-2. Ejecutar el checklist manual de presentación con cuentas por rol.
-3. Validar servicios externos solo en un ambiente seguro con secretos no versionados.
+2. Ejecutar el gate seguro `scripts/validate-predefense.ps1` antes de cada entrega.
+3. Validar SMTP, Redis y Cloudinary solo en un ambiente seguro con secretos no versionados.
 4. Corregir únicamente defectos reproducibles y acompañarlos con prueba de regresión.
-5. Mantener como criterio de salida: backend/frontend tests, builds, EF drift y smoke GraphQL en verde.
+5. Mantener como criterio de salida: suites, builds, EF drift y regresión de sesión en verde.
 
-Con estas condiciones, OneITB23 se encuentra estable para la defensa académica controlada. El paso a producción pública requiere completar smokes con proveedores reales y la regresión manual por rol, sin modificar la lógica funcional ya congelada.
+Con estas condiciones, OneITB23 se encuentra estable para la defensa académica
+controlada. El paso a producción pública requiere completar smokes con proveedores
+reales, medir BCrypt sobre el hardware objetivo y aprobar SSO institucional, sin
+modificar la lógica funcional ya congelada.
+
+### Spec 194 - Aceptación operacional final
+
+La aceptación ejecutó 147 pruebas backend y 79 frontend, builds Release/Vite, control de
+drift EF, contratos paginados, upload hostil, política de silenciamiento y entrega local
+Magic Link. En navegador se recorrieron Estudiante, Profesor, Egresado, Administrador y
+Empleador; además se comprobó `A -> logout -> B` sin identidad, mensajes ni
+notificaciones de la sesión anterior. El panel administrativo, el hub académico, chat,
+perfil y Gestor de Postulaciones cargaron sin errores o warnings propios en consola.
+
+El recorrido Moderador queda bloqueado porque el seeder canónico no crea esa identidad.
+La prueba realtime con dos contextos aislados y los smokes reales SMTP/Redis/Cloudinary
+también quedan bloqueados por ambiente/configuración. Estos límites están documentados,
+no alteran el cierre local y no se presentan como verificaciones realizadas.
 
 ---
 
 ## 2. Hallazgos de Auditoría Modular (Ordenados del más reciente al más antiguo)
+
+Las descripciones de esta sección preservan la condición observada en el momento de cada auditoría. El campo **Estado posterior/actualizado** y la matriz de la sección 1 representan la situación vigente del código.
 
 ### Módulo 4 — Arquitectura Frontend y React (NUEVO — 2026-07-27)
 
@@ -110,7 +138,7 @@ Esto significa que un error de renderizado que se origine en `ApolloProvider` o 
 </GlobalErrorBoundary>
 ```
 
-**Estado posterior (Spec 193)**: **MITIGADO `[I]`**. `main.jsx` usa un bootstrap asincrónico que carga el árbol de aplicación dentro de `try/catch`; `GlobalErrorBoundary` queda por fuera de `AppProviders`, la fábrica Apollo se evalúa perezosamente una sola vez por montaje y un fallback DOM cubre incluso el fallo de `createRoot`. Las pruebas inyectan fallos en fábrica, Apollo, Theme, hijo y pre-mount.
+**Estado posterior (Specs 193/194)**: **VERIFICADO `[V]`**. `main.jsx` usa un bootstrap asincrónico que carga el árbol de aplicación dentro de `try/catch`; `GlobalErrorBoundary` queda por fuera de `AppProviders`, la fábrica Apollo se evalúa perezosamente una sola vez por montaje y un fallback DOM cubre incluso el fallo de `createRoot`. Las pruebas inyectan fallos en fábrica, Apollo, Theme, hijo y pre-mount; los recorridos de navegador finalizaron sin errores propios.
 
 ---
 
@@ -154,7 +182,7 @@ Las otras tres mutaciones de creación de contenido sí invocan esta validación
 
 **Remediación**: Agregar `await EnsureUserCanCreateContentAsync(userId, "reaccionar", cancellationToken);` al inicio de `ToggleReactionAsync`, inmediatamente antes de la verificación de existencia de la publicación (línea 714).
 
-**Estado posterior (Spec 193)**: **MITIGADO `[I]`**. El guard se ejecuta antes de toda lectura/escritura de reacción; tests prueban que el like denegado no inserta, el unlike denegado no elimina, no se invoca notificación y la cancelación no deja efectos. `Mutation.ToggleReaction` transforma el rechazo en `USER_ERROR`.
+**Estado posterior (Specs 193/194)**: **VERIFICADO `[V]`**. El guard se ejecuta antes de toda lectura/escritura de reacción; tests y aceptación autenticada prueban que el like denegado no inserta, el unlike denegado no elimina, no se invoca notificación y la cancelación no deja efectos. `Mutation.ToggleReaction` transforma el rechazo en `USER_ERROR`.
 
 ---
 
@@ -166,7 +194,7 @@ Las otras tres mutaciones de creación de contenido sí invocan esta validación
 | **Soft-delete en Comments** | ✅ Seguro | `OneItbContext.cs` línea 674: `entity.HasQueryFilter(e => e.IsActive && !e.IsHiddenByModerator)`. Mismo patrón que Inquiries. Los `Include(inquiry => inquiry.Comments)` en el feed heredan el filtro global automáticamente. |
 | **Cascada de filtros en Reactions** | ✅ Seguro | `OneItbContext.cs` línea 714: `entity.HasQueryFilter(e => e.Inquiry.IsActive && !e.Inquiry.IsHiddenByModerator)` — las reacciones de publicaciones moderadas quedan excluidas automáticamente. |
 | **Cascada de filtros en CommentReactions** | ✅ Seguro | `OneItbContext.cs` líneas 739–743: filtro compuesto que verifica `Comment.IsActive`, `!Comment.IsHiddenByModerator`, `Comment.Inquiry.IsActive` y `!Comment.Inquiry.IsHiddenByModerator`. Cobertura completa de la cadena de moderación. |
-| **Mute enforcement social** | ✅ Seguro `[I]` | `EnsureUserCanCreateContentAsync` consulta `MutedUntil` y rechaza una sanción activa. Se aplica a publicaciones, comentarios, reacciones de comentarios y, desde Spec 193, reacciones de publicaciones; pruebas cubren insert, delete, notificación, cancelación y separación respecto del `Mute` personal. |
+| **Mute enforcement social** | ✅ Seguro `[V]` | `EnsureUserCanCreateContentAsync` consulta `MutedUntil` y rechaza una sanción activa. Se aplica a publicaciones, comentarios, reacciones de comentarios y reacciones de publicaciones; pruebas y aceptación autenticada cubren insert, delete, notificación, cancelación y separación respecto del `Mute` personal. |
 | **Moderación administrativa** | ✅ Seguro | `ModerationService.cs`: `EnsureModeratorAsync` valida rol "Administrador" o "Moderador" antes de permitir hide/restore. Todas las operaciones de moderación generan `ModerationAudit` con `ActorUserId`, `Action`, `Summary` y timestamp. |
 | **SIU Mock: validación de notas** | ✅ Seguro | `AcademicService.cs` líneas 670–680: `ValidateScore` aplica `Math.Round(score, 2)` y rechaza con `ArgumentException` si `score < 0 || score > 10`. La sincronización SIU (`SyncSiuGradesAsync`, línea 372–381) envuelve cada registro en try/catch y registra el skip sin abortar el batch. Un mock que devolviera un 15 sería rechazado y registrado en `skippedItems`. |
 | **SIU Mock: datos hardcodeados** | ✅ Seguro | `MockSiuIntegrationService.cs`: devuelve 3 registros fijos con notas 8.75, 7.50 y 6.00 — todos dentro del rango válido [0, 10]. El registro con email inexistente es correctamente descartado por `SyncSiuGradesAsync` ("sin cuenta local"). |
@@ -208,6 +236,8 @@ bool hasGlobalVisibility = await context.Users.AnyAsync(u => u.Id == userId && (
 // Pasar hasGlobalVisibility como parámetro a GetInquiries(...)
 ```
 
+**Estado posterior (Specs 191/194)**: **VERIFICADO `[V]`**. La visibilidad global se resuelve con `AnyAsync` y `CancellationToken`; el builder social quedó libre de I/O terminal. Tests de cancelación, schema y recorrido autenticado paginado pasan.
+
 ---
 
 #### ALTO-3: `GetInquiries` retorna `IQueryable` sin paginación declarativa — feed potencialmente ilimitado
@@ -230,6 +260,8 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 
 **Remediación**: Agregar `[UsePaging(MaxPageSize = 25)]` al resolver `GetInquiries` o eliminarlo del schema y consolidar el uso en `GetInquiriesPage`.
 
+**Estado posterior (Specs 191/194)**: **VERIFICADO `[V]`**. Se eliminó el campo ilimitado y `inquiriesPage` quedó como único contrato, con máximo 25, cursor opaco, orden estable, filtro de autor previo al conteo y consumidores Apollo migrados; límite, deduplicación, next page y filtro fueron ejecutados.
+
 ---
 
 #### ALTO-4: `GetAcademicStudents` sin paginación en entidad de crecimiento lineal
@@ -245,6 +277,8 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 **Impacto**: Crecimiento de memoria proporcional al tamaño del plantel estudiantil. La entidad `User` incluye campos CV (experiencias, educación, proyectos, etc.) que no son necesarios en este listado académico.
 
 **Remediación**: Introducir paginación (offset o cursor-based) y proyectar únicamente los campos necesarios (Id, FirstName, LastName, Email).
+
+**Estado posterior (Specs 191/194)**: **VERIFICADO `[V]`**. `AcademicStudentPage` limita la página a 50, conserva autorización por actor/materia, ordena de forma determinista y alimenta un selector frontend con carga incremental; paginación, denegación y navegación académica fueron ejecutadas.
 
 ---
 
@@ -272,7 +306,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 
 #### CRÍTICO-1: Ausencia de validación por Magic Bytes en subida de archivos
 
-**Estado actualizado (Spec 190)**: **MITIGADO `[I]`**. `FileContentInspector` valida firmas y estructura antes de storage; pruebas focalizadas y smoke runtime confirman aceptación de PDF válido y rechazo de contenido ejecutable renombrado sin persistencia.
+**Estado actualizado (Specs 190/194)**: **VERIFICADO `[V]`**. `FileContentInspector` valida firmas y estructura antes de storage; pruebas y aceptación runtime confirman PDF válido, rechazo de ejecutable renombrado y PDF truncado, sin persistencia residual.
 
 - **Archivo**: [`UploadController.cs`](file:///F:/React/OneITB23/API%20Graphql/OneITB/Controllers/UploadController.cs#L60-L66)
 - **Líneas**: 60–66
@@ -283,7 +317,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 
 #### CRÍTICO-2: Mutaciones `RequestMagicLink` y `LoginWithMagicLink` expuestas sin rate limiting específico
 
-**Estado actualizado (Spec 190)**: **MITIGADO `[I]`**. Ambas operaciones aplican límites por origen e identidad/credencial antes del servicio, con fingerprints HMAC, provider en memoria/Redis y errores genéricos. La concurrencia, expiración y recuperación se verificaron por tests; el smoke runtime fue diferido por instrucción operativa.
+**Estado actualizado (Specs 190/194)**: **VERIFICADO `[V]`**. Ambas operaciones aplican límites por origen e identidad/credencial antes del servicio, con fingerprints HMAC, provider en memoria/Redis y errores genéricos. Concurrencia/fail-closed están cubiertos por tests y umbral, expiración y recuperación cuentan con evidencia runtime previa que no fue reejecutada tras la restricción operativa.
 
 - **Archivo**: [`Mutation.cs`](file:///F:/React/OneITB23/API%20Graphql/OneITB/GraphQL/Mutation.cs#L207-L222)
 - **Líneas**: 207–222
@@ -291,7 +325,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 - **Impacto**: Sin rate limiting dedicado, un atacante puede:
   1. Generar creación masiva de cuentas de empleador (DoS en la base de datos).
   2. Intentar fuerza bruta contra tokens de magic link de 64 caracteres hex (bajo riesgo práctico por entropía, pero el principio de defensa en profundidad exige limitación).
-- **Nota**: El reporte anterior menciona rate limiting global activo. Si cubre estas mutaciones específicas, el riesgo baja a **ALTO**. Se debe verificar la configuración exacta del middleware de rate limiting para confirmar cobertura.
+- **Nota de cierre**: El rate limiting global permanece como defensa adicional. El limiter específico anterior al servicio quedó cubierto por tests y evidencia runtime; el gate seguro de predefensa no vuelve a levantar servidores por defecto.
 
 #### ALTO-1: Token de Magic Link devuelto en la respuesta GraphQL
 
@@ -299,7 +333,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 - **Líneas**: 95–97
 - **Descripción**: El método `RequestMagicLinkAsync` retorna el token directamente al cliente como valor de retorno de la mutación GraphQL. Este token es una **credencial de un solo uso** equivalente a una contraseña temporal.
 - **Impacto**: Si los logs de GraphQL, APM o algún proxy intermedio registran payloads de respuesta, la credencial queda expuesta en texto plano. Además, cualquier actor con acceso a la respuesta HTTP (MITM sobre HTTP, extensiones de navegador, cache de proxy) obtiene la credencial.
-- **Estado posterior (Spec 192)**: **MITIGADO `[I]`**. `requestMagicLink` devuelve `MagicLinkRequestPayload`, el token se envía por SMTP/pickup dentro de un fragmento, SQL guarda SHA-256 y React elimina el fragmento antes del consumo. Schema real y tests prueban ausencia de campos de credencial.
+- **Estado posterior (Specs 192/194)**: **VERIFICADO LOCALMENTE `[V]`**. `requestMagicLink` devuelve `MagicLinkRequestPayload`, el token se envía por pickup dentro de un fragmento, SQL guarda SHA-256 y React elimina el fragmento antes del consumo. Schema, tests y aceptación prueban ausencia de campos de credencial, digest y consumo único. SMTP real sigue bloqueado por configuración externa.
 
 #### ALTO-2: BCrypt sin work factor explícito en flujos de producción
 
@@ -330,9 +364,9 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 
 ---
 
-## 3. Auditoría de cierre original (Histórico)
+## 3. Cierre verificado de las Specs 186-189
 
-### Auditoría de cierre original (2026-07-23)
+### Auditoría de cierre (2026-07-23)
 
 #### Resumen ejecutivo
 

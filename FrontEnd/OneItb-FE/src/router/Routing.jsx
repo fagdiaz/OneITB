@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route, BrowserRouter, Navigate, Link } from 'react-router-dom'
+import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom'
 import { PublicLayout } from '../Components/layout/public/PublicLayout'
 import { Landing } from '../Components/user/Landing'
 import { Login } from '../Components/user/Login'

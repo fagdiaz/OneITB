@@ -5,6 +5,48 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-28] - Spec 194: Final Operational Acceptance
+
+* **Objetivo**: Convertir las remediaciones 190-193 en evidencia operativa reproducible,
+  cerrar la regresion por roles y establecer el Code Freeze local sin ocultar gates
+  externos.
+* **Resultado**:
+  - Se incorporo `scripts/validate-predefense.ps1`, cuyo modo predeterminado ejecuta
+    suites, builds, drift EF, Compose, auditoria de dependencias e higiene sin levantar
+    servidores; el runtime queda opt-in y sujeto a aprobacion explicita.
+  - La aceptacion runtime ya ejecutada valido uploads validos/hostiles/truncados,
+    paginacion social y academica, filtro por autor, silenciamiento sin efectos laterales
+    y Magic Link generico, digerido, de un uso y con limites recuperables.
+  - La regresion de navegador recorrio Estudiante, Profesor, Egresado, Administrador y
+    Empleador; el panel administrativo, hub academico, chat, perfil y Gestor de
+    Postulaciones cargaron sin errores propios de consola.
+  - La secuencia Estudiante -> logout -> Administrador comprobo aislamiento de identidad,
+    cache, mensajes y notificaciones entre sesiones.
+  - Como quick win de seguridad, `react-router-dom` se actualizo a 6.30.4 y las rutas de
+    notificaciones se sanitizan antes de llegar a `<Link>`, con tests para redirects
+    externos, protocol-relative y backslash.
+  - SMTP, Redis, Cloudinary, recorrido Moderador y realtime con dos contextos aislados
+    quedan bloqueados por configuracion/identidad/ambiente exactos; no se declararon como
+    verificados.
+* **Validaciones ejecutadas**:
+  - Backend: 147/147 tests PASS; Release build 0 warnings / 0 errores.
+  - Frontend: 31 archivos / 79 tests PASS; Vite 380 modulos / 0 errores.
+  - EF Core: sin cambios pendientes; Compose valido; `git diff --check` PASS.
+  - Limpieza: puertos 5094/5095/5173 libres, sin PIDs ni fixtures de aceptacion.
+* **Estado**: Specs 190-193 elevadas a `[V]` para los gates locales ejecutados. Code
+  Freeze operativo local alcanzado; proveedores reales conservan estado `[B]`.
+
+## [2026-07-28] - Normalización documental: matriz final de remediaciones 186-193
+
+* **Objetivo**: Alinear `FINAL_AUDIT_REPORT.md` con el corte de código `25cdb9f` y dejar trazabilidad breve, individual y verificable de cada hallazgo de cierre.
+* **Resultado**:
+  - Se consolidaron en una única matriz las Specs 186-193, separando problema, corrección aplicada, evidencia y gate residual.
+  - Se añadieron cierres explícitos junto a C-3, A-3 y A-4, que conservaban únicamente la descripción del hallazgo original.
+  - Se retiró la nota obsoleta que pedía confirmar el rate limiting específico de Magic Link, ya cubierto por Spec 190.
+  - La sección 186-189 dejó de presentarse como histórica y quedó identificada como cierre verificado vigente.
+  - Se preservó la diferencia entre `[V]` e `[I]`; ningún smoke diferido fue declarado como ejecutado.
+* **Estado**: Documentación de auditoría sincronizada con código, roadmap y evidencia disponible.
+
 ## [2026-07-28] - Spec 193: Social Policy and UI Bootstrap Resilience
 
 * **Objetivo**: Cerrar el bypass de silenciamiento administrativo en reacciones de publicaciones y extender la resiliencia global de React por encima de Apollo, Theme y los fallos previos al montaje.
