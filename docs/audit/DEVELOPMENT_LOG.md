@@ -5,6 +5,26 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-29] - Alineación logística con lineamientos oficiales de mesa
+
+* **Objetivo**: Sincronizar la preparación de la defensa con las condiciones comunicadas
+  por el presidente de mesa, sin alterar código, arquitectura, porcentaje ni Quality
+  Gates.
+* **Resultado**:
+  - Se fijó como duración oficial una exposición de 20-30 minutos, con un objetivo
+    interno de 22-25 minutos para controlar transiciones y conservar margen.
+  - Se documentó una copia impresa preferentemente a color, anillada o encuadernada,
+    además de presentación PPTX/PDF, notebook propia probada, cargador, adaptador HDMI,
+    repositorio actualizado y pendrive de contingencia que no se entrega.
+  - Se registró el inicio de mesa a las 09:00, la asignación de aula el mismo día y la
+    recomendación operativa de llegar entre 08:15 y 08:30.
+  - El Manual de Usuario queda formalmente integrado en la sección 6 de la memoria
+    técnica; no requiere un entregable separado según confirmación de la cátedra.
+  - Roadmap, memoria 1.4, guía de maquetación 2.2 y estado documental quedaron
+    sincronizados con estas condiciones.
+* **Estado**: Ajuste exclusivamente logístico/documental completado `[I]`; porcentajes y
+  evidencia técnica permanecen sin cambios.
+
 ## [2026-07-28] - Plan operativo de cierre académico y entrega final
 
 * **Objetivo**: Convertir el estado Release Candidate académico en un plan trazable de

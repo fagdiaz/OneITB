@@ -7,8 +7,8 @@
 **Alumno/a:** [Completar nombre y apellido]<br>
 **Docente/s:** [Completar]<br>
 **Ciclo lectivo:** 2026<br>
-**Versión del documento:** 1.3 - Aceptación operacional, plan de defensa y cierre APA 7<br>
-**Fecha de corte técnico-documental:** 28 de julio de 2026
+**Versión del documento:** 1.4 - Condiciones oficiales de mesa y cierre logístico<br>
+**Fecha de corte técnico-documental:** 29 de julio de 2026
 
 > **Alcance de esta memoria.** Este documento describe el estado comprobable del repositorio OneITB23 al momento de su redacción. Distingue entre funcionalidades implementadas, validaciones automatizadas y verificaciones externas todavía pendientes. Los nombres y versiones se corresponden con el código fuente: .NET 8 (Microsoft, 2023a), Entity Framework Core 8.0.6 (Microsoft, 2023b), Hot Chocolate 14.2.0 (ChilliCream, s. f.), GraphQL (GraphQL Foundation, 2021), React 18 (React Team, 2022), Apollo Client 3.7 (Apollo GraphQL, s. f.), Vite 8 (Vite Team, 2026), Tailwind CSS 4 (Wathan, 2025) y SQL Server 2022 (Microsoft, 2025).
 
@@ -1050,9 +1050,9 @@ mantienen en `docs/project_docs/ROADMAP.md`.
 | Recrear DER y tres gráficos de gestión en Draw.io | 4-6 h | Fuentes editables y exportaciones consistentes |
 | Convertir a DOCX y aplicar APA 7 | 3-4 h | Documento editable con índice, estilos y figuras |
 | Auditar y exportar PDF final | 2-3 h | PDF revisado página por página |
-| Preparar guion, respaldo y ensayo | 2-3 h | Presentación de 12-15 minutos con contingencia |
+| Preparar guion, respaldo y ensayo | 4-5 h | Exposición base de 22-25 minutos dentro del rango oficial de 20-30 minutos, con contingencia |
 
-El cierre académico pendiente demanda aproximadamente **20 a 29 horas efectivas**,
+El cierre académico pendiente demanda aproximadamente **22 a 31 horas efectivas**,
 equivalentes a **tres o cuatro jornadas concentradas**. Los proveedores públicos,
 Google SSO, benchmark BCrypt y antivirus/CDR requieren entre **20 y 43 horas técnicas**
 adicionales, además de tiempos de aprobación; no bloquean la defensa controlada ni deben
@@ -1061,6 +1061,10 @@ confundirse con funcionalidades ya verificadas.
 ---
 
 ## 6. MANUAL DE USUARIO
+
+Esta sección constituye el Manual de Usuario requerido para la entrega académica. De
+acuerdo con la confirmación del presidente de mesa, no se presenta como documento
+separado porque sus flujos se encuentran integrados en la memoria técnica general.
 
 ### 6.1 Acceso y registro
 
@@ -1233,11 +1237,36 @@ La presentación debe diferenciar con precisión:
 - **Condicional:** requiere variables, secretos o proveedor externo.
 - **Pendiente de validación manual:** requiere recorrido visual final en navegador.
 
-Al corte del 28 de julio de 2026, SMTP con Mailpit y Redis local poseen evidencia de
+Al corte del 29 de julio de 2026, SMTP con Mailpit y Redis local poseen evidencia de
 integración; no equivalen a validación de proveedor público. Google SSO, Cloudinary
 productivo, Redis administrado, SMTP público y el handshake WebSocket con dos navegadores
 permanecen identificados como gates. Esta distinción evita sobreafirmaciones, facilita
 preguntas técnicas y demuestra una gestión profesional de riesgos y evidencia.
+
+### 7.9 Condiciones oficiales de presentación y entrega
+
+La mesa evaluatoria comienza el **viernes 7 de agosto de 2026 a las 09:00**. El aula o
+laboratorio será informado ese mismo día. La instancia comprende exposición,
+demostración funcional y preguntas de los integrantes de la mesa. La duración oficial
+de la exposición es de **20 a 30 minutos** y puede extenderse por las preguntas o por la
+cantidad de integrantes. Para controlar el tiempo se planifica internamente una
+presentación base de **22 a 25 minutos**.
+
+La entrega y el equipamiento previstos son:
+
+1. una copia impresa de esta memoria técnica, preferentemente a color, anillada o
+   encuadernada;
+2. presentación en PowerPoint, PDF o formato equivalente;
+3. notebook propia con OneITB23 instalado, configurado y probado, además del cargador;
+4. adaptador HDMI compatible con la notebook, aun cuando la institución normalmente
+   disponga de adaptadores;
+5. repositorio actualizado y un respaldo digital del sistema, la documentación y la
+   presentación en un pendrive que no debe entregarse;
+6. computadora institucional como alternativa de contingencia.
+
+No existe una plantilla institucional adicional. Como recomendación operativa se prevé
+llegar entre las 08:15 y las 08:30 para confirmar aula, proyección y conectividad antes
+del inicio de la mesa.
 
 ---
 

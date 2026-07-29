@@ -3,13 +3,13 @@
 **Proyecto:** OneITB23<br>
 **Documento fuente:** `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`<br>
 **Resultado esperado:** archivo `.docx` editable y archivo `.pdf` listo para presentar<br>
-**Versión de la guía:** 2.1 - Plan operativo, cierre de evidencia y control editorial<br>
+**Versión de la guía:** 2.2 - Condiciones oficiales de mesa y contingencia de defensa<br>
 **Inventario gráfico vigente:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos
 **Criterio editorial:** APA 7, sujeto a los requisitos particulares del Instituto Tecnológico Beltrán
 
 > El documento Markdown es la fuente canónica. No debe reemplazarse ni editarse destructivamente durante la maquetación. Se recomienda trabajar sobre una copia y conservar los diagramas originales en formato Mermaid.
 
-> **Estado de entrada (28 de julio de 2026).** La memoria fuente está alineada con el
+> **Estado de entrada (29 de julio de 2026).** La memoria fuente está alineada con el
 > Release Candidate académico: 152 pruebas backend, 79 frontend, builds limpios, EF sin
 > drift, Redis local y SMTP Mailpit verificados. Todavía no existen en esta carpeta los
 > diagramas exportados, `DOCUMENTO_MAQUETACION.md`, el DOCX ni el PDF. Esta guía convierte
@@ -114,11 +114,11 @@ plan de cierre de `docs/project_docs/ROADMAP.md`.
 | 3 | `DF-04` | Recrear DER, Cronograma Macro, Calendario Scrum y PERT | 4-6 h | 4 archivos editables y 4 exportaciones |
 | 4 | `DF-05` | Crear documento de maquetación, DOCX e índice | 3-4 h | DOCX APA editable y completo |
 | 5 | `DF-06` | Auditar, corregir y exportar PDF | 2-3 h | PDF revisado página por página |
-| 6 | `DF-07` | Preparar paquete y ensayo de defensa | 2-3 h | Guion, respaldo y ensayo de 12-15 min |
+| 6 | `DF-07` | Preparar paquete y ensayo de defensa | 4-5 h | Guion, respaldo y exposición base de 22-25 min dentro del rango oficial de 20-30 min |
 
-El tiempo documental pendiente es de **13 h 20 min a 19 h 30 min**. Debe reservarse
+El tiempo documental pendiente es de **15 h 20 min a 21 h 30 min**. Debe reservarse
 una jornada adicional para los gates técnicos `CF-01` a `CF-06`; el cierre académico
-completo requiere aproximadamente **20-29 horas efectivas** o **3-4 jornadas**.
+completo requiere aproximadamente **22-31 horas efectivas** o **3-4 jornadas**.
 
 **Ruta crítica documental:** `DF-01 -> DF-03/DF-04 -> DF-05 -> DF-06 -> DF-07`.
 Los diagramas Mermaid y los cuatro gráficos manuales pueden producirse en paralelo.
@@ -561,22 +561,51 @@ El `.docx` debe considerarse el archivo de edición final; el PDF es la versión
 
 ## 5. CIERRE, ENTREGA Y DEFENSA
 
-### 5.1 Paquete mínimo entregable
+### 5.1 Condiciones oficiales de la mesa
+
+La mesa comienza el **viernes 7 de agosto de 2026 a las 09:00**. El aula o laboratorio
+se confirmará ese mismo día. La instancia incluye exposición, demostración funcional y
+preguntas. La duración oficial de la exposición es de **20 a 30 minutos** y puede
+extenderse por las preguntas o por la cantidad de integrantes.
+
+La cátedra confirmó los siguientes requisitos:
+
+1. llevar una presentación en PowerPoint, PDF o formato equivalente;
+2. entregar **una copia impresa** de la documentación técnica, preferentemente a color,
+   anillada o encuadernada;
+3. disponer del sistema, documentación y presentación en formato digital;
+4. mantener actualizado y disponible el repositorio;
+5. llevar notebook propia con el sistema instalado, configurado y probado, aunque exista
+   una computadora institucional;
+6. llevar adaptador HDMI compatible porque la disponibilidad institucional no está
+   garantizada;
+7. llevar un pendrive de contingencia que no deberá entregarse.
+
+El Manual de Usuario no constituye un entregable separado: está integrado en la sección
+6 de `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`, conforme a la indicación del presidente
+de mesa. No existe otra plantilla institucional obligatoria.
+
+Como recomendación operativa, llegar entre las **08:15 y las 08:30** para identificar
+el aula, conectar el equipo y comprobar proyección y audio antes del inicio.
+
+### 5.2 Paquete mínimo entregable
 
 El paquete académico se considera completo cuando contiene:
 
-1. `OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx`, editable y sin comentarios.
-2. `OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf`, idéntico al DOCX aprobado.
-3. Las 13 figuras en formato de entrega y sus fuentes editables.
-4. El Markdown canónico utilizado para producir el documento.
-5. El archivo SHA-256 del PDF revisado.
-6. Un archivo o lámina breve con el SHA del código presentado, versión del sistema y
+1. una copia impresa, preferentemente a color, anillada o encuadernada, de la memoria aprobada;
+2. `OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx`, editable y sin comentarios;
+3. `OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf`, idéntico al DOCX aprobado;
+4. presentación `OneITB23_Defensa_2026.pptx` y su exportación PDF;
+5. las 13 figuras en formato de entrega y sus fuentes editables;
+6. el Markdown canónico utilizado para producir el documento;
+7. el archivo SHA-256 del PDF revisado;
+8. un archivo o lámina breve con el SHA del código presentado, versión del sistema y
    fecha del último gate.
 
 No incluir en el paquete contraseñas demo, secretos, cadenas de conexión, archivos
 `.env`, buzones SMTP capturados ni datos personales que no sean necesarios.
 
-### 5.2 Control de coherencia con el software
+### 5.3 Control de coherencia con el software
 
 Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
 
@@ -593,40 +622,67 @@ Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
 Si una nueva ejecución cambia una cifra, actualizar primero el Roadmap y la evidencia,
 después la memoria y por último el DOCX/PDF. Nunca corregir solo el archivo Word.
 
-### 5.3 Ensayo técnico de la defensa
+### 5.4 Ensayo técnico de la defensa
 
-Preparar un recorrido de **12 a 15 minutos**:
+La duración oficial es de **20 a 30 minutos**. Preparar un recorrido interno de
+**22 a 25 minutos** para conservar margen de transición y evitar excederse antes de las
+preguntas:
 
-1. **Problema y objetivo (1-2 min):** fragmentación académica y propuesta OneITB23.
-2. **Arquitectura (2 min):** React/Apollo, GraphQL/Hot Chocolate, EF Core/SQL Server y
+1. **Problema institucional y objetivo (2 min):** fragmentación académica y propuesta
+   OneITB23.
+2. **Alcance, actores y módulos (2 min):** roles, límites y recorrido general.
+3. **Arquitectura y seguridad (3 min):** React/Apollo, GraphQL/Hot Chocolate, EF
+   Core/SQL Server, autenticación y
    adaptadores externos.
-3. **Demostración funcional (6-7 min):** identidad, muro multimedia, módulo académico,
+4. **Demostración funcional (10-12 min):** identidad, muro multimedia, módulo académico,
    chat/notificaciones, moderación y Bolsa de Trabajo.
-4. **Calidad y seguridad (2 min):** autorización declarativa, uploads, paginación,
+5. **Calidad y evidencia (3 min):** autorización declarativa, uploads, paginación,
    aislamiento de sesión, pruebas y auditoría.
-5. **Estado y evolución (1-2 min):** Release Candidate académico, gates externos y
+6. **Estado y evolución (2 min):** Release Candidate académico, gates externos y
    próximos pasos.
 
 Ejecutar al menos un ensayo con cronómetro y otro utilizando únicamente el material de
 respaldo. La demostración debe poder continuar si falla Internet.
 
-### 5.4 Plan de contingencia
+### 5.5 Plan de contingencia
 
-Conservar localmente, en una carpeta separada de los secretos:
+Preparar la notebook propia con cargador y adaptador HDMI. La computadora institucional
+se considera respaldo y no entorno principal. Conservar localmente y en un pendrive, en
+una carpeta separada de los secretos:
 
 - PDF final y una copia en almacenamiento removible;
-- presentación o índice de secciones;
+- presentación en PPTX y PDF;
 - capturas de los flujos por rol;
 - evidencia resumida de tests/builds;
 - exportación de los diagramas;
 - instrucciones para restaurar Docker SQL y ejecutar el seeder;
-- una copia del commit o tag presentado.
+- una copia del commit o tag presentado;
+- snapshot offline del repositorio.
+
+Estructura recomendada:
+
+```text
+OneITB23_Defensa/
+|-- Presentacion/
+|   |-- OneITB23_Defensa_2026.pptx
+|   `-- OneITB23_Defensa_2026.pdf
+|-- Documentacion/
+|   |-- OneITB23_Memoria_Tecnica_PP3_2026.pdf
+|   `-- OneITB23_Memoria_Tecnica_PP3_2026.docx
+|-- Evidencia/
+|   |-- resumen-validaciones.pdf
+|   `-- capturas-demo/
+|-- Repositorio/
+|   `-- OneITB23-source.zip
+`-- LEEME_DEFENSA.txt
+```
 
 No depender de Google SSO, SMTP público, Cloudinary ni Redis administrado durante la
 defensa. La demo controlada debe utilizar los fallbacks y contenedores locales ya
-verificados.
+verificados. El pendrive no se entrega y no debe contener `.env`, secretos, contraseñas,
+tokens, cadenas de conexión ni datos personales innecesarios.
 
-### 5.5 Definition of Done documental
+### 5.6 Definition of Done documental
 
 - [ ] Portada e información institucional completadas.
 - [ ] Trece figuras exportadas, numeradas y revisadas.
@@ -636,8 +692,14 @@ verificados.
 - [ ] PDF revisado en las cuatro pasadas y sin instrucciones editoriales visibles.
 - [ ] Cifras de pruebas, estado y pendientes coinciden con el Roadmap.
 - [ ] SHA-256 del PDF generado después de la última corrección.
-- [ ] Paquete de respaldo disponible sin secretos.
-- [ ] Ensayo cronometrado realizado y límites externos explicados correctamente.
+- [ ] Una copia impresa, preferentemente a color, anillada o encuadernada, preparada para la mesa.
+- [ ] Presentación disponible en PPTX y PDF.
+- [ ] Notebook, cargador y adaptador HDMI probados.
+- [ ] Pendrive verificado, sin secretos y con sistema, documentación, presentación y snapshot.
+- [ ] Repositorio remoto actualizado y corte presentado identificado por SHA.
+- [ ] Ensayo cronometrado de 22-25 minutos realizado dentro del rango oficial de 20-30.
+- [ ] Llegada planificada para las 08:15-08:30; aula y equipamiento se confirman ese día.
+- [ ] Límites externos y plan de contingencia explicados correctamente.
 
 Solo después de completar esta lista debe utilizarse la palabra **final** en el nombre
 del paquete institucional.

@@ -1,6 +1,6 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-07-28
+**Ultima revision**: 2026-07-29
 
 **Estado global**: 99% (115 de 116 items)
 
@@ -275,14 +275,33 @@ esperas institucionales, aprobacion de credenciales ni incidentes de terceros.
 | `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | 4 fuentes editables y 4 PNG/SVG consistentes con el modelo |
 | `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[ ] [P]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable, estilos APA, tablas/figuras dentro de margenes |
 | `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[ ] [P]` | 2-3 h | `DF-05` | PDF revisado pagina por pagina, enlaces y accesibilidad basica |
-| `DF-07` | Preparar paquete de defensa, guion y ensayo cronometrado | `[ ] [P]` | 2-3 h | `CF-06` y `DF-06` | Demo de 12-15 min, fallback y respuestas sobre limites reales |
+| `DF-07` | Preparar paquete de defensa, guion y ensayo cronometrado | `[ ] [P]` | 4-5 h | `CF-06` y `DF-06` | Exposicion base de 22-25 min dentro del rango oficial de 20-30 min, fallback y respuestas sobre limites reales |
 
-**Subtotal pendiente estimado:** **13 h 20 min a 19 h 30 min**, porque `DF-02` ya
+**Subtotal pendiente estimado:** **15 h 20 min a 21 h 30 min**, porque `DF-02` ya
 quedo implementado documentalmente. La entrega academica completa, incluyendo el cierre
-tecnico del bloque A, requiere aproximadamente **20-29 h efectivas**, equivalentes a
+tecnico del bloque A, requiere aproximadamente **22-31 h efectivas**, equivalentes a
 **3-4 jornadas concentradas**.
 
-### C. Gates productivos externos
+### C. Condiciones oficiales y logistica de mesa
+
+La mesa comienza el **viernes 7 de agosto de 2026 a las 09:00**. El aula o laboratorio
+se confirmara ese mismo dia. La duracion oficial de exposicion es **20-30 minutos** y
+puede extenderse por preguntas; el objetivo interno de **22-25 minutos** deja margen
+para transiciones sin redefinir el requisito de la catedra.
+
+| ID | Tarea | Estado | Estimacion | Condicion oficial o criterio |
+|---|---|---|---:|---|
+| `LG-01` | Imprimir una copia de la memoria tecnica, preferentemente a color, y anillarla o encuadernarla | `[ ] [P]` | 60-90 min de preparacion, mas plazo de imprenta | Una copia fisica para la mesa |
+| `LG-02` | Preparar notebook propia, cargador y adaptador HDMI compatible | `[ ] [P]` | 60-90 min | Sistema instalado, configurado y probado; el equipo institucional queda como respaldo |
+| `LG-03` | Crear y verificar pendrive de contingencia | `[ ] [P]` | 45-60 min | Sistema, repositorio, memoria DOCX/PDF y presentacion PPTX/PDF; el pendrive no se entrega |
+| `LG-04` | Confirmar repositorio remoto actualizado y conservar un snapshot offline | `[ ] [P]` | 30-45 min | Corte presentado identificable y recuperable sin Internet |
+| `LG-05` | Llegar entre 08:15 y 08:30 y confirmar aula/equipamiento | `[ ] [P]` | 15-30 min in situ | Recomendacion operativa; la mesa inicia a las 09:00 |
+
+Las estimaciones `LG-01` a `LG-04` se solapan con `DF-05` a `DF-07` y no deben sumarse
+por segunda vez al subtotal documental. No se requiere un Manual de Usuario separado:
+su contenido permanece integrado en la seccion 6 de la memoria tecnica.
+
+### D. Gates productivos externos
 
 Estos puntos no bloquean la defensa controlada y no deben presentarse como verificados
 hasta ejecutarse en el ambiente de destino.
