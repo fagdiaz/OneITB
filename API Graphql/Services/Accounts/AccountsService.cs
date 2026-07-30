@@ -49,6 +49,9 @@ namespace Services.Accounts
                 await _uow.CompleteAsync(cancellationToken);
             }
 
+            if (string.IsNullOrWhiteSpace(account.PasswordHash))
+                throw CreateAuthenticationError();
+
             if (!_passwordHasher.Verify(input.Password, account.PasswordHash))
             {
                 account.FailedLoginAttempts++;
@@ -79,7 +82,13 @@ namespace Services.Accounts
                 await _uow.CompleteAsync(cancellationToken);
 
             string token = _jwtTokenService.IssueAccessToken(user);
-            return new AuthPayload(token, user.FirstName, true, user.Id, user.Role);
+            return new AuthPayload(
+                token,
+                user.FirstName,
+                true,
+                user.Id,
+                user.Role,
+                user.Account.Email);
         }
 
         public Account? GetById(Guid id)

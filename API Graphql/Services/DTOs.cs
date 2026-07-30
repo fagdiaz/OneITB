@@ -42,7 +42,13 @@ namespace OneITB.Core.Services.Interfaces
 
     public record UserPayload(Guid Id, bool Success, string Message);
 
-    public record AuthPayload(string Token, string Username, bool IsAuthenticated, Guid Id, string Role);
+    public record AuthPayload(
+        string Token,
+        string Username,
+        bool IsAuthenticated,
+        Guid Id,
+        string Role,
+        string? Email = null);
 
     public record UpdateProfileInput(
         [property: GraphQLType(typeof(NonNullType<IdType>))]
@@ -163,6 +169,7 @@ namespace OneITB.Core.Services.Interfaces
         string LastName,
         string FullName,
         string Role,
+        bool InstitutionalAccountLinked,
         string? Biography,
         string? LinkedIn,
         string? Facebook,

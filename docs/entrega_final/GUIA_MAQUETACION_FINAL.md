@@ -3,15 +3,16 @@
 **Proyecto:** OneITB23<br>
 **Documento fuente:** `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`<br>
 **Resultado esperado:** archivo `.docx` editable y archivo `.pdf` listo para presentar<br>
-**Versión de la guía:** 2.2 - Condiciones oficiales de mesa y contingencia de defensa<br>
+**Versión de la guía:** 2.4 - Identidad institucional y contingencia de defensa<br>
 **Inventario gráfico vigente:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos
 **Criterio editorial:** APA 7, sujeto a los requisitos particulares del Instituto Tecnológico Beltrán
 
 > El documento Markdown es la fuente canónica. No debe reemplazarse ni editarse destructivamente durante la maquetación. Se recomienda trabajar sobre una copia y conservar los diagramas originales en formato Mermaid.
 
-> **Estado de entrada (29 de julio de 2026).** La memoria fuente está alineada con el
-> Release Candidate académico: 152 pruebas backend, 79 frontend, builds limpios, EF sin
-> drift, Redis local y SMTP Mailpit verificados. Todavía no existen en esta carpeta los
+> **Estado de entrada (30 de julio de 2026).** La memoria fuente está alineada con el
+> Release Candidate académico: 174 pruebas backend, 82 frontend, builds limpios, EF sin
+> drift, base demo canónica, Microsoft Entra implementado, Redis local y SMTP Mailpit
+> verificados. Todavía no existen en esta carpeta los
 > diagramas exportados, `DOCUMENTO_MAQUETACION.md`, el DOCX ni el PDF. Esta guía convierte
 > esos faltantes en una secuencia verificable y no debe utilizarse para declarar como
 > productivos los proveedores externos pendientes.
@@ -110,7 +111,7 @@ plan de cierre de `docs/project_docs/ROADMAP.md`.
 | Orden | ID | Trabajo | Estimación | Salida verificable |
 |---:|---|---|---:|---|
 | 1 | `DF-01` | Completar portada y datos institucionales | 20-30 min | No quedan marcadores `[Completar]` |
-| 2 | `DF-03` | Exportar los 9 diagramas Mermaid recomendados | 2-3 h | SVG y PNG numerados, legibles y sin errores |
+| 2 | `DF-03` | Exportar los 10 diagramas Mermaid recomendados | 2-3 h | SVG y PNG numerados, legibles y sin errores |
 | 3 | `DF-04` | Recrear DER, Cronograma Macro, Calendario Scrum y PERT | 4-6 h | 4 archivos editables y 4 exportaciones |
 | 4 | `DF-05` | Crear documento de maquetación, DOCX e índice | 3-4 h | DOCX APA editable y completo |
 | 5 | `DF-06` | Auditar, corregir y exportar PDF | 2-3 h | PDF revisado página por página |
@@ -611,11 +612,12 @@ Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
 
 | Afirmación documental | Fuente de comprobación |
 |---|---|
-| 99 % global y 115/116 ítems | `docs/project_docs/ROADMAP.md` |
-| 152 pruebas backend y 79 frontend | evidencia de Spec 195 y `DOCUMENTATION_STATUS.md` |
+| 100 % global y 116/116 ítems | `docs/project_docs/ROADMAP.md` |
+| 174 pruebas backend y 82 frontend | evidencia de Spec 197 y `DOCUMENTATION_STATUS.md` |
 | EF Core sin drift | salida del gate de predefensa |
+| Backup, 33 migraciones, seed doble y seis roles | evidencia de Specs 196-197 |
 | Redis local y SMTP Mailpit verificados | evidencia de Spec 195 |
-| Google SSO bloqueado | Roadmap y auditoría final |
+| Microsoft Entra implementado; tenant real pendiente | Roadmap y auditoría final |
 | Feature Complete core | Roadmap, sin reinterpretar P5/P6 como deuda académica |
 | Release Candidate académico | sección 7.8 de la memoria |
 
@@ -656,6 +658,7 @@ una carpeta separada de los secretos:
 - evidencia resumida de tests/builds;
 - exportación de los diagramas;
 - instrucciones para restaurar Docker SQL y ejecutar el seeder;
+- salida sanitizada de `scripts/validate-demo-database.ps1`;
 - una copia del commit o tag presentado;
 - snapshot offline del repositorio.
 
@@ -677,10 +680,16 @@ OneITB23_Defensa/
 `-- LEEME_DEFENSA.txt
 ```
 
-No depender de Google SSO, SMTP público, Cloudinary ni Redis administrado durante la
+No depender de la aceptación Microsoft Entra, SMTP público, Cloudinary ni Redis administrado durante la
 defensa. La demo controlada debe utilizar los fallbacks y contenedores locales ya
 verificados. El pendrive no se entrega y no debe contener `.env`, secretos, contraseñas,
 tokens, cadenas de conexión ni datos personales innecesarios.
+
+El día anterior y nuevamente en el equipo que se llevará a la mesa, ejecutar
+`scripts/validate-demo-database.ps1`. Conservar el backup verificado en la notebook,
+pero **no** copiar archivos `.bak` al pendrive académico ni al repositorio: pueden
+contener datos y hashes locales. La contingencia debe apoyarse en el runbook, el código,
+las migraciones y capturas de la demostración, no en distribuir la base.
 
 ### 5.6 Definition of Done documental
 
@@ -695,6 +704,7 @@ tokens, cadenas de conexión ni datos personales innecesarios.
 - [ ] Una copia impresa, preferentemente a color, anillada o encuadernada, preparada para la mesa.
 - [ ] Presentación disponible en PPTX y PDF.
 - [ ] Notebook, cargador y adaptador HDMI probados.
+- [ ] SQL Docker saludable y `scripts/validate-demo-database.ps1` en PASS con seis roles.
 - [ ] Pendrive verificado, sin secretos y con sistema, documentación, presentación y snapshot.
 - [ ] Repositorio remoto actualizado y corte presentado identificado por SHA.
 - [ ] Ensayo cronometrado de 22-25 minutos realizado dentro del rango oficial de 20-30.

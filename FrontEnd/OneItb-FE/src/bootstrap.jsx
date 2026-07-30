@@ -65,7 +65,13 @@ export const bootstrapApplication = async ({
   try {
     resolvedRoot ??= ensureApplicationRoot();
     reactRoot = createRootFactory(resolvedRoot);
-    const { ApplicationRoot } = await loadApplication();
+    const {
+      ApplicationRoot,
+      initializeMicrosoftIdentity,
+    } = await loadApplication();
+    if (initializeMicrosoftIdentity) {
+      await initializeMicrosoftIdentity();
+    }
     reactRoot.render(<ApplicationRoot />);
     return reactRoot;
   } catch (error) {

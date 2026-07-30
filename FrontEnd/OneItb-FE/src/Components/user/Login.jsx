@@ -4,6 +4,8 @@ import { useMutation } from '@apollo/client'
 import { AUTHENTICATE_USER } from '../../data/graphql/mutations/authenticateUser'
 import useAuth from '../../hooks/useAuth'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { MicrosoftInstitutionalLogin } from '../auth/MicrosoftInstitutionalLogin'
+import { isMicrosoftIdentityAvailable } from '../../auth/microsoftEntra'
 
 /**
  * Login — REFACTOR 037
@@ -54,13 +56,13 @@ export const Login = () => {
       // ya habrá capturado el mensaje — aquí hacemos early-return para no crashear.
       if (!data?.login) return;
 
-      const { token, username, isAuthenticated, id, role } = data.login;
+      const { token, username, isAuthenticated, id, role, email } = data.login;
 
       if (isAuthenticated) {
-        const userObj = { id, username, email: form.email, role };
-        await login(token, userObj);
-        setSaved('login');
-        setTimeout(() => navigate('/feed'), 1000);
+        await completeLogin(
+          { token, username, isAuthenticated, id, role, email },
+          form.email,
+        );
       } else {
         setSaved('error');
         setLoginError('El backend rechazó las credenciales.');
@@ -73,6 +75,39 @@ export const Login = () => {
       setSaved('error');
       setLoginError(gqlMessage || netMessage || err.message || 'No se pudo completar el inicio de sesión.');
     }
+  };
+
+  const completeLogin = async (payload, fallbackEmail = '') => {
+    const {
+      token: authToken,
+      username,
+      isAuthenticated,
+      id,
+      role,
+      email,
+    } = payload;
+    if (!isAuthenticated || !authToken || !id) {
+      throw new Error('El backend rechazó las credenciales.');
+    }
+
+    await login(authToken, {
+      id,
+      username,
+      email: email || fallbackEmail,
+      role,
+    });
+    setSaved('login');
+    setTimeout(() => navigate('/feed'), 1000);
+  };
+
+  const handleMicrosoftError = (message) => {
+    if (!message) {
+      setSaved('not_sended');
+      setLoginError('');
+      return;
+    }
+    setSaved('error');
+    setLoginError(message);
   };
 
   const [authenticateUser, { loading, error: mutationError }] = useMutation(AUTHENTICATE_USER, {
@@ -173,6 +208,25 @@ export const Login = () => {
             </button>
 
           </form>
+
+          {isMicrosoftIdentityAvailable() && (
+            <>
+              <div className="my-6 flex items-center gap-3" aria-hidden="true">
+                <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  o
+                </span>
+                <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+              </div>
+              <MicrosoftInstitutionalLogin
+                onAuthenticated={completeLogin}
+                onError={handleMicrosoftError}
+              />
+              <p className="mt-3 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">
+                Exclusivo para cuentas institucionales autorizadas de Microsoft 365.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -57,6 +57,12 @@ services:
       Jwt__Key: "${ONEITB_JWT_KEY:?Set ONEITB_JWT_KEY with at least 32 characters}"
       PasswordHashing__WorkFactor: "${ONEITB_PASSWORD_HASHING_WORK_FACTOR:-12}"
       MagicLink__FrontendBaseUrl: "${ONEITB_MAGIC_LINK_FRONTEND_URL:?Set ONEITB_MAGIC_LINK_FRONTEND_URL}"
+      EntraId__Enabled: "${ONEITB_ENTRA_ENABLED:-false}"
+      EntraId__TenantId: "${ONEITB_ENTRA_TENANT_ID:-}"
+      EntraId__ClientId: "${ONEITB_ENTRA_API_CLIENT_ID:-}"
+      EntraId__Audience: "${ONEITB_ENTRA_API_CLIENT_ID:-}"
+      EntraId__RequiredScope: "${ONEITB_ENTRA_REQUIRED_SCOPE:-access_as_user}"
+      EntraId__AllowedDomain: "${ONEITB_ENTRA_ALLOWED_DOMAIN:-itbeltran.com.ar}"
       Cors__AllowedOrigins__0: "${ONEITB_CORS_ORIGIN:-http://localhost}"
       CloudinarySettings__Url: "${ONEITB_CLOUDINARY_URL:-}"
       SmtpSettings__Host: "${ONEITB_SMTP_HOST:?Set ONEITB_SMTP_HOST}"
@@ -96,6 +102,11 @@ services:
     build:
       context: FrontEnd/OneItb-FE
       dockerfile: Dockerfile
+      args:
+        VITE_ENTRA_CLIENT_ID: "${ONEITB_ENTRA_SPA_CLIENT_ID:-}"
+        VITE_ENTRA_TENANT_ID: "${ONEITB_ENTRA_TENANT_ID:-}"
+        VITE_ENTRA_API_SCOPE: "${ONEITB_ENTRA_API_SCOPE:-}"
+        VITE_ENTRA_REDIRECT_URI: "${ONEITB_ENTRA_REDIRECT_URI:-}"
     image: oneitb23-web:prod
     container_name: oneitb23-prod-web
     depends_on:

@@ -37,6 +37,6 @@ Este entregable resume el alcance vigente. La fuente completa y versionada es [s
 
 - Regresion autenticada en navegador del panel admin, hub academico y Gestor de Postulaciones.
 - Smoke tests productivos con Redis, Cloudinary y SMTP reales.
-- Google SSO productivo con credenciales y callbacks institucionales.
+- Aceptacion de Microsoft Entra con App Registrations, consentimiento y cuenta real del tenant institucional.
 - Provisioning y smoke test en Azure App Service/Azure SQL.
 - App movil nativa React Native + Expo.

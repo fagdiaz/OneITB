@@ -1,5 +1,6 @@
 using HotChocolate;
 using Microsoft.EntityFrameworkCore;
+using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
 using Services.Accounts;
 using Services.Auth;
@@ -60,6 +61,44 @@ public sealed class AccountsServiceTests
             service.Login(new LoginInput("inactive@itbeltran.test", "Test1234!")));
 
         Assert.Contains("incorrectos", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Login_ExternalOnlyAccount_RejectsWithoutPasswordLockout()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        User user = ServiceTestData.CreateUser(
+            Guid.NewGuid(),
+            "Ana",
+            "Perez",
+            "Estudiante",
+            true);
+        var account = new OneItb.Entities.Models.Account
+        {
+            Id = user.Id,
+            Email = "ana.perez@itbeltran.com.ar",
+            PasswordHash = null,
+            ExternalProvider = MicrosoftEntraOptions.ProviderName,
+            ExternalTenantId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            ExternalSubjectId = "object-123",
+            CreatedAt = DateTime.UtcNow,
+            User = user
+        };
+        user.Account = account;
+        context.Accounts.Add(account);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        using var unitOfWork = new UnitOfWork(context);
+        var service = CreateService(unitOfWork);
+
+        GraphQLException exception = await Assert.ThrowsAsync<GraphQLException>(() =>
+            service.Login(new LoginInput(account.Email, "AnyPassword123!")));
+
+        Assert.Contains("incorrectos", exception.Message, StringComparison.OrdinalIgnoreCase);
+        var persisted = await context.Accounts.AsNoTracking().SingleAsync();
+        Assert.Equal(0, persisted.FailedLoginAttempts);
+        Assert.Null(persisted.LockoutEnd);
     }
 
     [Fact]
@@ -146,11 +185,12 @@ public sealed class AccountsServiceTests
             new LoginInput("student@itbeltran.test", "Test1234!"));
 
         Assert.True(payload.IsAuthenticated);
-        string upgradedHash = await context.Accounts
+        string? upgradedHash = await context.Accounts
             .AsNoTracking()
             .Where(item => item.Id == ServiceTestData.StudentUserId)
             .Select(item => item.PasswordHash)
             .SingleAsync();
+        Assert.NotNull(upgradedHash);
         Assert.False(passwordHasher.NeedsRehash(upgradedHash));
     }
 

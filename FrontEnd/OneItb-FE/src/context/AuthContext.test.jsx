@@ -30,9 +30,15 @@ const graphQlProviderMock = vi.hoisted(() => {
   };
 });
 
+const microsoftSessionMock = vi.hoisted(() => ({
+  clearMicrosoftIdentitySession: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock('../data/graphql/GraphqlProvider', () => ({
   GraphQLProvider: graphQlProviderMock.api,
 }));
+
+vi.mock('../auth/microsoftEntra', () => microsoftSessionMock);
 
 import { AuthContext, AuthProvider } from './AuthContext';
 
@@ -60,6 +66,7 @@ describe('AuthContext session isolation', () => {
     localStorage.clear();
     sessionStorage.clear();
     graphQlProviderMock.clearHandler();
+    microsoftSessionMock.clearMicrosoftIdentitySession.mockClear();
     Object.values(graphQlProviderMock.api).forEach((value) => {
       value?.mockClear?.();
     });
@@ -89,12 +96,14 @@ describe('AuthContext session isolation', () => {
     expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
     expect(localStorage.getItem('token')).toBeNull();
     expect(graphQlProviderMock.api.invalidateSessionTransport).toHaveBeenCalledTimes(1);
+    expect(microsoftSessionMock.clearMicrosoftIdentitySession).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       screen.getByRole('button', { name: 'login-b' }).click();
     });
     expect(graphQlProviderMock.api.waitForSessionTermination).toHaveBeenCalled();
     expect(graphQlProviderMock.api.invalidateSessionTransport).toHaveBeenCalledTimes(2);
+    expect(microsoftSessionMock.clearMicrosoftIdentitySession).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId('user-id')).toHaveTextContent('user-b');
     expect(screen.getByTestId('user-role')).toHaveTextContent('Moderador');
     expect(localStorage.getItem('token')).toBe('token-b');

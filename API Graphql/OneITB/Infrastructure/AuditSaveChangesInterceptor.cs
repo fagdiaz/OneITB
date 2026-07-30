@@ -18,6 +18,7 @@ namespace OneItb.GraphQL.Infrastructure
 
         private static readonly HashSet<string> AuditedEntities = new(StringComparer.Ordinal)
         {
+            nameof(Account),
             nameof(User),
             nameof(AcademicProgress),
             nameof(AcademicResource),
@@ -29,7 +30,9 @@ namespace OneItb.GraphQL.Infrastructure
 
         private static readonly HashSet<string> SensitiveProperties = new(StringComparer.OrdinalIgnoreCase)
         {
-            "PasswordHash"
+            "PasswordHash",
+            "ExternalTenantId",
+            "ExternalSubjectId"
         };
 
         private readonly IHttpContextAccessor _httpContextAccessor;

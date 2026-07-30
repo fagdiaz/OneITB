@@ -177,7 +177,8 @@ namespace Services.Users
                     operatorUser.Account == null)
                     throw new InvalidOperationException("No se pudo validar al administrador autenticado.");
 
-                if (!_passwordHasher.Verify(adminPassword, operatorUser.Account.PasswordHash))
+                if (string.IsNullOrWhiteSpace(operatorUser.Account.PasswordHash) ||
+                    !_passwordHasher.Verify(adminPassword, operatorUser.Account.PasswordHash))
                     throw new InvalidOperationException("Contraseña de administrador incorrecta.");
             }
 

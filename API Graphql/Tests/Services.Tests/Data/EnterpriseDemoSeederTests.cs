@@ -64,4 +64,113 @@ public sealed class EnterpriseDemoSeederTests
                 notification.UserId == EnterpriseDemoSeeder.Moderator1Id &&
                 notification.Type == NotificationType.JobOffer));
     }
+
+    [Fact]
+    public async Task SeedAsync_CreatesCompleteCanonicalGraphAndIsIdempotent()
+    {
+        await using var context = ServiceTestData.CreateContext();
+
+        await EnterpriseDemoSeeder.SeedAsync(
+            context,
+            DemoPassword,
+            password => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 4));
+        SeedInventory first = await CaptureInventoryAsync(context);
+
+        await EnterpriseDemoSeeder.SeedAsync(
+            context,
+            DemoPassword,
+            password => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 4));
+        SeedInventory second = await CaptureInventoryAsync(context);
+
+        Assert.Equal(first, second);
+        Assert.Equal(15, second.Accounts);
+        Assert.Equal(15, second.Users);
+        Assert.Equal(9, second.Careers);
+        Assert.Equal(6, second.Subjects);
+        Assert.Equal(4, second.SubjectPrerequisites);
+        Assert.Equal(10, second.UserCareers);
+        Assert.Equal(12, second.AcademicResources);
+        Assert.Equal(18, second.AcademicProgress);
+        Assert.Equal(60, second.Inquiries);
+        Assert.Equal(80, second.Comments);
+        Assert.Equal(240, second.Reactions);
+        Assert.Equal(2, second.CommunityReports);
+        Assert.Equal(10, second.UserInteractions);
+        Assert.Equal(280, second.Messages);
+        Assert.Equal(120, second.NotificationPreferences);
+        Assert.Equal(4, second.JobOffers);
+        Assert.Equal(6, second.JobApplications);
+        Assert.Equal(12, second.CvExperiences);
+        Assert.Equal(12, second.CvEducations);
+        Assert.Equal(12, second.CvProjects);
+        Assert.Equal(12, second.CvSkills);
+        Assert.Equal(12, second.CvLanguages);
+
+        List<Comment> comments = await context.Comments
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .ToListAsync();
+        Dictionary<Guid, Comment> commentsById = comments.ToDictionary(comment => comment.Id);
+        Assert.DoesNotContain(
+            comments,
+            comment =>
+                comment.ParentCommentId.HasValue &&
+                commentsById[comment.ParentCommentId.Value].ParentCommentId.HasValue);
+        Assert.DoesNotContain(
+            await context.UserInteractions.AsNoTracking().ToListAsync(),
+            interaction => interaction.ObserverId == interaction.TargetId);
+    }
+
+    private static async Task<SeedInventory> CaptureInventoryAsync(OneItbContext context)
+    {
+        return new SeedInventory(
+            await context.Accounts.CountAsync(),
+            await context.Users.CountAsync(),
+            await context.Careers.CountAsync(),
+            await context.Subjects.IgnoreQueryFilters().CountAsync(),
+            await context.SubjectPrerequisites.CountAsync(),
+            await context.UserCareers.CountAsync(),
+            await context.AcademicResources.IgnoreQueryFilters().CountAsync(),
+            await context.AcademicProgressRecords.CountAsync(),
+            await context.Inquiries.IgnoreQueryFilters().CountAsync(),
+            await context.Comments.IgnoreQueryFilters().CountAsync(),
+            await context.Reactions.IgnoreQueryFilters().CountAsync(),
+            await context.CommunityReports.IgnoreQueryFilters().CountAsync(),
+            await context.UserInteractions.CountAsync(),
+            await context.Messages.CountAsync(),
+            await context.NotificationPreferences.CountAsync(),
+            await context.Notifications.CountAsync(),
+            await context.JobOffers.CountAsync(),
+            await context.JobApplications.CountAsync(),
+            await context.UserCvExperiences.CountAsync(),
+            await context.UserCvEducations.CountAsync(),
+            await context.UserCvProjects.CountAsync(),
+            await context.UserCvSkills.CountAsync(),
+            await context.UserCvLanguages.CountAsync());
+    }
+
+    private sealed record SeedInventory(
+        int Accounts,
+        int Users,
+        int Careers,
+        int Subjects,
+        int SubjectPrerequisites,
+        int UserCareers,
+        int AcademicResources,
+        int AcademicProgress,
+        int Inquiries,
+        int Comments,
+        int Reactions,
+        int CommunityReports,
+        int UserInteractions,
+        int Messages,
+        int NotificationPreferences,
+        int Notifications,
+        int JobOffers,
+        int JobApplications,
+        int CvExperiences,
+        int CvEducations,
+        int CvProjects,
+        int CvSkills,
+        int CvLanguages);
 }

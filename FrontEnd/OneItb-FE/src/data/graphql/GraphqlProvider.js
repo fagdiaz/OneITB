@@ -13,18 +13,18 @@ import { getMainDefinition } from '@apollo/client/utilities';
 import { createClient } from 'graphql-ws';
 import { GeneralDataProvider } from '../GeneralDataProvider';
 
-const resolveHttpUri = () => {
+export const resolveHttpUri = () => {
   const configuredUri = import.meta.env.VITE_GRAPHQL_URL;
   if (configuredUri) return configuredUri;
 
-  if (import.meta.env.PROD && typeof window !== 'undefined') {
-    return `${window.location.origin}/graphql`;
+  if (typeof window !== 'undefined') {
+    return '/graphql';
   }
 
   return 'https://localhost:44397/graphql';
 };
 
-const resolveWsUri = (httpEndpoint) => {
+export const resolveWsUri = (httpEndpoint) => {
   const configuredUri = import.meta.env.VITE_GRAPHQL_WS_URL;
   if (configuredUri) return configuredUri;
 

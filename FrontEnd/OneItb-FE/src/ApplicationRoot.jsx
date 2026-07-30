@@ -4,6 +4,8 @@ import App from './App';
 import { GlobalErrorBoundary } from './Components/layout/GlobalErrorBoundary';
 import { ThemeProvider } from './context/ThemeContext';
 import { GraphQLProvider } from './data/graphql/GraphqlProvider';
+import { MicrosoftIdentityProvider } from './auth/MicrosoftIdentityProvider';
+export { initializeMicrosoftIdentity } from './auth/microsoftEntra';
 
 const createDefaultApolloClient = () => new GraphQLProvider().apolloInstance;
 
@@ -12,14 +14,17 @@ export const AppProviders = ({
   clientFactory = createDefaultApolloClient,
   ApolloProviderComponent = ApolloProvider,
   ThemeProviderComponent = ThemeProvider,
+  MicrosoftIdentityProviderComponent = MicrosoftIdentityProvider,
 }) => {
   const [apolloClient] = useState(() => clientFactory());
 
   return (
     <ApolloProviderComponent client={apolloClient}>
-      <ThemeProviderComponent>
-        {children}
-      </ThemeProviderComponent>
+      <MicrosoftIdentityProviderComponent>
+        <ThemeProviderComponent>
+          {children}
+        </ThemeProviderComponent>
+      </MicrosoftIdentityProviderComponent>
     </ApolloProviderComponent>
   );
 };

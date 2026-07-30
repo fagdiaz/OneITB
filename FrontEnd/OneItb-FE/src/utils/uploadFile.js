@@ -21,7 +21,7 @@ const ALLOWED_UPLOAD_TYPES = new Set([
   'video/webm',
 ]);
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL || 'https://localhost:44397/graphql';
+const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL || '/graphql';
 export const apiBaseUrl = graphqlUrl.replace(/\/graphql\/?$/, '');
 
 export const getFileIdentity = (file) => `${file.name}:${file.size}:${file.lastModified}`;

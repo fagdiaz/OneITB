@@ -1,6 +1,6 @@
 # Arquitectura y diseno de OneITB23
 
-**Ultima alineacion con codigo**: 2026-07-27
+**Ultima alineacion con codigo**: 2026-07-30
 
 ## 1. Stack vigente
 
@@ -15,6 +15,7 @@
 | Tiempo real | GraphQL Subscriptions sobre WebSocket; Redis Pub/Sub opcional en produccion |
 | Archivos | `/api/upload` con disco local o Cloudinary por configuracion |
 | Correo | SMTP obligatorio en produccion; pickup `.eml` local e ignorado en desarrollo |
+| Identidad institucional | Microsoft Entra ID single-tenant; MSAL Authorization Code + PKCE y canje por JWT OneITB |
 | Despliegue e Infra | Docker multi-stage / Nginx reverse proxy / Redis / Cloudinary opcional / GitHub Actions |
 
 ## 2. Estructura fisica
@@ -45,12 +46,24 @@ Mobile/OneItb-App/
 - `POST /api/upload`: transferencia binaria autenticada y desacoplada, maximo 15 MB.
 - `/uploads/{file}`: lectura de archivos estaticos almacenados localmente cuando no se usa Cloudinary.
 - SMTP/pickup: salida de correo para cambios de postulaciones y entrega fuera de banda del Magic Link de empleadores.
+- Microsoft Entra ID: la SPA obtiene un access token delegado para la API OneITB y lo canjea una sola vez mediante `microsoftLogin`; los resolvers restantes solo aceptan el JWT local.
 
 Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/api/upload`; luego GraphQL persiste el descriptor en `SocialAttachment` para publicaciones/comentarios o la URL en `AcademicResource.FileUrl`. `Inquiry.FileUrl` y `Comment.FileUrl` se conservan como compatibilidad con clientes y datos historicos. El feed usa un mosaico acotado y, solo cuando una portada PDF entra en proximidad visual, carga un chunk PDF.js y worker locales para rasterizar la primera pagina en canvas con cancelacion/cleanup. El visor completo recupera el PDF con `fetch`, crea una Blob URL temporal, aborta la descarga y revoca la URL al cerrar; no se relaja `X-Frame-Options: DENY` ni se depende de CDN.
 
 Controles defensivos vigentes: `/graphql` y `/api/upload` tienen rate limiting fixed-window por IP; GraphQL aplica profundidad maxima configurable (`GraphQL:MaxExecutionDepth`, default 10) y limites globales de paginacion (`DefaultPageSize` 20, `MaxPageSize` 50). El login usa lockout persistente por cuenta (`FailedLoginAttempts`, `LockoutEnd`) para mitigar fuerza bruta aunque el atacante rote IPs. Los perfiles privados se enmascaran en el backend, no solo en React.
 
 El acceso de empleadores separa solicitud y consumo. `requestMagicLink` responde un payload generico sin revelar existencia ni credencial; el token aleatorio de 256 bits viaja por correo dentro de un fragmento URL, mientras SQL conserva solamente su digest SHA-256. React elimina el fragmento mediante `history.replaceState` antes de usarlo. El consumo atomico, expiracion y proteccion de replay permanecen vigentes.
+
+El acceso institucional usa dos App Registrations single-tenant: una API que expone el
+scope delegado `access_as_user` y una SPA publica sin client secret. MSAL ejecuta
+Authorization Code + PKCE y conserva su cache en `sessionStorage`. `microsoftLogin`
+valida RS256, metadata OpenID tenant-specific con refresh de claves, emisor, audiencia,
+vigencia, `tid`, `oid`, `scp` y dominio `itbeltran.com.ar`; recien entonces vincula por
+identidad inmutable o email institucional validado. Las altas nuevas reciben rol
+`Estudiante`; las cuentas privilegiadas no se vinculan automaticamente. SQL aplica un
+indice unico filtrado sobre proveedor, tenant y objeto. Ningun token Entra se persiste,
+audita o reutiliza como credencial de los resolvers. Las cuentas SSO-only admiten
+`PasswordHash` nulo bajo un constraint que exige identidad externa completa.
 
 Las contrasenas usan `IPasswordHasher` con BCrypt y costo configurable (`PasswordHashing:WorkFactor`, default 12, rango 10-14). Un login correcto actualiza hashes de costo inferior sin degradar hashes mas fuertes. Registro, promocion administrativa, cuentas de empleador y seeder comparten la politica. La clave JWT no existe en archivos rastreados y debe provenir de user-secrets o variables de entorno.
 
@@ -212,7 +225,10 @@ El modulo academico permite exportar el progreso propio como CSV e imprimir una 
 ## 7. Estado y limites conocidos
 
 - Redis Pub/Sub y Cloudinary son adaptadores condicionales. SMTP cuenta con query de smoke admin-only y es obligatorio en Production; Development usa un pickup local ignorado. Para elevar servicios externos a `[V]` se requiere ejecutarlos con secretos productivos reales.
-- La regresion autenticada en navegador del hub academico y del Gestor de Postulaciones sigue pendiente para elevar esos modulos de `[I]` a `[V]`.
+- Microsoft Entra queda deshabilitado cuando faltan sus identificadores publicos. Si `EntraId:Enabled=true`, una configuracion parcial detiene el arranque. La aceptacion `[V]` requiere consentimiento del tenant y una cuenta institucional real; la SPA nunca recibe un client secret.
+- El hub academico y el Gestor de Postulaciones cuentan con recorridos autenticados de Spec 194 y smoke GraphQL sobre la base reconstruida en Spec 196. La validacion visual final en el equipo de defensa sigue siendo una actividad manual, no una brecha del modelo.
 - El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validacion de specs.
 - El seeding demo es idempotente, configurable y deshabilitado por defecto en produccion. Cuando se habilita requiere `Seed:DemoPassword`/`ONEITB_SEED_DEMO_PASSWORD`, recibe `IPasswordHasher` desde el composition root y no resetea passwords existentes.
+- La topologia demo canonica comprende 15 cuentas/usuarios, 9 carreras institucionales, 6 materias de muestra, recursos y progreso academico, CV relacional, grafo social, mensajeria, notificaciones y empleos. Cada fase persiste y limpia el `ChangeTracker`; una segunda ejecucion conserva exactamente el inventario.
+- La reconstruccion demo es una operacion separada y explicita: valida destino local, crea y verifica backup, reaplica migraciones y ejecuta dos seeds. Esta prohibida para produccion y no elimina el volumen Docker ni los uploads.
 - El cliente mobile React Native/Expo esta planificado, pero no existe codigo versionado; antes de implementarlo se deben definir queries/fragments compartidos con el cliente Web para no duplicar logica de Apollo Cache.

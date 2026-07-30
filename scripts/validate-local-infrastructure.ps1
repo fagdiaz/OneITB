@@ -309,5 +309,5 @@ if ($null -ne $failure) {
 
 Write-Host ""
 Write-Host "Spec 195 local infrastructure acceptance: PASS" -ForegroundColor Green
-Write-Host "External SMTP, Cloudinary, Google SSO and network WebSocket handshakes remain unverified."
+Write-Host "External SMTP, Cloudinary, Microsoft Entra tenant acceptance and network WebSocket handshakes remain unverified."
 exit 0

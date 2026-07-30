@@ -5,6 +5,110 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-30] - Spec 197: Microsoft Entra Institutional SSO
+
+* **Objetivo**: Reemplazar el plan Google OAuth por una integracion institucional
+  Microsoft Entra ID/Microsoft 365 single-tenant, sin retirar password local ni Magic
+  Link de empleadores y sin usar tokens externos para autorizar resolvers OneITB.
+* **Resultado**:
+  - React integra MSAL Browser/React con Authorization Code + PKCE, autoridad del tenant,
+    scope delegado de la API, cache en `sessionStorage`, boton institucional condicional
+    y limpieza conjunta de MSAL, Apollo y WebSocket al cerrar o reemplazar sesion.
+  - `microsoftLogin` valida access tokens RS256 contra metadata OpenID cacheada, con
+    refresh ante rotacion de claves, y exige issuer, audience, lifetime, `tid`, `oid`,
+    `scp` y dominio `itbeltran.com.ar` antes de emitir el JWT canonico OneITB.
+  - La vinculacion/aprovisionamiento es transaccional e idempotente: las altas externas
+    nacen como `Estudiante`; roles privilegiados no se derivan de claims ni se vinculan
+    automaticamente; SQL aplica identidad externa unica y constraint de cuenta valida.
+  - Los tokens Entra no se persisten ni auditan. Los eventos aceptados/rechazados usan
+    metadatos sanitizados y correlation ID; el endpoint publico posee limites por origen
+    e identidad con Redis opcional y fallback local acotado.
+  - `Account.PasswordHash` admite null solo para cuentas externas completas. Login local
+    y verificaciones administrativas rechazan cuentas SSO-only sin crash ni enumeracion.
+  - Se retiro el query publico legacy `userById` y su cliente huérfano; perfiles de
+    terceros pasan exclusivamente por `publicProfile` con masking backend.
+  - Roadmap, arquitectura, alcance, runbook, auditoria y entrega final reemplazaron las
+    referencias activas a Google por Microsoft Entra y separan implementacion `[I]` de
+    aceptacion real del tenant `[B]`.
+* **Validaciones ejecutadas**:
+  - Backend: 174/174 tests PASS; Release build con 0 warnings y 0 errores.
+  - Frontend: 32 archivos / 82 tests PASS; Vite 539 modulos / 0 errores en 0,85 s.
+  - EF Core: migracion `AddMicrosoftEntraIdentity` aplicada; 33 migraciones y cero drift.
+  - Runtime finito: 43 mutaciones, `microsoftLogin` presente, rechazo controlado
+    `ENTRA_NOT_CONFIGURED` y puertos liberados al finalizar.
+  - Dependencias: npm audit conserva dos advisories moderados preexistentes de React
+    Router; MSAL no agrega hallazgos y no se fuerza el salto incompatible a Router 7.
+  - Speckit QA final: PASS con checklist 11/11, higiene de secretos/Google SSO activo
+    sin hallazgos y smoke de privacidad confirmando `userById` ausente.
+* **Archivos clave**:
+  - `API Graphql/Services/Auth/MicrosoftEntraTokenValidator.cs`
+  - `API Graphql/Services/Auth/MicrosoftEntraAuthService.cs`
+  - `API Graphql/Data/Migrations/20260730032643_AddMicrosoftEntraIdentity.cs`
+  - `FrontEnd/OneItb-FE/src/auth/microsoftEntra.js`
+  - `FrontEnd/OneItb-FE/src/Components/auth/MicrosoftInstitutionalLogin.jsx`
+  - `docs/audit/RUNBOOK_DEV.md`
+* **Estado**: Implementada `[I]`. La elevacion a `[V]` requiere App Registrations,
+  consentimiento y una cuenta real del tenant institucional; no se versionaron secretos
+  ni se realizo commit/push.
+
+## [2026-07-29] - Spec 196: Demo Database Rebaseline
+
+* **Objetivo**: Eliminar la dependencia de datos historicos del puesto local y dejar una
+  base de demostracion reproducible, respaldada, idempotente y alineada con la
+  documentacion de la defensa.
+* **Resultado**:
+  - `EnterpriseDemoSeeder` cubre identidad, nueve carreras institucionales, materias,
+    correlatividades, recursos/progreso academico, CV relacional, grafo social,
+    mensajeria, preferencias, notificaciones, reportes y empleos por fases con
+    `SaveChangesAsync` y `ChangeTracker.Clear`.
+  - El runner protegido valido `oneitb23-sql/OneItb`, genero un backup `COPY_ONLY` con
+    checksum y `RESTORE VERIFYONLY`, reconstruyo la base desde 32 migraciones y obtuvo
+    inventarios identicos en dos ejecuciones consecutivas del seed.
+  - La auditoria relacional devolvio cero violaciones; Administrador, Moderador,
+    Profesor, Estudiante, Egresado y Empleador autenticaron con el rol esperado.
+  - Los smoke tests finitos aprobaron feed, academico, mensajeria, notificaciones,
+    empleos, administracion, moderacion y upload sin dejar servidor ni fixture temporal.
+  - Runbook, arquitectura, alcance, diagramas, Roadmap, auditoria, memoria tecnica y
+    guia de maquetacion quedaron reconciliados con el modelo y procedimiento reales.
+* **Validaciones ejecutadas**:
+  - Backend: 153/153 tests PASS; Release build con 0 warnings y 0 errores.
+  - Frontend: 31 archivos / 80 tests PASS; Vite 380 modulos / 0 errores.
+  - EF Core: 32 migraciones aplicadas y modelo sin cambios pendientes.
+  - Seguridad/higiene: backup ignorado, secretos ausentes de evidencia, integridad 0/6
+    roles y runtime multidominio PASS.
+* **Archivos clave**:
+  - `API Graphql/Data/EnterpriseDemoSeeder.cs`
+  - `API Graphql/Tests/Services.Tests/Data/EnterpriseDemoSeederTests.cs`
+  - `scripts/reset-demo-database.ps1`
+  - `scripts/validate-demo-database.ps1`
+  - `docs/audit/RUNBOOK_DEV.md`
+  - `docs/project_docs/architecture-and-design.md`
+  - `docs/academic/04-design-diagrams.md`
+  - `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`
+* **Estado**: Verificada localmente `[V]`; el porcentaje funcional permanece en 99 %
+  porque la spec estabiliza operacion y datos, sin agregar alcance.
+
+## [2026-07-29] - Hotfix: transporte local GraphQL y login de empleador
+
+* **Objetivo**: Eliminar el fallo de red que Firefox reportaba como CORS al iniciar
+  sesion desde Vite contra el certificado HTTPS local de Kestrel.
+* **Resultado**:
+  - Vite actua como proxy same-origin para `/graphql`, `/api` y `/uploads` durante
+    desarrollo; el navegador ya no depende de que cada perfil confie directamente en
+    el certificado de `https://localhost:44397`.
+  - Apollo HTTP, GraphQL WebSocket y uploads comparten por defecto el origen de Vite;
+    las variables `VITE_GRAPHQL_URL` y `VITE_GRAPHQL_WS_URL` conservan prioridad para
+    despliegues configurados.
+  - Se agrego una regresion que valida la resolucion same-origin de HTTP y WebSocket.
+  - La cuenta demo `empleador1@itbeltran.com.ar` fue restablecida solo en la base local
+    y sincronizada con `Seed:DemoPassword`; no se incorporaron credenciales al repo.
+* **Validaciones ejecutadas**:
+  - Login real a traves de `http://localhost:5173/graphql`: autenticado como
+    `Empleador`, con ID y JWT emitidos.
+  - Frontend: 31 archivos / 80 tests PASS.
+  - Vite: 380 modulos, build de produccion sin errores en 1,99 s.
+* **Estado**: Hotfix verificado en runtime local `[V]`.
+
 ## [2026-07-29] - Alineación logística con lineamientos oficiales de mesa
 
 * **Objetivo**: Sincronizar la preparación de la defensa con las condiciones comunicadas
@@ -66,8 +170,9 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
     Vite 380 modulos / 0 errores.
   - EF Core: sin cambios pendientes; Compose valido; contenedores y puertos de
     aceptacion eliminados al finalizar; SQL no fue reiniciado ni recreado.
-* **Limites**: SMTP publico, Cloudinary, Google SSO y handshake WebSocket de red con dos
-  navegadores permanecen bloqueados por configuracion o aprobacion externa.
+* **Limites del corte historico**: SMTP publico, Cloudinary, el plan Google SSO y el
+  handshake WebSocket de red quedaron bloqueados. El plan Google fue reemplazado por
+  Microsoft Entra en Spec 197.
 * **Estado**: Verificada localmente `[V]`; Code Freeze funcional preservado.
 
 ## [2026-07-28] - Spec 194: Final Operational Acceptance
@@ -733,7 +838,7 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ## [2026-07-06] - Spec 168: WOW Production Polish
 
-* **Objetivo**: implementar over-delivery institucional sin deuda tecnica falsa: trazabilidad EF transversal, constancias academicas, credenciales publicas aprobadas y toasts globales, dejando Google SSO bloqueado por dependencias externas reales.
+* **Objetivo historico**: implementar over-delivery institucional sin deuda tecnica falsa: trazabilidad EF transversal, constancias academicas, credenciales publicas aprobadas y toasts globales. El plan Google SSO de este corte fue reemplazado por Microsoft Entra en Spec 197.
 * **Resultado**:
   - Se agrego `AuditLog` con mapeo EF Core explicito, indices por fecha/actor/entidad y FK restrictiva a `User`.
   - `AuditSaveChangesInterceptor` registra cambios de `User`, `AcademicProgress`, `AcademicResource`, `Inquiry` y `Comment` con actor JWT, correlation id, entidad, clave y snapshots JSON, excluyendo datos sensibles como `PasswordHash`.
@@ -742,7 +847,7 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `/academic` incorpora `CertificateExport` para descargar CSV e imprimir una constancia formal del progreso academico propio.
   - Se agrego la ruta publica `/certificate/:id` con credencial institucional, estado aprobado, short id y enlace de compartir en LinkedIn.
   - `NotificationProvider` escucha `notificationReceived` y muestra toasts globales deduplicados sin depender del dropdown de la campanita.
-  - `ROADMAP.md` se expande a 83 items y queda en 93% (77/83): cuatro items de alto impacto quedan `[I]`; Google SSO queda `[B]` por falta de credenciales OAuth institucionales reales.
+  - `ROADMAP.md` se expande a 83 items y queda en 93% (77/83): cuatro items de alto impacto quedan `[I]`; el quinto se planifico entonces con Google y fue supersedido por Spec 197.
 * **Validaciones ejecutadas**:
   - `dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release -p:RestoreIgnoreFailedSources=true`: PASS, 0 warnings, 0 errores.
   - `dotnet ef migrations add AddAuditLogs --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj" --configuration Release`: PASS.
@@ -2312,7 +2417,7 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 ## [2026-06-13] - Feature: Professional Seed Users (Rama: 088-professional-seed-users)
 
 * **Objetivo**: Implementar el sembrado automático de usuarios de prueba (Seeding) para todos los roles del sistema utilizando GUIDs estáticos y contraseñas hasheadas con BCrypt, garantizando la idempotencia y evitando errores de integridad referencial.
-* **Descripción**: Se instaló el paquete `BCrypt.Net-Next` en la capa de Datos (resolviendo un conflicto de versiones con `Services.csproj` mediante la estandarización a la v4.2.0). Se creó `DbInitializer.cs` definiendo 5 constantes UUID reales e inmutables. El sembrador crea las entidades `Account` (con la clave "Test1234!" hasheada) y sus respectivas entidades `User` (para los roles Administrador, Estudiante, Profesor, Moderador, Empleador). Se inyectó la llamada a la inicialización en el pipeline de arranque de `Program.cs`. La compilación finalizó exitosamente (0 Errores).
+* **Descripción**: Se instaló el paquete `BCrypt.Net-Next` en la capa de Datos (resolviendo un conflicto de versiones con `Services.csproj` mediante la estandarización a la v4.2.0). Se creó `DbInitializer.cs` definiendo 5 constantes UUID reales e inmutables. El sembrador crea las entidades `Account` con una contraseña demo hasheada, configurada actualmente fuera del repositorio, y sus respectivas entidades `User` (para los roles Administrador, Estudiante, Profesor, Moderador, Empleador). Se inyectó la llamada a la inicialización en el pipeline de arranque de `Program.cs`. La compilación finalizó exitosamente (0 Errores).
 * **Archivos Modificados**:
   - `API Graphql/Data/Data.csproj` y `API Graphql/Services/Services.csproj`
   - `API Graphql/Data/DbInitializer.cs` (Nuevo)

@@ -13,6 +13,56 @@ namespace Services.Tests.GraphQL;
 public sealed class PublicProfilePrivacyGraphQLTests
 {
     [Fact]
+    public async Task QuerySchema_DoesNotExposeLegacyUnmaskedUserById()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddHttpContextAccessor();
+        services.AddDbContext<OneItbContext>(options =>
+            options.UseInMemoryDatabase($"oneitb-profile-schema-{Guid.NewGuid():N}"));
+        services
+            .AddGraphQLServer()
+            .AddProjections()
+            .AddFiltering()
+            .AddSorting()
+            .AddAuthorization()
+            .AddQueryType<Query>();
+
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        IRequestExecutor executor = await provider
+            .GetRequiredService<IRequestExecutorResolver>()
+            .GetRequestExecutorAsync();
+
+        IExecutionResult result = await executor.ExecuteAsync("""
+            query {
+              __type(name: "Query") {
+                fields {
+                  name
+                }
+              }
+            }
+            """);
+
+        IReadOnlyDictionary<string, object?> data =
+            Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(
+                result.GetType().GetProperty("Data")?.GetValue(result));
+        IReadOnlyDictionary<string, object?> queryType =
+            Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(data["__type"]);
+        IReadOnlyList<object?> fields =
+            Assert.IsAssignableFrom<IReadOnlyList<object?>>(queryType["fields"]);
+        string[] names = fields
+            .Select(field =>
+                Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(field)["name"]?.ToString())
+            .Where(name => name is not null)
+            .Cast<string>()
+            .ToArray();
+
+        Assert.Contains("publicProfile", names);
+        Assert.Contains("me", names);
+        Assert.DoesNotContain("userById", names);
+    }
+
+    [Fact]
     public async Task PublicProfile_MasksSensitiveFields_WhenProfileIsPrivateAndViewerIsAnonymous()
     {
         string databaseName = $"oneitb-profile-privacy-{Guid.NewGuid():N}";

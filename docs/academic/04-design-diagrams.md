@@ -9,7 +9,11 @@ erDiagram
     ACCOUNT {
         guid Id PK
         string Email
-        string PasswordHash
+        string PasswordHash "nullable only for external-only account"
+        string ExternalProvider
+        string ExternalTenantId
+        string ExternalSubjectId
+        datetime LastExternalLoginAt
         int FailedLoginAttempts
         datetime LockoutEnd
     }
@@ -306,3 +310,30 @@ flowchart TB
     Api -->|Correo| Smtp
     Nginx -->|proxy /graphql /api /uploads| Api
 ```
+
+## 4.6 Reconstruccion y aceptacion de la base demo
+
+```mermaid
+%%{init: {"flowchart": {"curve": "linear"}}}%%
+flowchart LR
+    Guard["Guardas: contenedor, puerto, DB y secretos"] --> Build["Build Release + EF sin drift"]
+    Build --> Backup["BACKUP COPY_ONLY + CHECKSUM"]
+    Backup --> Verify["RESTORE VERIFYONLY"]
+    Verify --> Drop["DROP exclusivo de OneItb"]
+    Drop --> Migrate["Aplicar migraciones EF Core"]
+    Migrate --> Seed1["Seed canonico por fases"]
+    Seed1 --> Clear1["SaveChanges + ChangeTracker.Clear"]
+    Clear1 --> Seed2["Segunda ejecucion idempotente"]
+    Seed2 --> Compare{"Inventarios identicos"}
+    Compare -->|No| Fail["Abortar y restaurar backup"]
+    Compare -->|Si| Integrity["Integridad relacional = 0"]
+    Integrity --> Roles["Login de 6 roles"]
+    Roles --> Smoke["Smoke GraphQL + upload"]
+    Smoke --> Done["Base demo aceptada"]
+```
+
+El flujo esta limitado al SQL Server Docker local `oneitb23-sql` y a la base `OneItb`.
+La copia verificada se conserva fuera de Git. El seed abarca identidad, nueve carreras
+institucionales, materias de muestra, recursos y progreso, muro, comentarios,
+reacciones, mensajeria, notificaciones, CV y empleos. Las migraciones son la unica
+fuente del esquema; el seeder aporta datos, pero no crea ni corrige tablas.

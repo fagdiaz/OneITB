@@ -94,8 +94,9 @@ public sealed class EmployerAuthServiceTests
             .Include(item => item.Account)
             .SingleAsync(item => item.Account.Email == "employer.demo@itbeltran.com.ar");
         Assert.Equal("Empleador", user.Role);
-        Assert.Equal(60, user.Account.PasswordHash.Length);
-        Assert.True(passwordHasher.Verify("not-the-placeholder-password", user.Account.PasswordHash) is false);
+        string passwordHash = Assert.IsType<string>(user.Account.PasswordHash);
+        Assert.Equal(60, passwordHash.Length);
+        Assert.False(passwordHasher.Verify("not-the-placeholder-password", passwordHash));
         Assert.Single(sender.Messages);
 
         string credential = ExtractFragmentCredential(sender.Messages[0].Body);

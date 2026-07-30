@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -71,6 +72,8 @@ namespace OneItb.GraphQL
                 MagicLinkDeliveryOptions.FromConfiguration(
                     Configuration,
                     Environment.IsProduction());
+            MicrosoftEntraOptions microsoftEntraOptions =
+                MicrosoftEntraOptions.FromConfiguration(Configuration);
 
             services.AddControllers();
             services.AddHttpContextAccessor();
@@ -170,10 +173,19 @@ namespace OneItb.GraphQL
 
             ConfigureSubscriptionProvider(graphQlBuilder, services);
             ConfigureMagicLinkRateLimiter(services, jwtOptions);
+            ConfigureMicrosoftEntraRateLimiter(services, jwtOptions);
 
             graphQlBuilder
                 .AddSocketSessionInterceptor<AuthenticationSocketSessionInterceptor>()
-                .AddType(new ObjectType<Account>(d => d.Field(f => f.PasswordHash).Ignore()))
+                .AddType(new ObjectType<Account>(descriptor =>
+                {
+                    descriptor.Field(account => account.PasswordHash).Ignore();
+                    descriptor.Field(account => account.ExternalProvider).Ignore();
+                    descriptor.Field(account => account.ExternalTenantId).Ignore();
+                    descriptor.Field(account => account.ExternalSubjectId).Ignore();
+                    descriptor.Field(account => account.LastExternalLoginAt).Ignore();
+                    descriptor.Field(account => account.HasExternalIdentity).Ignore();
+                }))
                 .AddType(new ObjectType<User>(descriptor =>
                 {
                     descriptor.Field(f => f.Id).Name("id");
@@ -193,6 +205,19 @@ namespace OneItb.GraphQL
                     descriptor.Field("email").Resolve(ctx => ctx.Parent<User>().Account?.Email);
                     descriptor.Field("fullName").Resolve(ctx => $"{ctx.Parent<User>().FirstName} {ctx.Parent<User>().LastName}".Trim());
                     descriptor.Field("password").Resolve(ctx => "********");
+                    descriptor.Field("institutionalAccountLinked")
+                        .Type<NonNullType<BooleanType>>()
+                        .Resolve(ctx =>
+                        {
+                            User user = ctx.Parent<User>();
+                            string? actorValue = ctx.Service<IHttpContextAccessor>()
+                                .HttpContext?
+                                .User
+                                .FindFirstValue(ClaimTypes.NameIdentifier);
+                            return Guid.TryParse(actorValue, out Guid actorUserId) &&
+                                actorUserId == user.Id &&
+                                user.Account?.HasExternalIdentity == true;
+                        });
                     descriptor.Field(f => f.Biography).Name("biography");
                     descriptor.Field(f => f.LinkedIn).Name("linkedIn");
                     descriptor.Field(f => f.Facebook).Name("facebook");
@@ -304,9 +329,12 @@ namespace OneItb.GraphQL
             services.AddSingleton(jwtOptions);
             services.AddSingleton(passwordHashingOptions);
             services.AddSingleton(magicLinkDeliveryOptions);
+            services.AddSingleton(microsoftEntraOptions);
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton<IJwtTokenService, JwtTokenService>();
             services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
+            services.AddSingleton<IMicrosoftEntraTokenValidator, MicrosoftEntraTokenValidator>();
+            services.AddScoped<IMicrosoftEntraAuthService, MicrosoftEntraAuthService>();
             services.AddScoped<IEmployerAuthService, global::Services.Auth.EmployerAuthService>();
             services.AddScoped<IModerationService, global::Services.Moderation.ModerationService>();
             services.AddScoped<ISocialService, SocialService>();
@@ -496,6 +524,35 @@ namespace OneItb.GraphQL
             services.TryAddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConnectionString));
             services.AddSingleton<IMagicLinkRateLimiter, RedisMagicLinkRateLimiter>();
+        }
+
+        private void ConfigureMicrosoftEntraRateLimiter(
+            IServiceCollection services,
+            JwtTokenOptions jwtOptions)
+        {
+            MicrosoftEntraRateLimitOptions options =
+                MicrosoftEntraRateLimitOptions.FromConfiguration(Configuration);
+            byte[] fingerprintKey = SHA256.HashData(
+                Encoding.UTF8.GetBytes($"oneitb:entra-rate-limit:{jwtOptions.Key}"));
+
+            services.AddSingleton(options);
+            services.AddSingleton(new MicrosoftEntraRateLimitFingerprintKey(fingerprintKey));
+
+            string? redisConnectionString = Configuration.GetConnectionString("Redis")
+                ?? Configuration["Redis:ConnectionString"];
+            if (string.IsNullOrWhiteSpace(redisConnectionString))
+            {
+                services.AddSingleton<
+                    IMicrosoftEntraRateLimiter,
+                    InMemoryMicrosoftEntraRateLimiter>();
+                return;
+            }
+
+            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString));
+            services.AddSingleton<
+                IMicrosoftEntraRateLimiter,
+                RedisMicrosoftEntraRateLimiter>();
         }
 
         private void ConfigureForwardedHeaders(IServiceCollection services)

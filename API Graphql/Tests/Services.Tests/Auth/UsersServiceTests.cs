@@ -37,8 +37,9 @@ public sealed class UsersServiceTests
         Assert.Equal("Perez", persisted.LastName);
         Assert.Equal("Estudiante", persisted.Role);
         Assert.Equal("lu.prueba@itbeltran.com.ar", persisted.Account.Email);
-        Assert.True(BCrypt.Net.BCrypt.Verify("Test1234!", persisted.Account.PasswordHash));
-        Assert.Equal(60, persisted.Account.PasswordHash.Length);
+        string passwordHash = Assert.IsType<string>(persisted.Account.PasswordHash);
+        Assert.True(BCrypt.Net.BCrypt.Verify("Test1234!", passwordHash));
+        Assert.Equal(60, passwordHash.Length);
         Assert.Contains(persisted.UserCareers, link => link.CareerId == ServiceTestData.CareerId);
     }
 

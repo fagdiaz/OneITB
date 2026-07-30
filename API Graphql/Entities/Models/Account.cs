@@ -7,7 +7,7 @@ namespace OneItb.Entities.Models
     public class Account : EntityModel<Guid>
     {
         private string _email = default!;
-        private string _passwordHash = default!;
+        private string? _passwordHash;
         private DateTime _createdAt;
 
         private static readonly Regex EmailRegex = new Regex(
@@ -32,13 +32,19 @@ namespace OneItb.Entities.Models
             }
         }
 
-        public string PasswordHash
+        public string? PasswordHash
         {
             get => _passwordHash;
             set
             {
+                if (value is null)
+                {
+                    _passwordHash = null;
+                    return;
+                }
+
                 if (string.IsNullOrWhiteSpace(value))
-                    throw new ArgumentException("El PasswordHash no puede ser nulo o vacío.", nameof(value));
+                    throw new ArgumentException("El PasswordHash no puede estar vacío.", nameof(value));
 
                 if (value.Length != 60 || !value.StartsWith("$2"))
                     throw new ArgumentException("Estructura de hash inválida. Debe ser un hash BCrypt válido de 60 caracteres.", nameof(value));
@@ -46,6 +52,19 @@ namespace OneItb.Entities.Models
                 _passwordHash = value;
             }
         }
+
+        public string? ExternalProvider { get; set; }
+
+        public string? ExternalTenantId { get; set; }
+
+        public string? ExternalSubjectId { get; set; }
+
+        public DateTime? LastExternalLoginAt { get; set; }
+
+        public bool HasExternalIdentity =>
+            !string.IsNullOrWhiteSpace(ExternalProvider) &&
+            !string.IsNullOrWhiteSpace(ExternalTenantId) &&
+            !string.IsNullOrWhiteSpace(ExternalSubjectId);
 
         public DateTime CreatedAt
         {

@@ -8,6 +8,26 @@ export default defineConfig(({ command }) => ({
     react(),
     tailwindcss()
   ].filter(Boolean),
+  server: {
+    proxy: {
+      '/graphql': {
+        target: 'https://localhost:44397',
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      },
+      '/api': {
+        target: 'https://localhost:44397',
+        changeOrigin: true,
+        secure: false
+      },
+      '/uploads': {
+        target: 'https://localhost:44397',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
   define: {
     __DEV__: 'true'
   },
@@ -32,5 +52,4 @@ export default defineConfig(({ command }) => ({
     }
   }
 }))
-
 

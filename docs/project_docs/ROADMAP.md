@@ -1,14 +1,15 @@
 # Roadmap unico de OneITB23
 
-**Ultima revision**: 2026-07-29
+**Ultima revision**: 2026-07-30
 
-**Estado global**: 99% (115 de 116 items)
+**Estado global**: 100% (116 de 116 items)
 
 **Feature Complete funcional core**: 100%. Las remediaciones 186-193 cuentan con
-evidencia automatizada y aceptacion operativa local. Las Specs 194-195 verificaron los
-recorridos principales, el aislamiento de sesion, la identidad Moderador, Redis
-distribuido local y entrega SMTP capturada. El unico item funcional bloqueado es SSO
-Google, dependiente de credenciales, callbacks y aprobacion institucional externa.
+evidencia automatizada y aceptacion operativa local. Las Specs 194-196 verificaron los
+recorridos principales, la infraestructura local y la base demo canonica. La Spec 197
+implemento el acceso institucional Microsoft Entra ID con Authorization Code + PKCE,
+validacion backend del access token y canje por el JWT canonico de OneITB. La aceptacion
+contra el tenant real permanece como gate externo y no se contabiliza como `[V]`.
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 El porcentaje global cuenta los items funcionales y de auditoria; P5/P6 describen
@@ -153,11 +154,11 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Hardening GraphQL anti-DoS con profundidad maxima y paging global configurable.
 - [x] [I] Seeding demo/productivo configurable, idempotente y sin reset de passwords existentes.
 
-## Modulo Extra - Caracteristicas de Alto Impacto (Efecto WOW): 80% (4/5)
+## Modulo Extra - Caracteristicas de Alto Impacto (Efecto WOW): 100% (5/5)
 
 - [x] [I] Trazabilidad academica transversal mediante `AuditLog` y `SaveChangesInterceptor` de EF Core para entidades criticas.
 - [x] [I] Generacion de constancias y exportacion CSV/impresion formal desde el modulo academico.
-- [ ] [B] Integracion Single Sign-On con Google OAuth2; bloqueada hasta contar con Client ID/secret reales, dominios de callback aprobados y politica institucional.
+- [x] [I] Integracion institucional Microsoft Entra ID single-tenant mediante MSAL Authorization Code + PKCE, validacion criptografica del access token de la API y emision del JWT canonico OneITB; la aceptacion con el tenant Microsoft 365 real permanece como gate externo.
 - [x] [I] Credenciales digitales publicas para progreso aprobado mediante ruta `/certificate/{id}` y query GraphQL publica limitada.
 - [x] [I] Toast notifications globales conectadas a GraphQL Subscriptions existentes.
 
@@ -167,8 +168,11 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 
 1. Mantener el Code Freeze funcional: aceptar solo defectos reproducibles con prueba de regresion.
 2. Conservar Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
-3. Ejecutar `scripts/validate-predefense.ps1` antes de la defensa y de cada entrega.
-4. Validar SMTP, Redis y Cloudinary solo cuando existan secretos no versionados y un ambiente aprobado.
+3. Conservar la base demo canonica mediante `scripts/reset-demo-database.ps1` solo
+   cuando sea necesario y ejecutar `scripts/validate-demo-database.ps1` antes de la
+   auditoria funcional final.
+4. Ejecutar `scripts/validate-predefense.ps1` antes de la defensa y de cada entrega.
+5. Validar SMTP, Redis y Cloudinary solo cuando existan secretos no versionados y un ambiente aprobado.
 
 ### P1 - Cierre del nucleo social
 
@@ -188,7 +192,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 2. `[x] [I]` Almacenamiento compartido opcional con Cloudinary, activado por `CloudinarySettings:Url` y fallback local.
 3. `[x] [I]` Hardening operativo: rate limiting, security headers, healthcheck y auditoria npm sin hallazgos altos/criticos; dos avisos moderados upstream de React Router quedan documentados y el destino interno de notificaciones se sanitiza.
 4. `[x] [I]` Hardening GraphQL anti-DoS: profundidad maxima configurable y limites globales de paginacion.
-5. `[ ] [B]` SSO Google productivo con credenciales institucionales y callback URLs definitivas.
+5. `[x] [I]` SSO institucional Microsoft Entra ID single-tenant; configuracion fail-closed, vinculacion segura, auditoria y limpieza de sesion implementadas. El consentimiento y smoke del tenant real permanecen en `PR-04`.
 
 ### P4 - Contenedores y CI/CD
 
@@ -217,7 +221,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] **Spec 186 - Employer Authentication JWT Remediation**: emision JWT centralizada, sin tokens mock/placeholder, Magic Link atomico y validado contra SQL Server Docker.
 - [x] [V] **Spec 187 - Mutation Cancellation Propagation**: `CancellationToken` propagado desde todas las mutaciones asincronas hasta EF Core y efectos soportados, con guard automatizado.
 - [x] [V] **Spec 188 - Apollo Logout Session Isolation**: frontera de sesion idempotente para React, Apollo HTTP/cache y WebSocket, con regresion A -> B automatizada y browser smoke limpio.
-- [x] [V] **Spec 189 - Declarative GraphQL Mutation Authorization**: matriz declarativa completa para 42 mutaciones, cuatro entradas publicas y controles contextuales de ownership preservados.
+- [x] [V] **Spec 189 - Declarative GraphQL Mutation Authorization**: matriz declarativa completa, ampliada por Spec 197 a 43 mutaciones y cinco entradas publicas; controles contextuales de ownership preservados.
 
 ## Auditoria de Cierre y Seguridad - Etapa 2: 100% (4/4)
 
@@ -241,12 +245,39 @@ Compose de aceptacion efimero ejecuto Redis 7 y Mailpit con pruebas reales de en
 cross-provider, aislamiento de topics y tres correos inspeccionados sin secretos. El gate
 finito no inicia API/Vite, preserva SQL y elimina contenedores/puertos en `finally`.
 
-Permanecen `[B]` el SMTP publico, Cloudinary, Google SSO y el handshake WebSocket de red
-con dos navegadores; Redis local y Mailpit no se presentan como validacion cloud.
+Permanecen `[B]` el SMTP publico, Cloudinary, la aceptacion Microsoft Entra en el tenant
+institucional y el handshake WebSocket de red con dos navegadores; Redis local y Mailpit
+no se presentan como validacion cloud.
+
+## Aceptacion de base demo canonica - Spec 196
+
+La Spec 196 elimino la dependencia de datos historicos del puesto de desarrollo. El
+procedimiento protegido genero y verifico un backup, reconstruyo `OneItb` desde 32
+migraciones y ejecuto dos veces el seeder con inventario identico. El grafo resultante
+incluye 15 cuentas/usuarios, 9 carreras, 6 materias, recursos/progreso academico, CV,
+muro, interacciones, 280 mensajes, 127 notificaciones y el modulo de empleos.
+
+La aceptacion finita obtuvo cero violaciones relacionales, autentico Administrador,
+Moderador, Profesor, Estudiante, Egresado y Empleador, y probo feed, academico, chat,
+notificaciones, empleos, administracion, moderacion y upload. Ese corte mantuvo el 99%
+porque se trato de estabilizacion operativa y documental; la feature institucional que
+faltaba fue implementada posteriormente por la Spec 197.
+
+## Identidad institucional Microsoft Entra ID - Spec 197
+
+La Spec 197 reemplazo el plan Google OAuth por la plataforma que utiliza la institucion:
+Microsoft Entra ID/Microsoft 365. La SPA usa MSAL con Authorization Code + PKCE,
+autoridad single-tenant, scope delegado propio de la API y cache en `sessionStorage`.
+El backend valida firma RS256, emisor, audiencia, vigencia, `tid`, `oid`, scope y dominio
+institucional antes de vincular o aprovisionar una cuenta sin privilegios y emitir el
+JWT local. No persiste tokens externos ni secretos; logout limpia MSAL, Apollo y
+WebSocket. La migracion agrega identidad externa unica y password local nullable solo
+para cuentas SSO-only. Tests, builds, EF y schema runtime cuentan con evidencia; el
+consentimiento y la prueba con una cuenta real del tenant siguen en `PR-04`.
 
 ## Plan operativo de cierre para la defensa
 
-Este plan no agrega alcance funcional ni modifica el calculo de 115/116 items. Convierte
+Este plan no agrega alcance funcional ni modifica el calculo de 116/116 items. Convierte
 el Release Candidate academico en un paquete reproducible de defensa. Las estimaciones
 representan tiempo efectivo de una persona con el entorno ya instalado; no incluyen
 esperas institucionales, aprobacion de credenciales ni incidentes de terceros.
@@ -255,14 +286,14 @@ esperas institucionales, aprobacion de credenciales ni incidentes de terceros.
 
 | ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
 |---|---|---|---:|---|---|
-| `CF-01` | Publicar y revisar el commit `dd2e7f2` de Spec 195; integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota, revision y merge sin perder evidencia |
+| `CF-01` | Publicar y revisar el corte de Spec 197; integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota, revision y merge sin perder evidencia |
 | `CF-02` | Resolver `prompt_modulo1.txt` y confirmar higiene del worktree | `[ ] [P]` | 15-30 min | Decision de conservar, mover o ignorar el archivo | `git status` limpio y sin artefactos de trabajo accidentalmente versionados |
-| `CF-03` | Ejecutar `scripts/validate-predefense.ps1` y `scripts/validate-local-infrastructure.ps1` | `[ ] [P]` | 60-90 min | Docker operativo | Tests, builds, EF drift, Redis, Mailpit y cleanup en PASS |
+| `CF-03` | Ejecutar los gates de predefensa, infraestructura local y base demo | `[ ] [P]` | 75-105 min | Docker operativo | Tests, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS |
 | `CF-04` | Regresion manual guiada por roles: Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador | `[ ] [P]` | 3-4 h | `CF-03` | Checklist firmado, consola limpia y capturas de los flujos principales |
 | `CF-05` | Validar chat/notificaciones con dos navegadores o perfiles aislados | `[ ] [P]` | 60-90 min | API y frontend temporales, dos identidades | Handshake WebSocket, aislamiento de topic, badges y lectura comprobados |
 | `CF-06` | Consolidar evidencia, congelar el corte y etiquetar el commit presentado | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, resultados y limitaciones coinciden en todos los documentos |
 
-**Subtotal estimado:** **6 h 30 min a 9 h 15 min**. La ruta critica es
+**Subtotal estimado:** **6 h 45 min a 9 h 30 min**. La ruta critica es
 `CF-01 -> CF-03 -> CF-04/CF-05 -> CF-06`.
 
 ### B. Entrega final academica
@@ -270,8 +301,8 @@ esperas institucionales, aprobacion de credenciales ni incidentes de terceros.
 | ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
 |---|---|---|---:|---|---|
 | `DF-01` | Completar nombre, docentes, fecha y datos institucionales de portada | `[ ] [P]` | 20-30 min | Datos oficiales | Portada sin marcadores `[Completar]` |
-| `DF-02` | Sincronizar memoria y guia con Specs 194-195, 152/79 pruebas y riesgos vigentes | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown alineado con roadmap y auditoria al 2026-07-28 |
-| `DF-03` | Renderizar y revisar los 9 diagramas Mermaid exportables | `[ ] [P]` | 2-3 h | `DF-02` | SVG/PNG legibles, numerados y sin errores de sintaxis |
+| `DF-02` | Sincronizar memoria y guia con Specs 194-197, 174/82 pruebas y riesgos vigentes | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown alineado con roadmap y auditoria al 2026-07-30 |
+| `DF-03` | Renderizar y revisar los 10 diagramas Mermaid exportables | `[ ] [P]` | 2-3 h | `DF-02` | SVG/PNG legibles, numerados y sin errores de sintaxis |
 | `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | 4 fuentes editables y 4 PNG/SVG consistentes con el modelo |
 | `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[ ] [P]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable, estilos APA, tablas/figuras dentro de margenes |
 | `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[ ] [P]` | 2-3 h | `DF-05` | PDF revisado pagina por pagina, enlaces y accesibilidad basica |
@@ -311,13 +342,13 @@ hasta ejecutarse en el ambiente de destino.
 | `PR-01` | Smoke con proveedor SMTP publico | `[ ] [B]` | 1-3 h | Host, puerto, cuenta y politica institucional |
 | `PR-02` | Smoke con Redis administrado | `[ ] [B]` | 1-3 h | Endpoint TLS, credenciales y red permitida |
 | `PR-03` | Smoke de Cloudinary y ciclo upload/delete | `[ ] [B]` | 1-3 h | Cuenta, URL firmada y cuota aprobada |
-| `PR-04` | Google SSO productivo | `[ ] [B]` | 6-12 h | Client ID/secret, callbacks y aprobacion institucional |
+| `PR-04` | Aceptacion Microsoft Entra en tenant institucional | `[ ] [B]` | 3-6 h | Tenant ID, dos App Registrations, scope delegado, redirect URIs, consentimiento y cuenta de prueba |
 | `PR-05` | Benchmark BCrypt en hardware objetivo | `[ ] [B]` | 1-2 h | Host productivo representativo |
 | `PR-06` | Alertas operativas y politica de I/O persistente | `[ ] [B]` | 2-4 h | Plataforma de monitoreo seleccionada |
 | `PR-07` | Antivirus/CDR externo para uploads | `[ ] [B]` | 8-16 h | Seleccion de proveedor, API, presupuesto y privacidad |
 
-**Esfuerzo tecnico estimado:** **20-43 h**, excluyendo tiempos de aprobacion y
-provisionamiento. Google SSO, cloud publico y antivirus/CDR son evolucion productiva;
+**Esfuerzo tecnico estimado:** **17-37 h**, excluyendo tiempos de aprobacion y
+provisionamiento. La aceptacion Entra, cloud publico y antivirus/CDR son evolucion productiva;
 no forman parte del Definition of Done academico del MVP.
 
 ### Definition of Done de la entrega academica

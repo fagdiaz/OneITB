@@ -7,8 +7,8 @@
 **Alumno/a:** [Completar nombre y apellido]<br>
 **Docente/s:** [Completar]<br>
 **Ciclo lectivo:** 2026<br>
-**Versión del documento:** 1.4 - Condiciones oficiales de mesa y cierre logístico<br>
-**Fecha de corte técnico-documental:** 29 de julio de 2026
+**Versión del documento:** 1.6 - Identidad institucional Microsoft Entra<br>
+**Fecha de corte técnico-documental:** 30 de julio de 2026
 
 > **Alcance de esta memoria.** Este documento describe el estado comprobable del repositorio OneITB23 al momento de su redacción. Distingue entre funcionalidades implementadas, validaciones automatizadas y verificaciones externas todavía pendientes. Los nombres y versiones se corresponden con el código fuente: .NET 8 (Microsoft, 2023a), Entity Framework Core 8.0.6 (Microsoft, 2023b), Hot Chocolate 14.2.0 (ChilliCream, s. f.), GraphQL (GraphQL Foundation, 2021), React 18 (React Team, 2022), Apollo Client 3.7 (Apollo GraphQL, s. f.), Vite 8 (Vite Team, 2026), Tailwind CSS 4 (Wathan, 2025) y SQL Server 2022 (Microsoft, 2025).
 
@@ -18,7 +18,7 @@ OneITB23 es una plataforma web institucional que integra comunicación académic
 
 La solución adopta una arquitectura desacoplada: una aplicación de página única o SPA (Mozilla, 2025) consume una API GraphQL desarrollada en .NET 8; Entity Framework Core administra la persistencia en SQL Server; las operaciones en tiempo real utilizan el protocolo WebSocket (Fette & Melnikov, 2011); y la carga binaria se resuelve mediante un endpoint basado en el estilo arquitectónico REST (Fielding, 2000). El despliegue productivo se modela con contenedores Docker (Docker, Inc., s. f.) para NGINX (NGINX, Inc., s. f.), la API, SQL Server y Redis (Redis Ltd., s. f.), con adaptadores opcionales para el protocolo SMTP (Klensin, 2008) y almacenamiento Cloudinary (Cloudinary, 2026). Cuando esas variables externas no existen, el entorno local mantiene mecanismos alternativos seguros y reproducibles.
 
-El núcleo funcional se encuentra implementado y el roadmap registra un 99 % global (115 de 116 ítems), con el core funcional completo. La evidencia automatizada más reciente registra 152 pruebas backend y 79 pruebas frontend aprobadas, compilación Release con cero errores y cero advertencias, bundle Vite con 380 módulos y cero errores, y esquema de Entity Framework sin cambios pendientes. La aceptación local también verificó una identidad Moderador canónica, aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y entrega SMTP capturada mediante Mailpit. Permanecen como controles de cierre académico la regresión visual manual del rol Moderador, la prueba WebSocket de red con dos sesiones aisladas y la maquetación final. Los proveedores públicos, Cloudinary y Google SSO requieren credenciales o aprobación externa y no se presentan como verificados.
+El núcleo funcional se encuentra implementado y el roadmap registra un 100 % global (116 de 116 ítems), con el core funcional completo. La evidencia automatizada más reciente registra 174 pruebas backend y 82 pruebas frontend aprobadas, compilación Release con cero errores y cero advertencias, bundle Vite con 539 módulos y cero errores, y esquema de Entity Framework sin cambios pendientes. La base de demostración fue respaldada y reconstruida desde las migraciones canónicas; la migración número 33 agregó identidad externa Microsoft Entra sin alterar el grafo demo. Dos ejecuciones del seeder produjeron un inventario idéntico, la auditoría relacional obtuvo cero violaciones y seis identidades canónicas autenticaron con el rol esperado. La aceptación local también verificó aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y entrega SMTP capturada mediante Mailpit. El acceso institucional Microsoft 365 se implementó con MSAL Authorization Code + PKCE y validación backend del access token (Microsoft, s. f.); el consentimiento y smoke contra el tenant real permanecen como gate externo. También restan como controles de cierre académico la regresión visual manual del rol Moderador, la prueba WebSocket de red con dos sesiones aisladas y la maquetación final.
 
 **Índice**
 
@@ -70,7 +70,7 @@ El objetivo global es construir una red social académica y una Bolsa de Trabajo
 - No incluye pasarelas de pago, comercio electrónico ni gestión contable.
 - No incluye videollamadas nativas ni reemplaza plataformas de aula virtual sincrónica.
 - La integración SIU Guaraní se implementa mediante un adaptador mock; la conexión con una API institucional real requiere convenio, credenciales y contrato de datos.
-- Google SSO no se considera operativo sin credenciales del protocolo OAuth 2.0 (Hardt, 2012), callbacks y aprobación institucional.
+- La integración Microsoft Entra está implementada, pero no se considera verificada contra producción sin App Registrations, scope delegado, redirect URIs, consentimiento y una cuenta del tenant institucional.
 - SMTP, Cloudinary y Redis distribuido poseen implementación condicional, pero requieren secretos y pruebas en el entorno de destino.
 - La ruta pública de credenciales digitales no sustituye certificados oficiales firmados por la institución.
 - La plataforma no realiza selección automática de candidatos: ofrece una Bolsa de Trabajo y un Gestor de Ofertas y Postulaciones.
@@ -121,7 +121,7 @@ Una flecha parte del Estudiante hacia OneITB23 con la leyenda “crea su perfil 
 
 ### Descripción General
 
-El sistema se presenta como una aplicación web responsive. Una persona puede registrarse con una identidad permitida, seleccionar rol y carreras, iniciar sesión y acceder a un entorno privado. Las contraseñas se verifican mediante BCrypt (Provos & Mazières, 1999). Una autenticación válida emite un JSON Web Token o JWT (Jones et al., 2015), que el cliente Apollo adjunta a las operaciones GraphQL y a las cargas de archivos autorizadas.
+El sistema se presenta como una aplicación web responsive. Una persona puede registrarse con una identidad permitida, seleccionar rol y carreras, iniciar sesión y acceder a un entorno privado. Las contraseñas se verifican mediante BCrypt (Provos & Mazières, 1999). Como alternativa institucional, MSAL ejecuta Authorization Code + PKCE contra un tenant Microsoft Entra único; la API valida el access token del scope OneITB y lo canjea por la misma sesión local. Una autenticación válida emite un JSON Web Token o JWT (Jones et al., 2015), que el cliente Apollo adjunta a las operaciones GraphQL y a las cargas de archivos autorizadas.
 
 Una vez autenticado, el usuario accede a un muro cuyo contenido se limita por la intersección de carreras y materias. Puede crear publicaciones con texto, enlaces de YouTube y varios adjuntos; elegir una portada; comentar hasta dos niveles; mencionar usuarios; reaccionar; seguir, silenciar o bloquear; y reportar contenido. Los archivos se cargan primero al endpoint REST y luego se asocian a la operación de negocio mediante GraphQL, evitando transportar binarios por el esquema.
 
@@ -144,6 +144,7 @@ Administradores y moderadores disponen de herramientas diferentes. El autor cons
 - **RF-003 - Bloqueo de cuenta:** rechazar cuentas inactivas y aplicar lockout temporal luego de cinco intentos fallidos durante quince minutos.
 - **RF-004 - Protección administrativa:** impedir modificar o desactivar una cuenta administradora desde los flujos ordinarios; exigir contraseña del administrador actual para promover otra cuenta.
 - **RF-005 - Sesión segura:** limpiar token, estado de autenticación, caché Apollo, chat y notificaciones al cerrar sesión o expirar el JWT.
+- **RF-005B - Identidad institucional:** iniciar sesión con una cuenta Microsoft 365 del tenant autorizado, validar firma, emisor, audiencia, vigencia, tenant, objeto, scope y dominio antes de vincular la identidad y emitir el JWT OneITB.
 - **RF-006 - Perfil y CV:** consultar y editar avatar, biografía, contacto, redes, educación, experiencia, proyectos, habilidades e idiomas.
 - **RF-007 - Carreras:** vincular cada usuario con una o más carreras institucionales mediante una relación explícita.
 - **RF-008 - Privacidad:** permitir perfil público o privado y enmascarar información sensible ante terceros no autorizados.
@@ -200,7 +201,7 @@ Administradores y moderadores disponen de herramientas diferentes. El autor cons
 
 | Código | Categoría | Requerimiento y criterio aplicado |
 |---|---|---|
-| RNF-001 | Seguridad | Autenticación JWT, hash BCrypt, bloqueo de fuerza bruta, autorización por rol/propiedad y secretos fuera del repositorio. |
+| RNF-001 | Seguridad | Autenticación JWT, hash BCrypt, bloqueo de fuerza bruta, autorización por rol/propiedad, access tokens Entra validados y no persistidos, y secretos fuera del repositorio. |
 | RNF-002 | Protección API | Rate limiting por IP, profundidad GraphQL máxima configurable, paginación global y validación de entradas, en concordancia con las defensas recomendadas para disponibilidad y control de costos (OWASP Foundation, s. f.). |
 | RNF-003 | Privacidad | Enmascaramiento backend de perfiles privados y aislamiento por usuario en mensajes, notas y notificaciones. |
 | RNF-004 | Integridad | Todas las claves foráneas relevantes se modelan explícitamente; se utiliza `DeleteBehavior.Restrict` para evitar rutas de cascada no deseadas. |
@@ -341,7 +342,8 @@ sequenceDiagram
     autonumber
     actor U as Usuario
     participant F as Frontend (React)
-    participant C as API (Controlador Auth)
+    participant E as Microsoft Entra ID
+    participant C as API GraphQL OneITB
     participant DB as SQL Server
 
     rect rgb(15, 23, 42)
@@ -379,29 +381,38 @@ sequenceDiagram
     note right of U: Flujo de Inicio de Sesión (Login)
     end
 
-    U->>F: iniciarSesion(email, password)
+    U->>F: seleccionar método de acceso
     activate F
-    F->>C: POST /graphql (login mutation)
-    activate C
-    C->>DB: buscarUsuario(email)
-    activate DB
-    DB-->>C: retorna usuario y hash
-    deactivate DB
-
-    C->>C: verificar BCrypt(password, hash)
-
-    alt Credenciales válidas
-        C-->>F: retorna JWT Token
-        F->>U: redirigir a /feed principal
-    else Credenciales inválidas
-        C-->>F: error (Invalid credentials)
-        F->>U: mostrar alert("Error de acceso")
+    alt Password local
+        F->>C: login(email, password)
+        activate C
+        C->>DB: buscar cuenta y estado de lockout
+        DB-->>C: cuenta y hash BCrypt
+        C->>C: verificar password y emitir JWT local
+        C-->>F: AuthPayload o error genérico
+        deactivate C
+    else Microsoft 365 institucional
+        F->>E: Authorization Code + PKCE
+        E-->>F: access token para scope API OneITB
+        F->>C: microsoftLogin(accessToken)
+        activate C
+        C->>E: obtener metadata/keys OpenID cacheadas
+        E-->>C: issuer y claves RS256
+        C->>C: validar firma, audience, lifetime, tid, oid y scp
+        C->>DB: vincular/aprovisionar identidad y auditar
+        DB-->>C: usuario local autorizado
+        C-->>F: AuthPayload con JWT local
+        deactivate C
     end
-    deactivate C
+    F->>U: redirigir a /feed o mostrar error controlado
     deactivate F
 ```
 
-**Nota descriptiva.** La secuencia de acceso incorpora una decisión condicional posterior a la verificación del hash. Las credenciales válidas producen el token JWT y habilitan la navegación autenticada; las inválidas generan un error controlado y mantienen al usuario fuera del área privada.
+**Nota descriptiva.** Ambos métodos terminan en el mismo JWT local. El token Entra solo
+se utiliza para validar y vincular la identidad institucional; no se persiste ni
+autoriza otras operaciones GraphQL. La autoridad es single-tenant y una cuenta nueva se
+aprovisiona sin privilegios. Password local y Magic Link de empleadores permanecen como
+flujos independientes.
 
 ### Modelo de Dominio (DER)
 
@@ -425,9 +436,12 @@ erDiagram
     }
     ACCOUNT {
         uuid Id PK
-        uuid UserId FK
         string Email UK
-        string PasswordHash
+        string PasswordHash "nullable for external-only"
+        string ExternalProvider
+        string ExternalTenantId
+        string ExternalSubjectId
+        datetime LastExternalLoginAt
         int FailedLoginAttempts
         datetime LockoutEnd
         datetime CreatedAt
@@ -687,7 +701,7 @@ erDiagram
 
 **B) Descripción descriptiva exhaustiva**
 
-El DER debe dibujarse por dominios para conservar legibilidad. En el centro se ubica `USER` en azul oscuro, porque concentra identidad y relaciones. A su lado se colocan `ACCOUNT` y `MAGIC_LINK` en azul claro, representando autenticación. Debajo se ubican `CAREER`, `USER_CAREER`, `SUBJECT` y `SUBJECT_PREREQUISITE` en verde suave, representando estructura académica.
+El DER debe dibujarse por dominios para conservar legibilidad. En el centro se ubica `USER` en azul oscuro, porque concentra identidad y relaciones. A su lado se colocan `ACCOUNT` y `MAGIC_LINK` en azul claro, representando autenticación. `ACCOUNT` utiliza la misma clave del usuario en la relación uno a uno y puede contener password BCrypt o una identidad externa completa; la combinación proveedor, tenant y objeto Entra es única y los tokens no forman parte del modelo. Debajo se ubican `CAREER`, `USER_CAREER`, `SUBJECT` y `SUBJECT_PREREQUISITE` en verde suave, representando estructura académica.
 
 El dominio social se pinta en celeste: `INQUIRY`, `COMMENT`, `SOCIAL_ATTACHMENT`, `REACTION`, `COMMENT_REACTION`, `COMMUNITY_REPORT` y `USER_INTERACTION`. `COMMENT` debe mostrar una flecha hacia sí misma para representar respuestas, con cardinalidad opcional en el padre y múltiple en los hijos. `SOCIAL_ATTACHMENT` puede pertenecer a una publicación o a un comentario; la validación de negocio aplica un **Constraint de Exclusividad Mutua (XOR)**: el archivo pertenece a una `Inquiry` o a un `Comment`, pero jamás a ambos simultáneamente. Se debe añadir una nota visual indicando que la relación exige exactamente un propietario.
 
@@ -960,15 +974,17 @@ La estrategia combina análisis estático, pruebas automatizadas, compilación, 
 
 | Control | Resultado documentado más reciente |
 |---|---|
-| Pruebas backend | 152/152 aprobadas |
-| Pruebas frontend | 31 archivos y 79/79 pruebas aprobadas |
+| Pruebas backend | 174/174 aprobadas |
+| Pruebas frontend | 32 archivos y 82/82 pruebas aprobadas |
 | Build backend Release | 0 errores y 0 advertencias |
-| Build frontend Vite | 380 módulos; 669 ms; 0 errores |
+| Build frontend Vite | 539 módulos; 0,85 s; 0 errores |
 | Modelo EF Core | Sin cambios pendientes respecto de migraciones |
 | Sesión y roles | Reemplazo Estudiante -> Moderador sin fuga de identidad, caché ni transporte |
 | Redis local | Entrega exacta entre dos proveedores Hot Chocolate y aislamiento de topic |
 | SMTP local | Tres mensajes capturados e inspeccionados mediante Mailpit |
-| Runtime GraphQL | HTTP 200 y recorridos autenticados de cinco roles en Spec 194 |
+| Base demo e integridad | Backup verificado; 33 migraciones; seed doble estable; cero violaciones |
+| Runtime GraphQL | Seis roles; feed, académico, chat, notificaciones, empleos, administración, moderación y upload aprobados |
+| Microsoft Entra | 43 mutaciones en schema; `microsoftLogin` publicado y rechazo controlado; tenant real pendiente |
 
 **Comandos canónicos de verificación**
 
@@ -1003,17 +1019,18 @@ npm.cmd run build
 - Redis fue verificado localmente entre proveedores independientes. Falta el handshake WebSocket completo a través de la red con dos navegadores aislados.
 - SMTP local fue verificado con Mailpit. SMTP público, Redis administrado y Cloudinary deben probarse con secretos reales antes de declarar validación productiva.
 - La integración SIU es simulada; no debe presentarse como conexión oficial.
-- Google SSO permanece fuera del cierre hasta disponer de credenciales y aprobación institucional.
+- Microsoft Entra está implementado; su aceptación en el tenant real permanece pendiente hasta disponer de App Registrations, consentimiento y una cuenta institucional de prueba.
 - Open Graph para crawlers externos puede requerir renderizado del lado servidor para una previsualización universal.
 - El costo BCrypt debe medirse nuevamente sobre el hardware objetivo antes de un despliegue público.
 
 **Checklist manual previo a la defensa**
 
-- [ ] Publicar e integrar el corte de Spec 195 y confirmar `git status` limpio.
+- [ ] Publicar e integrar el corte de Spec 197 y confirmar `git status` limpio.
 - [ ] Ejecutar `scripts/validate-predefense.ps1`.
 - [ ] Ejecutar `scripts/validate-local-infrastructure.ps1` y comprobar que libere contenedores y puertos.
 - [ ] Ejecutar `docker compose up -d` y verificar salud de SQL Server.
-- [ ] Aplicar migraciones en una base limpia y ejecutar el seeder demo habilitado.
+- [x] Reconstruir la base demo desde migraciones, ejecutar dos seeds y verificar integridad (Spec 196).
+- [ ] Ejecutar `scripts/validate-demo-database.ps1` nuevamente en el equipo de defensa.
 - [ ] Iniciar API y frontend desde el runbook canónico.
 - [ ] Probar registro, login, logout y cambio entre dos cuentas sin fuga de caché.
 - [ ] Crear una publicación con imagen, PDF y YouTube; comentar, reaccionar y abrir notificación.
@@ -1035,8 +1052,8 @@ mantienen en `docs/project_docs/ROADMAP.md`.
 
 | Actividad | Estimación | Resultado esperado |
 |---|---:|---|
-| Integrar Spec 195 y limpiar el repositorio | 45-75 min | SHA remoto e inmutable, sin artefactos accidentales |
-| Ejecutar los dos gates automatizados de predefensa | 60-90 min | Tests, builds, EF, Redis, Mailpit y cleanup en verde |
+| Integrar Spec 197 y limpiar el repositorio | 45-75 min | SHA remoto e inmutable, sin artefactos accidentales |
+| Ejecutar los tres gates automatizados de predefensa | 75-105 min | Tests, builds, EF, base demo, Redis, Mailpit y cleanup en verde |
 | Regresión manual por seis roles | 3-4 h | Evidencia visual y consola limpia |
 | Chat y notificaciones con dos sesiones aisladas | 60-90 min | WebSocket, badges, lectura y aislamiento comprobados |
 | Consolidar evidencia y congelar el corte | 45-60 min | Roadmap, auditoría y memoria alineados al mismo SHA |
@@ -1054,7 +1071,7 @@ mantienen en `docs/project_docs/ROADMAP.md`.
 
 El cierre académico pendiente demanda aproximadamente **22 a 31 horas efectivas**,
 equivalentes a **tres o cuatro jornadas concentradas**. Los proveedores públicos,
-Google SSO, benchmark BCrypt y antivirus/CDR requieren entre **20 y 43 horas técnicas**
+la aceptación Microsoft Entra, benchmark BCrypt y antivirus/CDR requieren entre **17 y 37 horas técnicas**
 adicionales, además de tiempos de aprobación; no bloquean la defensa controlada ni deben
 confundirse con funcionalidades ya verificadas.
 
@@ -1202,6 +1219,22 @@ Los comandos, variables y resolución de problemas se mantienen en `docs/audit/R
 
 Las migraciones se generan desde el proyecto `Data` utilizando `GraphQL.csproj` como startup project. El seeder empresarial es idempotente, se ejecuta por fases y limpia el Change Tracker entre bloques para limitar memoria y evitar conflictos de identidad. Las credenciales demo se obtienen desde configuración segura (`Seed:DemoPassword`) y no deben fijarse en el repositorio.
 
+Para la defensa se definió una base demo canónica y reproducible. El procedimiento
+`scripts/reset-demo-database.ps1` identifica de forma estricta el SQL Server Docker
+local, verifica un backup antes de cualquier eliminación, reconstruye el esquema desde
+las 33 migraciones y exige que dos ejecuciones consecutivas del seeder produzcan el
+mismo inventario. El grafo resultante contiene 15 cuentas/usuarios, 9 carreras
+institucionales, 6 materias de muestra, recursos y progreso académico, CV relacional,
+60 publicaciones, 80 comentarios, 240 reacciones, 280 mensajes, 127 notificaciones,
+4 ofertas y 6 postulaciones.
+
+La aceptación se completa con `scripts/validate-demo-database.ps1`, que controla
+integridad referencial, exclusividad de adjuntos, profundidad de comentarios, claves
+canónicas, estado de lockout, autenticación de los seis roles y contratos críticos. El
+proceso es finito y elimina sus fixtures y servidor temporal. El reset conserva uploads
+y volumen Docker; los backups se almacenan en una ruta ignorada por Git. La operación
+está prohibida contra bases externas o productivas.
+
 ### 7.6 Trazabilidad metodológica
 
 El proyecto utiliza Spec Kit. Cada intervención relevante dispone, cuando corresponde, de `spec.md`, `plan.md`, `tasks.md` y evidencia. La definición de terminado exige pruebas, compilación, actualización del roadmap y una única entrada nueva en el Development Log. Una tarea marcada como implementada no equivale automáticamente a verificada: la evidencia de runtime tiene prioridad.
@@ -1230,6 +1263,10 @@ ejecución. Esta denominación es deliberadamente más precisa que “producció
 reconoce que el software está preparado para la defensa y que los proveedores externos
 todavía requieren credenciales y smokes en el ambiente de destino.
 
+La base de demostración forma parte de ese Release Candidate: no depende de datos
+históricos del equipo, se puede recuperar desde un backup verificado y cuenta con
+credenciales no versionadas y un grafo relacional estable para los seis roles.
+
 La presentación debe diferenciar con precisión:
 
 - **Implementado:** existe código integrado y compilable.
@@ -1237,9 +1274,10 @@ La presentación debe diferenciar con precisión:
 - **Condicional:** requiere variables, secretos o proveedor externo.
 - **Pendiente de validación manual:** requiere recorrido visual final en navegador.
 
-Al corte del 29 de julio de 2026, SMTP con Mailpit y Redis local poseen evidencia de
-integración; no equivalen a validación de proveedor público. Google SSO, Cloudinary
-productivo, Redis administrado, SMTP público y el handshake WebSocket con dos navegadores
+Al corte del 30 de julio de 2026, SMTP con Mailpit y Redis local poseen evidencia de
+integración; no equivalen a validación de proveedor público. La aceptación Microsoft
+Entra en el tenant institucional, Cloudinary productivo, Redis administrado, SMTP
+público y el handshake WebSocket con dos navegadores
 permanecen identificados como gates. Esta distinción evita sobreafirmaciones, facilita
 preguntas técnicas y demuestra una gestión profesional de riesgos y evidencia.
 
@@ -1315,6 +1353,8 @@ Microsoft. (2023a, 14 de noviembre). *Announcing .NET 8*. .NET Blog. https://dev
 Microsoft. (2023b, 22 de noviembre). *What's new in EF Core 8*. Microsoft Learn. https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-8.0/whatsnew
 
 Microsoft. (2025, 8 de septiembre). *What's new in SQL Server 2022*. Microsoft Learn. https://learn.microsoft.com/en-us/sql/sql-server/what-s-new-in-sql-server-2022
+
+Microsoft. (s. f.). *OAuth 2.0 authorization code flow on the Microsoft identity platform*. Recuperado el 30 de julio de 2026, de https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow
 
 Mozilla. (s. f.). *PDF.js*. Recuperado el 18 de julio de 2026, de https://mozilla.github.io/pdf.js/
 

@@ -22,6 +22,8 @@ using Services.Academic;
 using Services.Notifications;
 using Services.Siu;
 using Services.Jobs;
+using Services.Auth;
+using OneItb.GraphQL.Infrastructure;
 using OneItb.GraphQL.Services.Security;
 
 namespace OneITB.GraphQL.Mutations
@@ -69,6 +71,33 @@ namespace OneITB.GraphQL.Mutations
             if (input == null) throw new ArgumentNullException(nameof(input));
             var authResult = await accountService.Login(input, cancellationToken);
             return authResult;
+        }
+
+        public async Task<AuthPayload> MicrosoftLogin(
+            string accessToken,
+            [Service] IMicrosoftEntraAuthService authService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await authService.LoginAsync(
+                    accessToken,
+                    GetClientSource(httpContextAccessor),
+                    httpContextAccessor.HttpContext?
+                        .Response
+                        .Headers[CorrelationIdMiddleware.HeaderName]
+                        .FirstOrDefault(),
+                    cancellationToken);
+            }
+            catch (MicrosoftEntraAuthenticationException exception)
+            {
+                throw new GraphQLException(
+                    ErrorBuilder.New()
+                        .SetMessage(exception.Message)
+                        .SetCode(exception.Code)
+                        .Build());
+            }
         }
 
         [Authorize]

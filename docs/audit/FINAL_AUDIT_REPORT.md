@@ -1,10 +1,10 @@
 # Reporte final de auditoría técnica y seguridad - OneITB23
 
-**Fecha de corte**: 2026-07-28
+**Fecha de corte**: 2026-07-30
 **Alcance**: .NET 8, EF Core 8, HotChocolate 14, React 18, Apollo Client 3, SQL Server Docker
-**Estado del roadmap**: 99% (115 de 116 items)
-**Corte de código base**: `25cdb9f`; aceptación final ejecutada en `codex/194-final-operational-acceptance`
-**Decisión técnica**: cierre de remediaciones 186-193 aprobado y Code Freeze operativo local alcanzado. Los proveedores reales y el SSO institucional permanecen como gates externos explícitos.
+**Estado del roadmap**: 100% (116 de 116 items)
+**Corte de código base**: remediaciones 186-195 integradas; rebaseline ejecutado en Spec 196; Microsoft Entra implementado en `codex/197-microsoft-entra-sso`
+**Decisión técnica**: cierre de remediaciones 186-193 aprobado, infraestructura local aceptada, base demo canónica reconstruida e identidad Microsoft Entra implementada. Los proveedores reales y la aceptación en el tenant institucional permanecen como gates externos explícitos.
 
 ---
 
@@ -13,7 +13,7 @@
 Si bien la auditoría local puede darse por cerrada a nivel de código (Code Freeze operativo local alcanzado), quedan explícitamente registradas las siguientes tareas pendientes. Estas se encuentran bloqueadas por entorno, dependencias de secretos reales o validaciones institucionales, y son requisitos previos para el paso a producción pública:
 
 1. **Smokes con Proveedores Reales `[B]`**: Validar SMTP, Redis administrado y Cloudinary en un ambiente seguro que cuente con secretos reales no versionados. La Spec 195 valida los adaptadores Redis/SMTP contra infraestructura Docker local, no contra proveedores públicos.
-2. **Aprobación y Configuración de Google SSO**: Completar la aprobación institucional y configurar las credenciales y callbacks necesarios para habilitar el inicio de sesión.
+2. **Aceptación Microsoft Entra en el tenant institucional `[B]`**: Crear/aprobar las dos App Registrations single-tenant, scope delegado y redirect URIs; completar consentimiento y smoke con una cuenta Microsoft 365 real. El adaptador y sus controles ya están implementados por Spec 197.
 3. **Validación Operativa de Criptografía `[I]`**: Medir el costo y rendimiento de `BCrypt` (Work Factor) sobre el hardware productivo objetivo antes del despliegue público (referencia A-2).
 4. **Validaciones manuales o de red pendientes**:
    - **Rol Moderador**: La identidad, JWT, permisos y auditoría están automatizados; resta el recorrido visual manual previo a la defensa.
@@ -37,7 +37,7 @@ validación de hardware productivo.
 | **Spec 186 - token mock/duplicidad de emisores JWT** | Crítico | Se eliminó `token_placeholder`; `JwtTokenService` centralizó firma HS256, claims, issuer, audience y expiración. Magic Link pasó a credencial criptográfica de un uso con consumo atómico. | **Verificado `[V]`**: 82/82 tests, build Release, EF sin drift y smoke SQL Docker con JWT válido, replay rechazado y concurrencia 1 éxito/1 rechazo. | La entrega fuera de banda fue endurecida posteriormente por Spec 192. |
 | **Spec 187 - cancelación incompleta en mutaciones** | Alto | Todas las mutaciones asíncronas reciben `CancellationToken` y lo propagan por servicios, UnitOfWork, repositorios, EF Core y efectos compatibles; `OperationCanceledException` no se convierte en error de negocio. | **Verificado `[V]`**: guard por reflexión, prueba pre-cancelada sin escritura, 82/82 tests y schema runtime sin argumentos de infraestructura expuestos. | Sin gate funcional pendiente. |
 | **Spec 188 - session bleed en Apollo/React/WebSocket** | Alto | Logout, expiración, cambio de identidad y cierre entre pestañas convergen en una terminación idempotente: borra identidad, limpia Apollo, termina WebSocket e invalida respuestas tardías mediante epoch. | **Verificado `[V]`**: 79 tests frontend, build Vite, navegador limpio y recorrido real Estudiante -> logout -> Administrador sin datos cruzados. | Sin gate local pendiente. |
-| **Spec 189 - autorización mutacional incompleta** | Crítico | Se aplicó `[Authorize]` declarativo a toda mutación protegida, con roles canónicos; ownership, autoría e inscripción permanecen como controles contextuales en servicios. | **Verificado `[V]`**: matriz de 42 mutaciones, solo 4 públicas, tests de no-escritura y smokes anónimo/rol incorrecto. | Sin gate funcional pendiente. |
+| **Spec 189 - autorización mutacional incompleta** | Crítico | Se aplicó `[Authorize]` declarativo a toda mutación protegida, con roles canónicos; ownership, autoría e inscripción permanecen como controles contextuales en servicios. | **Verificado `[V]`**: matriz actual de 43 mutaciones, solo 5 públicas tras agregar `microsoftLogin`, tests de no-escritura y smokes anónimo/rol incorrecto. | Sin gate funcional pendiente. |
 | **C-1 - upload validado solo por extensión/MIME** | Crítico | `FileContentInspector` valida firmas y estructura antes de cualquier storage y rechaza contenido incompatible con código estable sin filtrar detalles. | **Verificado por Specs 190/194 `[V]`**: PDF válido aceptado; ejecutable renombrado y PDF truncado rechazados sin fixture retenido. | Antivirus/CDR externo queda fuera del MVP. |
 | **C-2 - Magic Link sin limitación específica** | Crítico | Se agregaron límites independientes por IP e identidad/credencial, fingerprints HMAC, memoria acotada en local y operación atómica Redis en producción. | **Verificado por Specs 190/194 `[V]`**: umbrales de solicitud/redención, recuperación, digest y single-use observados; tests deterministas cubren concurrencia/fail-closed. | El gate Redis distribuido requiere configuración externa. |
 | **C-3 - I/O síncrono en carga del feed** | Crítico | La consulta de visibilidad usa `AnyAsync` cancelable y el builder del feed no ejecuta I/O terminal síncrono. | **Verificado por Specs 191/194 `[V]`**: suite de cancelación y recorrido runtime paginado sin regresión. | Sin gate local pendiente. |
@@ -47,6 +47,7 @@ validación de hardware productivo.
 | **A-2 - BCrypt sin política explícita** | Alto | `IPasswordHasher` centraliza costo 12 configurable, eleva hashes débiles tras login y nunca degrada hashes más fuertes. | **Mitigado por Spec 192 `[I]`**: registro, administración, empleadores y seeder cubiertos; tests de rehash/no-downgrade PASS. | Medición operativa del costo por hardware antes del despliegue público. |
 | **M3-M1 - bypass de silenciamiento en reacciones** | Medio | `ToggleReactionAsync` ejecuta el guard de `MutedUntil` antes de leer o mutar; el rechazo no altera reacciones ni emite notificación y retorna `USER_ERROR`. | **Verificado por Specs 193/194 `[V]`**: like/unlike autenticados rechazados con cero delta de reacción/notificación. | Sin gate local pendiente. |
 | **M4-M1 - error boundary por debajo de providers** | Medio | `GlobalErrorBoundary` envuelve Apollo, Theme y App; el bootstrap asíncrono agrega fallback React/DOM incluso antes de `createRoot`. | **Verificado por Specs 193/194 `[V]`**: 79 tests frontend y recorridos de navegador sin errores/warnings propios. | Sin gate local pendiente. |
+| **Spec 197 - identidad institucional Microsoft Entra** | Alto | MSAL Authorization Code + PKCE obtiene un access token del scope API; backend valida RS256, issuer, audience, lifetime, tenant, object ID, scope y dominio antes del canje por JWT OneITB. Vinculación, roles, auditoría, rate limit y logout son fail-closed. | **Implementado `[I]`**: tests backend/frontend, build, migración aplicada, EF sin drift y schema runtime con rechazo controlado. | Consentimiento y smoke con tenant/cuenta institucional reales. |
 
 > **Nota Módulo 3**: La auditoría de lógica de negocio y moderación no arrojó hallazgos Críticos ni Altos. El hallazgo **MEDIO** M3-M1 fue mitigado por Spec 193; el detalle y su estado posterior se conservan en la sección §2.
 
@@ -70,7 +71,7 @@ validación de hardware productivo.
 
 1. `UploadCleanupHostedService` registra fallos de limpieza como warning; en producción se recomienda elevar errores persistentes de I/O a error/alerta.
 2. Redis y Cloudinary tienen fallback local. SMTP es obligatorio en Production y usa pickup local solo en Development; los tres requieren smoke con secretos reales en el ambiente de destino.
-3. Google SSO continúa bloqueado por credenciales, callbacks y aprobación institucional.
+3. Microsoft Entra está implementado; su aceptación real continúa bloqueada por App Registrations, consentimiento y cuenta institucional de prueba.
 
 ### Recomendación de cierre
 
@@ -78,14 +79,15 @@ Se recomienda declarar **Code Freeze operativo local**, condicionado externament
 
 1. No incorporar nuevas features.
 2. Ejecutar `scripts/validate-predefense.ps1` y el gate finito
-   `scripts/validate-local-infrastructure.ps1` antes de cada entrega relevante.
+   `scripts/validate-local-infrastructure.ps1` antes de cada entrega relevante; antes
+   de la demostración, agregar `scripts/validate-demo-database.ps1`.
 3. Validar SMTP, Redis y Cloudinary solo en un ambiente seguro con secretos no versionados.
 4. Corregir únicamente defectos reproducibles y acompañarlos con prueba de regresión.
 5. Mantener como criterio de salida: suites, builds, EF drift y regresión de sesión en verde.
 
 Con estas condiciones, OneITB23 se encuentra estable para la defensa académica
 controlada. El paso a producción pública requiere completar smokes con proveedores
-reales, medir BCrypt sobre el hardware objetivo y aprobar SSO institucional, sin
+reales, medir BCrypt sobre el hardware objetivo y aceptar Microsoft Entra en el tenant institucional, sin
 modificar la lógica funcional ya congelada.
 
 ### Spec 194 - Aceptación operacional final
@@ -112,6 +114,38 @@ dos providers HotChocolate independientes y no lo filtró a un topic ajeno. Mail
 capturó tres correos del adaptador SMTP, cuyos destinatarios, asuntos y contenidos fueron
 inspeccionados sin encontrar secretos. El runner no inicia servidores web, conserva la
 huella del contenedor SQL y elimina servicios, mensajes y puertos de aceptación.
+
+### Spec 196 - Rebaseline y aceptación de la base demo
+
+La base local dejó de depender de registros históricos o contraseñas modificadas
+manualmente. Un runner protegido comprobó el destino exacto `oneitb23-sql/OneItb`,
+generó un backup `COPY_ONLY` con checksum, aprobó `RESTORE VERIFYONLY`, eliminó
+exclusivamente la base demo y aplicó las 32 migraciones vigentes. Dos arranques
+consecutivos del seeder produjeron el mismo inventario: 15 cuentas/usuarios, 9 carreras,
+6 materias, recursos y progreso académico, CV relacional, muro social, mensajería,
+notificaciones y empleos.
+
+La auditoría SQL obtuvo cero huérfanos, duplicados canónicos, violaciones XOR de
+adjuntos, auto-interacciones o profundidad inválida de comentarios. La aceptación
+runtime autenticó los seis roles y verificó feed, académico, mensajería, notificaciones,
+empleos, administración, moderación y upload. El cierre automatizado quedó en 153/153
+pruebas backend, 80/80 frontend, builds limpios y EF sin drift. Backups, secretos y
+fixtures permanecen fuera de Git.
+
+### Spec 197 - Microsoft Entra institucional
+
+La integración sustituyó el plan Google por Microsoft Entra ID, coherente con Microsoft
+365 institucional. MSAL usa Authorization Code + PKCE, autoridad single-tenant y cache
+de sesión; el backend acepta solo un access token del scope OneITB, valida sus fronteras
+criptográficas y lo canjea por el JWT local. La identidad externa posee índice único,
+cuentas nuevas sin privilegios y vínculo privilegiado fail-closed. Password local y
+Magic Link permanecen activos.
+
+El cierre ejecutó 174/174 pruebas backend, 82/82 frontend, ambos builds limpios, 33
+migraciones sin drift y un schema runtime de 43 mutaciones. `microsoftLogin` respondió
+con error controlado `ENTRA_NOT_CONFIGURED` al estar deshabilitado y el proceso temporal
+liberó su puerto. No se probó un token institucional real porque requiere App
+Registrations, consentimiento y cuenta del tenant; ese gate permanece `[B]`.
 
 ---
 
@@ -383,7 +417,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 | **Consumo atómico de Magic Link** | ✅ Seguro | `EmployerAuthService.cs` líneas 137–168: `ExecuteUpdateAsync` con cláusula `WHERE !IsUsed AND ExpiresAt > utcNow` garantiza consumo atómico y previene replay. Fallback para providers no-relacionales también implementado. |
 | **Token de Magic Link: entropía** | ✅ Seguro | 32 bytes de `RandomNumberGenerator` (256 bits de entropía). Expiración de 15 minutos. Inviable por fuerza bruta. |
 | **Login: protección contra fuerza bruta** | ✅ Seguro | `AccountsService.cs`: lockout de 15 minutos tras 5 intentos fallidos. Contadores reseteados en login exitoso. Mensajes de error genéricos (`AUTH_INVALID_CREDENTIALS`). |
-| **Autorización de mutaciones** | ✅ Seguro | 42 mutaciones verificadas: 4 públicas (register, login, requestMagicLink, loginWithMagicLink), todas las demás con `[Authorize]` o `[Authorize(Roles = ...)]` declarativo. Roles usan constantes canónicas en `GraphQlRoles`. No hay validación manual insegura de roles. |
+| **Autorización de mutaciones** | ✅ Seguro | 43 mutaciones verificadas: 5 públicas (register, login, requestMagicLink, loginWithMagicLink y `microsoftLogin` con rate limit y validación criptográfica propia), todas las demás con `[Authorize]` o `[Authorize(Roles = ...)]` declarativo. Roles usan constantes canónicas en `GraphQlRoles`. No hay validación manual insegura de roles. |
 | **Upload: autenticación** | ✅ Seguro | `UploadController.cs` línea 12: `[Authorize]` a nivel de clase. Límite de 15 MB por archivo, 16 MB por request. Nombre de archivo sanitizado. |
 | **Upload: contenido real** | ✅ Mitigado `[I]` | Inspección binaria/estructural previa a storage para todos los formatos permitidos, con rechazo genérico y tests que prueban ausencia de escritura. |
 | **Magic Link: abuso de operaciones públicas** | ✅ Mitigado `[I]` | Límites configurables por origen y fingerprint de identidad/credencial; memoria acotada en local y operación Lua atómica en Redis. |
@@ -399,7 +433,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 
 La auditoría de cierre verificó las cuatro brechas críticas/altas que impedían declarar estable la frontera de autenticación, cancelación, sesión frontend y autorización GraphQL. La evaluación se respaldó con pruebas automatizadas, builds Release/Vite, revisión de modelo EF, schema GraphQL ejecutado y smokes contra SQL Server 2022 en Docker.
 
-No se declara un despliegue cloud productivo ya validado. Permanecen fuera de este cierre las credenciales de proveedores externos, SSO institucional y la aprobación visual integral del panel administrativo. Esas condiciones están registradas en `ROADMAP.md` y no se contabilizan como verificadas.
+No se declara un despliegue cloud productivo ya validado. Permanecen fuera de este cierre las credenciales de proveedores externos, la aceptación de Microsoft Entra en el tenant real y la aprobación visual integral del panel administrativo. Esas condiciones están registradas en `ROADMAP.md` y no se contabilizan como verificadas.
 
 #### Críticos resueltos
 
@@ -414,7 +448,8 @@ No se declara un despliegue cloud productivo ya validado. Permanecen fuera de es
 ##### Autorización de mutaciones GraphQL - RESUELTO
 
 - La matriz automatizada cubre los 42 campos de `Mutation`.
-- Solo cuatro operaciones son públicas: registro, login, solicitud y consumo de Magic Link.
+- Cinco operaciones son públicas: registro, login, solicitud/consumo de Magic Link y
+  `microsoftLogin`; esta última mantiene rate limit y validación criptográfica propia.
 - Las operaciones por rol usan atributos declarativos con valores canónicos en español.
 - Los controles contextuales de ownership, autor, inscripción y estado se conservaron dentro de servicios.
 - Runtime: una mutación administrativa anónima y una postulación con rol incorrecto fueron rechazadas por middleware.
@@ -427,7 +462,7 @@ No se declara un despliegue cloud productivo ya validado. Permanecen fuera de es
 - Servicios, UnitOfWork y repositorios alcanzados propagan el token hasta EF Core y efectos soportados.
 - Un guard por reflexión impide regresiones futuras.
 - Una prueba pre-cancelada demuestra ausencia de escritura.
-- El schema runtime conserva el contrato externo: 42 mutaciones y cero argumentos de cancelación visibles.
+- El schema runtime conserva el contrato externo: 43 mutaciones y cero argumentos de cancelación visibles.
 
 ##### Aislamiento de sesión Apollo/React/WebSocket - RESUELTO
 

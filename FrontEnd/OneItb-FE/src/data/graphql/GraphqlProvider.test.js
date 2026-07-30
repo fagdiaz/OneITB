@@ -1,6 +1,10 @@
 import { parse } from 'graphql';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GraphQLProvider } from './GraphqlProvider';
+import {
+  GraphQLProvider,
+  resolveHttpUri,
+  resolveWsUri,
+} from './GraphqlProvider';
 
 const ENTITY_TYPES = [
   'User',
@@ -79,5 +83,14 @@ describe('GraphQLProvider session boundary', () => {
 
     releaseTermination();
     await first;
+  });
+});
+
+describe('GraphQLProvider local transport', () => {
+  it('uses the browser origin for HTTP and WebSocket defaults', () => {
+    expect(resolveHttpUri()).toBe('/graphql');
+    expect(resolveWsUri('/graphql')).toBe(
+      `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/graphql`,
+    );
   });
 });

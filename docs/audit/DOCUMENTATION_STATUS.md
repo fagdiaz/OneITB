@@ -1,19 +1,19 @@
 # Estado de documentacion
 
-**Ultima verificacion**: 2026-07-29
+**Ultima verificacion**: 2026-07-30
 
 ## Fuentes canonicas
 
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.4 alineada a Specs 194-195 y a condiciones oficiales de mesa; portada, figuras, DOCX/PDF, impresion y ensayo permanecen pendientes |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 115/116 (99%); cierre academico estimado en 22-31 h, logistica oficial, gates productivos y estimaciones P5/P6 sin inflar el porcentaje funcional |
+| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.6 alineada a Specs 194-197, identidad Microsoft Entra, base demo canonica y condiciones oficiales de mesa; portada, figuras, DOCX/PDF, impresion y ensayo permanecen pendientes |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 116/116 (100%); distingue Feature Complete de aceptacion externa Entra, cierre academico, logistica oficial y gates productivos |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
-| `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones y validacion | Vigente |
+| `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones, rebaseline/restore de la base demo y validacion | Vigente; seis identidades canonicas, procedimiento protegido de Spec 196 y registro/configuracion Microsoft Entra de Spec 197 |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; matriz 186-193 y aceptaciones 194-195 alineadas, con resolucion, evidencia y gate residual por hallazgo |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; matriz 186-193 y aceptaciones 194-197 alineadas, con resolucion, evidencia y gate residual por hallazgo |
 
 ## Documentacion complementaria
 
@@ -23,7 +23,7 @@
 | `docs/academic/02-software-requirements.md` | Resumen academico de requisitos |
 | `docs/academic/03-use-cases.md` | Casos de uso principales |
 | `docs/academic/04-design-diagrams.md` | Diagramas resumidos |
-| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Guia 2.2 para producir 10 diagramas Mermaid, 3 graficos de gestion, convertir a DOCX/PDF y cumplir impresion, presentacion, notebook, HDMI, pendrive, ensayo y contingencia oficial |
+| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Guia 2.4 para producir 10 diagramas Mermaid, 3 graficos de gestion, convertir a DOCX/PDF y cumplir impresion, presentacion, notebook, HDMI, pendrive, ensayo y contingencia oficial |
 | `core-web/` | Paquete compacto de contexto para Gemini/external AI; no es fuente canonica |
 | `.specify/`, `.agents/`, `AGENTS.md`, `specs/` | Tooling local de agentes y evidencia granular; ignorado en el repo profesional |
 
@@ -31,6 +31,9 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/197-microsoft-entra-sso` | Microsoft Entra single-tenant implementado con MSAL PKCE, validacion backend completa, identidad externa unica, provisioning sin privilegios, auditoria/rate limit y limpieza de sesion. Backend 174/174, frontend 82/82, builds limpios, 33 migraciones sin drift y schema runtime 43 mutaciones con rechazo `ENTRA_NOT_CONFIGURED`; tenant real permanece `[B]` |
+| `specs/196-demo-database-rebaseline` | Base Docker local respaldada y reconstruida desde 32 migraciones; dos seeds con inventario identico, integridad SQL en cero y login de los seis roles. Smokes de feed, academico, mensajeria, notificaciones, empleos, administracion, moderacion y upload PASS. Backend 153/153, frontend 80/80, builds limpios y EF sin drift |
+| `Hotfix transport local 2026-07-29` | Vite proxy same-origin verificado para GraphQL HTTP, WebSocket, REST y uploads; login real de `Empleador` por `http://localhost:5173/graphql` PASS; frontend 80/80 y build Vite PASS. El secreto demo permanece fuera del repo |
 | `specs/195-local-infrastructure-and-moderator-acceptance` | Moderador canonico/idempotente y JWT/limites cubiertos; Redis cross-provider y aislamiento de topic verificados; tres escenarios SMTP capturados en Mailpit; backend 152/152, frontend 79/79, builds y EF PASS; cleanup de contenedores/puertos y preservacion SQL comprobados. Proveedores publicos y WebSocket de red siguen `[B]` |
 | `specs/194-final-operational-acceptance` | Aceptacion local cerrada: backend 147/147, frontend 79/79, builds Release/Vite, EF sin drift, Compose y diff-check PASS. Runtime ya ejecutado para uploads, paginacion, silenciamiento y Magic Link; navegador limpio con Estudiante, Profesor, Egresado, Administrador y Empleador, incluido A -> logout -> B. Moderator, dos sesiones realtime y SMTP/Redis/Cloudinary reales quedan `[B]` por ambiente/configuracion |
 | `specs/193-social-bootstrap-hardening` | Verificada localmente: `MutedUntil` bloquea like/unlike con cero delta de reaccion/notificacion; Apollo y providers permanecen bajo frontera global. Backend 147/147, frontend 79/79 y navegador sin errores propios |
@@ -53,7 +56,7 @@
 | `specs/171-production-security-and-seeding/` | Hardening final de seguridad/backend: profundidad maxima GraphQL configurable, paging global, lockout persistente por cuenta, migracion `AddAccountLockout`, seeding demo/productivo configurable sin reset de passwords existentes, backend build PASS, backend tests 38/38, EF sin cambios pendientes y compose productivo validado con `ONEITB_SEED_DEMO_PASSWORD` efimero |
 | `specs/170-cloud-devops-scalability/` | Preparacion cloud/devops: Dockerfiles multi-stage API/Web, `docker-compose.prod.yml` con SQL Server/Redis/API/Nginx, Redis Pub/Sub condicional con fallback InMemory, Cloudinary opcional con fallback local, rate limiting, security headers, healthcheck, npm audit productivo 0 vulnerabilidades, backend build PASS, backend tests 35/35, frontend tests 3/3, frontend build PASS, compose config/build PASS |
 | `specs/169-final-qa-and-hardening/` | Code Freeze hardening: `GraphQLErrorFilter` para sanitizar errores inesperados, `GlobalErrorBoundary` institucional, baseline Vitest/Testing Library para `CertificateExport` (3/3), baseline de integracion GraphQL con executor real HotChocolate + EF Core InMemory, workflow CI ejecuta tests frontend, backend tests 35/35, frontend build PASS; `npm audit --omit=dev` bloqueado por endpoint npm |
-| `specs/168-wow-production-polish/` | Over-delivery institucional: `AuditLog` + `AuditSaveChangesInterceptor`, migracion `AddAuditLogs` generada/aplicada, `auditLogs` admin-only, `publicCertificate` para progreso aprobado, export CSV/impresion de constancias en `/academic`, ruta publica `/certificate/:id` y toasts globales por `notificationReceived`; backend build, tests 34/34, frontend build y schema smoke HTTP verificados; SSO Google queda bloqueado por credenciales OAuth reales |
+| `specs/168-wow-production-polish/` | Registro historico del over-delivery: `AuditLog`, constancias, credenciales y toasts verificados. Su plan Google SSO fue reemplazado por Microsoft Entra en Spec 197 |
 | `specs/167-production-readiness-hardening/` | Hardening de produccion: middleware de correlation id, logging estructurado de metodo/path/status/duracion, metricas GraphQL sociales con DataLoaders para evitar N+1, smoke runtime GraphQL HTTP 200 con `X-Correlation-ID`, metric smoke admin y backend tests 34/34; build host PASS con cache NuGet local y warnings `NU1900` por metadata de vulnerabilidades inaccesible |
 | `specs/166-roadmap-quality-closure/` | Cierre de calidad roadmap/docs: tests backend de auth/feed agregados y pasando 34/34, bug de login con usuario inactivo corregido, busqueda social normalizada, workflow `quality-gates.yml` agregado, workflows Azure actualizados a .NET/actions vigentes, README/project_docs/academic/runbook alineados; build frontend y `git diff --check` verificados, build final del host .NET bloqueado por NuGet/red tras intento de EF restore |
 | `specs/165-academic-hub-hardening/` | Cierre de brechas de Specs 163/164: upload academico convertido a modal, busqueda local instantanea por titulo, mutaciones de recursos con Apollo cache update, alias GraphQL `resourcesBySubject`, feed social con `AsSplitQuery` y respuestas anidadas; tests backend 16/16, backend Release, frontend build, schema smoke y `git diff --check` verificados |
@@ -115,8 +118,9 @@
 - SMTP local quedo verificado contra Mailpit y Cloudinary conserva su fallback local.
   Los proveedores SMTP/Cloudinary publicos requieren secretos no versionados y ambiente
   aprobado; no se presentan como smokes productivos.
-- Google SSO sigue bloqueado hasta disponer de Client ID/secret, callbacks y aprobacion
-  institucional. Open Graph perfecto para crawlers exige SSR o HTML desde backend.
+- Microsoft Entra esta implementado; la aceptacion real requiere App Registrations,
+  consentimiento y cuenta del tenant institucional. Open Graph perfecto para crawlers
+  exige SSR o HTML desde backend.
 - React Router 6.30.4 conserva dos advisories moderados upstream y cero altos/criticos.
   OneITB no usa SSR y sanitiza destinos internos de notificaciones; la version 7.x
   evaluada se descarto porque introducia advisories altos en el corte de Code Freeze.

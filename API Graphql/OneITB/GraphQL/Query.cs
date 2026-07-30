@@ -32,11 +32,6 @@ namespace GraphQL.GraphQL
             return usersService.GetAllAsync();
         }
 
-        public User? GetUserById([Service] IUsersService usersService, Guid id)
-        {
-            return usersService.GetById(id);
-        }
-
         [Authorize]
         public async Task<User> GetMe(
             [Service] OneItbContext context,
@@ -248,6 +243,7 @@ namespace GraphQL.GraphQL
                 user.LastName,
                 $"{user.FirstName} {user.LastName}".Trim(),
                 user.Role,
+                viewerId == user.Id && user.Account.HasExternalIdentity,
                 canViewSensitiveProfile ? user.Biography : null,
                 canViewSensitiveProfile ? user.LinkedIn : null,
                 canViewSensitiveProfile ? user.Facebook : null,

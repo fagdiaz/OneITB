@@ -20,6 +20,13 @@ namespace OneItb.Data
         private static readonly EnterpriseCareer[] Careers =
         {
             new("ADS", "Analisis de Sistemas"),
+            new("DI", "Diseno Industrial"),
+            new("ENF", "Enfermeria"),
+            new("RAD", "Radiologia"),
+            new("HSAL", "Higiene Seguridad y Ambiente Laboral"),
+            new("CM", "Comunicacion Multimedial"),
+            new("AC", "Administracion Contable"),
+            new("APYME", "Administracion de PyMES"),
             new("CDIA", "Ciencia de Datos e Inteligencia Artificial")
         };
 
@@ -76,7 +83,28 @@ namespace OneItb.Data
             await SeedUserCareersAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);
 
+            await SeedSubjectPrerequisitesAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
+            await SeedAcademicResourcesAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
+            await SeedAcademicProgressAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
+            await SeedCvDataAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
+            await SeedNotificationPreferencesAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
+            await SeedUserInteractionsAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
             await SeedInquiriesAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
+            await SeedCommunityReportsAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);
 
             await SeedJobOffersAsync(context, cancellationToken);
@@ -274,6 +302,385 @@ namespace OneItb.Data
             }
         }
 
+        private static async Task SeedSubjectPrerequisitesAsync(
+            OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            string[] codes = Subjects.Select(subject => subject.Code).ToArray();
+            Dictionary<string, int> subjectIds = await context.Subjects
+                .IgnoreQueryFilters()
+                .Where(subject => codes.Contains(subject.Code))
+                .ToDictionaryAsync(subject => subject.Code, subject => subject.Id, cancellationToken);
+
+            (string Subject, string Prerequisite)[] desired =
+            {
+                ("BDD", "PROG1"),
+                ("ISOFT", "BDD"),
+                ("ML", "ESTAP"),
+                ("NOSQL", "ML")
+            };
+
+            int[] ids = subjectIds.Values.ToArray();
+            var existingLinks = await context.SubjectPrerequisites
+                .Where(link => ids.Contains(link.SubjectId) && ids.Contains(link.PrerequisiteId))
+                .Select(link => new { link.SubjectId, link.PrerequisiteId })
+                .ToListAsync(cancellationToken);
+            HashSet<string> existing = existingLinks
+                .Select(link => $"{link.SubjectId}:{link.PrerequisiteId}")
+                .ToHashSet(StringComparer.Ordinal);
+
+            foreach ((string subjectCode, string prerequisiteCode) in desired)
+            {
+                if (!subjectIds.TryGetValue(subjectCode, out int subjectId) ||
+                    !subjectIds.TryGetValue(prerequisiteCode, out int prerequisiteId))
+                {
+                    throw new InvalidOperationException(
+                        $"Subject prerequisite {subjectCode}/{prerequisiteCode} cannot be seeded.");
+                }
+
+                if (existing.Contains($"{subjectId}:{prerequisiteId}"))
+                    continue;
+
+                context.SubjectPrerequisites.Add(new SubjectPrerequisite
+                {
+                    SubjectId = subjectId,
+                    PrerequisiteId = prerequisiteId
+                });
+            }
+        }
+
+        private static async Task SeedAcademicResourcesAsync(
+            OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            string[] subjectCodes = Subjects.Select(subject => subject.Code).ToArray();
+            Dictionary<string, Subject> subjectsByCode = await context.Subjects
+                .IgnoreQueryFilters()
+                .Where(subject => subjectCodes.Contains(subject.Code))
+                .ToDictionaryAsync(subject => subject.Code, cancellationToken);
+
+            Guid[] desiredIds = Subjects
+                .SelectMany(subject => Enumerable.Range(1, 2)
+                    .Select(index => StableGuid($"enterprise-academic-resource:{subject.Code}:{index}")))
+                .ToArray();
+            HashSet<Guid> existingIds = (await context.AcademicResources
+                    .IgnoreQueryFilters()
+                    .Where(resource => desiredIds.Contains(resource.Id))
+                    .Select(resource => resource.Id)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            foreach (EnterpriseSubject seed in Subjects)
+            {
+                if (!subjectsByCode.TryGetValue(seed.Code, out Subject? subject))
+                    throw new InvalidOperationException($"Subject {seed.Code} was not seeded.");
+
+                EnterpriseUser uploader = Users.First(user =>
+                    user.Role == "Profesor" && user.CareerCodes.Contains(seed.CareerCode));
+
+                for (int index = 1; index <= 2; index++)
+                {
+                    Guid resourceId = StableGuid($"enterprise-academic-resource:{seed.Code}:{index}");
+                    if (existingIds.Contains(resourceId))
+                        continue;
+
+                    context.AcademicResources.Add(new AcademicResource
+                    {
+                        Id = resourceId,
+                        SubjectId = subject.Id,
+                        UploaderId = UserId(uploader.Email),
+                        Title = index == 1
+                            ? $"Guia de estudio - {subject.Name}"
+                            : $"Material de practica - {subject.Name}",
+                        Description = index == 1
+                            ? "Resumen docente con conceptos, objetivos y bibliografia de referencia."
+                            : "Ejercicios y criterios de autoevaluacion para preparar trabajos y parciales.",
+                        ExternalUrl = AcademicResourceUrl(seed.Code),
+                        ResourceType = "Link",
+                        Category = index == 1
+                            ? AcademicResourceCategory.Apunte
+                            : AcademicResourceCategory.Examen,
+                        Version = 1,
+                        CreatedAt = SeedStart.AddDays(4).AddHours(index),
+                        IsActive = true
+                    });
+                }
+            }
+        }
+
+        private static async Task SeedAcademicProgressAsync(
+            OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            string[] subjectCodes = Subjects.Select(subject => subject.Code).ToArray();
+            Dictionary<string, Subject> subjectsByCode = await context.Subjects
+                .IgnoreQueryFilters()
+                .Where(subject => subjectCodes.Contains(subject.Code))
+                .ToDictionaryAsync(subject => subject.Code, cancellationToken);
+
+            EnterpriseUser[] learners = Users
+                .Where(user => user.Role is "Estudiante" or "Egresado")
+                .ToArray();
+            Guid[] desiredIds = learners
+                .SelectMany(user => user.CareerCodes.SelectMany(careerCode =>
+                    Subjects.Where(subject => subject.CareerCode == careerCode)
+                        .Select(subject => StableGuid(
+                            $"enterprise-academic-progress:{user.Email}:{subject.Code}"))))
+                .ToArray();
+            HashSet<Guid> existingIds = (await context.AcademicProgressRecords
+                    .Where(progress => desiredIds.Contains(progress.Id))
+                    .Select(progress => progress.Id)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            foreach (EnterpriseUser learner in learners)
+            {
+                foreach (string careerCode in learner.CareerCodes)
+                {
+                    EnterpriseUser assigner = Users.First(user =>
+                        user.Role == "Profesor" && user.CareerCodes.Contains(careerCode));
+                    EnterpriseSubject[] careerSubjects = Subjects
+                        .Where(subject => subject.CareerCode == careerCode)
+                        .OrderBy(subject => subject.Year)
+                        .ToArray();
+
+                    for (int index = 0; index < careerSubjects.Length; index++)
+                    {
+                        EnterpriseSubject subjectSeed = careerSubjects[index];
+                        Guid progressId = StableGuid(
+                            $"enterprise-academic-progress:{learner.Email}:{subjectSeed.Code}");
+                        if (existingIds.Contains(progressId) ||
+                            !subjectsByCode.TryGetValue(subjectSeed.Code, out Subject? subject))
+                        {
+                            continue;
+                        }
+
+                        bool graduate = learner.Role == "Egresado";
+                        AcademicProgressStatus status = graduate || index == 0
+                            ? AcademicProgressStatus.Approved
+                            : index == 1
+                                ? AcademicProgressStatus.Regular
+                                : AcademicProgressStatus.InProgress;
+
+                        context.AcademicProgressRecords.Add(new AcademicProgress
+                        {
+                            Id = progressId,
+                            UserId = UserId(learner.Email),
+                            SubjectId = subject.Id,
+                            AssignedById = UserId(assigner.Email),
+                            Score = status == AcademicProgressStatus.InProgress
+                                ? null
+                                : 7.5m + (index * 0.5m),
+                            Status = status,
+                            Notes = status == AcademicProgressStatus.InProgress
+                                ? "Cursada activa con seguimiento docente."
+                                : "Registro academico de demostracion validado por el docente.",
+                            UpdatedAt = SeedStart.AddDays(6).AddHours(index)
+                        });
+                    }
+                }
+            }
+        }
+
+        private static async Task SeedCvDataAsync(
+            OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            EnterpriseUser[] profileUsers = Users
+                .Where(user => user.Role is "Profesor" or "Estudiante" or "Egresado" or "Empleador")
+                .ToArray();
+            Guid[] userIds = profileUsers.Select(user => UserId(user.Email)).ToArray();
+
+            HashSet<Guid> experienceUsers = (await context.UserCvExperiences
+                    .Where(item => userIds.Contains(item.UserId))
+                    .Select(item => item.UserId)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+            HashSet<Guid> educationUsers = (await context.UserCvEducations
+                    .Where(item => userIds.Contains(item.UserId))
+                    .Select(item => item.UserId)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+            HashSet<Guid> projectUsers = (await context.UserCvProjects
+                    .Where(item => userIds.Contains(item.UserId))
+                    .Select(item => item.UserId)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+            HashSet<Guid> skillUsers = (await context.UserCvSkills
+                    .Where(item => userIds.Contains(item.UserId))
+                    .Select(item => item.UserId)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+            HashSet<Guid> languageUsers = (await context.UserCvLanguages
+                    .Where(item => userIds.Contains(item.UserId))
+                    .Select(item => item.UserId)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            foreach (EnterpriseUser user in profileUsers)
+            {
+                Guid userId = UserId(user.Email);
+                string career = user.CareerCodes.FirstOrDefault() switch
+                {
+                    "ADS" => "Analisis de Sistemas",
+                    "CDIA" => "Ciencia de Datos e Inteligencia Artificial",
+                    _ => "Vinculacion Institucional"
+                };
+
+                if (!experienceUsers.Contains(userId))
+                {
+                    context.UserCvExperiences.Add(new UserCvExperience
+                    {
+                        Id = StableGuid($"enterprise-cv-experience:{user.Email}"),
+                        UserId = userId,
+                        Company = user.Role == "Empleador" ? "Organizacion empleadora" : "Proyecto academico OneITB",
+                        Role = user.Role == "Estudiante" ? "Colaborador academico" : user.Role,
+                        StartDate = "2025",
+                        EndDate = "Actualidad",
+                        Location = "Buenos Aires",
+                        Description = "Experiencia de demostracion vinculada a tecnologia, colaboracion y mejora continua.",
+                        SortOrder = 0
+                    });
+                }
+
+                if (!educationUsers.Contains(userId))
+                {
+                    context.UserCvEducations.Add(new UserCvEducation
+                    {
+                        Id = StableGuid($"enterprise-cv-education:{user.Email}"),
+                        UserId = userId,
+                        Institution = "Instituto Tecnologico Beltran",
+                        Degree = career,
+                        StartDate = "2024",
+                        EndDate = user.Role == "Egresado" ? "2026" : "En curso",
+                        Location = "Avellaneda, Buenos Aires",
+                        Description = "Trayectoria formativa incluida en el perfil academico institucional.",
+                        SortOrder = 0
+                    });
+                }
+
+                if (!projectUsers.Contains(userId))
+                {
+                    context.UserCvProjects.Add(new UserCvProject
+                    {
+                        Id = StableGuid($"enterprise-cv-project:{user.Email}"),
+                        UserId = userId,
+                        Name = "OneITB - Comunidad academica",
+                        Role = "Participante",
+                        StartDate = "2026",
+                        EndDate = "2026",
+                        Description = "Proyecto interdisciplinario de comunicacion, recursos y empleabilidad.",
+                        SortOrder = 0
+                    });
+                }
+
+                if (!skillUsers.Contains(userId))
+                {
+                    context.UserCvSkills.Add(new UserCvSkill
+                    {
+                        Id = StableGuid($"enterprise-cv-skill:{user.Email}"),
+                        UserId = userId,
+                        Name = user.CareerCodes.Contains("CDIA") ? "Analisis de datos" : "Trabajo colaborativo",
+                        Level = "Intermedio",
+                        SortOrder = 0
+                    });
+                }
+
+                if (!languageUsers.Contains(userId))
+                {
+                    context.UserCvLanguages.Add(new UserCvLanguage
+                    {
+                        Id = StableGuid($"enterprise-cv-language:{user.Email}"),
+                        UserId = userId,
+                        Name = "Ingles",
+                        Level = "Intermedio",
+                        SortOrder = 0
+                    });
+                }
+            }
+        }
+
+        private static async Task SeedNotificationPreferencesAsync(
+            OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            Guid[] userIds = Users.Select(user => UserId(user.Email)).ToArray();
+            NotificationType[] types = Enum.GetValues<NotificationType>();
+            var existingRows = await context.NotificationPreferences
+                .Where(preference => userIds.Contains(preference.UserId))
+                .Select(preference => new { preference.UserId, preference.Type })
+                .ToListAsync(cancellationToken);
+            HashSet<string> existing = existingRows
+                .Select(preference => $"{preference.UserId:N}:{(int)preference.Type}")
+                .ToHashSet(StringComparer.Ordinal);
+
+            foreach (EnterpriseUser user in Users)
+            {
+                Guid userId = UserId(user.Email);
+                foreach (NotificationType type in types)
+                {
+                    string key = $"{userId:N}:{(int)type}";
+                    if (existing.Contains(key))
+                        continue;
+
+                    context.NotificationPreferences.Add(new NotificationPreference
+                    {
+                        Id = StableGuid($"enterprise-notification-preference:{user.Email}:{type}"),
+                        UserId = userId,
+                        Type = type,
+                        IsEnabled = true,
+                        UpdatedAt = SeedStart
+                    });
+                }
+            }
+        }
+
+        private static async Task SeedUserInteractionsAsync(
+            OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            var desired = new List<(Guid Id, Guid ObserverId, Guid TargetId)>();
+            foreach (EnterpriseUser observer in Users.Where(user => user.CareerCodes.Length > 0))
+            {
+                foreach (string careerCode in observer.CareerCodes)
+                {
+                    EnterpriseUser[] professors = Users
+                        .Where(user => user.Role == "Profesor" && user.CareerCodes.Contains(careerCode))
+                        .ToArray();
+                    EnterpriseUser? target = professors.FirstOrDefault(user => user.Email != observer.Email);
+                    if (target is null)
+                        continue;
+
+                    desired.Add((
+                        StableGuid($"enterprise-follow:{observer.Email}:{target.Email}"),
+                        UserId(observer.Email),
+                        UserId(target.Email)));
+                }
+            }
+
+            Guid[] desiredIds = desired.Select(item => item.Id).ToArray();
+            HashSet<Guid> existingIds = (await context.UserInteractions
+                    .Where(interaction => desiredIds.Contains(interaction.Id))
+                    .Select(interaction => interaction.Id)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            foreach ((Guid id, Guid observerId, Guid targetId) in desired)
+            {
+                if (existingIds.Contains(id))
+                    continue;
+
+                context.UserInteractions.Add(new UserInteraction
+                {
+                    Id = id,
+                    ObserverId = observerId,
+                    TargetId = targetId,
+                    Type = InteractionType.Follow,
+                    CreatedAt = SeedStart.AddDays(2)
+                });
+            }
+        }
+
         private static async Task SeedInquiriesAsync(OneItbContext context, CancellationToken cancellationToken)
         {
             string[] subjectCodes = Subjects.Select(seed => seed.Code).ToArray();
@@ -317,6 +724,53 @@ namespace OneItb.Data
                         }
                     }
                 }
+            }
+        }
+
+        private static async Task SeedCommunityReportsAsync(
+            OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            Guid[] managedInquiryIds = ManagedInquiryIds().Take(2).ToArray();
+            if (managedInquiryIds.Length < 2)
+                return;
+
+            (Guid Id, Guid InquiryId, Guid ReporterId, string Reason)[] desired =
+            {
+                (
+                    StableGuid($"enterprise-report:{managedInquiryIds[0]:N}:quality"),
+                    managedInquiryIds[0],
+                    UserId("estudiante2.ads@itbeltran.com.ar"),
+                    "Contenido duplicado o fuera del alcance de la materia."),
+                (
+                    StableGuid($"enterprise-report:{managedInquiryIds[1]:N}:review"),
+                    managedInquiryIds[1],
+                    UserId("egresado1@itbeltran.com.ar"),
+                    "Solicito revision institucional del material compartido.")
+            };
+
+            Guid[] desiredIds = desired.Select(report => report.Id).ToArray();
+            HashSet<Guid> existingIds = (await context.CommunityReports
+                    .IgnoreQueryFilters()
+                    .Where(report => desiredIds.Contains(report.Id))
+                    .Select(report => report.Id)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            foreach ((Guid id, Guid inquiryId, Guid reporterId, string reason) in desired)
+            {
+                if (existingIds.Contains(id))
+                    continue;
+
+                context.CommunityReports.Add(new CommunityReport
+                {
+                    Id = id,
+                    InquiryId = inquiryId,
+                    ReporterId = reporterId,
+                    Reason = reason,
+                    Status = "Pending",
+                    CreatedAt = SeedStart.AddDays(3)
+                });
             }
         }
 
@@ -833,6 +1287,20 @@ namespace OneItb.Data
             return index == 1
                 ? $"Material clave para {subjectName}"
                 : $"Consulta aplicada sobre {subjectName}";
+        }
+
+        private static string AcademicResourceUrl(string subjectCode)
+        {
+            return subjectCode switch
+            {
+                "PROG1" => "https://learn.microsoft.com/dotnet/csharp/",
+                "BDD" => "https://learn.microsoft.com/sql/",
+                "ISOFT" => "https://learn.microsoft.com/azure/architecture/",
+                "ESTAP" => "https://www.r-project.org/",
+                "ML" => "https://scikit-learn.org/stable/",
+                "NOSQL" => "https://www.mongodb.com/docs/",
+                _ => "https://www.itbeltran.com.ar/"
+            };
         }
 
         private static string BuildInquiryContent(EnterpriseUser user, string subjectName, int index)

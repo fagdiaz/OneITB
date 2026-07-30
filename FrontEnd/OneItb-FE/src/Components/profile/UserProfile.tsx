@@ -311,6 +311,12 @@ export const UserProfile = () => {
                         {profile.role}
                       </span>
                     )}
+                    {isOwnProfile && profile.institutionalAccountLinked && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-100 ring-1 ring-emerald-300/30 print:bg-emerald-50 print:text-emerald-800 print:ring-emerald-200">
+                        <i className="fa-brands fa-microsoft" aria-hidden="true" />
+                        Cuenta institucional vinculada
+                      </span>
+                    )}
                     {careers.slice(0, 2).map((career: string) => (
                       <span key={career} className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100 ring-1 ring-white/15 print:bg-slate-100 print:text-slate-700 print:ring-slate-300">
                         {career}

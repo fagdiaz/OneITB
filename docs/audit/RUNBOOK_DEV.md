@@ -1,6 +1,6 @@
 # Runbook de desarrollo - OneITB23
 
-**Ultima revision**: 2026-07-27
+**Ultima revision**: 2026-07-30
 
 ## Requisitos
 
@@ -48,10 +48,90 @@ Una vez levantada la base de datos con el Seeder, puedes iniciar sesion usando u
 | Rol | Usuario demo |
 |---|---|
 | Administrador | `admin1@itbeltran.com.ar` |
+| Moderador | `moderador1@itbeltran.com.ar` |
 | Profesor | `profesor1.ads@itbeltran.com.ar` |
 | Estudiante | `estudiante1.ads@itbeltran.com.ar` |
 | Egresado | `egresado1@itbeltran.com.ar` |
 | Empleador | `empleador1@itbeltran.com.ar` |
+
+El seeder normal es idempotente y **no reemplaza hashes de cuentas existentes**. Cambiar
+`Seed:DemoPassword` no cambia automaticamente la clave de una base ya poblada. Para
+estandarizar todas las credenciales demo se debe ejecutar el rebaseline controlado
+descrito a continuacion; no se deben editar hashes ni cuentas directamente en SQL.
+
+### Rebaseline controlado de la base demo
+
+Este procedimiento es destructivo y esta limitado por guardas al contenedor local
+`oneitb23-sql`, puerto `1433` y base `OneItb`. Nunca debe ejecutarse contra una base
+externa o productiva. Antes de eliminar la base, el script:
+
+1. valida contenedor, destino, secretos, build Release y ausencia de drift EF;
+2. crea un backup `COPY_ONLY` con checksum;
+3. ejecuta `RESTORE VERIFYONLY`;
+4. copia el `.bak` a `backups/local-demo/`, ruta ignorada por Git;
+5. reconstruye el esquema exclusivamente desde migraciones;
+6. inicia el seeder dos veces y exige inventarios identicos.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/reset-demo-database.ps1 `
+  -ConfirmDatabaseReset
+
+powershell -ExecutionPolicy Bypass -File scripts/validate-demo-database.ps1
+```
+
+El segundo comando es finito: inicia una API temporal compilada, valida integridad,
+autentica los seis roles y prueba feed, academico, chat, notificaciones, empleos,
+administracion, moderacion y upload. El proceso temporal y el archivo de prueba se
+eliminan siempre en `finally`; SQL Docker queda disponible.
+
+Inventario canonico esperado despues del rebaseline:
+
+| Conjunto | Cantidad |
+|---|---:|
+| Cuentas / usuarios | 15 / 15 |
+| Carreras / materias / correlatividades | 9 / 6 / 4 |
+| Inscripciones `UserCareer` | 10 |
+| Recursos / progresos academicos | 12 / 18 |
+| Publicaciones / comentarios / reacciones | 60 / 80 / 240 |
+| Reportes / interacciones sociales | 2 / 10 |
+| Mensajes / preferencias / notificaciones | 280 / 120 / 127 |
+| Ofertas / postulaciones | 4 / 6 |
+| Filas CV normalizadas | 60 |
+
+La evidencia de una ejecucion valida debe mostrar `RestoreVerifyOnly: PASS`,
+`Idempotent: True`, `IntegrityViolations: 0` y `RoleLogins: 6`. Nunca copiar a
+documentacion contrasenas, JWT, hashes, connection strings ni el password `sa`.
+
+#### Restauracion de la base demo
+
+Si la reconstruccion posterior al backup falla, usar exclusivamente el nombre
+`BackupFile` informado por el script. El archivo verificado permanece en el contenedor
+bajo `/var/opt/mssql/backup/` y existe una copia local ignorada:
+
+```powershell
+$backupName = "<BackupFile informado por el reset>"
+$password = ((Get-Content .env | Where-Object {
+  $_ -like 'ONEITB_SQL_SA_PASSWORD=*'
+}) -replace '^ONEITB_SQL_SA_PASSWORD=', '')
+
+$restoreSql = @"
+IF DB_ID(N'OneItb') IS NOT NULL
+BEGIN
+  ALTER DATABASE [OneItb] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+END;
+RESTORE DATABASE [OneItb]
+FROM DISK = N'/var/opt/mssql/backup/$backupName'
+WITH REPLACE, CHECKSUM;
+ALTER DATABASE [OneItb] SET MULTI_USER;
+"@
+
+docker exec oneitb23-sql /opt/mssql-tools18/bin/sqlcmd `
+  -C -b -S localhost -U sa -P $password -d master -Q $restoreSql
+```
+
+Tras restaurar, ejecutar `scripts/validate-demo-database.ps1`. Si el `.bak` ya no se
+encuentra dentro del contenedor, copiar primero la version local mediante
+`docker cp`; no improvisar una recreacion parcial.
 
 ## Entity Framework Core
 
@@ -72,8 +152,13 @@ npm.cmd run build
 npm.cmd run dev
 ```
 
-El frontend usa `VITE_GRAPHQL_URL`; el valor local por defecto es `https://localhost:44397/graphql`.
-El perfil `OneITB` del backend escucha en el mismo puerto HTTPS para evitar diferencias entre `dotnet run`, Apollo y uploads.
+En desarrollo, el frontend usa por defecto rutas same-origin (`/graphql`, `/api` y
+`/uploads`) que Vite reenvia al perfil HTTPS `OneITB` en
+`https://localhost:44397`. Esto evita que la sesion del navegador dependa del almacen
+de certificados particular de Firefox o Chromium. `VITE_GRAPHQL_URL` y
+`VITE_GRAPHQL_WS_URL` tienen prioridad cuando se necesita apuntar a un host explicito.
+El proxy con `secure: false` existe solo en el servidor de desarrollo de Vite; no
+debilita TLS ni CORS del backend y no forma parte del bundle productivo.
 
 ## Docker productivo y servicios opcionales
 
@@ -101,6 +186,9 @@ $env:ONEITB_SMTP_ENABLE_SSL = "true"
 
 # Demo data queda deshabilitada por defecto en Production
 $env:ONEITB_SEED_ENABLE_DEMO_DATA = "false"
+
+# Microsoft Entra es opcional y queda deshabilitado sin App Registrations
+$env:ONEITB_ENTRA_ENABLED = "false"
 
 docker compose -f docker-compose.prod.yml config
 docker compose -f docker-compose.prod.yml build
@@ -137,6 +225,77 @@ En Development:
 3. navegar al enlace incluido;
 4. confirmar el acceso;
 5. comprobar que el mismo enlace falla al reutilizarse.
+
+### Microsoft Entra ID institucional
+
+La integracion usa Authorization Code + PKCE en la SPA y un access token delegado
+destinado a la API OneITB. No usa Google, Microsoft Graph como audiencia, implicit flow
+ni client secret en React.
+
+#### 1. Registrar la API
+
+1. En Microsoft Entra admin center, crear una App Registration con tipo de cuenta
+   **Accounts in this organizational directory only**.
+2. Conservar `Directory (tenant) ID` y `Application (client) ID`.
+3. En **Expose an API**, definir el Application ID URI `api://<API_CLIENT_ID>`.
+4. Crear el scope delegado `access_as_user`; habilitarlo para usuarios o
+   administradores segun la politica institucional.
+5. En el manifest de la API, establecer `requestedAccessTokenVersion` en `2`.
+
+#### 2. Registrar la SPA
+
+1. Crear una segunda App Registration single-tenant.
+2. En **Authentication**, agregar plataforma **Single-page application**.
+3. Registrar exactamente `http://localhost:5173/login` y la URL `/login` del ambiente
+   desplegado; no utilizar comodines.
+4. En **API permissions**, agregar el permiso delegado
+   `api://<API_CLIENT_ID>/access_as_user` y completar el consentimiento que exija el
+   tenant.
+5. No crear ni copiar un client secret a Vite. Tenant ID, client IDs, scope y redirect
+   URI son identificadores publicos; los tokens siguen siendo credenciales efimeras.
+
+#### 3. Configurar el backend
+
+```powershell
+dotnet user-secrets set "EntraId:Enabled" "true" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "EntraId:TenantId" "<TENANT_ID>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "EntraId:ClientId" "<API_CLIENT_ID>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "EntraId:Audience" "<API_CLIENT_ID>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "EntraId:RequiredScope" "access_as_user" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "EntraId:AllowedDomain" "itbeltran.com.ar" --project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+Una configuracion backend parcial con `Enabled=true` detiene el arranque. Con
+`Enabled=false`, password local y Magic Link continuan disponibles.
+
+#### 4. Configurar la SPA
+
+Crear `FrontEnd/OneItb-FE/.env.local` (ignorado por Git):
+
+```dotenv
+VITE_ENTRA_CLIENT_ID=<SPA_CLIENT_ID>
+VITE_ENTRA_TENANT_ID=<TENANT_ID>
+VITE_ENTRA_API_SCOPE=api://<API_CLIENT_ID>/access_as_user
+VITE_ENTRA_REDIRECT_URI=http://localhost:5173/login
+```
+
+La accion Microsoft se oculta si faltan valores. MSAL usa `sessionStorage`; al cerrar
+o reemplazar una sesion, OneITB purga MSAL, Apollo y WebSocket. Una cuenta nueva recibe
+rol `Estudiante`. El primer enlace automatico de cuentas `Administrador`, `Moderador`,
+`Profesor` o `Empleador` se rechaza y requiere una vinculacion institucional
+preaprobada; esos usuarios conservan el login local mientras tanto.
+
+#### 5. Gate de aceptacion real
+
+La implementacion local se valida con tests, migracion, build y schema GraphQL. Para
+elevarla de `[I]` a `[V]` se requiere una cuenta Microsoft 365 institucional real:
+
+1. iniciar sesion desde `/login`;
+2. comprobar que el consentimiento solicita solo el scope OneITB;
+3. verificar el alta/vinculacion y el Boolean `institutionalAccountLinked`;
+4. cerrar sesion y confirmar que no quedan datos de la cuenta anterior;
+5. rechazar un token de otro tenant, audiencia o dominio;
+6. conservar evidencia sin copiar access tokens, authorization codes ni JWT.
 
 Si el certificado HTTPS local no esta instalado o confiado:
 

@@ -10,6 +10,7 @@ public sealed class MutationAuthorizationMatrixTests
     {
         nameof(Mutation.RegisterUserAsync),
         nameof(Mutation.Login),
+        nameof(Mutation.MicrosoftLogin),
         nameof(Mutation.RequestMagicLink),
         nameof(Mutation.LoginWithMagicLink)
     };

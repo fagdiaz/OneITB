@@ -5,6 +5,7 @@ import React, {
   useState,
 } from 'react';
 import { GraphQLProvider } from '../data/graphql/GraphqlProvider';
+import { clearMicrosoftIdentitySession } from '../auth/microsoftEntra';
 
 export const AuthContext = createContext();
 
@@ -56,6 +57,7 @@ export const AuthProvider = ({ children }) => {
     setSessionVersion((current) => current + 1);
 
     await GraphQLProvider.invalidateSessionTransport();
+    await clearMicrosoftIdentitySession();
 
     if (reason === 'expired') {
       sessionStorage.setItem('oneitb-session-expired', '1');
@@ -90,6 +92,7 @@ export const AuthProvider = ({ children }) => {
 
     await GraphQLProvider.waitForSessionTermination();
     await GraphQLProvider.invalidateSessionTransport();
+    await clearMicrosoftIdentitySession();
     GraphQLProvider.resetSessionExpirationGuard();
 
     GraphQLProvider.setToken(authToken);

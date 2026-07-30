@@ -10,6 +10,7 @@ export const GET_USER_PROFILE = gql`
       alias
       email
       role
+      institutionalAccountLinked
       biography
       linkedIn
       facebook

@@ -206,3 +206,6 @@ core-web/
 *.swo
 BACKUP_*.patch
 *_codex_*
+
+# Local SQL Server backups created by the guarded demo rebaseline
+backups/

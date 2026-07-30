@@ -35,4 +35,4 @@ Construir una red social educativa institucional que permita:
 
 ## 1.5 Estado
 
-El estado verificable se mantiene en [ROADMAP.md](../project_docs/ROADMAP.md). El proyecto se encuentra alrededor del 98% de avance documentado y con core funcional Feature Complete. Los modulos sociales, perfiles/CV con privacidad, mensajeria, administracion, recursos academicos, SIU mock, notificaciones y empleos estan implementados a nivel `[I]` o `[V]` segun evidencia. Las regresiones visuales autenticadas, SSO Google productivo, despliegue Azure real y mobile quedan fuera del cierre inmediato.
+El estado verificable se mantiene en [ROADMAP.md](../project_docs/ROADMAP.md). El proyecto se encuentra en 100% (116/116 items) y con core funcional Feature Complete. Los modulos sociales, perfiles/CV con privacidad, mensajeria, administracion, recursos academicos, SIU mock, notificaciones, empleos e identidad Microsoft Entra estan implementados a nivel `[I]` o `[V]` segun evidencia. Las regresiones visuales autenticadas, la aceptacion Entra en el tenant institucional, el despliegue Azure real y mobile quedan fuera del cierre inmediato.

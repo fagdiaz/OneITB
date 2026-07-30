@@ -58,8 +58,22 @@ namespace OneItb.Data
                     .HasMaxLength(150);
 
                 entity.Property(e => e.PasswordHash)
-                    .IsRequired()
                     .HasColumnType("char(60)");
+
+                entity.Property(e => e.ExternalProvider)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ExternalTenantId)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ExternalSubjectId)
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LastExternalLoginAt)
+                    .HasColumnType("datetime2");
 
                 entity.Property(e => e.CreatedAt)
                     .IsRequired()
@@ -75,6 +89,30 @@ namespace OneItb.Data
 
                 entity.HasIndex(e => e.Email)
                     .IsUnique();
+
+                entity.HasIndex(e => new
+                    {
+                        e.ExternalProvider,
+                        e.ExternalTenantId,
+                        e.ExternalSubjectId
+                    })
+                    .IsUnique()
+                    .HasFilter(
+                        "[ExternalProvider] IS NOT NULL AND " +
+                        "[ExternalTenantId] IS NOT NULL AND " +
+                        "[ExternalSubjectId] IS NOT NULL");
+
+                entity.ToTable(tableBuilder =>
+                {
+                    tableBuilder.HasCheckConstraint(
+                        "CK_Accounts_ExternalIdentityCompleteness",
+                        "([ExternalProvider] IS NULL AND [ExternalTenantId] IS NULL AND [ExternalSubjectId] IS NULL) OR " +
+                        "([ExternalProvider] IS NOT NULL AND [ExternalTenantId] IS NOT NULL AND [ExternalSubjectId] IS NOT NULL)");
+                    tableBuilder.HasCheckConstraint(
+                        "CK_Accounts_AuthenticationCredential",
+                        "[PasswordHash] IS NOT NULL OR " +
+                        "([ExternalProvider] IS NOT NULL AND [ExternalTenantId] IS NOT NULL AND [ExternalSubjectId] IS NOT NULL)");
+                });
             });
 
             // ==========================================

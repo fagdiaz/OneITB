@@ -8,6 +8,7 @@ export const GET_PUBLIC_PROFILE = gql`
       lastName
       fullName
       role
+      institutionalAccountLinked
       biography
       linkedIn
       facebook
