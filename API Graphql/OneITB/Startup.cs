@@ -173,6 +173,7 @@ namespace OneItb.GraphQL
 
             ConfigureSubscriptionProvider(graphQlBuilder, services);
             ConfigureMagicLinkRateLimiter(services, jwtOptions);
+            ConfigureEmployerRequestRateLimiter(services, jwtOptions);
             ConfigureMicrosoftEntraRateLimiter(services, jwtOptions);
 
             graphQlBuilder
@@ -185,6 +186,7 @@ namespace OneItb.GraphQL
                     descriptor.Field(account => account.ExternalSubjectId).Ignore();
                     descriptor.Field(account => account.LastExternalLoginAt).Ignore();
                     descriptor.Field(account => account.HasExternalIdentity).Ignore();
+                    descriptor.Field(account => account.MagicLinkEnabled).Ignore();
                 }))
                 .AddType(new ObjectType<User>(descriptor =>
                 {
@@ -323,6 +325,18 @@ namespace OneItb.GraphQL
                     descriptor.Field(notification => notification.GroupKey).Ignore();
                     descriptor.Field(notification => notification.RowVersion).Ignore();
                     descriptor.Field(notification => notification.RelatedInquiry).Ignore();
+                }))
+                .AddType(new ObjectType<EmployerRequest>(descriptor =>
+                {
+                    descriptor.Field(request => request.RowVersion).Ignore();
+                    descriptor.Field(request => request.ProcessedByAdmin).Ignore();
+                    descriptor.Field(request => request.ProvisionedUser).Ignore();
+                    descriptor.Field(request => request.OutboxMessage).Ignore();
+                }))
+                .AddType(new ObjectType<EmployerOnboardingOutboxMessage>(descriptor =>
+                {
+                    descriptor.Field(message => message.RowVersion).Ignore();
+                    descriptor.Field(message => message.EmployerRequest).Ignore();
                 }));
 
             services.AddScoped<IUnitOfWork, global::Services.Repositories.UnitOfWork>();
@@ -336,6 +350,7 @@ namespace OneItb.GraphQL
             services.AddSingleton<IMicrosoftEntraTokenValidator, MicrosoftEntraTokenValidator>();
             services.AddScoped<IMicrosoftEntraAuthService, MicrosoftEntraAuthService>();
             services.AddScoped<IEmployerAuthService, global::Services.Auth.EmployerAuthService>();
+            services.AddScoped<IEmployerRequestService, global::Services.EmployerOnboarding.EmployerRequestService>();
             services.AddScoped<IModerationService, global::Services.Moderation.ModerationService>();
             services.AddScoped<ISocialService, SocialService>();
             services.AddScoped<ISocialGraphService, SocialGraphService>();
@@ -347,11 +362,16 @@ namespace OneItb.GraphQL
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<IAccountService, AccountsService>();
             services.AddScoped<IUploadCleanupService, UploadCleanupService>();
+            EmployerOnboardingOptions employerOnboardingOptions =
+                EmployerOnboardingOptions.FromConfiguration(Configuration);
+            services.AddSingleton(employerOnboardingOptions);
+            services.AddScoped<EmployerOnboardingDeliveryProcessor>();
             ConfigureEmailSender(services);
             ConfigureFileStorage(services);
             services.AddSingleton<ILinkPreviewService, LinkPreviewService>();
             services.AddHostedService<UploadCleanupHostedService>();
             services.AddHostedService<UnreadMessageReminderHostedService>();
+            services.AddHostedService<EmployerOnboardingHostedService>();
 
             services.AddAuthentication(options =>
             {
@@ -524,6 +544,37 @@ namespace OneItb.GraphQL
             services.TryAddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConnectionString));
             services.AddSingleton<IMagicLinkRateLimiter, RedisMagicLinkRateLimiter>();
+        }
+
+        private void ConfigureEmployerRequestRateLimiter(
+            IServiceCollection services,
+            JwtTokenOptions jwtOptions)
+        {
+            EmployerRequestRateLimitOptions options =
+                EmployerRequestRateLimitOptions.FromConfiguration(Configuration);
+            byte[] fingerprintKey = SHA256.HashData(
+                Encoding.UTF8.GetBytes(
+                    $"oneitb:employer-request-rate-limit:{jwtOptions.Key}"));
+
+            services.AddSingleton(options);
+            services.AddSingleton(
+                new EmployerRequestRateLimitFingerprintKey(fingerprintKey));
+
+            string? redisConnectionString = Configuration.GetConnectionString("Redis")
+                ?? Configuration["Redis:ConnectionString"];
+            if (string.IsNullOrWhiteSpace(redisConnectionString))
+            {
+                services.AddSingleton<
+                    IEmployerRequestRateLimiter,
+                    InMemoryEmployerRequestRateLimiter>();
+                return;
+            }
+
+            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString));
+            services.AddSingleton<
+                IEmployerRequestRateLimiter,
+                RedisEmployerRequestRateLimiter>();
         }
 
         private void ConfigureMicrosoftEntraRateLimiter(

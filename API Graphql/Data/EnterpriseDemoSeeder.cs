@@ -80,6 +80,9 @@ namespace OneItb.Data
             await SeedUsersAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);
 
+            await SeedEmployerRequestsAsync(context, cancellationToken);
+            await SaveAndClearAsync(context, cancellationToken);
+
             await SeedUserCareersAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);
 
@@ -202,14 +205,21 @@ namespace OneItb.Data
             CancellationToken cancellationToken)
         {
             string[] emails = Users.Select(user => user.Email).ToArray();
-            List<string> existingEmailList = await context.Accounts
+            List<Account> existingAccounts = await context.Accounts
                 .Where(account => emails.Contains(account.Email.ToLower()))
-                .Select(account => account.Email.ToLower())
                 .ToListAsync(cancellationToken);
-            HashSet<string> existingEmails = existingEmailList.ToHashSet();
+            Dictionary<string, Account> existingByEmail = existingAccounts
+                .ToDictionary(account => account.Email.ToLowerInvariant());
 
-            foreach (EnterpriseUser user in Users.Where(user => !existingEmails.Contains(user.Email)))
+            foreach (EnterpriseUser user in Users)
             {
+                if (existingByEmail.TryGetValue(user.Email, out Account? existing))
+                {
+                    if (user.Role == "Empleador")
+                        existing.MagicLinkEnabled = true;
+                    continue;
+                }
+
                 context.Accounts.Add(new Account
                 {
                     Id = UserId(user.Email),
@@ -217,8 +227,126 @@ namespace OneItb.Data
                     PasswordHash = passwordHash,
                     CreatedAt = SeedStart,
                     FailedLoginAttempts = 0,
-                    LockoutEnd = null
+                    LockoutEnd = null,
+                    MagicLinkEnabled = user.Role == "Empleador"
                 });
+            }
+        }
+
+        private static async Task SeedEmployerRequestsAsync(
+            OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            Guid approvedId = StableGuid("enterprise-employer-request:approved");
+            Guid pendingId = StableGuid("enterprise-employer-request:pending");
+            Guid rejectedId = StableGuid("enterprise-employer-request:rejected");
+            Guid[] managedIds = { approvedId, pendingId, rejectedId };
+            HashSet<Guid> existingIds = (await context.EmployerRequests
+                    .Where(request => managedIds.Contains(request.Id))
+                    .Select(request => request.Id)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            var seeds = new[]
+            {
+                new EmployerRequest
+                {
+                    Id = approvedId,
+                    CompanyName = "Tecnología Beltrán Demo",
+                    ContactName = "Empleador Tecnología",
+                    Email = "empleador1@itbeltran.com.ar",
+                    Phone = "+5491112345678",
+                    TaxId = "30712345671",
+                    Comments = "Empresa demo aprobada para publicar búsquedas laborales.",
+                    Status = EmployerRequestStatus.Approved,
+                    CreatedAt = SeedStart.AddDays(-4),
+                    ProcessedAt = SeedStart.AddDays(-3),
+                    ProcessedByAdminId = Admin1Id,
+                    ProvisionedUserId = Employer1Id,
+                    PrivacyConsentAt = SeedStart.AddDays(-4),
+                    EmailDeliveryStatus = EmployerEmailDeliveryStatus.Delivered,
+                    LastEmailAttemptAt = SeedStart.AddDays(-3),
+                    EmailDeliveryAttempts = 1
+                },
+                new EmployerRequest
+                {
+                    Id = pendingId,
+                    CompanyName = "Industrias del Sur",
+                    ContactName = "Marina López",
+                    Email = "contacto@industriasdelsur.com.ar",
+                    Phone = "+5491122334455",
+                    TaxId = "30123456781",
+                    Comments = "Interés en perfiles de sistemas y ciencia de datos.",
+                    Status = EmployerRequestStatus.Pending,
+                    CreatedAt = SeedStart.AddDays(-2),
+                    PrivacyConsentAt = SeedStart.AddDays(-2),
+                    EmailDeliveryStatus = EmployerEmailDeliveryStatus.NotRequested
+                },
+                new EmployerRequest
+                {
+                    Id = rejectedId,
+                    CompanyName = "Servicios Sin Validar",
+                    ContactName = "Carlos Revisión",
+                    Email = "contacto@servicios-sin-validar.com.ar",
+                    Phone = "+5491188776655",
+                    TaxId = "30234567892",
+                    Comments = "Solicitud conservada como evidencia de moderación administrativa.",
+                    Status = EmployerRequestStatus.Rejected,
+                    RejectionReason = "No fue posible validar la identidad fiscal declarada.",
+                    CreatedAt = SeedStart.AddDays(-6),
+                    ProcessedAt = SeedStart.AddDays(-5),
+                    ProcessedByAdminId = Admin1Id,
+                    PrivacyConsentAt = SeedStart.AddDays(-6),
+                    EmailDeliveryStatus = EmployerEmailDeliveryStatus.NotRequested
+                }
+            };
+
+            string[] activeEmails = await context.EmployerRequests
+                .AsNoTracking()
+                .Where(request =>
+                    request.Status == EmployerRequestStatus.Pending ||
+                    request.Status == EmployerRequestStatus.Approved)
+                .Select(request => request.Email)
+                .ToArrayAsync(cancellationToken);
+            string[] activeTaxIds = await context.EmployerRequests
+                .AsNoTracking()
+                .Where(request =>
+                    request.Status == EmployerRequestStatus.Pending ||
+                    request.Status == EmployerRequestStatus.Approved)
+                .Select(request => request.TaxId)
+                .ToArrayAsync(cancellationToken);
+
+            foreach (EmployerRequest seed in seeds)
+            {
+                if (existingIds.Contains(seed.Id))
+                    continue;
+                if (seed.Status is EmployerRequestStatus.Pending or EmployerRequestStatus.Approved &&
+                    (activeEmails.Contains(seed.Email) || activeTaxIds.Contains(seed.TaxId)))
+                {
+                    continue;
+                }
+
+                context.EmployerRequests.Add(seed);
+            }
+
+            Guid outboxId = StableGuid("enterprise-employer-request:approved:outbox");
+            bool outboxExists = await context.EmployerOnboardingOutboxMessages
+                .AnyAsync(message => message.Id == outboxId, cancellationToken);
+            bool approvedRequestExists = existingIds.Contains(approvedId) ||
+                context.EmployerRequests.Local.Any(request => request.Id == approvedId);
+            if (!outboxExists && approvedRequestExists)
+            {
+                context.EmployerOnboardingOutboxMessages.Add(
+                    new EmployerOnboardingOutboxMessage
+                    {
+                        Id = outboxId,
+                        EmployerRequestId = approvedId,
+                        Status = EmployerOutboxStatus.Delivered,
+                        CreatedAt = SeedStart.AddDays(-3),
+                        NextAttemptAt = SeedStart.AddDays(-3),
+                        ProcessedAt = SeedStart.AddDays(-3),
+                        Attempts = 1
+                    });
             }
         }
 

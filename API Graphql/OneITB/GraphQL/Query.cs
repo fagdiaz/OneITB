@@ -395,6 +395,21 @@ namespace GraphQL.GraphQL
         }
 
         [Authorize(Roles = new[] { "Administrador" })]
+        public Task<EmployerRequestPage> GetEmployerRequests(
+            EmployerRequestStatus? status,
+            int first,
+            int offset,
+            [Service] IEmployerRequestService employerRequestService,
+            CancellationToken cancellationToken)
+        {
+            return employerRequestService.GetPageAsync(
+                status,
+                first,
+                offset,
+                cancellationToken);
+        }
+
+        [Authorize(Roles = new[] { "Administrador" })]
         public async Task<bool> TestSmtpConnection(
             string targetEmail,
             [Service] IEmailSender emailSender,

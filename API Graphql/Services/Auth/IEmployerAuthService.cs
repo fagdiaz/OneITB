@@ -15,5 +15,9 @@ namespace OneITB.Core.Services.Interfaces
         Task<string> LoginWithMagicLinkAsync(
             string token,
             CancellationToken cancellationToken = default);
+
+        Task SendWelcomeMagicLinkAsync(
+            Guid employerRequestId,
+            CancellationToken cancellationToken = default);
     }
 }

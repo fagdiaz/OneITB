@@ -19,6 +19,7 @@ import { PublicCertificate } from '../Components/certificates/PublicCertificate'
 import { NotificationProvider } from '../Components/notifications/NotificationProvider'
 import { JobBoard } from '../Components/jobs/JobBoard'
 import { EmployerJobOffers } from '../Components/jobs/EmployerJobOffers'
+import { EmployerRequestForm } from '../Components/jobs/EmployerRequestForm'
 
 export const Routing = () => {
   return (
@@ -31,6 +32,7 @@ export const Routing = () => {
           <Route path='login' element={<Login />} />
           <Route path='register' element={<Register />} />
           <Route path='employer-login' element={<EmployerLogin />} />
+          <Route path='empleos/solicitud' element={<EmployerRequestForm />} />
           <Route path='certificate/:id' element={<PublicCertificate />} />
         </Route>
 

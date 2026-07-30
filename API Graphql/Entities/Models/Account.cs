@@ -61,6 +61,8 @@ namespace OneItb.Entities.Models
 
         public DateTime? LastExternalLoginAt { get; set; }
 
+        public bool MagicLinkEnabled { get; set; }
+
         public bool HasExternalIdentity =>
             !string.IsNullOrWhiteSpace(ExternalProvider) &&
             !string.IsNullOrWhiteSpace(ExternalTenantId) &&

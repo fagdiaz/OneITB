@@ -12,6 +12,7 @@ public sealed class MutationAuthorizationMatrixTests
         nameof(Mutation.Login),
         nameof(Mutation.MicrosoftLogin),
         nameof(Mutation.RequestMagicLink),
+        nameof(Mutation.SubmitEmployerRequest),
         nameof(Mutation.LoginWithMagicLink)
     };
 
@@ -36,6 +37,10 @@ public sealed class MutationAuthorizationMatrixTests
             [nameof(Mutation.CreateJobOffer)] = ["Administrador", "Empleador"],
             [nameof(Mutation.ApplyToJob)] = ["Egresado", "Estudiante"],
             [nameof(Mutation.UpdateApplicationStatus)] = ["Administrador", "Empleador"]
+            ,
+            [nameof(Mutation.ApproveEmployerRequest)] = ["Administrador"],
+            [nameof(Mutation.RejectEmployerRequest)] = ["Administrador"],
+            [nameof(Mutation.ResendEmployerWelcome)] = ["Administrador"]
         };
 
     [Fact]

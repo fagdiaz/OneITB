@@ -250,6 +250,96 @@ namespace OneITB.GraphQL.Mutations
             return await authService.RequestMagicLinkAsync(email, cuit, cancellationToken);
         }
 
+        public async Task<EmployerRequestSubmissionPayload> SubmitEmployerRequest(
+            EmployerRequestInput input,
+            [Service] IEmployerRequestService employerRequestService,
+            [Service] IEmployerRequestRateLimiter rateLimiter,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ILogger<Mutation> logger,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(input);
+            MagicLinkRateLimitDecision decision = await rateLimiter.TryAcquireAsync(
+                GetClientSource(httpContextAccessor),
+                $"{input.Email}|{input.TaxId}",
+                cancellationToken);
+            EnsureEmployerRequestAllowed(decision, logger);
+
+            try
+            {
+                return await employerRequestService.SubmitAsync(input, cancellationToken);
+            }
+            catch (EmployerRequestException exception)
+            {
+                throw CreateEmployerRequestError(exception);
+            }
+        }
+
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
+        public async Task<EmployerRequestActionPayload> ApproveEmployerRequest(
+            Guid requestId,
+            [Service] IEmployerRequestService employerRequestService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await employerRequestService.ApproveAsync(
+                    requestId,
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetCorrelationId(httpContextAccessor),
+                    cancellationToken);
+            }
+            catch (EmployerRequestException exception)
+            {
+                throw CreateEmployerRequestError(exception);
+            }
+        }
+
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
+        public async Task<EmployerRequestActionPayload> RejectEmployerRequest(
+            Guid requestId,
+            string reason,
+            [Service] IEmployerRequestService employerRequestService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await employerRequestService.RejectAsync(
+                    requestId,
+                    reason,
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetCorrelationId(httpContextAccessor),
+                    cancellationToken);
+            }
+            catch (EmployerRequestException exception)
+            {
+                throw CreateEmployerRequestError(exception);
+            }
+        }
+
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator })]
+        public async Task<EmployerRequestActionPayload> ResendEmployerWelcome(
+            Guid requestId,
+            [Service] IEmployerRequestService employerRequestService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await employerRequestService.ResendWelcomeAsync(
+                    requestId,
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetCorrelationId(httpContextAccessor),
+                    cancellationToken);
+            }
+            catch (EmployerRequestException exception)
+            {
+                throw CreateEmployerRequestError(exception);
+            }
+        }
+
         public async Task<string> LoginWithMagicLink(
             string token,
             [Service] IEmployerAuthService authService,
@@ -1273,6 +1363,63 @@ namespace OneITB.GraphQL.Mutations
         {
             return httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString()
                 ?? "unknown";
+        }
+
+        private static string? GetCorrelationId(
+            IHttpContextAccessor httpContextAccessor)
+        {
+            HttpContext? context = httpContextAccessor.HttpContext;
+            if (context is null)
+                return null;
+
+            string? responseValue = context.Response
+                .Headers[CorrelationIdMiddleware.HeaderName]
+                .FirstOrDefault();
+            return string.IsNullOrWhiteSpace(responseValue)
+                ? context.TraceIdentifier
+                : responseValue;
+        }
+
+        private static void EnsureEmployerRequestAllowed(
+            MagicLinkRateLimitDecision decision,
+            ILogger<Mutation> logger)
+        {
+            if (decision.IsAllowed)
+                return;
+
+            logger.LogWarning(
+                "Employer request rejected by the operation-specific limiter. Reason: {ReasonCode}.",
+                decision.ReasonCode);
+            IErrorBuilder builder = ErrorBuilder.New()
+                .SetMessage(
+                    decision.ReasonCode == "provider-unavailable"
+                        ? "El formulario no está disponible temporalmente. Intenta nuevamente más tarde."
+                        : "Se alcanzó el límite temporal de solicitudes. Intenta nuevamente más tarde.")
+                .SetCode(
+                    decision.ReasonCode == "provider-unavailable"
+                        ? "EMPLOYER_REQUEST_TEMPORARILY_UNAVAILABLE"
+                        : "EMPLOYER_REQUEST_RATE_LIMITED");
+            if (decision.RetryAfter.HasValue)
+            {
+                builder.SetExtension(
+                    "retryAfterSeconds",
+                    Math.Max(
+                        1,
+                        (int)Math.Ceiling(
+                            decision.RetryAfter.Value.TotalSeconds)));
+            }
+
+            throw new GraphQLException(builder.Build());
+        }
+
+        private static GraphQLException CreateEmployerRequestError(
+            EmployerRequestException exception)
+        {
+            return new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(exception.Message)
+                    .SetCode(exception.Code)
+                    .Build());
         }
 
         private static void EnsureMagicLinkRequestAllowed(

@@ -89,6 +89,13 @@ export const Landing = () => {
             >
               Crear cuenta institucional
             </Link>
+            <Link
+              to="/empleos/solicitud"
+              className={`inline-flex items-center justify-center gap-2 rounded-xl border border-blue-300/80 bg-blue-50/80 px-5 py-3 text-sm font-bold text-blue-800 shadow-sm backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-cyan-500/50 hover:bg-cyan-50 dark:border-blue-300/20 dark:bg-blue-400/10 dark:text-blue-200 dark:hover:border-cyan-300/30 dark:hover:bg-cyan-400/10 ${focusClasses}`}
+            >
+              <i className="fa-solid fa-building" aria-hidden="true" />
+              Soy empresa / Publicar oferta
+            </Link>
           </div>
           <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
             <span className="inline-flex items-center gap-2"><i className="fa-solid fa-shield-halved text-cyan-600 dark:text-cyan-300" aria-hidden="true" />Identidad institucional</span>

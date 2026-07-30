@@ -32,6 +32,8 @@ namespace OneItb.Data
         public DbSet<JobApplication> JobApplications { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
+        public DbSet<EmployerRequest> EmployerRequests { get; set; } = null!;
+        public DbSet<EmployerOnboardingOutboxMessage> EmployerOnboardingOutboxMessages { get; set; } = null!;
         public DbSet<UserCvExperience> UserCvExperiences { get; set; } = null!;
         public DbSet<UserCvEducation> UserCvEducations { get; set; } = null!;
         public DbSet<UserCvProject> UserCvProjects { get; set; } = null!;
@@ -75,6 +77,10 @@ namespace OneItb.Data
                 entity.Property(e => e.LastExternalLoginAt)
                     .HasColumnType("datetime2");
 
+                entity.Property(e => e.MagicLinkEnabled)
+                    .IsRequired()
+                    .HasDefaultValue(false);
+
                 entity.Property(e => e.CreatedAt)
                     .IsRequired()
                     .HasColumnType("datetime2")
@@ -111,7 +117,8 @@ namespace OneItb.Data
                     tableBuilder.HasCheckConstraint(
                         "CK_Accounts_AuthenticationCredential",
                         "[PasswordHash] IS NOT NULL OR " +
-                        "([ExternalProvider] IS NOT NULL AND [ExternalTenantId] IS NOT NULL AND [ExternalSubjectId] IS NOT NULL)");
+                        "([ExternalProvider] IS NOT NULL AND [ExternalTenantId] IS NOT NULL AND [ExternalSubjectId] IS NOT NULL) OR " +
+                        "[MagicLinkEnabled] = 1");
                 });
             });
 
@@ -954,7 +961,95 @@ namespace OneItb.Data
                 entity.HasOne(e => e.Account)
                     .WithMany()
                     .HasForeignKey(e => e.AccountId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: EMPLOYER ONBOARDING
+            // ==========================================
+            modelBuilder.Entity<EmployerRequest>(entity =>
+            {
+                entity.ToTable("EmployerRequests", "dbo", tableBuilder =>
+                {
+                    tableBuilder.HasCheckConstraint(
+                        "CK_EmployerRequests_Status",
+                        "[Status] IN ('Pending','Approved','Rejected')");
+                    tableBuilder.HasCheckConstraint(
+                        "CK_EmployerRequests_EmailDeliveryStatus",
+                        "[EmailDeliveryStatus] IN ('NotRequested','Pending','Delivered','Failed')");
+                    tableBuilder.HasCheckConstraint(
+                        "CK_EmployerRequests_EmailDeliveryAttempts",
+                        "[EmailDeliveryAttempts] >= 0");
+                });
+
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.CompanyName).IsRequired().HasMaxLength(160);
+                entity.Property(e => e.ContactName).IsRequired().HasMaxLength(160);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(256).IsUnicode(false);
+                entity.Property(e => e.Phone).IsRequired().HasMaxLength(32).IsUnicode(false);
+                entity.Property(e => e.TaxId).IsRequired().HasColumnType("char(11)").IsUnicode(false);
+                entity.Property(e => e.Comments).HasMaxLength(1500);
+                entity.Property(e => e.Status).IsRequired().HasConversion<string>().HasMaxLength(20).IsUnicode(false);
+                entity.Property(e => e.RejectionReason).HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2");
+                entity.Property(e => e.ProcessedAt).HasColumnType("datetime2");
+                entity.Property(e => e.PrivacyConsentAt).IsRequired().HasColumnType("datetime2");
+                entity.Property(e => e.EmailDeliveryStatus).IsRequired().HasConversion<string>().HasMaxLength(20).IsUnicode(false);
+                entity.Property(e => e.LastEmailAttemptAt).HasColumnType("datetime2");
+                entity.Property(e => e.EmailDeliveryAttempts).IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.RowVersion).IsRowVersion();
+
+                entity.HasIndex(e => e.Email)
+                    .IsUnique()
+                    .HasFilter("[Status] IN ('Pending','Approved')");
+                entity.HasIndex(e => e.TaxId)
+                    .IsUnique()
+                    .HasFilter("[Status] IN ('Pending','Approved')");
+                entity.HasIndex(e => new { e.Status, e.CreatedAt });
+                entity.HasIndex(e => e.ProvisionedUserId);
+
+                entity.HasOne(e => e.ProcessedByAdmin)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProcessedByAdminId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.ProvisionedUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProvisionedUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<EmployerOnboardingOutboxMessage>(entity =>
+            {
+                entity.ToTable("EmployerOnboardingOutboxMessages", "dbo", tableBuilder =>
+                {
+                    tableBuilder.HasCheckConstraint(
+                        "CK_EmployerOnboardingOutbox_Status",
+                        "[Status] IN ('Pending','Processing','Delivered','Failed')");
+                    tableBuilder.HasCheckConstraint(
+                        "CK_EmployerOnboardingOutbox_Attempts",
+                        "[Attempts] >= 0");
+                });
+
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Status).IsRequired().HasConversion<string>().HasMaxLength(20).IsUnicode(false);
+                entity.Property(e => e.CreatedAt).IsRequired().HasColumnType("datetime2");
+                entity.Property(e => e.NextAttemptAt).IsRequired().HasColumnType("datetime2");
+                entity.Property(e => e.LeaseExpiresAt).HasColumnType("datetime2");
+                entity.Property(e => e.ProcessedAt).HasColumnType("datetime2");
+                entity.Property(e => e.Attempts).IsRequired().HasDefaultValue(0);
+                entity.Property(e => e.LastErrorCode).HasMaxLength(80).IsUnicode(false);
+                entity.Property(e => e.RowVersion).IsRowVersion();
+
+                entity.HasIndex(e => e.EmployerRequestId).IsUnique();
+                entity.HasIndex(e => new { e.Status, e.NextAttemptAt });
+
+                entity.HasOne(e => e.EmployerRequest)
+                    .WithOne(e => e.OutboxMessage)
+                    .HasForeignKey<EmployerOnboardingOutboxMessage>(e => e.EmployerRequestId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

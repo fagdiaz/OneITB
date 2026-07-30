@@ -100,6 +100,8 @@ public sealed class EnterpriseDemoSeederTests
         Assert.Equal(120, second.NotificationPreferences);
         Assert.Equal(4, second.JobOffers);
         Assert.Equal(6, second.JobApplications);
+        Assert.Equal(3, second.EmployerRequests);
+        Assert.Equal(1, second.EmployerOnboardingOutboxMessages);
         Assert.Equal(12, second.CvExperiences);
         Assert.Equal(12, second.CvEducations);
         Assert.Equal(12, second.CvProjects);
@@ -142,6 +144,8 @@ public sealed class EnterpriseDemoSeederTests
             await context.Notifications.CountAsync(),
             await context.JobOffers.CountAsync(),
             await context.JobApplications.CountAsync(),
+            await context.EmployerRequests.CountAsync(),
+            await context.EmployerOnboardingOutboxMessages.CountAsync(),
             await context.UserCvExperiences.CountAsync(),
             await context.UserCvEducations.CountAsync(),
             await context.UserCvProjects.CountAsync(),
@@ -168,6 +172,8 @@ public sealed class EnterpriseDemoSeederTests
         int Notifications,
         int JobOffers,
         int JobApplications,
+        int EmployerRequests,
+        int EmployerOnboardingOutboxMessages,
         int CvExperiences,
         int CvEducations,
         int CvProjects,

@@ -83,20 +83,22 @@ public sealed class EmployerAuthServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         var sender = new CapturingEmailSender();
-        var passwordHasher = CreatePasswordHasher();
-        var service = CreateService(context, sender, passwordHasher);
+        await SeedApprovedEmployerAsync(
+            context,
+            "employer.demo@itbeltran.com.ar",
+            "30712345671");
+        var service = CreateService(context, sender);
 
         MagicLinkRequestPayload payload = await service.RequestMagicLinkAsync(
             " employer.demo@itbeltran.com.ar ",
-            "30712345678");
+            "30712345671");
 
         User user = await context.Users
             .Include(item => item.Account)
             .SingleAsync(item => item.Account.Email == "employer.demo@itbeltran.com.ar");
         Assert.Equal("Empleador", user.Role);
-        string passwordHash = Assert.IsType<string>(user.Account.PasswordHash);
-        Assert.Equal(60, passwordHash.Length);
-        Assert.False(passwordHasher.Verify("not-the-placeholder-password", passwordHash));
+        Assert.Null(user.Account.PasswordHash);
+        Assert.True(user.Account.MagicLinkEnabled);
         Assert.Single(sender.Messages);
 
         string credential = ExtractFragmentCredential(sender.Messages[0].Body);
@@ -133,7 +135,7 @@ public sealed class EmployerAuthServiceTests
         var service = CreateService(context, sender);
         MagicLinkRequestPayload payload = await service.RequestMagicLinkAsync(
             account.Email,
-            "30712345678");
+            "30712345671");
 
         Assert.True(payload.Accepted);
         Assert.Empty(sender.Messages);
@@ -141,19 +143,38 @@ public sealed class EmployerAuthServiceTests
     }
 
     [Fact]
+    public async Task RequestMagicLink_DoesNotAutoProvisionUnknownEmployer()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        var sender = new CapturingEmailSender();
+        var service = CreateService(context, sender);
+
+        MagicLinkRequestPayload payload = await service.RequestMagicLinkAsync(
+            "unknown.employer@example.com",
+            "30712345671");
+
+        Assert.True(payload.Accepted);
+        Assert.Empty(sender.Messages);
+        Assert.Empty(context.Users);
+        Assert.Empty(context.Accounts);
+        Assert.Empty(context.MagicLinks);
+    }
+
+    [Fact]
     public async Task RequestMagicLink_RemovesPersistedLinkWhenDeliveryFails()
     {
         await using var context = ServiceTestData.CreateContext();
+        await SeedApprovedEmployerAsync(
+            context,
+            "delivery.failure@itbeltran.com.ar",
+            "30712345671");
         var service = CreateService(context, new ThrowingEmailSender());
 
-        GraphQLException exception = await Assert.ThrowsAsync<GraphQLException>(
-            () => service.RequestMagicLinkAsync(
-                "delivery.failure@itbeltran.com.ar",
-                "30712345678"));
+        MagicLinkRequestPayload payload = await service.RequestMagicLinkAsync(
+            "delivery.failure@itbeltran.com.ar",
+            "30712345671");
 
-        Assert.Equal(
-            "AUTH_MAGIC_LINK_DELIVERY_UNAVAILABLE",
-            exception.Errors[0].Code);
+        Assert.True(payload.Accepted);
         Assert.Empty(await context.MagicLinks.AsNoTracking().ToListAsync());
     }
 
@@ -168,6 +189,10 @@ public sealed class EmployerAuthServiceTests
         try
         {
             await using var context = ServiceTestData.CreateContext();
+            await SeedApprovedEmployerAsync(
+                context,
+                "pickup.employer@itbeltran.com.ar",
+                "30712345671");
             var sender = new PickupDirectoryEmailService(
                 pickupDirectory,
                 NullLogger<PickupDirectoryEmailService>.Instance);
@@ -175,7 +200,7 @@ public sealed class EmployerAuthServiceTests
 
             MagicLinkRequestPayload payload = await service.RequestMagicLinkAsync(
                 "pickup.employer@itbeltran.com.ar",
-                "30712345678");
+                "30712345671");
 
             Assert.True(payload.Accepted);
             string mailFile = Assert.Single(
@@ -197,8 +222,7 @@ public sealed class EmployerAuthServiceTests
 
     private static EmployerAuthService CreateService(
         DbContext context,
-        IEmailSender? emailSender = null,
-        IPasswordHasher? passwordHasher = null)
+        IEmailSender? emailSender = null)
     {
         var options = new JwtTokenOptions(
             "oneitb23-test-signing-key-with-at-least-32-bytes",
@@ -208,7 +232,6 @@ public sealed class EmployerAuthServiceTests
         return new EmployerAuthService(
             (OneItb.Data.OneItbContext)context,
             new JwtTokenService(options, TimeProvider.System),
-            passwordHasher ?? CreatePasswordHasher(),
             emailSender ?? new CapturingEmailSender(),
             new MagicLinkDeliveryOptions("https://frontend.oneitb.test"),
             TimeProvider.System);
@@ -229,6 +252,7 @@ public sealed class EmployerAuthServiceTests
         Account account = ServiceTestData.CreateAccount(
             employer,
             $"employer.{userId:N}@itbeltran.test");
+        account.MagicLinkEnabled = true;
         string credential = Convert.ToHexString(RandomNumberGenerator.GetBytes(32))
             .ToLowerInvariant();
         var link = new MagicLink
@@ -249,9 +273,47 @@ public sealed class EmployerAuthServiceTests
         return (link, credential);
     }
 
-    private static IPasswordHasher CreatePasswordHasher()
+    private static async Task SeedApprovedEmployerAsync(
+        OneItb.Data.OneItbContext context,
+        string email,
+        string taxId)
     {
-        return new BcryptPasswordHasher(new PasswordHashingOptions(10));
+        Guid userId = Guid.NewGuid();
+        var account = new Account
+        {
+            Id = userId,
+            Email = email,
+            PasswordHash = null,
+            MagicLinkEnabled = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        var user = new User
+        {
+            Id = userId,
+            FirstName = "Empresa",
+            LastName = "Aprobada",
+            Role = "Empleador",
+            IsActive = true,
+            Account = account
+        };
+        account.User = user;
+        context.Users.Add(user);
+        context.EmployerRequests.Add(new EmployerRequest
+        {
+            Id = Guid.NewGuid(),
+            CompanyName = "Empresa aprobada",
+            ContactName = "Empresa Aprobada",
+            Email = email,
+            Phone = "+5491112345678",
+            TaxId = taxId,
+            Status = EmployerRequestStatus.Approved,
+            CreatedAt = DateTime.UtcNow.AddMinutes(-5),
+            ProcessedAt = DateTime.UtcNow,
+            ProvisionedUserId = userId,
+            PrivacyConsentAt = DateTime.UtcNow.AddMinutes(-5)
+        });
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
     }
 
     private static string ExtractFragmentCredential(string body)

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
+using Services.EmployerOnboarding;
 
 namespace Services.Auth
 {
@@ -18,7 +19,6 @@ namespace Services.Auth
 
         private readonly OneItbContext _context;
         private readonly IJwtTokenService _jwtTokenService;
-        private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailSender _emailSender;
         private readonly MagicLinkDeliveryOptions _deliveryOptions;
         private readonly TimeProvider _timeProvider;
@@ -26,14 +26,12 @@ namespace Services.Auth
         public EmployerAuthService(
             OneItbContext context,
             IJwtTokenService jwtTokenService,
-            IPasswordHasher passwordHasher,
             IEmailSender emailSender,
             MagicLinkDeliveryOptions deliveryOptions,
             TimeProvider timeProvider)
         {
             _context = context;
             _jwtTokenService = jwtTokenService;
-            _passwordHasher = passwordHasher;
             _emailSender = emailSender;
             _deliveryOptions = deliveryOptions;
             _timeProvider = timeProvider;
@@ -45,7 +43,15 @@ namespace Services.Auth
             CancellationToken cancellationToken = default)
         {
             string normalizedEmail = NormalizeEmail(email);
-            ValidateCuit(cuit);
+            string normalizedTaxId;
+            try
+            {
+                normalizedTaxId = EmployerRequestValidation.NormalizeTaxId(cuit);
+            }
+            catch (EmployerRequestException)
+            {
+                return CreateAcceptedPayload();
+            }
 
             User? user = await _context.Users
                 .Include(item => item.Account)
@@ -53,84 +59,71 @@ namespace Services.Auth
                     item => item.Account.Email == normalizedEmail,
                     cancellationToken);
 
-            if (user is null)
-            {
-                Guid userId = Guid.NewGuid();
-                var account = new Account
-                {
-                    Id = userId,
-                    Email = normalizedEmail,
-                    PasswordHash = _passwordHasher.Hash(
-                        Convert.ToHexString(RandomNumberGenerator.GetBytes(32))),
-                    CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
-                };
-
-                user = new User
-                {
-                    Id = userId,
-                    FirstName = "Empresa",
-                    LastName = "Empleadora",
-                    Role = "Empleador",
-                    IsActive = true,
-                    Account = account
-                };
-                account.User = user;
-
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            else if (!user.IsActive ||
-                     !string.Equals(user.Role, "Empleador", StringComparison.Ordinal))
+            if (user is null ||
+                !user.IsActive ||
+                !user.Account.MagicLinkEnabled ||
+                !string.Equals(user.Role, "Empleador", StringComparison.Ordinal))
             {
                 return CreateAcceptedPayload();
             }
 
-            DateTime utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-            string credential = Convert.ToHexString(
-                    RandomNumberGenerator.GetBytes(MagicLinkTokenBytes))
-                .ToLowerInvariant();
-            var magicLink = new MagicLink
-            {
-                Id = Guid.NewGuid(),
-                AccountId = user.Account.Id,
-                Token = ComputeTokenDigest(credential),
-                ExpiresAt = utcNow.AddMinutes(MagicLinkLifetimeMinutes),
-                CreatedAt = utcNow,
-                IsUsed = false
-            };
-
-            _context.MagicLinks.Add(magicLink);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            string loginUrl =
-                $"{_deliveryOptions.FrontendBaseUrl}/employer-login#token={credential}";
-            const string subject = "Acceso temporal a OneITB";
-            string body =
-                "Se solicito un acceso temporal para empleadores en OneITB.\n\n" +
-                $"Abrir enlace: {loginUrl}\n\n" +
-                $"El enlace vence en {MagicLinkLifetimeMinutes} minutos y puede utilizarse una sola vez.\n" +
-                "Si no solicitaste este acceso, ignora este mensaje.";
+            bool approvedIdentity = await _context.EmployerRequests
+                .AsNoTracking()
+                .AnyAsync(
+                    request =>
+                        request.Status == EmployerRequestStatus.Approved &&
+                        request.Email == normalizedEmail &&
+                        request.TaxId == normalizedTaxId &&
+                        request.ProvisionedUserId == user.Id,
+                    cancellationToken);
+            if (!approvedIdentity)
+                return CreateAcceptedPayload();
 
             try
             {
-                await _emailSender.SendAsync(
-                    normalizedEmail,
-                    subject,
-                    body,
+                await IssueAndSendMagicLinkAsync(
+                    user,
+                    "Acceso temporal a OneITB",
+                    "Se solicitó un acceso temporal para empleadores en OneITB.",
                     cancellationToken);
             }
-            catch (OperationCanceledException)
+            catch (GraphQLException exception) when (
+                exception.Errors.Any(error =>
+                    error.Code == "AUTH_MAGIC_LINK_DELIVERY_UNAVAILABLE"))
             {
-                throw;
-            }
-            catch
-            {
-                _context.MagicLinks.Remove(magicLink);
-                await _context.SaveChangesAsync(cancellationToken);
-                throw CreateDeliveryUnavailableError();
+                return CreateAcceptedPayload();
             }
 
             return CreateAcceptedPayload();
+        }
+
+        public async Task SendWelcomeMagicLinkAsync(
+            Guid employerRequestId,
+            CancellationToken cancellationToken = default)
+        {
+            EmployerRequest? request = await _context.EmployerRequests
+                .Include(item => item.ProvisionedUser!)
+                    .ThenInclude(user => user.Account)
+                .SingleOrDefaultAsync(
+                    item => item.Id == employerRequestId,
+                    cancellationToken);
+            User? user = request?.ProvisionedUser;
+            if (request is null ||
+                request.Status != EmployerRequestStatus.Approved ||
+                user is null ||
+                !user.IsActive ||
+                !user.Account.MagicLinkEnabled ||
+                !string.Equals(user.Role, "Empleador", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "La solicitud aprobada no tiene una cuenta de empleador habilitada.");
+            }
+
+            await IssueAndSendMagicLinkAsync(
+                user,
+                "Bienvenida a OneITB para Empresas",
+                $"La solicitud de {request.CompanyName} fue aprobada. Ya puedes acceder al Gestor de Ofertas y Postulaciones.",
+                cancellationToken);
         }
 
         public async Task<string> LoginWithMagicLinkAsync(
@@ -154,6 +147,7 @@ namespace Services.Auth
             if (magicLink is null ||
                 user is null ||
                 !user.IsActive ||
+                !magicLink.Account.MagicLinkEnabled ||
                 !string.Equals(user.Role, "Empleador", StringComparison.Ordinal))
             {
                 throw CreateInvalidMagicLinkError();
@@ -226,14 +220,78 @@ namespace Services.Auth
             return normalized;
         }
 
-        private static void ValidateCuit(string cuit)
+        private async Task IssueAndSendMagicLinkAsync(
+            User user,
+            string subject,
+            string introduction,
+            CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(cuit) ||
-                cuit.Length != 11 ||
-                !cuit.All(char.IsDigit))
+            DateTime utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+            await InvalidatePriorLinksAsync(user.Account.Id, cancellationToken);
+
+            string credential = Convert.ToHexString(
+                    RandomNumberGenerator.GetBytes(MagicLinkTokenBytes))
+                .ToLowerInvariant();
+            var magicLink = new MagicLink
             {
-                throw CreateInvalidMagicLinkError();
+                Id = Guid.NewGuid(),
+                AccountId = user.Account.Id,
+                Token = ComputeTokenDigest(credential),
+                ExpiresAt = utcNow.AddMinutes(MagicLinkLifetimeMinutes),
+                CreatedAt = utcNow,
+                IsUsed = false
+            };
+
+            _context.MagicLinks.Add(magicLink);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            string loginUrl =
+                $"{_deliveryOptions.FrontendBaseUrl}/employer-login#token={credential}";
+            string body =
+                $"{introduction}\n\n" +
+                $"Abrir enlace: {loginUrl}\n\n" +
+                $"El enlace vence en {MagicLinkLifetimeMinutes} minutos y puede utilizarse una sola vez.\n" +
+                "Si no solicitaste este acceso, ignora este mensaje.";
+
+            try
+            {
+                await _emailSender.SendAsync(
+                    user.Account.Email,
+                    subject,
+                    body,
+                    cancellationToken);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                _context.MagicLinks.Remove(magicLink);
+                await _context.SaveChangesAsync(cancellationToken);
+                throw CreateDeliveryUnavailableError();
+            }
+        }
+
+        private async Task InvalidatePriorLinksAsync(
+            Guid accountId,
+            CancellationToken cancellationToken)
+        {
+            if (_context.Database.IsRelational())
+            {
+                await _context.MagicLinks
+                    .Where(link => link.AccountId == accountId && !link.IsUsed)
+                    .ExecuteUpdateAsync(
+                        setters => setters.SetProperty(link => link.IsUsed, true),
+                        cancellationToken);
+                return;
+            }
+
+            MagicLink[] links = await _context.MagicLinks
+                .Where(link => link.AccountId == accountId && !link.IsUsed)
+                .ToArrayAsync(cancellationToken);
+            foreach (MagicLink link in links)
+                link.IsUsed = true;
         }
 
         private static GraphQLException CreateInvalidMagicLinkError()

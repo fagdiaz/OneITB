@@ -1,0 +1,23 @@
+# [MISIÓN: AUDITORÍA MÓDULO 4 (FRONTEND, REACT Y APOLLO)]
+Actúa como Lead Frontend Architect y Especialista en Seguridad React. Tienes permisos automáticos de lectura y escritura.
+
+# [TAREA 1: AUDITORÍA DE CÓDIGO FRONTEND]
+Utiliza tus herramientas para escanear la carpeta del frontend (`FrontEnd/OneItb-FE/src/`), enfocándote en:
+1. Configuración de Apollo Client y flujos de Autenticación/Logout.
+2. Componentes que rendericen contenido rico o Markdown (ej. publicaciones, comentarios).
+3. Manejo de estado global y Error Boundaries.
+
+Busca implacablemente estas vulnerabilidades (cita archivo y línea exacta si las encuentras):
+- **Fuga de Caché (Cross-Account Data Leak):** Verifica el flujo de Logout. ¿Se invoca explícitamente `client.clearStore()` o `client.resetStore()` en Apollo? Si la caché no se limpia al cerrar sesión, un usuario que se loguee en la misma pestaña verá datos del usuario anterior.
+- **Vulnerabilidad XSS (Cross-Site Scripting):** Busca cualquier uso de `dangerouslySetInnerHTML`. Verifica si el contenido de los usuarios (Markdown o HTML) pasa por una librería de sanitización estricta (como DOMPurify) antes de renderizarse.
+- **Fallas en Error Boundaries:** Revisa si el `GlobalErrorBoundary` atrapa correctamente errores de renderizado en el árbol principal.
+
+# [TAREA 2: ACTUALIZACIÓN DEL REPORTE FINAL]
+1. Abre el archivo `docs/audit/FINAL_AUDIT_REPORT.md`.
+2. Ve a la sección "## 2. Hallazgos de Auditoría Modular".
+3. INSERTA una nueva subsección titulada "### Módulo 4 — Arquitectura Frontend y React (NUEVO)" justo POR ENCIMA del Módulo 3, para mantener el orden cronológico.
+4. Documenta allí tus hallazgos Críticos, Altos o Medios. 
+5. Si encuentras un hallazgo CRÍTICO o ALTO, asegúrate de AGREGARLO también a la "Tabla consolidada de hallazgos Críticos y Altos" en la sección 1 (Resumen Ejecutivo).
+6. **REGLA DE ORO:** Preserva absolutamente todo el resto del documento intacto.
+
+Al finalizar, imprime en consola un breve resumen de los hallazgos de frontend y confirma la actualización. ¡Ejecuta tus herramientas ahora!

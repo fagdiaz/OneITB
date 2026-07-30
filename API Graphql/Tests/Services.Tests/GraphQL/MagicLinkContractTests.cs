@@ -134,6 +134,13 @@ public sealed class MagicLinkContractTests
         {
             throw new NotSupportedException();
         }
+
+        public Task SendWelcomeMagicLinkAsync(
+            Guid employerRequestId,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
     }
 
     private sealed class AllowAllMagicLinkRateLimiter : IMagicLinkRateLimiter
