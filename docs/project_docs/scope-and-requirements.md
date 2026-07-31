@@ -21,7 +21,7 @@ El objetivo institucional es ofrecer una plataforma demostrable y mantenible par
 | Mensajeria privada | Verificado | specs 104, 106, 107, 132, 160 |
 | Administracion y moderacion | Implementado/verificado por etapas | specs 099, 111, 117-119, 135 |
 | Recursos, notas y SIU | Implementado; recorrido autenticado y smoke GraphQL verificados, con SIU real fuera de alcance | specs 136, 137, 164, 165, 194, 196 |
-| Empleos y postulaciones | Implementado; recorrido autenticado y smoke GraphQL verificados, con SMTP publico como gate externo | specs 173-175, 194, 196 |
+| Empleos, postulaciones y onboarding B2B | Implementado; recorrido autenticado, solicitud/aprobacion empresarial y smoke GraphQL verificados, con SMTP publico como gate externo | specs 173-175, 194, 196, 198 |
 | Over-delivery institucional | Implementado; acceso Microsoft Entra single-tenant agregado en Spec 197 | specs 168-171, 197 |
 
 ## 3. Requerimientos funcionales vigentes
@@ -84,8 +84,10 @@ El objetivo institucional es ofrecer una plataforma demostrable y mantenible par
 - **RF-031**: Enviar alertas institucionales de cambio de estado de postulacion mediante SMTP y conservar un pickup `.eml` local, explicito e ignorado solo para desarrollo.
 - **RF-031B**: Permitir a administradores ejecutar una prueba SMTP controlada desde GraphQL sin recorrer el flujo completo de postulaciones.
 - **RF-032**: Entregar el Magic Link de empleadores fuera de GraphQL, almacenar solo su digest y retirar el fragmento sensible de la URL antes del consumo.
+- **RF-033**: Permitir una solicitud publica de alta empresarial sin crear cuentas ni revelar si el correo o CUIT ya existen; validar consentimiento, CUIT, honeypot y limites de abuso.
+- **RF-034**: Permitir exclusivamente a Administradores aprobar, rechazar o reintentar solicitudes; la aprobacion debe crear una unica cuenta `Empleador`, auditoria y Outbox dentro de una transaccion.
 
-RF-020 a RF-032 cuentan con implementacion y aceptacion local proporcional: los
+RF-020 a RF-034 cuentan con implementacion y aceptacion local proporcional: los
 contratos academicos y laborales fueron recorridos con identidades autenticadas y la
 base demo canonica; Redis y SMTP local se probaron con infraestructura contenida. SIU
 real, SMTP publico, Cloudinary y otros proveedores externos no deben presentarse como
@@ -98,9 +100,9 @@ verificados sin secretos y evidencia del ambiente de destino.
 | Estudiante | Identidad academica, participacion en muro por materias, recursos, progreso/notas, chat y postulaciones laborales |
 | Profesor | Acompanamiento academico, recursos por materia, asignacion de progreso/notas, respuesta a consultas y comunicacion directa |
 | Egresado | Perfil profesional/CV, participacion como referente y acceso a oportunidades laborales |
-| Empleador | Publicacion de ofertas, revision de postulantes y comunicacion institucional del estado de postulaciones |
+| Empleador | Alta externa sujeta a aprobacion institucional, publicacion de ofertas, revision de postulantes y comunicacion del estado de postulaciones |
 | Moderador | Revision de reportes, silenciamiento temporal y trazabilidad de decisiones sin borrado fisico |
-| Administrador | Gobierno institucional de usuarios, roles, carreras, materias, auditoria, moderacion y configuracion operativa |
+| Administrador | Gobierno institucional de usuarios, roles, carreras, materias, solicitudes empresariales, auditoria, moderacion y configuracion operativa |
 
 ## 5. Requerimientos no funcionales
 

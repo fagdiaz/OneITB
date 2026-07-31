@@ -612,7 +612,7 @@ Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
 
 | Afirmación documental | Fuente de comprobación |
 |---|---|
-| 100 % global y 116/116 ítems | `docs/project_docs/ROADMAP.md` |
+| 100 % global y 117/117 ítems | `docs/project_docs/ROADMAP.md` |
 | 174 pruebas backend y 82 frontend | evidencia de Spec 197 y `DOCUMENTATION_STATUS.md` |
 | EF Core sin drift | salida del gate de predefensa |
 | Backup, 33 migraciones, seed doble y seis roles | evidencia de Specs 196-197 |

@@ -2,9 +2,9 @@
 
 **Fecha de corte**: 2026-07-30
 **Alcance**: .NET 8, EF Core 8, HotChocolate 14, React 18, Apollo Client 3, SQL Server Docker
-**Estado del roadmap**: 100% (116 de 116 items)
-**Corte de código base**: remediaciones 186-195 integradas; rebaseline ejecutado en Spec 196; Microsoft Entra implementado en `codex/197-microsoft-entra-sso`
-**Decisión técnica**: cierre de remediaciones 186-193 aprobado, infraestructura local aceptada, base demo canónica reconstruida e identidad Microsoft Entra implementada. Los proveedores reales y la aceptación en el tenant institucional permanecen como gates externos explícitos.
+**Estado del roadmap**: 100% (117 de 117 items)
+**Corte de código base**: remediaciones 186-195 integradas; rebaseline ejecutado en Spec 196; Microsoft Entra implementado en Spec 197; onboarding B2B de empleadores implementado en Spec 198
+**Decisión técnica**: cierre de remediaciones 186-193 aprobado, infraestructura local aceptada, base demo canónica reconstruida, identidad Microsoft Entra y alta empresarial controlada implementadas. Los proveedores reales, la aceptación en el tenant institucional y la regresión visual final permanecen como gates explícitos.
 
 ---
 
@@ -18,6 +18,7 @@ Si bien la auditoría local puede darse por cerrada a nivel de código (Code Fre
 4. **Validaciones manuales o de red pendientes**:
    - **Rol Moderador**: La identidad, JWT, permisos y auditoría están automatizados; resta el recorrido visual manual previo a la defensa.
    - **Prueba Realtime**: Redis cross-provider y aislamiento de topic están verificados; resta el handshake WebSocket de red con dos navegadores aislados.
+   - **Onboarding de empleadores**: Migración, GraphQL, transacción, Outbox y correo local están verificados; resta recorrer visualmente `/empleos/solicitud` y la pestaña Admin en el navegador de la defensa.
 5. **Observabilidad en Producción**: Configurar las políticas de monitoreo para que el `UploadCleanupHostedService` eleve a nivel de error/alerta los fallos persistentes de I/O, que localmente se registran como warnings.
 6. **Defensa en Profundidad Adicional**: Incorporar una solución de escaneo de antivirus/CDR externo para la subida de archivos, característica que quedó fuera del MVP pero es recomendada (referencia C-1).
 
@@ -48,6 +49,7 @@ validación de hardware productivo.
 | **M3-M1 - bypass de silenciamiento en reacciones** | Medio | `ToggleReactionAsync` ejecuta el guard de `MutedUntil` antes de leer o mutar; el rechazo no altera reacciones ni emite notificación y retorna `USER_ERROR`. | **Verificado por Specs 193/194 `[V]`**: like/unlike autenticados rechazados con cero delta de reacción/notificación. | Sin gate local pendiente. |
 | **M4-M1 - error boundary por debajo de providers** | Medio | `GlobalErrorBoundary` envuelve Apollo, Theme y App; el bootstrap asíncrono agrega fallback React/DOM incluso antes de `createRoot`. | **Verificado por Specs 193/194 `[V]`**: 79 tests frontend y recorridos de navegador sin errores/warnings propios. | Sin gate local pendiente. |
 | **Spec 197 - identidad institucional Microsoft Entra** | Alto | MSAL Authorization Code + PKCE obtiene un access token del scope API; backend valida RS256, issuer, audience, lifetime, tenant, object ID, scope y dominio antes del canje por JWT OneITB. Vinculación, roles, auditoría, rate limit y logout son fail-closed. | **Implementado `[I]`**: tests backend/frontend, build, migración aplicada, EF sin drift y schema runtime con rechazo controlado. | Consentimiento y smoke con tenant/cuenta institucional reales. |
+| **Spec 198 - onboarding B2B de empleadores** | Alto | El alta pública no crea cuentas. Solicitud y Magic Link aplican anti-enumeración, honeypot temprano, CUIT válido y rate limits HMAC. La aprobación Admin es serializable, idempotente y aprovisiona solo `Empleador`; auditoría y Outbox no copian PII innecesaria. | **Implementado `[I]`**: 183/183 backend, 85/85 frontend, builds limpios, migración/EF sin drift y flujo finito solicitud -> aprobación -> Outbox -> `.eml` local. | Regresión visual manual; SMTP público continúa como gate externo. |
 
 > **Nota Módulo 3**: La auditoría de lógica de negocio y moderación no arrojó hallazgos Críticos ni Altos. El hallazgo **MEDIO** M3-M1 fue mitigado por Spec 193; el detalle y su estado posterior se conservan en la sección §2.
 
@@ -72,6 +74,7 @@ validación de hardware productivo.
 1. `UploadCleanupHostedService` registra fallos de limpieza como warning; en producción se recomienda elevar errores persistentes de I/O a error/alerta.
 2. Redis y Cloudinary tienen fallback local. SMTP es obligatorio en Production y usa pickup local solo en Development; los tres requieren smoke con secretos reales en el ambiente de destino.
 3. Microsoft Entra está implementado; su aceptación real continúa bloqueada por App Registrations, consentimiento y cuenta institucional de prueba.
+4. El onboarding empresarial está implementado y probado por contratos/runtime finito; la experiencia visual pública y administrativa requiere el recorrido manual final solicitado por QA.
 
 ### Recomendación de cierre
 
@@ -146,6 +149,27 @@ migraciones sin drift y un schema runtime de 43 mutaciones. `microsoftLogin` res
 con error controlado `ENTRA_NOT_CONFIGURED` al estar deshabilitado y el proceso temporal
 liberó su puerto. No se probó un token institucional real porque requiere App
 Registrations, consentimiento y cuenta del tenant; ese gate permanece `[B]`.
+
+### Spec 198 - Onboarding B2B de empleadores
+
+La plataforma dejó de depender de cuentas de empresa creadas manualmente. Una solicitud
+pública conserva consentimiento y datos normalizados, valida CUIT y aplica honeypot
+antes de validar campos, rate limiting por claves HMAC y respuestas uniformes ante
+duplicados. La solicitud nunca otorga permisos ni revela si ya existe una empresa.
+
+Solo un Administrador puede leer las solicitudes y procesarlas. La aprobación usa una
+transacción serializable e idempotente para persistir solicitud, cuenta, usuario con rol
+canónico `Empleador`, auditoría y Outbox. El rechazo mantiene el motivo en el registro
+administrativo, pero la auditoría transversal almacena únicamente
+`ReasonProvided = true`, evitando duplicar información potencialmente sensible.
+
+El Magic Link público responde siempre con confirmación genérica, incluso cuando la
+identidad no existe, no fue aprobada o el transporte de correo falla. El Outbox aplica
+lease, reintentos acotados y código de error sanitizado; no almacena credenciales ni
+cuerpos de correo. La evidencia incluye 183 pruebas backend, 85 frontend, builds
+limpios, migración aplicada sin drift, schema/operaciones GraphQL y entrega local
+`Delivered` con archivo `.eml`. La regresión visual queda explícitamente delegada al
+usuario y no se declara como ejecutada.
 
 ---
 

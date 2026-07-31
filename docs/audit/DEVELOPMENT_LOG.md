@@ -5,6 +5,42 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 
 ---
 
+## [2026-07-30] - Spec 198: Onboarding B2B de empleadores
+
+* **Objetivo**: incorporar un alta externa controlada para empresas, con solicitud
+  publica, revision administrativa y aprovisionamiento seguro de cuentas `Empleador`,
+  sin permitir autoasignacion de roles ni depender de contrasenas temporales.
+* **Resultado**:
+  - Se agregaron `EmployerRequest` y `EmployerOnboardingOutboxMessage`, estados de
+    procesamiento/entrega, concurrencia optimista, indices filtrados, checks y FKs
+    explicitas con `DeleteBehavior.Restrict`.
+  - La solicitud publica normaliza datos, valida CUIT, procesa el honeypot antes que los
+    campos de negocio, limita abuso por origen e identidad mediante fingerprints HMAC y
+    responde de forma generica ante cuentas o solicitudes existentes.
+  - La aprobacion Admin es serializable e idempotente: crea una unica cuenta y usuario
+    con rol canonico `Empleador`, auditoria sanitizada y mensaje Outbox en la misma
+    transaccion. El rechazo conserva el motivo en el dominio administrativo, pero el
+    registro de auditoria solo informa que se proporciono un motivo.
+  - Magic Link dejo de aprovisionar empleadores anonimos. El flujo publico no diferencia
+    identidades inexistentes, no aprobadas ni fallos de entrega; los tokens son de un
+    uso, expirables y solo se persisten como digest.
+  - El worker de Outbox usa lease, reintentos acotados y estados observables. Un fallo
+    SMTP mantiene la cuenta consistente y permite reintentar sin duplicar identidades.
+  - React incorpora `/empleos/solicitud`, CTA publico y una pestaña administrativa con
+    filtros, paginacion, confirmaciones accesibles, aprobar/rechazar/reintentar y estado
+    real de entrega de correo.
+* **Validaciones ejecutadas**:
+  - Backend: 183/183 pruebas PASS; build Release con 0 warnings y 0 errores.
+  - Frontend: 85/85 pruebas PASS; build Vite con 0 errores.
+  - EF Core: `AddEmployerOnboardingWorkflow` aplicada a SQL Server Docker y modelo sin
+    drift.
+  - Runtime finito: schema, solicitud publica, consulta Admin, aprobacion y Outbox PASS;
+    el correo de bienvenida alcanzo estado `Delivered` y genero evidencia `.eml` local.
+  - Seguridad: pruebas de anti-enumeracion, precedencia del honeypot y auditoria de
+    rechazo sin PII/motivo sensible PASS.
+* **Estado**: Implementada `[I]`. La regresion visual del formulario publico y la pestaña
+  Admin se realizara manualmente; no se inicio backend ni Vite durante este cierre.
+
 ## [2026-07-30] - Spec 197: Microsoft Entra Institutional SSO
 
 * **Objetivo**: Reemplazar el plan Google OAuth por una integracion institucional

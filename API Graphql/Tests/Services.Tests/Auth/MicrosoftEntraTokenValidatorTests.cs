@@ -41,6 +41,39 @@ public sealed class MicrosoftEntraTokenValidatorTests : IDisposable
         Assert.Equal("Perez", identity.LastName);
     }
 
+    [Fact]
+    public async Task ValidateAsync_CommonAuthority_AcceptsOrganizationalTenant()
+    {
+        MicrosoftEntraOptions options = CreateOptions(
+            MicrosoftEntraOptions.MultiTenantAuthority);
+        var validator = CreateValidator(options);
+
+        MicrosoftEntraIdentity identity = await validator.ValidateAsync(CreateToken());
+
+        Assert.True(options.IsMultiTenant);
+        Assert.Equal(TenantId, identity.TenantId);
+        Assert.Equal(
+            "https://login.microsoftonline.com/common/v2.0",
+            options.Authority);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_CommonAuthority_RejectsIssuerTenantMismatch()
+    {
+        const string otherTenantId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+        MicrosoftEntraOptions options = CreateOptions(
+            MicrosoftEntraOptions.MultiTenantAuthority);
+        var validator = CreateValidator(options);
+
+        MicrosoftEntraAuthenticationException exception =
+            await Assert.ThrowsAsync<MicrosoftEntraAuthenticationException>(() =>
+                validator.ValidateAsync(CreateToken(
+                    tenantId: TenantId,
+                    issuer: $"https://login.microsoftonline.com/{otherTenantId}/v2.0")));
+
+        Assert.Equal("ENTRA_INVALID_TOKEN", exception.Code);
+    }
+
     [Theory]
     [InlineData("wrong-audience", TenantId, "access_as_user", "ana.perez@itbeltran.com.ar")]
     [InlineData(ClientId, "cccccccc-cccc-4ccc-8ccc-cccccccccccc", "access_as_user", "ana.perez@itbeltran.com.ar")]
@@ -139,7 +172,24 @@ public sealed class MicrosoftEntraTokenValidatorTests : IDisposable
             MicrosoftEntraOptions.FromConfiguration(configuration));
     }
 
-    private MicrosoftEntraTokenValidator CreateValidator()
+    [Fact]
+    public void Options_CommonTenant_IsAcceptedWithoutGuidParsing()
+    {
+        MicrosoftEntraOptions options = CreateOptions("COMMON");
+
+        Assert.Equal(MicrosoftEntraOptions.MultiTenantAuthority, options.TenantId);
+        Assert.True(options.IsMultiTenant);
+    }
+
+    [Fact]
+    public void Options_UnknownTenantAuthority_FailsClosed()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            CreateOptions("organizations"));
+    }
+
+    private MicrosoftEntraTokenValidator CreateValidator(
+        MicrosoftEntraOptions? options = null)
     {
         var configuration = new OpenIdConnectConfiguration
         {
@@ -147,7 +197,7 @@ public sealed class MicrosoftEntraTokenValidatorTests : IDisposable
         };
         configuration.SigningKeys.Add(_signingKey);
         return new MicrosoftEntraTokenValidator(
-            _options,
+            options ?? _options,
             new StaticConfigurationManager(configuration));
     }
 
@@ -157,7 +207,8 @@ public sealed class MicrosoftEntraTokenValidatorTests : IDisposable
         string? scope = "access_as_user",
         string email = "ana.perez@itbeltran.com.ar",
         DateTime? notBefore = null,
-        DateTime? expires = null)
+        DateTime? expires = null,
+        string issuer = Issuer)
     {
         var claims = new List<Claim>
         {
@@ -174,7 +225,7 @@ public sealed class MicrosoftEntraTokenValidatorTests : IDisposable
         DateTime start = notBefore ?? DateTime.UtcNow.AddMinutes(-1);
         DateTime end = expires ?? DateTime.UtcNow.AddMinutes(10);
         var token = new JwtSecurityToken(
-            Issuer,
+            issuer,
             audience,
             claims,
             start,
@@ -183,13 +234,14 @@ public sealed class MicrosoftEntraTokenValidatorTests : IDisposable
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private static MicrosoftEntraOptions CreateOptions()
+    private static MicrosoftEntraOptions CreateOptions(
+        string tenantId = TenantId)
     {
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["EntraId:Enabled"] = "true",
-                ["EntraId:TenantId"] = TenantId,
+                ["EntraId:TenantId"] = tenantId,
                 ["EntraId:ClientId"] = ClientId,
                 ["EntraId:Audience"] = ClientId,
                 ["EntraId:RequiredScope"] = "access_as_user",

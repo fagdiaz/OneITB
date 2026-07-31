@@ -214,6 +214,29 @@ dotnet user-secrets set "SmtpSettings:EnableSsl" "true" --project "API Graphql/O
 
 No versionar credenciales SMTP. Para una demo local sin proveedor real, dejar todas las claves SMTP vacias y abrir el archivo `.eml` mas reciente de `App_Data/MailDrop`. El cuerpo y las credenciales temporales nunca se escriben en logs.
 
+### Onboarding B2B de empleadores
+
+El alta de una empresa no se realiza desde registro general ni desde
+`requestMagicLink`. El recorrido valido es:
+
+1. abrir `/empleos/solicitud` y enviar una solicitud empresarial;
+2. iniciar sesion como Administrador;
+3. abrir **Solicitudes de Empleadores** y aprobar o rechazar;
+4. si se aprueba, comprobar el estado `Pending`/`Delivered` del correo;
+5. en Development, abrir el `.eml` de `App_Data/MailDrop` y consumir el enlace una vez.
+
+La confirmacion publica es deliberadamente generica. No usar diferencias de mensaje para
+diagnosticar duplicados; esa informacion solo se consulta desde el panel Admin. Una
+aprobacion repetida no debe crear otra cuenta. Si el correo falla, utilizar
+**Reintentar envio** luego de corregir SMTP; no editar SQL manualmente ni volver a
+aprobar la solicitud.
+
+La migracion asociada es `AddEmployerOnboardingWorkflow`. Antes de una demo comprobar:
+
+```powershell
+dotnet ef migrations has-pending-model-changes --configuration Release --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
+```
+
 ### Magic Link de empleadores
 
 `requestMagicLink` devuelve solamente `{ accepted, message }`. La credencial aleatoria se envia en el fragmento `#token=` del enlace, se persiste como digest SHA-256 y se consume una sola vez. Al abrir el enlace, React retira el fragmento de la barra de direcciones antes de permitir el login.

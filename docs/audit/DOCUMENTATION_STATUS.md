@@ -7,13 +7,13 @@
 | Documento | Proposito | Estado |
 |---|---|---|
 | `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.6 alineada a Specs 194-197, identidad Microsoft Entra, base demo canonica y condiciones oficiales de mesa; portada, figuras, DOCX/PDF, impresion y ensayo permanecen pendientes |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 116/116 (100%); distingue Feature Complete de aceptacion externa Entra, cierre academico, logistica oficial y gates productivos |
+| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.7 alineada a Specs 194-198, identidad Microsoft Entra, base demo canonica, onboarding B2B de empleadores y condiciones oficiales de mesa; portada, figuras, DOCX/PDF, impresion y ensayo permanecen pendientes |
+| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 117/117 (100%); distingue Feature Complete de aceptacion externa Entra, regresion visual del onboarding empresarial, cierre academico, logistica oficial y gates productivos |
 | `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
 | `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones, rebaseline/restore de la base demo y validacion | Vigente; seis identidades canonicas, procedimiento protegido de Spec 196 y registro/configuracion Microsoft Entra de Spec 197 |
 | `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; matriz 186-193 y aceptaciones 194-197 alineadas, con resolucion, evidencia y gate residual por hallazgo |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; matriz 186-193 y aceptaciones 194-198 alineadas, con resolucion, evidencia y gate residual por hallazgo |
 
 ## Documentacion complementaria
 
@@ -31,6 +31,7 @@
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/198-employer-onboarding-workflow` | Onboarding B2B implementado: solicitud publica anti-enumeracion con honeypot temprano y limiter HMAC; aprobacion Admin serializable e idempotente; rol `Empleador` fijo; auditoria sanitizada; Outbox con lease/reintentos y Magic Link generico. Backend 183/183, frontend 85/85, builds limpios, migracion aplicada sin drift y entrega `.eml` local `Delivered`; regresion visual publica/Admin pendiente por decision del usuario |
 | `specs/197-microsoft-entra-sso` | Microsoft Entra single-tenant implementado con MSAL PKCE, validacion backend completa, identidad externa unica, provisioning sin privilegios, auditoria/rate limit y limpieza de sesion. Backend 174/174, frontend 82/82, builds limpios, 33 migraciones sin drift y schema runtime 43 mutaciones con rechazo `ENTRA_NOT_CONFIGURED`; tenant real permanece `[B]` |
 | `specs/196-demo-database-rebaseline` | Base Docker local respaldada y reconstruida desde 32 migraciones; dos seeds con inventario identico, integridad SQL en cero y login de los seis roles. Smokes de feed, academico, mensajeria, notificaciones, empleos, administracion, moderacion y upload PASS. Backend 153/153, frontend 80/80, builds limpios y EF sin drift |
 | `Hotfix transport local 2026-07-29` | Vite proxy same-origin verificado para GraphQL HTTP, WebSocket, REST y uploads; login real de `Empleador` por `http://localhost:5173/graphql` PASS; frontend 80/80 y build Vite PASS. El secreto demo permanece fuera del repo |

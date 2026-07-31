@@ -46,13 +46,22 @@ Mobile/OneItb-App/
 - `POST /api/upload`: transferencia binaria autenticada y desacoplada, maximo 15 MB.
 - `/uploads/{file}`: lectura de archivos estaticos almacenados localmente cuando no se usa Cloudinary.
 - SMTP/pickup: salida de correo para cambios de postulaciones y entrega fuera de banda del Magic Link de empleadores.
+- Onboarding B2B: `submitEmployerRequest` es publico y limitado; `employerRequests`, `approveEmployerRequest`, `rejectEmployerRequest` y `resendEmployerWelcome` son exclusivos de Administrador.
 - Microsoft Entra ID: la SPA obtiene un access token delegado para la API OneITB y lo canjea una sola vez mediante `microsoftLogin`; los resolvers restantes solo aceptan el JWT local.
 
 Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/api/upload`; luego GraphQL persiste el descriptor en `SocialAttachment` para publicaciones/comentarios o la URL en `AcademicResource.FileUrl`. `Inquiry.FileUrl` y `Comment.FileUrl` se conservan como compatibilidad con clientes y datos historicos. El feed usa un mosaico acotado y, solo cuando una portada PDF entra en proximidad visual, carga un chunk PDF.js y worker locales para rasterizar la primera pagina en canvas con cancelacion/cleanup. El visor completo recupera el PDF con `fetch`, crea una Blob URL temporal, aborta la descarga y revoca la URL al cerrar; no se relaja `X-Frame-Options: DENY` ni se depende de CDN.
 
 Controles defensivos vigentes: `/graphql` y `/api/upload` tienen rate limiting fixed-window por IP; GraphQL aplica profundidad maxima configurable (`GraphQL:MaxExecutionDepth`, default 10) y limites globales de paginacion (`DefaultPageSize` 20, `MaxPageSize` 50). El login usa lockout persistente por cuenta (`FailedLoginAttempts`, `LockoutEnd`) para mitigar fuerza bruta aunque el atacante rote IPs. Los perfiles privados se enmascaran en el backend, no solo en React.
 
-El acceso de empleadores separa solicitud y consumo. `requestMagicLink` responde un payload generico sin revelar existencia ni credencial; el token aleatorio de 256 bits viaja por correo dentro de un fragmento URL, mientras SQL conserva solamente su digest SHA-256. React elimina el fragmento mediante `history.replaceState` antes de usarlo. El consumo atomico, expiracion y proteccion de replay permanecen vigentes.
+El acceso de empleadores separa solicitud, aprobacion y consumo. El formulario publico
+no crea cuentas y responde de forma generica ante conflictos; procesa el honeypot antes
+de validar PII y aplica limites con fingerprints HMAC. La aprobacion Admin usa una
+transaccion serializable para persistir solicitud, cuenta, usuario `Empleador`, auditoria
+y Outbox sin duplicados. `requestMagicLink` tampoco revela existencia ni fallos de
+entrega; el token aleatorio de 256 bits viaja por correo dentro de un fragmento URL,
+mientras SQL conserva solamente su digest SHA-256. React elimina el fragmento mediante
+`history.replaceState` antes de usarlo. El consumo atomico, expiracion y proteccion de
+replay permanecen vigentes.
 
 El acceso institucional usa dos App Registrations single-tenant: una API que expone el
 scope delegado `access_as_user` y una SPA publica sin client secret. MSAL ejecuta
@@ -73,6 +82,9 @@ Las contrasenas usan `IPasswordHasher` con BCrypt y costo configurable (`Passwor
 erDiagram
     ACCOUNT ||--|| USER : authenticates
     ACCOUNT ||--o{ MAGIC_LINK : owns
+    USER o|--o{ EMPLOYER_REQUEST : processes
+    USER o|--o| EMPLOYER_REQUEST : provisioned_as
+    EMPLOYER_REQUEST ||--o| EMPLOYER_ONBOARDING_OUTBOX : enqueues
 
     USER ||--o{ USER_CAREER : enrolls
     CAREER ||--o{ USER_CAREER : includes
@@ -116,12 +128,14 @@ erDiagram
     USER ||--o{ AUDIT_LOG : performs
 ```
 
-Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommentReaction`, `SocialAttachment`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`, `NotificationPreference`, `ModerationAudit`, `AuditLog`, `MagicLink`, `JobOffer`, `JobApplication`, `UserCvExperience`, `UserCvEducation`, `UserCvProject`, `UserCvSkill` y `UserCvLanguage`.
+Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommentReaction`, `SocialAttachment`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`, `NotificationPreference`, `ModerationAudit`, `AuditLog`, `MagicLink`, `EmployerRequest`, `EmployerOnboardingOutboxMessage`, `JobOffer`, `JobApplication`, `UserCvExperience`, `UserCvEducation`, `UserCvProject`, `UserCvSkill` y `UserCvLanguage`.
 
 Campos destacados recientes:
 
 - `AcademicResource`: `Category`, `Version`, `FileUrl`, `ExternalUrl`, `IsActive`.
 - `JobApplication`: `Status` (`Pending`, `Reviewed`, `Rejected`) con indice unico por `JobOfferId + ApplicantId`.
+- `EmployerRequest`: identidad empresarial normalizada, estado, consentimiento, procesamiento, usuario aprovisionado, entrega de correo y `RowVersion`; email/CUIT activos son unicos.
+- `EmployerOnboardingOutboxMessage`: una fila por solicitud aprobada, lease, reintentos, proxima ejecucion y codigo de error sanitizado; no almacena token ni cuerpo del correo.
 - `AuditLog`: `ActorUserId`, `CorrelationId`, `Action`, `EntityName`, `EntityId`, snapshots JSON acotados.
 - `User.IsPublicProfile`: controla si terceros pueden ver bio, contacto, carreras, CV y metricas extendidas del perfil publico.
 - `SocialAttachment`: propietario exclusivo `InquiryId` XOR `CommentId`, URL, nombre original, MIME, tamano y orden; FKs restrictivas.
@@ -205,6 +219,37 @@ sequenceDiagram
 ```
 
 La mutacion de estado no revierte la postulacion si falla el proveedor SMTP; el correo es un side effect operacional y se registra como warning.
+
+### Onboarding B2B de empleadores
+
+```mermaid
+sequenceDiagram
+    actor Company as Empresa
+    actor Admin as Administrador
+    participant FE as React
+    participant GQL as GraphQL
+    participant Service as EmployerRequestService
+    participant DB as SQL Server
+    participant Outbox as Outbox Worker
+    participant Email as IEmailSender
+    Company->>FE: completa solicitud y consentimiento
+    FE->>GQL: submitEmployerRequest(input)
+    GQL->>Service: limitar, normalizar y validar
+    Service->>DB: INSERT Pending
+    GQL-->>FE: confirmacion generica
+    Admin->>GQL: approveEmployerRequest(id)
+    GQL->>Service: validar rol e idempotencia
+    Service->>DB: transaccion request + account + user + audit + outbox
+    GQL-->>Admin: Approved / Pending delivery
+    Outbox->>DB: adquirir lease
+    Outbox->>Email: enviar Magic Link
+    Outbox->>DB: marcar Delivered o programar reintento
+```
+
+La solicitud publica no permite enumerar cuentas. Solo el dominio administrativo expone
+PII. El rechazo conserva el motivo en `EmployerRequest`, mientras `AuditLog` registra
+solo que existio un motivo. La aprobacion fija el rol `Empleador`; no acepta un rol desde
+el cliente. El Outbox desacopla SMTP de la transaccion sin perder trazabilidad.
 
 ### Privacidad de perfil y smoke SMTP
 

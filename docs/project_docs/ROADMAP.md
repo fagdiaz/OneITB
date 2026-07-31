@@ -2,7 +2,7 @@
 
 **Ultima revision**: 2026-07-30
 
-**Estado global**: 100% (116 de 116 items)
+**Estado global**: 100% (117 de 117 items)
 
 **Feature Complete funcional core**: 100%. Las remediaciones 186-193 cuentan con
 evidencia automatizada y aceptacion operativa local. Las Specs 194-196 verificaron los
@@ -10,6 +10,9 @@ recorridos principales, la infraestructura local y la base demo canonica. La Spe
 implemento el acceso institucional Microsoft Entra ID con Authorization Code + PKCE,
 validacion backend del access token y canje por el JWT canonico de OneITB. La aceptacion
 contra el tenant real permanece como gate externo y no se contabiliza como `[V]`.
+La Spec 198 incorporo el onboarding B2B de empresas con solicitud publica, revision
+administrativa, aprovisionamiento transaccional de cuentas `Empleador` y entrega
+asincronica de Magic Link mediante Outbox.
 
 Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
 El porcentaje global cuenta los items funcionales y de auditoria; P5/P6 describen
@@ -110,7 +113,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Auditoria persistente de acciones administrativas y moderacion reversible con motivo, separada de la edicion exclusiva del autor.
 - [x] [V] Regresion runtime del panel tras cambios de materias y superadmin.
 
-## Modulo 7 - Empleos y Gestor de Postulaciones: 100% (9/9)
+## Modulo 7 - Empleos y Gestor de Postulaciones: 100% (10/10)
 
 - [x] [I] Entidad `JobOffer` con FK explicita a `User` y `DeleteBehavior.Restrict`.
 - [x] [I] Entidad `JobApplication` con estados `Pending`, `Reviewed` y `Rejected`, FKs restrictivas e indice unico por oferta/postulante.
@@ -121,6 +124,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Alertas por correo SMTP para cambios de estado de postulaciones: contrato de empleo cubierto y adaptador de red verificado contra Mailpit local; proveedor SMTP publico permanece como gate externo.
 - [x] [I] Seeder enterprise con empleadores, ofertas laborales, postulaciones y notificaciones persistentes.
 - [x] [I] QA/security del gestor: validacion por rol, ownership estricto de oferta, auditoria persistente y build/migracion sin errores.
+- [x] [I] Onboarding B2B de empleadores: solicitud publica con anti-enumeracion y rate limiting, revision Admin, aprovisionamiento atomico de cuenta `Empleador`, auditoria sanitizada y entrega reintentable de Magic Link mediante Outbox.
 
 ## Modulo 8 - Recursos y seguimiento academico: 100% (6/6)
 
@@ -275,9 +279,25 @@ WebSocket. La migracion agrega identidad externa unica y password local nullable
 para cuentas SSO-only. Tests, builds, EF y schema runtime cuentan con evidencia; el
 consentimiento y la prueba con una cuenta real del tenant siguen en `PR-04`.
 
+## Onboarding B2B de empleadores - Spec 198
+
+La Spec 198 cierra el alta controlada de empresas externas sin habilitar un registro
+publico directo con privilegios. La solicitud valida CUIT, normaliza datos, aplica
+honeypot antes de procesar campos, rate limiting con claves HMAC y respuesta generica
+ante duplicados. Solo Administradores pueden consultar PII, aprobar, rechazar o
+reintentar la entrega.
+
+La aprobacion utiliza una transaccion serializable para crear exactamente una cuenta y
+un usuario con rol canonico `Empleador`, registrar auditoria y persistir un mensaje de
+Outbox. El worker entrega un Magic Link de un uso con lease y reintentos acotados; un
+fallo SMTP no revierte la identidad ya aprobada. La migracion, schema, flujo GraphQL y
+pickup local cuentan con evidencia automatizada. La regresion visual de
+`/empleos/solicitud` y la pestaña administrativa queda como recorrido manual previo a
+la defensa y no se presenta como ejecutada.
+
 ## Plan operativo de cierre para la defensa
 
-Este plan no agrega alcance funcional ni modifica el calculo de 116/116 items. Convierte
+Este plan no agrega alcance funcional ni modifica el calculo de 117/117 items. Convierte
 el Release Candidate academico en un paquete reproducible de defensa. Las estimaciones
 representan tiempo efectivo de una persona con el entorno ya instalado; no incluyen
 esperas institucionales, aprobacion de credenciales ni incidentes de terceros.

@@ -7,7 +7,7 @@
 **Alumno/a:** [Completar nombre y apellido]<br>
 **Docente/s:** [Completar]<br>
 **Ciclo lectivo:** 2026<br>
-**Versión del documento:** 1.6 - Identidad institucional Microsoft Entra<br>
+**Versión del documento:** 1.7 - Microsoft Entra y onboarding B2B de empleadores<br>
 **Fecha de corte técnico-documental:** 30 de julio de 2026
 
 > **Alcance de esta memoria.** Este documento describe el estado comprobable del repositorio OneITB23 al momento de su redacción. Distingue entre funcionalidades implementadas, validaciones automatizadas y verificaciones externas todavía pendientes. Los nombres y versiones se corresponden con el código fuente: .NET 8 (Microsoft, 2023a), Entity Framework Core 8.0.6 (Microsoft, 2023b), Hot Chocolate 14.2.0 (ChilliCream, s. f.), GraphQL (GraphQL Foundation, 2021), React 18 (React Team, 2022), Apollo Client 3.7 (Apollo GraphQL, s. f.), Vite 8 (Vite Team, 2026), Tailwind CSS 4 (Wathan, 2025) y SQL Server 2022 (Microsoft, 2025).
@@ -18,7 +18,7 @@ OneITB23 es una plataforma web institucional que integra comunicación académic
 
 La solución adopta una arquitectura desacoplada: una aplicación de página única o SPA (Mozilla, 2025) consume una API GraphQL desarrollada en .NET 8; Entity Framework Core administra la persistencia en SQL Server; las operaciones en tiempo real utilizan el protocolo WebSocket (Fette & Melnikov, 2011); y la carga binaria se resuelve mediante un endpoint basado en el estilo arquitectónico REST (Fielding, 2000). El despliegue productivo se modela con contenedores Docker (Docker, Inc., s. f.) para NGINX (NGINX, Inc., s. f.), la API, SQL Server y Redis (Redis Ltd., s. f.), con adaptadores opcionales para el protocolo SMTP (Klensin, 2008) y almacenamiento Cloudinary (Cloudinary, 2026). Cuando esas variables externas no existen, el entorno local mantiene mecanismos alternativos seguros y reproducibles.
 
-El núcleo funcional se encuentra implementado y el roadmap registra un 100 % global (116 de 116 ítems), con el core funcional completo. La evidencia automatizada más reciente registra 174 pruebas backend y 82 pruebas frontend aprobadas, compilación Release con cero errores y cero advertencias, bundle Vite con 539 módulos y cero errores, y esquema de Entity Framework sin cambios pendientes. La base de demostración fue respaldada y reconstruida desde las migraciones canónicas; la migración número 33 agregó identidad externa Microsoft Entra sin alterar el grafo demo. Dos ejecuciones del seeder produjeron un inventario idéntico, la auditoría relacional obtuvo cero violaciones y seis identidades canónicas autenticaron con el rol esperado. La aceptación local también verificó aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y entrega SMTP capturada mediante Mailpit. El acceso institucional Microsoft 365 se implementó con MSAL Authorization Code + PKCE y validación backend del access token (Microsoft, s. f.); el consentimiento y smoke contra el tenant real permanecen como gate externo. También restan como controles de cierre académico la regresión visual manual del rol Moderador, la prueba WebSocket de red con dos sesiones aisladas y la maquetación final.
+El núcleo funcional se encuentra implementado y el roadmap registra un 100 % global (117 de 117 ítems), con el core funcional completo. La evidencia automatizada más reciente registra 183 pruebas backend y 85 pruebas frontend aprobadas, compilaciones Release/Vite sin errores y esquema de Entity Framework sin cambios pendientes. La base de demostración fue respaldada y reconstruida desde las migraciones canónicas; las migraciones posteriores incorporaron identidad externa Microsoft Entra y onboarding B2B sin alterar el grafo demo. Dos ejecuciones del seeder produjeron un inventario idéntico, la auditoría relacional obtuvo cero violaciones y seis identidades canónicas autenticaron con el rol esperado. La aceptación local también verificó aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y entrega SMTP capturada mediante Mailpit/pickup local. El acceso institucional Microsoft 365 se implementó con MSAL Authorization Code + PKCE y validación backend del access token (Microsoft, s. f.); el consentimiento y smoke contra el tenant real permanecen como gate externo. El alta empresarial controlada se verificó desde la solicitud GraphQL hasta la aprobación, el Outbox y el correo `.eml`; su recorrido visual público/Admin queda pendiente. También restan como controles de cierre académico la regresión visual manual del rol Moderador, la prueba WebSocket de red con dos sesiones aisladas y la maquetación final.
 
 **Índice**
 
@@ -133,6 +133,8 @@ La mensajería privada conserva historial en SQL Server y utiliza suscripciones 
 
 La Bolsa de Trabajo permite que empleadores y administradores publiquen ofertas. Estudiantes y egresados pueden postularse una sola vez por oferta. El propietario de la oferta consulta candidatos y actualiza el estado a pendiente, revisado o rechazado desde el Gestor de Ofertas y Postulaciones. Los cambios relevantes pueden generar correo mediante SMTP; en desarrollo se utiliza un buzón local `.eml` ignorado por el repositorio, sin registrar cuerpos sensibles en consola.
 
+Una empresa externa que todavía no posee cuenta utiliza un formulario público de solicitud. La plataforma no concede el rol `Empleador` de forma automática: un Administrador revisa los datos, aprueba o rechaza la solicitud y, al aprobarla, el sistema crea la identidad con privilegios mínimos y encola el correo de bienvenida dentro de una transacción. Un procesador Outbox reintentable entrega el Magic Link sin comprometer la consistencia de la cuenta si SMTP se encuentra temporalmente indisponible.
+
 Administradores y moderadores disponen de herramientas diferentes. El autor conserva la edición de su texto; la moderación puede ocultar o restaurar contenido con motivo y registro auditable, pero no reescribir contenido ajeno. Las cuentas administrativas están protegidas frente a degradación o desactivación desde la interfaz habitual.
 
 ### Requerimientos Funcionales
@@ -188,6 +190,8 @@ Administradores y moderadores disponen de herramientas diferentes. El autor cons
 - **RF-034 - Perfil académico del candidato:** mostrar al empleador la información permitida para evaluar una postulación.
 - **RF-035 - Aviso por correo:** enviar una notificación institucional al pasar una postulación a revisada o rechazada.
 - **RF-036 - Prueba SMTP:** permitir a un administrador ejecutar un smoke test de correo sin recorrer el flujo laboral completo.
+- **RF-036A - Solicitud empresarial:** permitir que una empresa sin cuenta presente una solicitud pública con consentimiento, datos normalizados, CUIT válido, protección anti-bot y respuesta resistente a enumeración.
+- **RF-036B - Aprobación empresarial:** permitir exclusivamente a Administradores revisar solicitudes y aprobarlas o rechazarlas; una aprobación debe aprovisionar exactamente una identidad `Empleador`, registrar auditoría y encolar el acceso por Magic Link de manera atómica.
 
 #### Administración, moderación y auditoría
 
@@ -453,6 +457,30 @@ erDiagram
         datetime ExpiresAt
         bool IsUsed
     }
+    EMPLOYER_REQUEST {
+        uuid Id PK
+        string CompanyName
+        string ContactName
+        string Email
+        string Phone
+        string TaxId
+        string Status
+        datetime CreatedAt
+        datetime ProcessedAt
+        uuid ProcessedByAdminId FK
+        uuid ProvisionedUserId FK
+        string EmailDeliveryStatus
+    }
+    EMPLOYER_ONBOARDING_OUTBOX {
+        uuid Id PK
+        uuid EmployerRequestId FK,UK
+        string Status
+        datetime NextAttemptAt
+        datetime LeaseExpiresAt
+        datetime ProcessedAt
+        int Attempts
+        string LastErrorCode
+    }
     CAREER {
         int Id PK
         string Name
@@ -658,6 +686,9 @@ erDiagram
 
     USER ||--|| ACCOUNT : owns
     ACCOUNT ||--o{ MAGIC_LINK : issues
+    USER o|--o{ EMPLOYER_REQUEST : processes
+    USER o|--o| EMPLOYER_REQUEST : provisioned_as
+    EMPLOYER_REQUEST ||--o| EMPLOYER_ONBOARDING_OUTBOX : enqueues
     USER ||--o{ USER_CAREER : enrolls
     CAREER ||--o{ USER_CAREER : includes
     CAREER ||--o{ SUBJECT : contains
@@ -707,13 +738,13 @@ El dominio social se pinta en celeste: `INQUIRY`, `COMMENT`, `SOCIAL_ATTACHMENT`
 
 El dominio de comunicación se pinta en violeta tenue: `MESSAGE`, `NOTIFICATION` y `NOTIFICATION_PREFERENCE`. Deben salir dos relaciones desde `USER` hacia `MESSAGE`, rotuladas “envía” y “recibe”. El dominio académico operativo se pinta en verde más intenso: `ACADEMIC_RESOURCE` depende de Materia y Usuario cargador; `ACADEMIC_PROGRESS` depende de Estudiante, Materia y Usuario asignador.
 
-El dominio laboral se pinta en naranja suave: `JOB_OFFER` pertenece al empleador y `JOB_APPLICATION` une la oferta con el postulante. Debe destacarse con una nota que el par oferta-postulante es único. Las cinco tablas `CV_*` se ubican alrededor de Usuario en gris azulado y se conectan uno a muchos; cada registro puede ocultarse y posee orden de presentación.
+El dominio laboral se pinta en naranja suave: `JOB_OFFER` pertenece al empleador y `JOB_APPLICATION` une la oferta con el postulante. Debe destacarse con una nota que el par oferta-postulante es único. `EMPLOYER_REQUEST` representa el alta B2B previa a la cuenta y se relaciona opcionalmente con el Administrador que la procesa y con el usuario aprovisionado. `EMPLOYER_ONBOARDING_OUTBOX` mantiene una relación uno a cero-o-uno con la solicitud aprobada y conserva solo estado técnico, intentos, lease y código de error sanitizado. Las cinco tablas `CV_*` se ubican alrededor de Usuario en gris azulado y se conectan uno a muchos; cada registro puede ocultarse y posee orden de presentación.
 
 Finalmente, `AUDIT_LOG` y `MODERATION_AUDIT` se pintan en rojo muy claro. `AUDIT_LOG` conserva valores anteriores y nuevos serializados para trazabilidad transversal. `MODERATION_AUDIT` referencia al actor y, opcionalmente, a usuario, publicación, comentario o reporte objetivo. Todas las relaciones críticas deben acompañarse con la leyenda “FK explícita / DeleteBehavior.Restrict”.
 
 ### Interfaces de Usuario
 
-**Landing pública y autenticación.** La ruta `/` presenta la identidad visual, propósito, módulos y llamados a iniciar sesión o registrarse. El encabezado adapta navegación a escritorio y móvil. Login y registro incluyen visibilidad de contraseña, validación institucional, feedback de error y tema claro predeterminado para usuarios anónimos.
+**Landing pública y autenticación.** La ruta `/` presenta la identidad visual, propósito, módulos y llamados a iniciar sesión o registrarse. También ofrece el acceso **Soy empresa / Publicar oferta**, que dirige a `/empleos/solicitud` sin conceder una cuenta directamente. El encabezado adapta navegación a escritorio y móvil. Login y registro incluyen visibilidad de contraseña, validación institucional, feedback de error y tema claro predeterminado para usuarios anónimos.
 
 **Muro principal.** La ruta `/feed` organiza el compositor, búsqueda, filtros y publicaciones. Cada tarjeta muestra autor, rol, materia, texto expandible, mosaico multimedia, reacciones, comentarios y acciones contextuales. El Media Grid limita la altura, combina portada, imágenes, PDF y YouTube, y deriva el excedente a un visor. Su algoritmo calcula dinámicamente el layout y adapta las fracciones disponibles según la orientación y proporción de la portada: una pieza apaisada puede ocupar el ancho superior completo, mientras los medios secundarios se redistribuyen en una grilla compacta. Para documentos PDF utiliza un motor ligero y diferido basado en PDF.js (Mozilla, s. f.), que previsualiza la primera página con una presentación similar a las aplicaciones de mensajería y conserva las acciones de apertura y descarga. Los reproductores de YouTube quedan encapsulados en contenedores con `aspect-ratio` y dimensiones estrictas para impedir que los `iframe` desborden su tarjeta o alteren el DOM circundante. Los comentarios distinguen nivel principal y respuesta mediante sangría y conexión visual.
 
@@ -723,7 +754,7 @@ Finalmente, `AUDIT_LOG` y `MODERATION_AUDIT` se pintan en rojo muy claro. `AUDIT
 
 **Mensajería.** `/chat` presenta contactos y conversación en paneles. El widget compacto permite continuar una conversación sin abandonar la vista actual. Los badges, mensajes no leídos y avatares se obtienen de datos persistentes; no se muestra presencia “en línea” ficticia.
 
-**Bolsa de Trabajo.** `/empleos` muestra ofertas con skeleton, filtros y estados vacíos. Estudiantes y egresados pueden postularse. `/empleos/mis-ofertas` permite al propietario abrir una oferta, filtrar postulaciones y consultar el Perfil Académico del candidato en un modal antes de actualizar su estado.
+**Bolsa de Trabajo.** `/empleos` muestra ofertas con skeleton, filtros y estados vacíos. Estudiantes y egresados pueden postularse. `/empleos/mis-ofertas` permite al propietario abrir una oferta, filtrar postulaciones y consultar el Perfil Académico del candidato en un modal antes de actualizar su estado. `/empleos/solicitud` presenta el onboarding B2B con validación accesible, consentimiento y confirmación genérica. El panel Admin agrega **Solicitudes de Empleadores**, con filtros, paginación y acciones confirmadas para aprobar, rechazar o reintentar una entrega pendiente.
 
 **Administración y moderación.** `/admin` reúne usuarios, carreras, materias, publicaciones, comentarios y reportes. Las tablas y acciones respetan jerarquía de roles. Moderar significa ocultar o restaurar con motivo, no editar contenido ajeno. Las acciones críticas presentan confirmación y feedback.
 
@@ -1141,6 +1172,13 @@ Los comentarios principales admiten respuestas. Una respuesta a otra respuesta s
 
 ### 6.8 Bolsa de Trabajo
 
+**Empresa sin cuenta**
+
+1. Desde la portada, seleccionar **Soy empresa / Publicar oferta**.
+2. Completar empresa, CUIT, contacto, correo, teléfono y consentimiento.
+3. Enviar la solicitud. La confirmación no revela si el correo o CUIT ya estaban registrados.
+4. Esperar la revisión administrativa y, si se aprueba, utilizar el enlace de acceso recibido por correo.
+
 **Estudiante o egresado**
 
 1. Abrir **Empleos**.
@@ -1158,7 +1196,7 @@ Los comentarios principales admiten respuestas. Una respuesta a otra respuesta s
 
 ### 6.9 Administración y moderación
 
-El Administrador puede gestionar usuarios, catálogo académico, recursos, ofertas y auditoría. Las cuentas administradoras no pueden degradarse ni desactivarse desde el flujo ordinario. El Moderador revisa reportes, aplica silenciamientos temporales y oculta o restaura contenido con motivo. Ninguno puede editar el texto de otro usuario.
+El Administrador puede gestionar usuarios, catálogo académico, recursos, ofertas y auditoría. En **Solicitudes de Empleadores** filtra solicitudes pendientes, aprobadas o rechazadas; revisa la información empresarial; confirma la aprobación o el rechazo; y consulta el estado real de entrega del correo. La aprobación crea solo el rol `Empleador` y los reintentos no duplican cuentas. Las cuentas administradoras no pueden degradarse ni desactivarse desde el flujo ordinario. El Moderador revisa reportes, aplica silenciamientos temporales y oculta o restaura contenido con motivo. Ninguno puede editar el texto de otro usuario.
 
 ### 6.10 Cierre de sesión
 

@@ -5,6 +5,7 @@ namespace Services.Auth
     public sealed class MicrosoftEntraOptions
     {
         public const string ProviderName = "MicrosoftEntra";
+        public const string MultiTenantAuthority = "common";
 
         private MicrosoftEntraOptions(
             bool enabled,
@@ -31,8 +32,28 @@ namespace Services.Auth
         public string RequiredScope { get; }
         public string AllowedDomain { get; }
         public int MaxTokenLength { get; }
+        public bool IsMultiTenant =>
+            string.Equals(
+                TenantId,
+                MultiTenantAuthority,
+                StringComparison.Ordinal);
         public string Authority => $"https://login.microsoftonline.com/{TenantId}/v2.0";
         public string MetadataAddress => $"{Authority}/.well-known/openid-configuration";
+
+        public bool AllowsTenant(string tenantId)
+        {
+            if (!Guid.TryParse(tenantId, out Guid parsedTenantId) ||
+                parsedTenantId == Guid.Empty)
+            {
+                return false;
+            }
+
+            return IsMultiTenant ||
+                string.Equals(
+                    parsedTenantId.ToString("D"),
+                    TenantId,
+                    StringComparison.OrdinalIgnoreCase);
+        }
 
         public static MicrosoftEntraOptions FromConfiguration(IConfiguration configuration)
         {
@@ -51,7 +72,7 @@ namespace Services.Auth
                     16_384);
             }
 
-            string tenantId = ReadRequiredGuid(configuration, "EntraId:TenantId");
+            string tenantId = ReadTenantAuthority(configuration);
             string clientId = ReadRequiredGuid(configuration, "EntraId:ClientId");
             string audience = configuration["EntraId:Audience"]?.Trim() ?? clientId;
             string requiredScope = ReadRequired(configuration, "EntraId:RequiredScope");
@@ -97,6 +118,24 @@ namespace Services.Auth
             return Guid.TryParse(value, out Guid parsed) && parsed != Guid.Empty
                 ? parsed.ToString("D")
                 : throw new InvalidOperationException($"{key} must be a non-empty GUID.");
+        }
+
+        private static string ReadTenantAuthority(IConfiguration configuration)
+        {
+            const string key = "EntraId:TenantId";
+            string value = ReadRequired(configuration, key);
+            if (string.Equals(
+                value,
+                MultiTenantAuthority,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return MultiTenantAuthority;
+            }
+
+            return Guid.TryParse(value, out Guid parsed) && parsed != Guid.Empty
+                ? parsed.ToString("D")
+                : throw new InvalidOperationException(
+                    $"{key} must be a non-empty GUID or '{MultiTenantAuthority}'.");
         }
     }
 }

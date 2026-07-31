@@ -89,7 +89,7 @@ namespace Services.Auth
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKeys = configuration.SigningKeys,
                 ValidateIssuer = true,
-                ValidIssuer = configuration.Issuer,
+                IssuerValidator = ValidateIssuer,
                 ValidateAudience = true,
                 ValidAudience = _options.Audience,
                 ValidateLifetime = true,
@@ -118,12 +118,13 @@ namespace Services.Auth
 
         private MicrosoftEntraIdentity ReadIdentity(ClaimsPrincipal principal)
         {
-            string tenantId = ReadBoundedClaim(principal, "tid", 64);
+            string tenantId = NormalizeTenantId(
+                ReadBoundedClaim(principal, "tid", 64));
             string subjectId = ReadBoundedClaim(principal, "oid", 128);
             string email = ReadEmail(principal);
             string scope = ReadBoundedClaim(principal, "scp", 2_048);
 
-            if (!string.Equals(tenantId, _options.TenantId, StringComparison.OrdinalIgnoreCase))
+            if (!_options.AllowsTenant(tenantId))
                 throw Reject("ENTRA_INVALID_TOKEN");
             if (!scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                     .Contains(_options.RequiredScope, StringComparer.Ordinal))
@@ -151,11 +152,47 @@ namespace Services.Auth
                 ref lastName);
 
             return new MicrosoftEntraIdentity(
-                tenantId.ToLowerInvariant(),
+                tenantId,
                 subjectId,
                 normalizedEmail,
                 firstName,
                 lastName);
+        }
+
+        private string ValidateIssuer(
+            string issuer,
+            SecurityToken securityToken,
+            TokenValidationParameters validationParameters)
+        {
+            if (securityToken is not JwtSecurityToken jwt)
+                throw new SecurityTokenInvalidIssuerException();
+
+            string tokenTenantId = NormalizeTenantId(
+                jwt.Claims
+                    .FirstOrDefault(claim => claim.Type == "tid")
+                    ?.Value);
+            if (!_options.AllowsTenant(tokenTenantId))
+                throw new SecurityTokenInvalidIssuerException();
+
+            string expectedIssuer =
+                $"https://login.microsoftonline.com/{tokenTenantId}/v2.0";
+            if (!string.Equals(
+                issuer,
+                expectedIssuer,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                throw new SecurityTokenInvalidIssuerException();
+            }
+
+            return issuer;
+        }
+
+        private static string NormalizeTenantId(string? tenantId)
+        {
+            return Guid.TryParse(tenantId, out Guid parsedTenantId) &&
+                parsedTenantId != Guid.Empty
+                    ? parsedTenantId.ToString("D")
+                    : throw new SecurityTokenInvalidIssuerException();
         }
 
         private static string ReadEmail(ClaimsPrincipal principal)

@@ -66,6 +66,7 @@ project.fragment.lock.json
 secrets.json
 *.pfx
 *.snk
+/inyectar-secretos.ps1
 
 # Debug and Diagnostics
 *.pdb
