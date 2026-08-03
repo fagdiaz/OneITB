@@ -1,77 +1,210 @@
 # OneITB23
 
-Red social academica full-stack para estudiantes, profesores, egresados y gestion institucional.
+Plataforma web institucional que integra red social académica, perfiles tipo CV,
+recursos por materia, mensajería privada, moderación y Bolsa de Trabajo con gestión de
+ofertas y postulaciones.
 
-## Estado actual
+El repositorio corresponde a la Práctica Profesionalizante III de la Tecnicatura
+Superior en Análisis de Sistemas del Instituto Tecnológico Beltrán.
 
-- Avance detallado: **100% (116/116 items)**; core funcional Feature Complete.
-- Nucleo social, mensajeria, administracion, perfiles/CV, privacidad y modulo academico: implementados por etapas.
-- Prioridad P0: cerrar regresion visual del panel admin y ampliar cobertura automatizada frontend/GraphQL SQL.
-- Recursos, notas, SIU mock y notificaciones academicas: implementados a nivel `[I]`; requieren regresion autenticada de navegador para elevarse a `[V]`.
-- Over-delivery institucional: Audit Trail EF, constancias academicas, credenciales publicas, toasts globales y Microsoft Entra ID single-tenant implementados. La aceptacion con el tenant Microsoft 365 real permanece como gate externo.
-- Code Freeze 2026-07-06: Error Boundary global, filtro central de errores GraphQL y baselines de pruebas frontend/GraphQL implementados.
-- Cloud/DevOps 2026-07-07: Docker productivo API/Web, Redis Pub/Sub condicional, Cloudinary opcional, rate limiting, security headers y npm audit productivo en cero vulnerabilidades conocidas.
-- Security/Seeding 2026-07-07: profundidad maxima GraphQL, lockout de cuenta por fuerza bruta y seeding demo/productivo configurable sin secretos versionados.
-- Privacy/SMTP Smoke 2026-07-08: perfiles privados con masking backend-side y prueba SMTP admin-only implementados.
+## Estado del proyecto
 
-Consultar el [roadmap unico](docs/project_docs/ROADMAP.md) para estado, evidencia y prioridades.
+| Indicador | Estado documentado al 03/08/2026 |
+|---|---|
+| Alcance contabilizado | **100 % (117/117)**: 45 ítems verificados `[V]` y 72 implementados `[I]` |
+| Backend automatizado | **198/198** pruebas aprobadas en el worktree de Spec 201 |
+| Frontend automatizado | **144/144** pruebas aprobadas en el mismo worktree |
+| Entrega | **Release Candidate académico**, core Feature Complete y Code Freeze operativo local |
+| Base de datos | 34 migraciones; base demo canónica con doble seed idempotente y seis roles |
 
-## Stack
+La Spec 201 ejecutó ambas suites sobre el mismo worktree, pero ese resultado todavía no
+identifica un SHA candidato inmutable. Antes de congelar el corte de la defensa deben
+repetirse los gates sobre ese SHA y completar la regresión manual definida en el
+[Roadmap](docs/project_docs/ROADMAP.md) y el
+[Runbook](docs/audit/RUNBOOK_DEV.md).
 
-- Backend: .NET 8, HotChocolate 14.2.0 y Entity Framework Core 8.0.6.
-- Base de datos: SQL Server.
-- Frontend: React 18, Apollo Client 3.7, Vite 8 y Tailwind CSS 4.
-- Contratos: GraphQL HTTP/WebSocket; REST solo para upload binario desacoplado.
+El 100 % contabilizado expresa cobertura del alcance comprometido. No equivale a
+certificación de seguridad, despliegue cloud aceptado ni validación de proveedores
+externos.
+
+## Capacidades principales
+
+- Autenticación local con JWT, BCrypt, lockout y autorización por rol.
+- Microsoft Entra ID organizacional mediante redirect, Authorization Code + PKCE y
+  canje por una sesión local; la aceptación contra el tenant real continúa pendiente.
+- Perfiles académicos y CV relacional con privacidad, avatar, carreras e impresión.
+- Feed contextual por carrera con publicaciones multimedia, comentarios, menciones,
+  reacciones, seguimiento, reportes y moderación reversible.
+- Chat uno a uno y notificaciones en tiempo real mediante GraphQL Subscriptions.
+- Materias, correlatividades, recursos académicos, progreso, constancias y adaptador SIU
+  simulado.
+- Bolsa de Trabajo y Gestor de Ofertas y Postulaciones con onboarding B2B de empleadores.
+- Panel administrativo, Audit Trail, auditoría de moderación y seeder empresarial.
+- Infraestructura Docker, Redis y Mailpit locales; adaptadores condicionales para Redis,
+  SMTP y Cloudinary externos.
+
+## Stack técnico
+
+| Capa | Tecnologías |
+|---|---|
+| Backend | .NET 8, Hot Chocolate 14.2.0, Entity Framework Core 8.0.6 |
+| Persistencia | SQL Server 2022 |
+| Frontend | React 18, Apollo Client 3.7, Vite 8, Tailwind CSS 4 |
+| Tiempo real | GraphQL sobre WebSocket; Redis Pub/Sub opcional |
+| Infraestructura | Docker Compose y Nginx para la plantilla productiva |
+| Testing | xUnit, Hot Chocolate executor, Vitest y React Testing Library |
+
+Las operaciones de negocio utilizan `/graphql`. La carga binaria desacoplada utiliza el
+endpoint autenticado `POST /api/upload`; no se transportan archivos como `Upload` de
+GraphQL.
 
 ## Estructura del repositorio
 
 ```text
-API Graphql/             backend, dominio, servicios y migraciones
-FrontEnd/OneItb-FE/      cliente React
-docs/academic/           entregables academicos resumidos
-docs/entrega_final/      memoria tecnica final para la practica profesionalizante
-docs/project_docs/       alcance, arquitectura y roadmap
-docs/audit/              runbook, estado, historial y auditoria consolidada
+API Graphql/             Backend, dominio, servicios, GraphQL y migraciones
+FrontEnd/OneItb-FE/      Cliente React/Vite
+docs/project_docs/       Alcance, arquitectura y Roadmap
+docs/audit/              Runbook, auditoría, estado e historial técnico
+docs/academic/           Síntesis académica, requisitos, casos de uso y diagramas
+docs/entrega_final/      Memoria APA 7 y guía de maquetación
+scripts/                 Gates finitos, validación y recuperación de la demo
 ```
 
-Las carpetas de trabajo de agentes (`specs/`, `.specify/`, `.agents/`, `core-web/`) quedan fuera del repositorio profesional mediante `.gitignore`. La evidencia consolidada que debe viajar con el proyecto vive en `docs/`.
+`specs/`, `.specify/`, `.agents/` y `core-web/` son espacios locales de trabajo
+ignorados por Git. La evidencia y documentación que forman parte del repositorio se
+consolidan en `docs/`.
 
-## Documentacion
+## Requisitos locales
 
-| Documento | Uso |
+- Windows con PowerShell 5.1 o superior.
+- .NET SDK 8.x y `dotnet-ef` 8.0.6.
+- Node.js `^20.19.0` o `>=22.12.0`.
+- Docker Desktop/Engine con Compose v2.
+- Certificado HTTPS de desarrollo confiable.
+
+Puertos canónicos:
+
+| Servicio | Dirección local |
 |---|---|
-| [Documento base de Practica Profesionalizante III](docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md) | Memoria tecnica integral lista para conversion a Word/PDF |
-| [Guia de maquetacion final](docs/entrega_final/GUIA_MAQUETACION_FINAL.md) | Flujo definitivo para diagramas UML, DOCX, PDF y controles APA 7 |
-| [Roadmap](docs/project_docs/ROADMAP.md) | Unica fuente de avance, pendientes y prioridades |
-| [Alcance y requerimientos](docs/project_docs/scope-and-requirements.md) | Capacidades y roles |
-| [Arquitectura](docs/project_docs/architecture-and-design.md) | Stack, dominio y flujos |
-| [Runbook](docs/audit/RUNBOOK_DEV.md) | Ejecucion y validacion local |
-| [Estado documental](docs/audit/DOCUMENTATION_STATUS.md) | Fuentes canonicas y brechas |
-| [Development log](docs/audit/DEVELOPMENT_LOG.md) | Historial inverso de implementaciones |
-| [Reporte final de auditoria](docs/audit/FINAL_AUDIT_REPORT.md) | Cierre tecnico vigente para evaluacion academica |
-| [Auditorias historicas](docs/audit/HISTORICAL_AUDITS.md) | Resumen de auditorias supersedidas; no reemplaza el reporte final |
+| Frontend Vite | `http://localhost:5173` |
+| Backend HTTPS | `https://localhost:44397` |
+| Backend HTTP | `http://localhost:5000` |
+| SQL Server Docker | `localhost,1433` |
 
-## Flujo de trabajo
+## Inicio local seguro
 
-1. Consultar `docs/project_docs/ROADMAP.md` como fuente unica de avance.
-2. Implementar y registrar evidencia real.
-3. Ejecutar los gates aplicables del runbook.
-4. Actualizar roadmap, log y estado documental.
-5. Mantener fuera del commit los artefactos locales de agentes, specs y logs temporales.
+La instalación completa, creación de secretos, recuperación de base y resolución de
+problemas están documentadas en el
+[Runbook de desarrollo](docs/audit/RUNBOOK_DEV.md). El flujo resumido es:
 
-Compilar es necesario, pero no demuestra que GraphQL, autenticacion, cache o persistencia funcionen.
-
-## Comandos principales
+1. Crear `.env` desde `.env.example` sin sobrescribir uno existente.
+2. Configurar una contraseña SQL local fuerte y los `dotnet user-secrets` requeridos.
+3. Levantar SQL Server con Docker Compose y esperar el estado `healthy`.
+4. Restaurar dependencias y aplicar las migraciones.
+5. Iniciar backend y frontend en terminales dedicadas.
 
 ```powershell
-dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release
-dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release
-dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+docker compose config --quiet
+docker compose up -d oneitb-sql
+docker compose ps
 ```
 
+No continuar con migraciones hasta configurar la cadena local mediante user-secrets.
+No se incluyen contraseñas demo ni secretos en este README.
+
+Después de completar las secciones 3.2 a 3.5 del Runbook:
+
 ```powershell
-Set-Location "FrontEnd/OneItb-FE"
+dotnet ef database update `
+  --project "API Graphql/Data/Data.csproj" `
+  --startup-project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+Terminal dedicada para backend:
+
+```powershell
+dotnet run --project "API Graphql/OneITB/GraphQL.csproj" --launch-profile OneITB
+```
+
+Terminal dedicada para frontend:
+
+```powershell
+Push-Location "FrontEnd/OneItb-FE"
 npm.cmd ci
-npm.cmd run build
 npm.cmd run dev
 ```
+
+`dotnet run` y `npm.cmd run dev` son procesos bloqueantes. Deben detenerse con `Ctrl+C`.
+
+## Validación finita
+
+Estos comandos compilan y ejecutan suites sin iniciar servidores persistentes:
+
+```powershell
+dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release
+dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release
+dotnet ef migrations has-pending-model-changes `
+  --project "API Graphql/Data/Data.csproj" `
+  --startup-project "API Graphql/OneITB/GraphQL.csproj"
+
+Push-Location "FrontEnd/OneItb-FE"
+npm.cmd run test -- --run
+npm.cmd run build
+Pop-Location
+```
+
+Los scripts `validate-predefense.ps1`, `validate-local-infrastructure.ps1` y
+`validate-demo-database.ps1` tienen precondiciones y efectos diferentes. Leer la matriz
+de validación del Runbook antes de ejecutarlos. El script `reset-demo-database.ps1` es
+destructivo y solo se admite contra la base demo local con confirmación explícita.
+
+Compilar es necesario, pero no demuestra por sí solo que GraphQL, autenticación,
+persistencia, WebSockets o un recorrido de navegador funcionen.
+
+## Documentación canónica
+
+| Documento | Propósito |
+|---|---|
+| [Roadmap](docs/project_docs/ROADMAP.md) | Única fuente de avance, pendientes, prioridades y tiempos de cierre |
+| [Alcance y requerimientos](docs/project_docs/scope-and-requirements.md) | Actores, permisos, 48 RF, 12 BR, 12 RNF y exclusiones |
+| [Arquitectura](docs/project_docs/architecture-and-design.md) | Componentes, dominio, seguridad, integraciones y decisiones |
+| [Runbook](docs/audit/RUNBOOK_DEV.md) | Instalación, secretos, operación, validación y recuperación |
+| [Auditoría final](docs/audit/FINAL_AUDIT_REPORT.md) | Dictamen técnico, riesgos, evidencia y recomendación de liberación |
+| [Estado documental](docs/audit/DOCUMENTATION_STATUS.md) | Precedencia y preparación de cada documento |
+| [Development Log](docs/audit/DEVELOPMENT_LOG.md) | Historial técnico en cronología inversa |
+| [Memoria técnica](docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md) | Documento académico integral en Markdown y APA 7 |
+| [Guía de maquetación](docs/entrega_final/GUIA_MAQUETACION_FINAL.md) | Gates para figuras, DOCX, PDF, imprenta y defensa |
+
+La memoria Markdown tiene el contenido normalizado, pero todavía requiere render de
+figuras, maquetación DOCX y auditoría visual del PDF antes de considerarse lista para
+imprenta.
+
+## Límites vigentes
+
+La demostración local controlada no queda bloqueada por estos puntos, pero no deben
+ocultarse al evaluar un piloto o producción:
+
+- Registro público y alcance Profesor-Materia pendientes de endurecimiento.
+- Seguimiento unilateral incompatible con una política estricta de perfil privado.
+- Archivos locales servidos sin autorización por objeto.
+- Certificado SQL productivo y observabilidad central todavía no aceptados.
+- Microsoft Entra, SMTP, Redis y Cloudinary reales pendientes de credenciales y smoke
+  tests en el ambiente de destino.
+- Integración SIU implementada mediante un adaptador simulado, no oficial.
+
+El detalle, severidad y tratamiento esperado se mantienen en el Roadmap y en el reporte
+de auditoría final.
+
+## Flujo de contribución
+
+1. Leer `.specify/feature.json`, la constitución y la spec activa.
+2. Consultar el Roadmap antes de modificar alcance o estado.
+3. Implementar con autorización, errores, rendimiento y pruebas proporcionales al riesgo.
+4. Registrar evidencia realmente ejecutada; no promover `[I]` a `[V]` por inferencia.
+5. Agregar una sola entrada al inicio del Development Log y sincronizar los documentos
+   afectados.
+6. Mantener secretos, artefactos temporales, specs locales y logs fuera del commit.
+
+No se realizan commits automáticos: cada commit debe ser manual, explicable y limitado a
+una unidad de cambio coherente.

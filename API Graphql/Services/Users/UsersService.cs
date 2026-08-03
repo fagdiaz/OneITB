@@ -30,33 +30,51 @@ namespace Services.Users
             "User"
         };
 
-        private static readonly string[] PublicRegistrationRoles =
-        {
-            "Estudiante",
-            "Profesor",
-            "Egresado"
-        };
+        private const string PublicRegistrationRole = "Estudiante";
+        private const string RegistrationNotAvailableMessage =
+            "No se pudo completar el registro con los datos proporcionados.";
 
         private readonly IUnitOfWork _uow;
         private readonly OneItbContext _context;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly PublicRegistrationPolicy _registrationPolicy;
 
         public UsersService(
             IUnitOfWork uow,
             OneItbContext context,
-            IPasswordHasher passwordHasher)
+            IPasswordHasher passwordHasher,
+            PublicRegistrationPolicy registrationPolicy)
         {
             _uow = uow;
             _context = context;
             _passwordHasher = passwordHasher;
+            _registrationPolicy = registrationPolicy;
         }
 
         public async Task<UserPayload> RegisterAsync(
             RegisterInput input,
             CancellationToken cancellationToken = default)
         {
-            var userId = Guid.NewGuid();
+            string normalizedEmail = NormalizeEmail(input.Email);
             string normalizedRole = NormalizePublicRegistrationRole(input.Role);
+            if (!_registrationPolicy.IsInstitutionalEmail(normalizedEmail))
+            {
+                throw new PublicRegistrationException(
+                    "REGISTRATION_POLICY_REJECTED",
+                    $"Se requiere un correo institucional @{_registrationPolicy.InstitutionalDomain}.");
+            }
+
+            bool accountExists = await _context.Accounts
+                .AsNoTracking()
+                .AnyAsync(account => account.Email == normalizedEmail, cancellationToken);
+            if (accountExists)
+            {
+                throw new PublicRegistrationException(
+                    "REGISTRATION_NOT_AVAILABLE",
+                    RegistrationNotAvailableMessage);
+            }
+
+            var userId = Guid.NewGuid();
             int[] activeCareerIds = await GetActiveRegistrationCareerIdsAsync(
                 input.CareerIds,
                 cancellationToken);
@@ -65,7 +83,7 @@ namespace Services.Users
             var account = new Account
             {
                  Id = userId,
-                 Email = NormalizeEmail(input.Email),
+                 Email = normalizedEmail,
                  PasswordHash = passwordHash,
                  CreatedAt = DateTime.UtcNow
             };
@@ -88,8 +106,18 @@ namespace Services.Users
                 });
             }
 
-            await _uow.Users.AddAsync(user, cancellationToken);
-            await _uow.CompleteAsync(cancellationToken);
+            try
+            {
+                await _uow.Users.AddAsync(user, cancellationToken);
+                await _uow.CompleteAsync(cancellationToken);
+            }
+            catch (DbUpdateException exception)
+            {
+                throw new PublicRegistrationException(
+                    "REGISTRATION_NOT_AVAILABLE",
+                    RegistrationNotAvailableMessage,
+                    exception);
+            }
             return new UserPayload(user.Id, true, "Usuario registrado exitosamente en el sistema académico.");
         }
 
@@ -260,16 +288,17 @@ namespace Services.Users
 
         private static string NormalizePublicRegistrationRole(string? role)
         {
-            string normalized = role?.Trim() ?? string.Empty;
-            string? allowed = PublicRegistrationRoles
-                .FirstOrDefault(item => string.Equals(item, normalized, StringComparison.OrdinalIgnoreCase));
-
-            if (allowed == null)
+            if (!string.Equals(
+                    role?.Trim(),
+                    PublicRegistrationRole,
+                    StringComparison.OrdinalIgnoreCase))
             {
-                throw new ArgumentException("Rol de registro no permitido.");
+                throw new PublicRegistrationException(
+                    "REGISTRATION_POLICY_REJECTED",
+                    "El registro público está disponible únicamente para estudiantes.");
             }
 
-            return allowed;
+            return PublicRegistrationRole;
         }
 
         private async Task<int[]> GetActiveRegistrationCareerIdsAsync(

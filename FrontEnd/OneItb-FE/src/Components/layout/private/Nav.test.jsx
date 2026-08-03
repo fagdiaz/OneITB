@@ -84,5 +84,20 @@ describe('Nav', () => {
     expect(actions).toHaveClass('md:flex');
     expect(actions).toHaveTextContent('Iniciar Sesi');
     expect(actions).toHaveTextContent('Registrarse');
+    expect(
+      screen.getByRole('link', { name: 'Soy empresa' }),
+    ).toHaveAttribute('href', '/empleos/solicitud');
+  });
+
+  it('exposes the employer request in the anonymous mobile menu', () => {
+    authState.value = { auth: {}, isAuthenticated: false, token: null, sessionVersion: 0 };
+    render(<MemoryRouter><Nav /></MemoryRouter>);
+
+    screen.getByRole('button', { name: 'Abrir menu de navegacion' }).click();
+
+    expect(
+      screen.getAllByRole('link', { name: 'Soy empresa' })
+        .some((link) => link.getAttribute('href') === '/empleos/solicitud'),
+    ).toBe(true);
   });
 });

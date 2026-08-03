@@ -184,7 +184,8 @@ namespace GraphQL.GraphQL
         public async Task<PublicProfileSummary> GetPublicProfile(
             Guid userId,
             [Service] OneItbContext context,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             User user = await context.Users
                 .AsNoTracking()
@@ -197,7 +198,9 @@ namespace GraphQL.GraphQL
                 .Include(item => item.CvSkills)
                 .Include(item => item.CvLanguages)
                 .AsSplitQuery()
-                .SingleOrDefaultAsync(item => item.Id == userId && item.IsActive)
+                .SingleOrDefaultAsync(
+                    item => item.Id == userId && item.IsActive,
+                    cancellationToken)
                 ?? throw new GraphQLException("Usuario no encontrado.");
 
             IQueryable<Inquiry> publicationMetricsQuery = context.Inquiries
@@ -216,9 +219,11 @@ namespace GraphQL.GraphQL
             }
             else
             {
-                bool hasGlobalCareerVisibility = await context.Users.AnyAsync(item =>
-                    item.Id == viewerId.Value &&
-                    (item.Role == "Administrador" || item.Role == "Moderador"));
+                bool hasGlobalCareerVisibility = await context.Users.AnyAsync(
+                    item =>
+                        item.Id == viewerId.Value &&
+                        (item.Role == "Administrador" || item.Role == "Moderador"),
+                    cancellationToken);
 
                 if (!hasGlobalCareerVisibility)
                 {
@@ -233,9 +238,13 @@ namespace GraphQL.GraphQL
                 }
             }
 
-            int totalPublications = await publicationMetricsQuery.CountAsync();
-            int totalComments = await commentMetricsQuery.CountAsync();
-            bool canViewSensitiveProfile = await CanViewSensitiveProfileAsync(context, user, viewerId);
+            int totalPublications = await publicationMetricsQuery.CountAsync(cancellationToken);
+            int totalComments = await commentMetricsQuery.CountAsync(cancellationToken);
+            bool canViewSensitiveProfile = await CanViewSensitiveProfileAsync(
+                context,
+                user,
+                viewerId,
+                cancellationToken);
 
             return new PublicProfileSummary(
                 user.Id,
@@ -272,7 +281,8 @@ namespace GraphQL.GraphQL
             string? searchTerm,
             int first,
             [Service] OneItbContext context,
-            [Service] IHttpContextAccessor httpContextAccessor)
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
         {
             string normalizedTerm = (searchTerm ?? string.Empty).Trim();
             int take = Math.Clamp(first, 1, 8);
@@ -297,11 +307,10 @@ namespace GraphQL.GraphQL
                 .ThenBy(user => user.LastName)
                 .Take(take)
                 .AsSplitQuery()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             Guid? viewerId = TryGetAuthenticatedUserId(httpContextAccessor);
             string? viewerRole = null;
-            HashSet<Guid> followedTargetIds = new();
 
             if (viewerId.HasValue)
             {
@@ -309,18 +318,7 @@ namespace GraphQL.GraphQL
                     .AsNoTracking()
                     .Where(user => user.Id == viewerId.Value && user.IsActive)
                     .Select(user => user.Role)
-                    .SingleOrDefaultAsync();
-
-                Guid[] targetIds = users.Select(user => user.Id).ToArray();
-                followedTargetIds = (await context.UserInteractions
-                        .AsNoTracking()
-                        .Where(item =>
-                            item.ObserverId == viewerId.Value &&
-                            targetIds.Contains(item.TargetId) &&
-                            item.Type == InteractionType.Follow)
-                        .Select(item => item.TargetId)
-                        .ToListAsync())
-                    .ToHashSet();
+                    .SingleOrDefaultAsync(cancellationToken);
             }
 
             return users
@@ -329,8 +327,7 @@ namespace GraphQL.GraphQL
                     bool canViewSensitiveProfile = CanViewSensitiveProfileFromLoadedData(
                         user,
                         viewerId,
-                        viewerRole,
-                        followedTargetIds);
+                        viewerRole);
 
                     return new PublicProfileSearchResult(
                         user.Id,
@@ -811,7 +808,8 @@ namespace GraphQL.GraphQL
         private static async Task<bool> CanViewSensitiveProfileAsync(
             OneItbContext context,
             User targetUser,
-            Guid? viewerId)
+            Guid? viewerId,
+            CancellationToken cancellationToken)
         {
             if (targetUser.IsPublicProfile)
                 return true;
@@ -826,29 +824,19 @@ namespace GraphQL.GraphQL
                 .AsNoTracking()
                 .Where(user => user.Id == viewerId.Value && user.IsActive)
                 .Select(user => user.Role)
-                .SingleOrDefaultAsync();
+                .SingleOrDefaultAsync(cancellationToken);
 
-            if (CanViewPrivateProfilesByRole(viewerRole))
-                return true;
-
-            return await context.UserInteractions
-                .AsNoTracking()
-                .AnyAsync(item =>
-                    item.ObserverId == viewerId.Value &&
-                    item.TargetId == targetUser.Id &&
-                    item.Type == InteractionType.Follow);
+            return CanViewPrivateProfilesByRole(viewerRole);
         }
 
         private static bool CanViewSensitiveProfileFromLoadedData(
             User targetUser,
             Guid? viewerId,
-            string? viewerRole,
-            IReadOnlySet<Guid> followedTargetIds)
+            string? viewerRole)
         {
             return targetUser.IsPublicProfile ||
                    (viewerId.HasValue && viewerId.Value == targetUser.Id) ||
-                   CanViewPrivateProfilesByRole(viewerRole) ||
-                   followedTargetIds.Contains(targetUser.Id);
+                   CanViewPrivateProfilesByRole(viewerRole);
         }
 
         private static bool CanViewPrivateProfilesByRole(string? role)

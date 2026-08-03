@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using GraphQL.GraphQL;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Types;
@@ -23,6 +24,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using OneItb.Data;
 using OneItb.Entities.Models;
@@ -74,10 +76,21 @@ namespace OneItb.GraphQL
                     Environment.IsProduction());
             MicrosoftEntraOptions microsoftEntraOptions =
                 MicrosoftEntraOptions.FromConfiguration(Configuration);
+            services.AddSingleton(new PublicRegistrationPolicy(
+                Configuration["PublicRegistration:AllowedDomain"] ??
+                Configuration["EntraId:AllowedDomain"]));
 
             services.AddControllers();
             services.AddHttpContextAccessor();
-            services.AddHealthChecks();
+            services.AddHealthChecks()
+                .AddCheck(
+                    "self",
+                    () => HealthCheckResult.Healthy("API process is alive."),
+                    tags: new[] { "live" })
+                .AddCheck<DatabaseReadinessHealthCheck>(
+                    "database",
+                    failureStatus: HealthStatus.Unhealthy,
+                    tags: new[] { "ready" });
             ConfigureForwardedHeaders(services);
             services.AddRateLimiter(options =>
             {
@@ -173,6 +186,7 @@ namespace OneItb.GraphQL
 
             ConfigureSubscriptionProvider(graphQlBuilder, services);
             ConfigureMagicLinkRateLimiter(services, jwtOptions);
+            ConfigurePublicRegistrationRateLimiter(services, jwtOptions);
             ConfigureEmployerRequestRateLimiter(services, jwtOptions);
             ConfigureMicrosoftEntraRateLimiter(services, jwtOptions);
 
@@ -463,6 +477,18 @@ namespace OneItb.GraphQL
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHealthChecks("/health");
+                endpoints.MapHealthChecks(
+                    "/health/live",
+                    new HealthCheckOptions
+                    {
+                        Predicate = registration => registration.Tags.Contains("live")
+                    });
+                endpoints.MapHealthChecks(
+                    "/health/ready",
+                    new HealthCheckOptions
+                    {
+                        Predicate = registration => registration.Tags.Contains("ready")
+                    });
                 endpoints.MapControllers().RequireRateLimiting(FixedWindowRateLimitPolicy);
                 endpoints.MapGraphQL().RequireRateLimiting(FixedWindowRateLimitPolicy);
             });
@@ -575,6 +601,37 @@ namespace OneItb.GraphQL
             services.AddSingleton<
                 IEmployerRequestRateLimiter,
                 RedisEmployerRequestRateLimiter>();
+        }
+
+        private void ConfigurePublicRegistrationRateLimiter(
+            IServiceCollection services,
+            JwtTokenOptions jwtOptions)
+        {
+            PublicRegistrationRateLimitOptions options =
+                PublicRegistrationRateLimitOptions.FromConfiguration(Configuration);
+            byte[] fingerprintKey = SHA256.HashData(
+                Encoding.UTF8.GetBytes(
+                    $"oneitb:public-registration-rate-limit:{jwtOptions.Key}"));
+
+            services.AddSingleton(options);
+            services.AddSingleton(
+                new PublicRegistrationRateLimitFingerprintKey(fingerprintKey));
+
+            string? redisConnectionString = Configuration.GetConnectionString("Redis")
+                ?? Configuration["Redis:ConnectionString"];
+            if (string.IsNullOrWhiteSpace(redisConnectionString))
+            {
+                services.AddSingleton<
+                    IPublicRegistrationRateLimiter,
+                    InMemoryPublicRegistrationRateLimiter>();
+                return;
+            }
+
+            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString));
+            services.AddSingleton<
+                IPublicRegistrationRateLimiter,
+                RedisPublicRegistrationRateLimiter>();
         }
 
         private void ConfigureMicrosoftEntraRateLimiter(

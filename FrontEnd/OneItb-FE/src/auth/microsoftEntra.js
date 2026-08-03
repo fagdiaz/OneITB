@@ -1,32 +1,25 @@
 import {
   BrowserCacheLocation,
+  EventType,
   PublicClientApplication,
 } from '@azure/msal-browser';
+import { resolveMicrosoftEntraConfig } from './microsoftEntraConfig';
 
-const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-const tenantId = import.meta.env.VITE_ENTRA_TENANT_ID?.trim() || '';
-const clientId = import.meta.env.VITE_ENTRA_CLIENT_ID?.trim() || '';
-const apiScope = import.meta.env.VITE_ENTRA_API_SCOPE?.trim() || '';
-const configuredRedirectUri = import.meta.env.VITE_ENTRA_REDIRECT_URI?.trim();
-const redirectUri = configuredRedirectUri ||
-  (typeof window === 'undefined' ? '' : `${window.location.origin}/login`);
-
-export const isMicrosoftEntraConfigured = Boolean(
-  guidPattern.test(tenantId) &&
-  guidPattern.test(clientId) &&
-  apiScope.startsWith('api://') &&
-  apiScope.length <= 256 &&
-  redirectUri,
+export const microsoftEntraConfiguration = resolveMicrosoftEntraConfig(
+  import.meta.env,
+  typeof window === 'undefined' ? '' : window.location.origin,
 );
+export const isMicrosoftEntraConfigured =
+  microsoftEntraConfiguration.isConfigured;
 
 let msalInstance = isMicrosoftEntraConfigured
   ? new PublicClientApplication({
       auth: {
-        clientId,
-        authority: `https://login.microsoftonline.com/${tenantId}`,
-        redirectUri,
-        postLogoutRedirectUri: redirectUri,
+        clientId: microsoftEntraConfiguration.clientId,
+        authority: microsoftEntraConfiguration.authority,
+        redirectUri: microsoftEntraConfiguration.redirectUri,
+        postLogoutRedirectUri: microsoftEntraConfiguration.loginUri,
+        navigateToLoginRequestUrl: false,
       },
       cache: {
         cacheLocation: BrowserCacheLocation.SessionStorage,
@@ -38,9 +31,12 @@ let msalInstance = isMicrosoftEntraConfigured
     })
   : null;
 let initialized = false;
+let accountEventCallbackId = null;
 
 export const microsoftLoginRequest = Object.freeze({
-  scopes: isMicrosoftEntraConfigured ? [apiScope] : [],
+  scopes: isMicrosoftEntraConfigured
+    ? [microsoftEntraConfiguration.apiScope]
+    : [],
   prompt: 'select_account',
 });
 
@@ -49,6 +45,13 @@ export const initializeMicrosoftIdentity = async () => {
 
   try {
     await msalInstance.initialize();
+    accountEventCallbackId ??= msalInstance.addEventCallback((event) => {
+      const isAuthenticationSuccess = event.eventType === EventType.LOGIN_SUCCESS
+        || event.eventType === EventType.ACQUIRE_TOKEN_SUCCESS;
+      if (isAuthenticationSuccess && event.payload?.account) {
+        msalInstance?.setActiveAccount(event.payload.account);
+      }
+    });
     initialized = true;
     return true;
   } catch {

@@ -128,10 +128,15 @@ namespace Services.Academic
 
             AcademicResource resource = await _context.AcademicResources
                 .IgnoreQueryFilters()
+                .Include(item => item.Subject)
                 .SingleOrDefaultAsync(item => item.Id == resourceId, cancellationToken)
                 ?? throw new InvalidOperationException("Recurso academico no encontrado.");
 
-            EnsureCanDeleteResource(actorUserId, actorRole, resource.UploaderId);
+            await EnsureCanManageSubjectAsync(
+                actorUserId,
+                actorRole,
+                resource.Subject.CareerId,
+                cancellationToken);
 
             resource.IsActive = false;
             resource.UpdatedAt = DateTime.UtcNow;
@@ -148,13 +153,18 @@ namespace Services.Academic
             Guid resourceId,
             CancellationToken cancellationToken = default)
         {
-            EnsureCanManageAcademics(actorRole);
             await EnsureActiveUserAsync(actorUserId, cancellationToken);
 
             AcademicResource resource = await _context.AcademicResources
                 .IgnoreQueryFilters()
+                .Include(item => item.Subject)
                 .SingleOrDefaultAsync(item => item.Id == resourceId, cancellationToken)
                 ?? throw new InvalidOperationException("Recurso academico no encontrado.");
+            await EnsureCanManageSubjectAsync(
+                actorUserId,
+                actorRole,
+                resource.Subject.CareerId,
+                cancellationToken);
 
             resource.IsActive = !resource.IsActive;
             resource.UpdatedAt = DateTime.UtcNow;
@@ -203,12 +213,16 @@ namespace Services.Academic
             string? after,
             CancellationToken cancellationToken = default)
         {
-            EnsureCanManageAcademics(actorRole);
             int pageSize = Math.Clamp(first, 1, 50);
             int offset = OffsetCursor.Decode(after);
             cancellationToken.ThrowIfCancellationRequested();
             await EnsureActiveUserAsync(actorUserId, cancellationToken);
             Subject subject = await LoadActiveSubjectAsync(subjectId, cancellationToken);
+            await EnsureCanManageSubjectAsync(
+                actorUserId,
+                actorRole,
+                subject.CareerId,
+                cancellationToken);
 
             IQueryable<User> query = _context.UserCareers
                 .AsNoTracking()
@@ -249,7 +263,6 @@ namespace Services.Academic
             string? notes,
             CancellationToken cancellationToken = default)
         {
-            EnsureCanManageAcademics(actorRole);
             await EnsureActiveUserAsync(actorUserId, cancellationToken);
 
             User targetUser = await _context.Users
@@ -261,6 +274,11 @@ namespace Services.Academic
                 throw new InvalidOperationException("Solo se puede cargar progreso academico para estudiantes.");
 
             Subject subject = await LoadActiveSubjectAsync(subjectId, cancellationToken);
+            await EnsureCanManageSubjectAsync(
+                actorUserId,
+                actorRole,
+                subject.CareerId,
+                cancellationToken);
             bool belongsToCareer = await _context.UserCareers
                 .AnyAsync(
                     link => link.UserId == userId && link.CareerId == subject.CareerId,
@@ -511,7 +529,7 @@ namespace Services.Academic
             int careerId,
             CancellationToken cancellationToken)
         {
-            if (CanManageAcademics(actorRole))
+            if (string.Equals(actorRole, "Administrador", StringComparison.Ordinal))
                 return;
 
             bool belongsToCareer = await _context.UserCareers
@@ -528,15 +546,38 @@ namespace Services.Academic
             int careerId,
             CancellationToken cancellationToken)
         {
-            if (CanManageAcademics(actorRole))
+            await EnsureCanManageSubjectAsync(
+                actorUserId,
+                actorRole,
+                careerId,
+                cancellationToken);
+        }
+
+        private async Task EnsureCanManageSubjectAsync(
+            Guid actorUserId,
+            string? actorRole,
+            int careerId,
+            CancellationToken cancellationToken)
+        {
+            if (string.Equals(actorRole, "Administrador", StringComparison.Ordinal))
                 return;
 
+            if (!string.Equals(actorRole, "Profesor", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "No tenes permisos para gestionar contenido academico.");
+            }
+
             bool belongsToCareer = await _context.UserCareers
+                .AsNoTracking()
                 .AnyAsync(
                     link => link.UserId == actorUserId && link.CareerId == careerId,
                     cancellationToken);
             if (!belongsToCareer)
-                throw new InvalidOperationException("No tenes permisos para publicar recursos en esta materia.");
+            {
+                throw new InvalidOperationException(
+                    "No tenes permisos para gestionar materias fuera de tus carreras asignadas.");
+            }
         }
 
         private async Task EnsureActiveUserAsync(
@@ -580,30 +621,10 @@ namespace Services.Academic
                 cancellationToken);
         }
 
-        private static void EnsureCanManageAcademics(string? role)
-        {
-            if (!CanManageAcademics(role))
-                throw new InvalidOperationException("No tenes permisos para gestionar contenido academico.");
-        }
-
-        private static void EnsureCanDeleteResource(Guid actorUserId, string? role, Guid uploaderId)
-        {
-            if (CanManageAcademics(role) || actorUserId == uploaderId)
-                return;
-
-            throw new InvalidOperationException("No tenes permisos para eliminar este recurso academico.");
-        }
-
         private static void EnsureAdmin(string? role)
         {
             if (!string.Equals(role, "Administrador", StringComparison.Ordinal))
                 throw new InvalidOperationException("La consulta requiere rol Administrador.");
-        }
-
-        private static bool CanManageAcademics(string? role)
-        {
-            return string.Equals(role, "Administrador", StringComparison.Ordinal) ||
-                   string.Equals(role, "Profesor", StringComparison.Ordinal);
         }
 
         private static string RequireText(string value, int maxLength, string fieldName)

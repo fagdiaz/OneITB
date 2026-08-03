@@ -1214,16 +1214,16 @@ function Invoke-RuntimeAcceptance {
 
     Save-AccountSnapshots
     $admin = Login-DemoUser -Email "admin1@itbeltran.com.ar"
+    $moderator = Login-DemoUser -Email "moderador1@itbeltran.com.ar"
     $student = Login-DemoUser -Email "estudiante1.ads@itbeltran.com.ar"
     $professor = Login-DemoUser -Email "profesor1.ads@itbeltran.com.ar"
     $graduate = Login-DemoUser -Email "egresado1@itbeltran.com.ar"
     $employer = Login-DemoUser -Email "empleador1@itbeltran.com.ar"
-    $roles = @($admin.role, $student.role, $professor.role, $graduate.role, $employer.role)
-    if (@($roles | Select-Object -Unique).Count -ne 5) {
-        throw "Seeded role logins did not resolve five distinct roles."
+    $roles = @($admin.role, $moderator.role, $student.role, $professor.role, $graduate.role, $employer.role)
+    if (@($roles | Select-Object -Unique).Count -ne 6) {
+        throw "Seeded role logins did not resolve six distinct roles."
     }
-    Add-Gate -Name "Seeded role authentication" -Status "PASS" -Evidence "Administrator, Student, Professor, Graduate and Employer authenticated with non-versioned demo credentials."
-    Add-Gate -Name "Moderator demo identity" -Status "BLOCKED" -Evidence "Canonical EnterpriseDemoSeeder does not provide a Moderator account; manual role promotion must remain reversible."
+    Add-Gate -Name "Seeded role authentication" -Status "PASS" -Evidence "Administrator, Moderator, Student, Professor, Graduate and Employer authenticated with non-versioned demo credentials."
 
     Test-UploadSecurity -Token $admin.token
     Add-Gate -Name "Upload content validation" -Status "PASS" -Evidence "Valid PDF persisted; hostile and truncated PDFs returned HTTP 400 without extra files."

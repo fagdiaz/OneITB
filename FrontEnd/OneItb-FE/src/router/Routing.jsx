@@ -20,6 +20,9 @@ import { NotificationProvider } from '../Components/notifications/NotificationPr
 import { JobBoard } from '../Components/jobs/JobBoard'
 import { EmployerJobOffers } from '../Components/jobs/EmployerJobOffers'
 import { EmployerRequestForm } from '../Components/jobs/EmployerRequestForm'
+import { RequireAcademicOnboarding } from '../Components/onboarding/RequireAcademicOnboarding'
+import { AcademicOnboarding } from '../Components/onboarding/AcademicOnboarding'
+import { MicrosoftRedirectCallback } from '../Components/auth/MicrosoftRedirectCallback'
 
 export const Routing = () => {
   return (
@@ -27,6 +30,8 @@ export const Routing = () => {
     <AuthProvider>
       <NotificationProvider>
       <Routes>
+        <Route path='auth/microsoft/callback' element={<MicrosoftRedirectCallback />} />
+
         <Route path='/' element={<PublicLayout />}>
           <Route index element={<Landing />} />
           <Route path='login' element={<Login />} />
@@ -36,18 +41,22 @@ export const Routing = () => {
           <Route path='certificate/:id' element={<PublicCertificate />} />
         </Route>
 
-        <Route path='/' element={<PrivateLayout />}>
-          <Route path='feed' element={<Feed />} />
-          <Route path='profile' element={<UserProfile />} />
-          <Route path='profile/:id' element={<UserProfile />} />
-          <Route path='profile/edit' element={<CvEditorProfile />} />
-          <Route path='chat' element={<PrivateChat />} />
-          <Route path='academic' element={<AcademicDashboard />} />
-          <Route path='empleos' element={<JobBoard />} />
-          <Route path='empleos/mis-ofertas' element={<EmployerJobOffers />} />
-          <Route path='admin' element={<AdminDashboard />} />
-          <Route path='admin/users' element={<Navigate to="/admin" replace />} />
-          <Route path='logout' element={<Logout></Logout>} />
+        <Route path='onboarding/academic' element={<AcademicOnboarding />} />
+
+        <Route element={<RequireAcademicOnboarding />}>
+          <Route path='/' element={<PrivateLayout />}>
+            <Route path='feed' element={<Feed />} />
+            <Route path='profile' element={<UserProfile />} />
+            <Route path='profile/:id' element={<UserProfile />} />
+            <Route path='profile/edit' element={<CvEditorProfile />} />
+            <Route path='chat' element={<PrivateChat />} />
+            <Route path='academic' element={<AcademicDashboard />} />
+            <Route path='empleos' element={<JobBoard />} />
+            <Route path='empleos/mis-ofertas' element={<EmployerJobOffers />} />
+            <Route path='admin' element={<AdminDashboard />} />
+            <Route path='admin/users' element={<Navigate to="/admin" replace />} />
+            <Route path='logout' element={<Logout></Logout>} />
+          </Route>
         </Route>
 
         <Route path='*' element={<NotFound />} />

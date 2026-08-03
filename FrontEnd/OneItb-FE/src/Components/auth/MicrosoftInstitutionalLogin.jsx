@@ -1,85 +1,51 @@
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
 import { InteractionStatus } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
-import { MICROSOFT_LOGIN } from '../../data/graphql/mutations/authenticateUser';
 import {
   clearMicrosoftIdentitySession,
   microsoftLoginRequest,
 } from '../../auth/microsoftEntra';
+import {
+  beginMicrosoftRedirectFlow,
+  clearMicrosoftRedirectFlow,
+} from '../../auth/microsoftRedirectFlow';
 
 export const MicrosoftInstitutionalLogin = ({
-  onAuthenticated,
-  onError,
+  onError = () => {},
+  returnTo = '/feed',
 }) => {
   const { instance, inProgress } = useMsal();
-  const [isAcquiring, setIsAcquiring] = useState(false);
-  const [exchangeToken, { loading: isExchanging }] = useMutation(
-    MICROSOFT_LOGIN,
-    { fetchPolicy: 'no-cache' },
-  );
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleMicrosoftLogin = async () => {
-    setIsAcquiring(true);
+    if (isRedirecting || inProgress !== InteractionStatus.None) return;
+
+    const flow = beginMicrosoftRedirectFlow(returnTo);
+    setIsRedirecting(true);
     onError('');
 
     try {
-      const interactiveResult = await instance.loginPopup(microsoftLoginRequest);
-      let accessToken = interactiveResult.accessToken;
-      if (!accessToken) {
-        const silentResult = await instance.acquireTokenSilent({
-          ...microsoftLoginRequest,
-          prompt: undefined,
-          account: interactiveResult.account,
-        });
-        accessToken = silentResult.accessToken;
-      }
-      if (!accessToken) {
-        throw new Error('Microsoft no entregó un token para la API de OneITB.');
-      }
-
-      const { data } = await exchangeToken({
-        variables: { accessToken },
-      });
-      const payload = data?.microsoftLogin;
-      if (!payload?.isAuthenticated) {
-        throw new Error('OneITB no pudo iniciar la sesión institucional.');
-      }
-
-      await onAuthenticated(
-        payload,
-        payload.email || interactiveResult.account?.username || '',
-      );
+      await instance.loginRedirect(microsoftLoginRequest);
     } catch (error) {
+      clearMicrosoftRedirectFlow(flow.id);
       await clearMicrosoftIdentitySession();
-      const graphMessage = error.graphQLErrors
-        ?.map((item) => item.message)
-        .join(' ');
-      const wasCancelled =
-        error.errorCode === 'user_cancelled' ||
-        error.errorCode === 'user_canceled';
       onError(
-        wasCancelled
-          ? 'Se canceló el acceso con Microsoft.'
-          : graphMessage ||
-            error.message ||
-            'No se pudo completar el acceso institucional.',
+        error.message || 'No se pudo iniciar el acceso institucional.',
       );
-    } finally {
-      setIsAcquiring(false);
+      setIsRedirecting(false);
     }
   };
 
-  const loading =
-    isAcquiring ||
-    isExchanging ||
-    inProgress !== InteractionStatus.None;
+  const loading = isRedirecting || inProgress !== InteractionStatus.None;
+  const isHandlingRedirect = inProgress === InteractionStatus.HandleRedirect
+    || inProgress === InteractionStatus.Startup;
 
   return (
     <button
       type="button"
       onClick={handleMicrosoftLogin}
       disabled={loading}
+      aria-busy={loading}
       className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-blue-300/40 dark:hover:bg-slate-700"
     >
       <span
@@ -91,7 +57,11 @@ export const MicrosoftInstitutionalLogin = ({
         <span className="bg-[#00a4ef]" />
         <span className="bg-[#ffb900]" />
       </span>
-      {loading ? 'Validando con Microsoft...' : 'Continuar con Microsoft 365'}
+      {isHandlingRedirect
+        ? 'Autenticando con Microsoft...'
+        : loading
+          ? 'Redirigiendo a Microsoft...'
+          : 'Continuar con Microsoft 365'}
     </button>
   );
 };

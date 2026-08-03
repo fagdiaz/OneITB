@@ -1,38 +1,204 @@
-# Estado de documentacion
+# Estado y gobierno documental de OneITB23
 
-**Ultima verificacion**: 2026-07-30
-
-## Fuentes canonicas
-
-| Documento | Proposito | Estado |
-|---|---|---|
-| `README.md` | Unico indice general del repositorio | Vigente |
-| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria tecnica integral para Practica Profesionalizante III, con UML modular, secuencias, metodologia hibrida, guiones visuales, citas y referencias APA 7 | Vigente; version 1.7 alineada a Specs 194-198, identidad Microsoft Entra, base demo canonica, onboarding B2B de empleadores y condiciones oficiales de mesa; portada, figuras, DOCX/PDF, impresion y ensayo permanecen pendientes |
-| `docs/project_docs/ROADMAP.md` | Unica fuente de avance, estabilizacion y prioridades | Vigente, 117/117 (100%); distingue Feature Complete de aceptacion externa Entra, regresion visual del onboarding empresarial, cierre academico, logistica oficial y gates productivos |
-| `docs/project_docs/scope-and-requirements.md` | Alcance, roles y requisitos | Vigente |
-| `docs/project_docs/architecture-and-design.md` | Arquitectura alineada al codigo | Vigente |
-| `docs/audit/RUNBOOK_DEV.md` | Ejecucion, migraciones, rebaseline/restore de la base demo y validacion | Vigente; seis identidades canonicas, procedimiento protegido de Spec 196 y registro/configuracion Microsoft Entra de Spec 197 |
-| `docs/audit/DEVELOPMENT_LOG.md` | Historial inverso de implementaciones | Vigente |
-| `docs/audit/FINAL_AUDIT_REPORT.md` | Reporte tecnico vigente para auditoria academica final | Vigente; matriz 186-193 y aceptaciones 194-198 alineadas, con resolucion, evidencia y gate residual por hallazgo |
-
-## Documentacion complementaria
-
-| Documento | Proposito |
+| Dato de control | Valor |
 |---|---|
-| `docs/academic/01-project-overview.md` | Presentacion academica |
-| `docs/academic/02-software-requirements.md` | Resumen academico de requisitos |
-| `docs/academic/03-use-cases.md` | Casos de uso principales |
-| `docs/academic/04-design-diagrams.md` | Diagramas resumidos |
-| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Guia 2.4 para producir 10 diagramas Mermaid, 3 graficos de gestion, convertir a DOCX/PDF y cumplir impresion, presentacion, notebook, HDMI, pendrive, ensayo y contingencia oficial |
-| `core-web/` | Paquete compacto de contexto para Gemini/external AI; no es fuente canonica |
-| `.specify/`, `.agents/`, `AGENTS.md`, `specs/` | Tooling local de agentes y evidencia granular; ignorado en el repo profesional |
+| **Última revisión de este índice** | 2026-08-03 |
+| **Estado funcional de referencia** | 117/117 ítems: 45 verificados `[V]` y 72 implementados `[I]` |
+| **Clasificación del producto** | Release Candidate académico, core Feature Complete y Code Freeze operativo local |
+| **Próxima mesa** | Viernes 7 de agosto de 2026, 09:00 |
+| **Fuentes normalizadas en esta pasada** | `ROADMAP.md`, `FINAL_AUDIT_REPORT.md`, `scope-and-requirements.md`, `architecture-and-design.md`, `RUNBOOK_DEV.md`, `DEVELOPMENT_LOG.md`, `01-project-overview.md`, `02-software-requirements.md`, `03-use-cases.md`, `04-design-diagrams.md` y este documento |
 
-## Evidencia reciente
+Este archivo no reemplaza al roadmap, a la arquitectura, al runbook ni a la auditoría.
+Su función es identificar **qué documento gobierna cada decisión**, cuál es su estado de
+revisión, qué materiales son derivados y qué debe actualizarse cuando cambia el código o
+la evidencia. No se utiliza para inferir que una feature funciona.
+
+---
+
+## 1. Propósito y reglas de gobierno
+
+### 1.1 Objetivos
+
+1. Mantener una única fuente autorizada para cada tipo de información.
+2. Evitar que resúmenes académicos, specs o logs históricos contradigan al código actual.
+3. Separar documentación técnica canónica, evidencia, entregables de la mesa y material
+   auxiliar para agentes.
+4. Registrar el nivel de revisión real sin presentar como vigente un documento que aún
+   no fue contrastado contra las últimas specs.
+5. Facilitar la auditoría académica y la reconstrucción del contexto por otra persona.
+
+### 1.2 Estados documentales
+
+| Estado | Significado |
+|---|---|
+| **Normalizado** | Revisado contra las fuentes de mayor precedencia en la fecha indicada; estructura y contenido vigentes |
+| **Vigente, pendiente de revisión** | Utilizable, pero debe recorrerse en esta normalización integral antes de congelar la entrega |
+| **Derivado** | Resume o adapta documentos canónicos; nunca prevalece sobre ellos |
+| **Histórico** | Conserva trazabilidad de un corte anterior; sus métricas o decisiones pueden haber sido supersedidas |
+| **En preparación** | Entregable aún incompleto o pendiente de maquetación/validación |
+| **Local/ignorado** | Herramienta o evidencia de trabajo que no forma parte del repositorio profesional |
+
+### 1.3 Regla de no inferencia
+
+Una casilla marcada, una entrada del development log o una descripción académica no
+constituyen evidencia de runtime. El estado funcional solo cambia desde el checklist del
+roadmap y debe estar respaldado por código, schema/migración y evidencia proporcional al
+riesgo.
+
+---
+
+## 2. Jerarquía de fuentes
+
+Ante una contradicción se aplica el siguiente orden:
+
+1. **Código y configuración versionados** en el SHA evaluado.
+2. **Schema GraphQL, modelo EF, migraciones y base ejecutada**.
+3. **Evidencia reproducible** de tests, builds, runtime y aceptación manual.
+4. **Constitución y decisiones arquitectónicas** aplicables.
+5. **Documentos canónicos** de alcance, arquitectura, roadmap, runbook y auditoría.
+6. **Memoria técnica y documentación académica derivada**.
+7. **Development log, specs históricas y paquetes de contexto para agentes**.
+
+Si una fuente inferior contradice a una superior, debe corregirse o marcarse como
+histórica. No se modifica el código para hacerlo coincidir con una narrativa obsoleta.
+
+---
+
+## 3. Matriz de documentación canónica
+
+| Documento | Autoridad y propósito | Estado al 2026-08-03 | Próxima acción |
+|---|---|---|---|
+| `README.md` | Puerta de entrada al repositorio, requisitos mínimos, estructura y enlaces | **Normalizado**: estado 45 V/72 I, capacidades, stack, arranque seguro, validaciones finitas, fuentes canónicas y límites vigentes | Mantener breve; actualizar métricas solo desde evidencia y no duplicar procedimientos completos del Runbook |
+| `docs/project_docs/ROADMAP.md` | Única fuente de avance, prioridades, estados y planificación del cierre | **Normalizado**: 109 ítems funcionales/operativos + 8 remediaciones; 117/117; separa defensa, producción y evolución | Actualizar solo con evidencia de `CF`, `DF`, `LG` o `PR`; no inflar el denominador con aceptación redundante |
+| `docs/project_docs/scope-and-requirements.md` | Contrato de alcance, actores, requisitos funcionales/no funcionales y exclusiones | **Normalizado y remediado**: Spec 201 cerró registro público privilegiado y alcance Profesor cross-career con contratos/pruebas | Mantener la política y reevaluar una entidad Profesor-Materia solo si se exige granularidad de cursada |
+| `docs/project_docs/architecture-and-design.md` | Arquitectura lógica/física, decisiones, datos, integraciones, seguridad y flujos | **Normalizado**: privacidad Follow y TLS de plantilla remediados; uploads públicos y observabilidad central conservan gates explícitos | Renderizar diagramas y no promover aceptación productiva sin cerrar `GAP-FILE-01` y controles de destino |
+| `docs/audit/RUNBOOK_DEV.md` | Instalación, secretos, Docker, migraciones, base demo, operación, recuperación y gates | **Normalizado**: procedimientos clasificados por riesgo, setup reproducible, seis roles, Entra redirect, scripts finitos/runtime, rebaseline y límites productivos contrastados | Mantener sincronizado con parámetros de scripts, migraciones, puertos, callbacks y brechas; repetir revisión antes de congelar el SHA |
+| `docs/audit/FINAL_AUDIT_REPORT.md` | Dictamen técnico, controles, riesgos residuales, evidencia y recomendación de liberación | **Normalizado**: 8 secciones, riesgos `RR-01` a `RR-12`, matriz 186-193 y trazabilidad 194-201 | Actualizar después de `CF-03`/`CF-06` con SHA y resultados del gate integral |
+| `docs/audit/DEVELOPMENT_LOG.md` | Historial técnico cronológico inverso | **Normalizado**: 148 entradas principales ordenadas; entregas parciales de Specs 140 y 152 consolidadas; colisión nominal de Spec 146 eliminada sin perder evidencia | Agregar cada nuevo cierre inmediatamente debajo de la introducción y conservar el estado vigente únicamente en el Roadmap |
+| `docs/audit/DOCUMENTATION_STATUS.md` | Índice de gobierno, precedencia y estado de revisión | **Normalizado** | Actualizar cada vez que un documento cambie de estado o se agregue/elimine un artefacto canónico |
+| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria técnica integral y fuente de la futura entrega DOCX/PDF | **Contenido normalizado**: APA 7, 48 RF, 12 BR, 12 RNF, 10 Mermaid, 30 entidades, baseline conjunto 198/144 y riesgos residuales Spec 201 alineados | Renderizar figuras, maquetar DOCX, ejecutar revisión visual/APA y exportar el PDF; no declarar listo para imprenta hasta completar `DF-03` a `DF-06` |
+
+### 3.1 Límites de responsabilidad
+
+- El **roadmap** responde qué está hecho, qué está verificado y qué falta.
+- El **scope** responde qué debe hacer el producto y para quién.
+- La **arquitectura** responde cómo está construido y qué decisiones lo condicionan.
+- El **runbook** responde cómo instalarlo, ejecutarlo, validarlo y recuperarlo.
+- La **auditoría** responde qué riesgos se encontraron, cómo se trataron y qué gates
+  permanecen.
+- El **development log** responde cuándo y por qué cambió el proyecto.
+- Este archivo responde cuál de esas fuentes está lista para ser utilizada.
+
+---
+
+## 4. Entregables académicos
+
+| Documento o artefacto | Propósito | Estado | Dependencia / criterio de cierre |
+|---|---|---|---|
+| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria integral de Práctica Profesionalizante III con APA 7, requisitos, diseño, arquitectura, gestión, pruebas, manual y anexos | **Contenido normalizado; materialización pendiente**: portada precargada, contratos canónicos, baseline 198/144 y riesgos alineados hasta Spec 201; todavía no es el PDF final | Confirmar metadatos de portada, sustituir diagramas, generar DOCX y auditar PDF (`DF-01`, `DF-03` a `DF-06`) |
+| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Procedimiento para diagramas, DOCX/PDF, APA 7, impresión, exposición y contingencia | **Normalizada**: 10 Mermaid + 3 gráficos de gestión, gates A-D, APA, preflight de imprenta, paquete digital y defensa de 20-30 minutos | Ejecutar el procedimiento, registrar evidencia de cada gate y ajustar únicamente si la imprenta o la cátedra comunican una condición nueva |
+| `DOCUMENTO_MAQUETACION.md` | Versión intermedia sin bloques Mermaid para conversión | **No creado** | Se genera después de exportar las figuras (`DF-05`) |
+| DOCX APA 7 | Editable institucional con índice, estilos, tablas y figuras | **No creado** | Depende de diagramas y documento de maquetación |
+| PDF definitivo | Copia digital e insumo de impresión | **No creado** | Auditoría en cuatro pasadas, enlaces/figuras legibles y paginación estable (`DF-06`) |
+| Presentación PPTX/PDF | Narrativa de defensa y guía de demostración | **No creada** | Problema, solución, arquitectura, demo, evidencia, límites y cierre en 22-25 minutos (`DF-07`) |
+| Copia física | Entrega para la mesa | **Pendiente** | Una copia preferentemente a color, anillada o encuadernada (`LG-01`) |
+
+El Manual de Usuario permanece integrado en la sección 6 de la memoria y, según la
+confirmación del presidente de mesa, no se entrega como documento separado.
+
+---
+
+## 5. Documentación derivada, complementaria y local
+
+### 5.1 Resúmenes académicos derivados
+
+| Documento | Función | Estado y regla de uso |
+|---|---|---|
+| `docs/academic/01-project-overview.md` | Síntesis ejecutiva de organización, problema, actores, alcance, arquitectura, seguridad, estado y límites | **Derivado normalizado**: distingue 45 `[V]`/72 `[I]`, límites de defensa/producción y brechas vigentes sin duplicar el contrato canónico | Mantener sincronizado después de cambios en scope, arquitectura, Roadmap, auditoría o memoria |
+| `docs/academic/02-software-requirements.md` | Especificación académica con actores, permisos, requisitos, reglas, calidad, integraciones y aceptación | **Derivado normalizado**: 48 RF, 12 BR y 12 RNF con correspondencia exacta al contrato canónico; brechas y gates explícitos | Mantener sincronizado después de modificar `scope-and-requirements.md` o aceptar/remediar gaps |
+| `docs/academic/03-use-cases.md` | Catálogo de casos de uso con actores, condiciones, flujos, alternativas y trazabilidad RF-CU | **Derivado normalizado**: 26 CU únicos y cobertura exacta de los 48 RF; brechas insertadas en los flujos afectados | Mantener sincronizado después de cambios de permisos, requisitos o aceptación de gaps |
+| `docs/academic/04-design-diagrams.md` | Paquete de contexto, componentes, DER, secuencias, realtime, despliegue y operación | **Derivado normalizado estáticamente**: 13 Mermaid; DER dividido con las 30 entidades persistidas; campos/cardinalidades contrastados | Renderizar/exportar y revisar visualmente SVG antes de incorporarlos al entregable (`QA-DIAG-01`) |
+
+Estos cuatro documentos son útiles para exposición y consulta rápida, pero duplican
+parcialmente la memoria. Se conservarán solo si, después de su auditoría, aportan una
+vista resumida claramente identificada y de mantenimiento razonable.
+
+### 5.2 Paquetes para agentes y tooling
+
+| Recurso | Función | Política |
+|---|---|---|
+| `core-web/` | Contexto compacto para Gemini u otra IA externa | **Normalizado**: los cuatro archivos comparten el corte 2026-08-03, precedencia, 117/117 (45 V + 72 I), decisiones, contratos, snapshot técnico y seis gaps | Apto para subir como contexto derivado; regenerar cuando cambien contratos, métricas, arquitectura o riesgos canónicos |
+| `.specify/`, `.agents/`, `AGENTS.md`, `GUIA_SPECKIT.md`, `specs/` | Constitución, templates, flujo Speckit, instrucciones y evidencia granular | **Local/ignorado** según la política actual; Constitución 1.5.0, `AGENTS.md`, guía y template de plan normalizados al corte 2026-08-03 con seguridad, privacidad, resiliencia, Code Freeze, gates por riesgo y precedencia vigentes; el circuito TXT redundante fue retirado; no sustituyen documentación entregable |
+| Plantilla DOCX y programa de la materia en raíz | Fuentes institucionales de entrada | Conservar como referencia local; no tratarlos como documentación técnica del sistema |
+| Scripts de secretos y archivos `.env` locales | Configuración privada | Deben permanecer ignorados, sin valores reales en documentación ni commits |
+
+---
+
+## 6. Estado operativo y brechas vigentes
+
+### 6.1 Baseline técnico documentado
+
+- Último baseline backend: **198/198** en el worktree de Spec 201.
+- Último baseline frontend: **144/144** en la misma ejecución de Spec 201.
+- Ambos pasaron en conjunto, pero deben repetirse sobre el SHA candidato limpio antes de
+  convertirlos en evidencia de release (`REL-001`).
+- Base local canónica: SQL Server 2022 en Docker con SQL Auth y secretos fuera de Git.
+- No quedan hallazgos Críticos/Altos de Specs 186-193 en condición vulnerable original.
+- El schema actual contiene **47 resolvers mutacionales**: seis públicos controlados y 41
+  autorizados declarativamente.
+- Spec 201 cerró `GAP-AUTH-01`, `GAP-AUTH-02` mediante política equivalente por carrera,
+  `GAP-PRIV-01`, la configuración rastreada de `GAP-INFRA-01` y `QA-UI-001`.
+- `GAP-FILE-01` permanece aceptado únicamente para demo controlada; `GAP-OPS-01` cuenta
+  con correlation ID, logs y probes live/ready, pero la plataforma central sigue bloqueada
+  por el ambiente de destino.
+
+### 6.2 Cierre técnico antes de la defensa
+
+| Bloque | Estado | Trabajo pendiente | Estimación canónica |
+|---|---|---|---:|
+| `CF-01` a `CF-06` | `[ ] [P]` | Integración Git, higiene, gates conjuntos, seis roles, realtime con dos sesiones y congelamiento del SHA | 6 h 45 min a 9 h 30 min |
+| Riesgos manuales `RR-04` a `RR-06` | `[I]` | Moderador visual, WebSocket aislado y onboarding B2B completo | Incluidos en `CF-04`/`CF-05` |
+| Evidencia final | `[ ] [P]` | Registrar fecha, SHA, comandos, métricas, capturas y desviaciones | Incluida en `CF-06` |
+
+### 6.3 Producción documental y logística
+
+| Bloque | Estado | Trabajo pendiente | Estimación canónica |
+|---|---|---|---:|
+| `DF-01`, `DF-03` a `DF-08` | `[ ] [P]` | Portada, 10 Mermaid, 4 recreaciones manuales, DOCX, PDF, presentación y dos ensayos | 16 h 50 min a 24 h 30 min |
+| `LG-01` a `LG-05` | `[ ] [P]` | Impresión, notebook/HDMI, pendrive, snapshot offline y llegada anticipada | Se solapa con `DF-05` a `DF-08` |
+| Cierre técnico + académico | `[ ] [P]` | Paquete reproducible completo | 23 h 35 min a 34 h efectivas |
+
+### 6.4 Gates externos y evolución
+
+- `PR-01` a `PR-03`: SMTP, Redis administrado y Cloudinary reales.
+- `PR-04`: aceptación Microsoft Entra con App Registrations, consentimiento y cuenta
+  Microsoft 365 organizacional.
+- `PR-05`: benchmark BCrypt sobre hardware objetivo.
+- `PR-06`: alertas y política de fallos persistentes de I/O.
+- `PR-07`: antivirus/CDR para uploads.
+- React Router 6.30.4 conserva advisories moderados aceptados; 7.x se reevaluará fuera
+  del Code Freeze.
+- Azure y aplicación móvil son evolución postdefensa, no deuda del core académico.
+
+Estos gates representan **17-37 horas técnicas**, sin contar aprobación, compras o
+provisionamiento. No bloquean la defensa controlada, pero sí una afirmación de producción
+pública completamente aceptada.
+
+---
+
+## 7. Catálogo cronológico de evidencia
+
+La tabla conserva los resultados registrados por cada spec. Sus métricas pertenecen al
+corte indicado y pueden haber sido ampliadas por specs posteriores. Para conocer el
+estado actual prevalecen las secciones 3 y 6, el roadmap y el informe final de auditoría.
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/201-final-audit-closure` | Registro Student-only con dominio/anti-enumeración/limiter, Profesor acotado por carrera, privacidad sin Follow, SQL productivo sin trust bypass predeterminado y probes live/ready. Backend 198/198, frontend 144/144, builds y EF PASS en worktree; SHA, DOCX/PDF y diagramas siguen como gates separados |
+| `specs/200-microsoft-entra-redirect-auth` | Popup eliminado; `loginRedirect`, callback aislado, selección de cuenta fail-closed, adquisición silenciosa del scope API, canje GraphQL idempotente y destino interno sanitizado implementados. Speckit QA PASS, focalizadas 41/41, frontend 144/144 y Vite 1,69 s; App Registration y aceptación Microsoft 365 real pendientes |
+| `specs/199-ux-b2b-and-academic-onboarding` | Configuracion Entra centralizada con `common`, client ID canonico y alias temporal; CTA empresarial responsive; guard previo al layout y seleccion academica persistida/refetch para Estudiantes sin carreras. Speckit QA PASS, tests focalizados 34/34, frontend 118/118 y build Vite 686 ms; regresion visual y tenant real pendientes |
 | `specs/198-employer-onboarding-workflow` | Onboarding B2B implementado: solicitud publica anti-enumeracion con honeypot temprano y limiter HMAC; aprobacion Admin serializable e idempotente; rol `Empleador` fijo; auditoria sanitizada; Outbox con lease/reintentos y Magic Link generico. Backend 183/183, frontend 85/85, builds limpios, migracion aplicada sin drift y entrega `.eml` local `Delivered`; regresion visual publica/Admin pendiente por decision del usuario |
-| `specs/197-microsoft-entra-sso` | Microsoft Entra single-tenant implementado con MSAL PKCE, validacion backend completa, identidad externa unica, provisioning sin privilegios, auditoria/rate limit y limpieza de sesion. Backend 174/174, frontend 82/82, builds limpios, 33 migraciones sin drift y schema runtime 43 mutaciones con rechazo `ENTRA_NOT_CONFIGURED`; tenant real permanece `[B]` |
+| `specs/197-microsoft-entra-sso` | Base Microsoft Entra implementada con MSAL PKCE, validacion backend completa, identidad externa unica, provisioning sin privilegios, auditoria/rate limit y limpieza de sesion; Spec 199 amplio la autoridad a `common` con validacion tenant-specific. Backend 174/174, frontend 82/82, builds limpios, 33 migraciones sin drift y schema runtime 43 mutaciones con rechazo `ENTRA_NOT_CONFIGURED`; aceptacion real permanece `[B]` |
 | `specs/196-demo-database-rebaseline` | Base Docker local respaldada y reconstruida desde 32 migraciones; dos seeds con inventario identico, integridad SQL en cero y login de los seis roles. Smokes de feed, academico, mensajeria, notificaciones, empleos, administracion, moderacion y upload PASS. Backend 153/153, frontend 80/80, builds limpios y EF sin drift |
 | `Hotfix transport local 2026-07-29` | Vite proxy same-origin verificado para GraphQL HTTP, WebSocket, REST y uploads; login real de `Empleador` por `http://localhost:5173/graphql` PASS; frontend 80/80 y build Vite PASS. El secreto demo permanece fuera del repo |
 | `specs/195-local-infrastructure-and-moderator-acceptance` | Moderador canonico/idempotente y JWT/limites cubiertos; Redis cross-provider y aislamiento de topic verificados; tres escenarios SMTP capturados en Mailpit; backend 152/152, frontend 79/79, builds y EF PASS; cleanup de contenedores/puertos y preservacion SQL comprobados. Proveedores publicos y WebSocket de red siguen `[B]` |
@@ -41,12 +207,12 @@
 | `specs/192-credential-crypto-hardening` | Verificada localmente: respuesta Magic Link generica, digest SHA-256, pickup, consumo unico/replay y limpieza de credencial ejecutados; BCrypt central y JWT externalizado cubiertos. SMTP real permanece `[B]` |
 | `specs/191-query-pagination-hardening` | Verificada localmente: contrato social acotado, orden/deduplicacion/next page/filtro de autor y paginacion academica con autorizacion ejecutados; cancelacion mantiene cobertura sin escritura |
 | `specs/190-upload-magiclink-hardening` | Verificada localmente: PDF valido aceptado, ejecutable renombrado y PDF truncado rechazados; limites Magic Link y recuperacion cuentan con evidencia previa. Redis distribuido permanece `[B]` |
-| `specs/186-189` | Cierre de seguridad verificado: JWT central y Magic Link atomico; cancelacion end-to-end con guard automatizado; frontera de sesion Apollo/React/WebSocket; matriz declarativa de 42 mutaciones. Backend 82/82, frontend 54/54, builds PASS, EF sin drift, GraphQL runtime y browser smoke PASS |
+| `specs/186-189` | Cierre de seguridad verificado: JWT central y Magic Link atomico; cancelacion end-to-end con guard automatizado; frontera de sesion Apollo/React/WebSocket; la matriz del corte cubria 42 mutaciones. Backend 82/82, frontend 54/54, builds PASS, EF sin drift, GraphQL runtime y browser smoke PASS. El schema crecio posteriormente a 47 resolvers, todos cubiertos por la matriz vigente |
 | `specs/185-media-notification-polish/` | Media Grid orientado por dimensiones, dos YouTube con limite UI/backend, PDF con primera hoja y pie de acciones, logo/nombres legibles en dark, transicion de tema accesible, textura global visible, preferencias en portal y badge estrictamente no leido. Backend 65/65, frontend 49/49, builds PASS, Vite 858 ms en el gate final, EF sin drift, npm audit 0 vulnerabilidades y runtime GraphQL HTTP 200; regresion visual manual pendiente |
 | `specs/184-qa-master-polish-and-layout/` | Header auto-hide defensivo, Footer unificado, textura global, dark mode suavizado, compositor acotado, mosaico mixto con portada/YouTube/overflow, menciones respaldadas por identidad, preferencias en drawer y deep-link laboral exacto. Backend 63/63, frontend 39/39, builds PASS, Vite 1.19 s, npm audit 0 vulnerabilidades y schema GraphQL runtime HTTP 200; regresion visual manual pendiente |
 | `specs/183-premium-branding-landing/` | Identidad final normalizada en cuatro assets canonicos, Header con isotipo aprobado y landing institucional unica Clean Tech/Tech Noir. Spotlight usa RAF sin re-render, reveals respetan reduced-motion y limpian observers; los PNG de fondo de 4.47/5.12 MB quedan fuera del bundle. Frontend 31/31, Vite build PASS en 941 ms, npm audit 0 vulnerabilidades y diff-check PASS; aprobacion visual responsive/manual pendiente |
 | `specs/182-qa-session4-feed-hierarchy-and-media-grid/` | Mosaico acotado 4/3, portada PDF por worker local diferido, respuestas dirigidas sin tercer nivel, deep-link exacto con highlight, widget no leido independiente y follow/unfollow explicito. Migracion aplicada a Docker SQL, EF sin drift, tests backend 62/62, frontend 25/25, Vite build PASS, npm audit 0 vulnerabilidades y smoke GraphQL autenticado PASS; regresion visual manual pendiente |
-| `specs/181-qa-session3-media-moderation/` | Portada multimedia y carrusel, PDF por Blob URL, reemplazo de adjuntos, texto expandible, reaccion unificada, nesting maximo de dos niveles, edicion exclusiva del autor, ocultamiento moderado auditado, badges de chat, recordatorio idempotente con reintentos de concurrencia y preferencias separadas. Migracion aplicada a Docker SQL, EF sin drift, backend 0/0 y tests 55/55, frontend tests 18/18 y Vite build PASS; schema/runtime HTTP 200. La regresion visual autenticada final queda explicitamente pendiente |
+| `specs/181-qa-session3-media-moderation/` | Portada multimedia y carrusel, PDF por Blob URL, reemplazo de adjuntos, texto expandible, reaccion unificada, nesting maximo de dos niveles, edicion exclusiva del autor, ocultamiento moderado auditado, badges de chat, recordatorio idempotente con reintentos de concurrencia y preferencias separadas. Migracion aplicada a Docker SQL, EF sin drift, backend build con 0 warnings/0 errores y tests 55/55, frontend tests 18/18 y Vite build PASS; schema/runtime HTTP 200. La regresion visual autenticada final queda explicitamente pendiente |
 | `specs/180-final-release-candidate-audit/` | Auditoria Release Candidate ejecutada: Git hygiene revisado, builds/tests backend y frontend PASS, EF sin drift, runtime GraphQL HTTP 200 contra Docker SQL y contratos criticos auditados. Se corrigio idempotencia del `EnterpriseDemoSeeder` para `JobApplications` ya existentes por `Id` y por par `JobOfferId + ApplicantId`, evitando fallos de arranque sobre bases demo previamente pobladas |
 | `specs/179-social-polish-quick-wins/` | Quick wins del muro implementados: enlace copiable por publicacion con deep-link estable, drag-and-drop de adjuntos reutilizando validaciones existentes, restauracion de foco en visores/listado de reacciones, guard contra cargas duplicadas y fallback de preview de enlaces rotos. Frontend tests PASS 12/12 y Vite build PASS |
 | `specs/178-qa-session2-social-core-fixes/` | Nucleo social estabilizado: scoping de materias backend/UI, `SocialAttachment`, `CommentReaction`, adjuntos multiples con nombre original, galeria multimedia no excluyente, visores, autofocus, listado paginado de likes, notificaciones agrupadas con deep-link, footer y retiro del compositor legacy del sidebar. Migracion aplicada a Docker SQL, EF sin cambios pendientes, backend build PASS, tests 47/47, frontend tests 6/6, build Vite PASS y smoke GraphQL autenticado PASS. Browser QA fue parcial: detecto el sidebar duplicado y motivo el fix; la recarga post-fix quedo bloqueada por politica de URL de la herramienta |
@@ -106,37 +272,58 @@
 | `specs/134-local-backend-runtime-unblock/` | Implementada; backend local, HTTPS y GraphQL smoke test verificados |
 | `specs/135-core-stabilization-sprint/` | Paginacion feed, cleanup uploads, auditoria persistente y runtime local Docker SQL verificados end-to-end |
 
-## Brechas vigentes
+---
 
-- No quedan hallazgos criticos o altos de las Specs 186-193 en condicion vulnerable
-  original. La Spec 194 cerro sus gates locales y la regresion A -> logout -> B.
-- La identidad Moderador, su JWT, permisos representativos y seed idempotente quedaron
-  verificados. El recorrido visual completo de ese rol sigue dentro de la auditoria
-  manual previa a la defensa, no como bloqueo de codigo.
-- Redis distribuido quedo verificado localmente entre dos proveedores independientes,
-  con entrega exacta y aislamiento de topic. El handshake WebSocket de red con dos
-  navegadores permanece bloqueado por la restriccion de no iniciar servidores.
-- SMTP local quedo verificado contra Mailpit y Cloudinary conserva su fallback local.
-  Los proveedores SMTP/Cloudinary publicos requieren secretos no versionados y ambiente
-  aprobado; no se presentan como smokes productivos.
-- Microsoft Entra esta implementado; la aceptacion real requiere App Registrations,
-  consentimiento y cuenta del tenant institucional. Open Graph perfecto para crawlers
-  exige SSR o HTML desde backend.
-- React Router 6.30.4 conserva dos advisories moderados upstream y cero altos/criticos.
-  OneITB no usa SSR y sanitiza destinos internos de notificaciones; la version 7.x
-  evaluada se descarto porque introducia advisories altos en el corte de Code Freeze.
-- La medicion del costo BCrypt debe repetirse sobre el hardware objetivo antes de un
-  despliegue publico.
-- La entrega final aun no contiene `DOCUMENTO_MAQUETACION.md`, exportaciones de los
-  13 graficos, DOCX ni PDF. El Roadmap estima 15 h 20 min a 21 h 30 min de produccion
-  documental y 22-31 h para el cierre academico completo con aceptacion y logistica.
-- La mesa del 07/08/2026 comienza a las 09:00 y exige una exposicion de 20-30 minutos,
-  demostracion, una copia impresa preferentemente a color/anillada o encuadernada,
-  presentacion digital y respaldo del sistema. El Manual de Usuario queda integrado en
-  la memoria y no es un entregable separado.
-- El runtime local canonico sigue siendo SQL Server 2022 en Docker con SQL Auth por
-  `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth no es un gate valido.
-- Azure App Service/SQL y el ecosistema movil permanecen como evolucion posterior a la
-  entrega academica, no como deuda del core Feature Complete.
+## 8. Política de mantenimiento documental
 
-Ante contradicciones, prevalecen codigo, esquema ejecutado y evidencia runtime. Los porcentajes se recalculan exclusivamente desde los checklists de `ROADMAP.md`.
+### 8.1 Cuándo actualizar cada fuente
+
+| Evento | Documentos obligatorios |
+|---|---|
+| Feature o corrección cerrada | Spec/evidence, `DEVELOPMENT_LOG.md` y roadmap si cambia un estado contabilizado |
+| Cambio de contrato o requisito | Scope, arquitectura, tests/contratos y memoria derivada |
+| Cambio de modelo EF o integración | Arquitectura, runbook, migraciones y diagramas afectados |
+| Nuevo hallazgo o remediación | Informe final, roadmap si genera trabajo y development log al cerrarse |
+| Cambio de comandos, puertos, secretos o Docker | Runbook, `.env.example`/compose cuando corresponda y README si afecta el ingreso |
+| Gate de aceptación final | Roadmap, informe final, estado documental, memoria y presentación con el mismo SHA/métricas |
+| Alta o baja de un documento | Este índice, README y enlaces internos afectados |
+
+### 8.2 Checklist de consistencia
+
+Antes de declarar normalizado un documento se debe comprobar:
+
+1. Nombre, ruta y propósito únicos; ausencia de duplicado canónico.
+2. Roles, términos y nombres GraphQL coherentes con el código actual.
+3. Métricas asociadas a fecha, spec y SHA/corte, sin sumar suites de ejecuciones distintas.
+4. Estados `[V]`, `[I]` y `[B]` utilizados con el mismo criterio que el roadmap.
+5. Ausencia de secretos, credenciales reales, enlaces absolutos locales o datos personales.
+6. Enlaces relativos válidos y encabezados jerárquicos sin numeración duplicada.
+7. UTF-8, tablas Markdown y bloques Mermaid/código sintácticamente válidos.
+8. Riesgos y límites escritos en presente; historia conservada como historia.
+9. Terminología institucional: “Bolsa de Trabajo” y “Gestor de Ofertas y
+   Postulaciones”, sin denominaciones que sobreprometan el producto.
+10. `git diff --check` sin errores y cambios acotados al documento auditado.
+
+### 8.3 Orden de normalización restante
+
+El recorrido recomendado, un documento por vez, es:
+
+1. `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`.
+2. `docs/entrega_final/GUIA_MAQUETACION_FINAL.md`.
+3. `README.md` y, después, `core-web/` como paquete derivado final.
+
+La secuencia parte de contratos y arquitectura, continúa con operación/evidencia y solo
+después actualiza resúmenes y entregables. Así se evita perfeccionar una copia derivada
+antes de estabilizar su fuente.
+
+### 8.4 Definition of Done documental global
+
+1. Todos los documentos de la sección 3 figuran como **Normalizados**.
+2. Los derivados de la sección 5 coinciden con sus fuentes o se eliminan si no aportan
+   valor suficiente para justificar su mantenimiento.
+3. La memoria, los diagramas, DOCX, PDF y presentación cumplen `DF-01` a `DF-08`.
+4. Roadmap, auditoría, memoria y presentación citan el mismo SHA, fecha, métricas y
+   limitaciones.
+5. README enlaza únicamente archivos existentes y explica cuál es canónico.
+6. No hay secretos, temporales, prompts de trabajo ni outputs personales en el corte.
+7. La copia impresa y los respaldos digitales cumplen `LG-01` a `LG-05`.

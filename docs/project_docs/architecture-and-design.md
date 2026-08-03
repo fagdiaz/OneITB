@@ -1,82 +1,323 @@
-# Arquitectura y diseno de OneITB23
+# Arquitectura y diseño de OneITB23
 
-**Ultima alineacion con codigo**: 2026-07-30
-
-## 1. Stack vigente
-
-| Capa | Tecnologia |
+| Dato de control | Valor |
 |---|---|
-| Backend | .NET 8 / ASP.NET Core |
-| API de negocio | HotChocolate GraphQL 14.2.0 |
-| Persistencia | Entity Framework Core 8.0.6 / SQL Server 2022 Docker local / Azure SQL objetivo |
-| Frontend Web | React 18 / Apollo Client 3.7 / Vite 8 |
-| Frontend Mobile | React Native / Expo planificado; no existe codigo mobile versionado |
-| UI | Tailwind CSS 4 / FontAwesome 6.6 |
-| Tiempo real | GraphQL Subscriptions sobre WebSocket; Redis Pub/Sub opcional en produccion |
-| Archivos | `/api/upload` con disco local o Cloudinary por configuracion |
-| Correo | SMTP obligatorio en produccion; pickup `.eml` local e ignorado en desarrollo |
-| Identidad institucional | Microsoft Entra ID single-tenant; MSAL Authorization Code + PKCE y canje por JWT OneITB |
-| Despliegue e Infra | Docker multi-stage / Nginx reverse proxy / Redis / Cloudinary opcional / GitHub Actions |
+| **Última contrastación con código** | 3 de agosto de 2026 |
+| **Estado documental** | Normalizado; arquitectura implementada con gates y brechas explícitas |
+| **Baseline técnico** | .NET 8, EF Core 8.0.6, HotChocolate 14.2.0, React 18, Apollo Client 3.7, Vite 8 y Tailwind CSS 4 |
+| **Ámbito** | Aplicación web, API, persistencia, tiempo real, archivos, correo, identidad e infraestructura |
+| **Fuente de estado** | `ROADMAP.md`; este documento no asigna porcentajes ni eleva ítems a verificados |
+| **Fuente de riesgos** | `FINAL_AUDIT_REPORT.md` y sección 15 de este documento |
 
-## 2. Estructura fisica
+Este documento describe **cómo está construido el sistema vigente** y qué decisiones
+condicionan su evolución. No reemplaza al contrato funcional, al runbook ni a la evidencia
+de pruebas. Una capacidad implementada sin aceptación en destino conserva su gate.
+
+---
+
+## 1. Propósito, alcance y atributos de calidad
+
+### 1.1 Propósito arquitectónico
+
+OneITB23 es una red social académica institucional que integra identidad, perfiles/CV,
+muro segmentado por carrera, mensajería privada, recursos y progreso académico,
+moderación, notificaciones y una Bolsa de Trabajo con Gestor de Ofertas y Postulaciones.
+La arquitectura prioriza separación de responsabilidades, autorización en servidor,
+integridad relacional, operación local reproducible y adaptadores reemplazables.
+
+### 1.2 Atributos de calidad prioritarios
+
+| Atributo | Respuesta arquitectónica |
+|---|---|
+| Seguridad | JWT local, BCrypt, lockout, autorización declarativa/contextual, límites de entrada, rate limiting y secretos fuera del repositorio |
+| Integridad | FKs explícitas, `DeleteBehavior.Restrict`, constraints SQL, soft delete y transacciones críticas |
+| Rendimiento | Paginación acotada, `AsNoTracking`, split queries, DataLoaders, índices y cancelación de I/O |
+| Escalabilidad | API sin sesión de servidor, Redis opcional para Pub/Sub/limiters y almacenamiento intercambiable |
+| Resiliencia | Error boundary, error filter GraphQL, Outbox, workers acotados y fallbacks de Development |
+| Trazabilidad | Correlation ID, `AuditLog`, `ModerationAudit` y estados persistentes |
+| Mantenibilidad | Servicios de dominio, contratos GraphQL, composición por interfaces y documentación canónica |
+| Usabilidad | UI en español, temas Clean Tech/Tech Noir, loading/error y onboarding explícito |
+
+### 1.3 Restricciones constitucionales
+
+1. Frontend y backend son aplicaciones separadas.
+2. GraphQL `/graphql` es el contrato de negocio por HTTP y WebSocket.
+3. `POST /api/upload` es la única excepción REST aprobada para binarios.
+4. Las reglas no triviales pertenecen a servicios; React no es frontera de autorización.
+5. Passwords, tokens y secretos no se registran ni versionan.
+6. Las FKs son explícitas y el dominio usa `Restrict`, salvo excepción documentada.
+7. Compilar no demuestra por sí solo schema, persistencia o flujo funcional.
+
+---
+
+## 2. Contexto del sistema
+
+```mermaid
+%%{init: {"flowchart": {"curve": "linear"}}}%%
+flowchart LR
+    Student["Estudiante / Egresado"]
+    Professor["Profesor"]
+    Employer["Empleador"]
+    Staff["Moderador / Administrador"]
+    OneITB["OneITB23"]
+    Entra["Microsoft Entra ID"]
+    SMTP["Servidor SMTP"]
+    Storage["Disco local / Cloudinary"]
+    Redis["Redis opcional"]
+    SQL["SQL Server"]
+    SIU["SIU Guaraní - adaptador mock"]
+
+    Student --> OneITB
+    Professor --> OneITB
+    Employer --> OneITB
+    Staff --> OneITB
+    OneITB --> Entra
+    OneITB --> SMTP
+    OneITB --> Storage
+    OneITB --> Redis
+    OneITB --> SQL
+    OneITB --> SIU
+```
+
+### 2.1 Actores y fronteras
+
+- **Institucionales:** Estudiante, Profesor, Egresado, Moderador y Administrador.
+- **Externo controlado:** Empleador, creado por aprobación Admin o seed; nunca por alta pública directa.
+- **Empresa solicitante:** actor anónimo que presenta una solicitud sin obtener privilegios.
+- **Entra ID:** proveedor institucional cuyo token se canjea por el JWT local.
+- **SMTP, Redis y Cloudinary:** dependencias configurables con aceptación real pendiente.
+- **SIU:** integración desacoplada; la implementación actual es simulada.
+
+---
+
+## 3. Vista lógica de componentes
+
+```mermaid
+%%{init: {"flowchart": {"curve": "linear"}}}%%
+flowchart TB
+    subgraph Browser["Navegador"]
+        UI["React 18 + Tailwind 4"]
+        Router["React Router"]
+        Apollo["Apollo Client cache + links"]
+        Auth["AuthContext + MSAL"]
+    end
+    subgraph Api["ASP.NET Core .NET 8"]
+        Pipeline["CORS + Rate Limit + Auth + Headers"]
+        GQL["HotChocolate Query / Mutation / Subscription"]
+        Upload["UploadController REST"]
+        Services["Servicios de aplicación y dominio"]
+        Workers["Hosted Services / Outbox / Cleanup"]
+        Adapters["SMTP / Storage / SIU / Redis"]
+    end
+    subgraph Data["Persistencia"]
+        EF["EF Core DbContext + Interceptors"]
+        SQL["SQL Server"]
+        Files["Uploads / Cloudinary"]
+        Cache["Redis opcional"]
+    end
+    UI --> Router
+    UI --> Auth
+    UI --> Apollo
+    Apollo --> Pipeline
+    Auth --> Pipeline
+    Pipeline --> GQL
+    Pipeline --> Upload
+    GQL --> Services
+    Upload --> Services
+    Workers --> Services
+    Services --> EF
+    Services --> Adapters
+    EF --> SQL
+    Adapters --> Files
+    Adapters --> Cache
+```
+
+### 3.1 Responsabilidades
+
+| Capa | Responsabilidad | No debe hacer |
+|---|---|---|
+| React | Vista, interacción, accesibilidad, estado efímero y navegación | Autorizar o asumir que ocultar un control protege la API |
+| Apollo | HTTP/WS, caché, paginación, reconciliación y sesión | Persistir secretos o cruzar datos entre identidades |
+| GraphQL | Contratos, autorización declarativa, adaptación de errores y delegación | Concentrar reglas complejas en resolvers |
+| Servicios | Validación contextual, ownership, scoping, transacciones y efectos | Depender de presentación React |
+| EF Core | Mapeo, constraints, consultas, migraciones e interceptores | Inferir relaciones mediante shadow properties |
+| Adaptadores | Encapsular SMTP, storage, SIU y Pub/Sub | Filtrar secretos o cambiar reglas de negocio |
+| Workers | Procesar Outbox, recordatorios y limpieza en lotes | Detener la API por fallos recuperables |
+
+---
+
+## 4. Stack y estructura física
+
+### 4.1 Stack vigente
+
+| Capa | Tecnología | Observación |
+|---|---|---|
+| Host API | ASP.NET Core sobre .NET 8 | `Program.cs` crea el host y `Startup.cs` compone servicios/pipeline |
+| API | HotChocolate 14.2.0 | HTTP, WS, proyecciones, filtros, sorting, paginación y error filter |
+| Datos | EF Core 8.0.6 y SQL Server 2022 | SQL Docker local canónico; Azure SQL es objetivo |
+| Web | React 18, Router 6.30, Apollo 3.7 y Vite 8 | JavaScript/JSX predominante con piezas TSX |
+| Diseño | Tailwind CSS 4 y FontAwesome 6.6 | Clean Tech y Tech Noir |
+| Tiempo real | GraphQL Subscriptions | In-memory o Redis por configuración |
+| Identidad | JWT, BCrypt y Microsoft Entra/MSAL | Authorization Code + PKCE y JWT local |
+| Archivos | REST upload + `IFileStorageService` | Disco local o Cloudinary |
+| Correo | `IEmailSender` | SMTP o pickup local en Development |
+| Infraestructura | Docker Compose y Nginx | Plantilla productiva implementada, destino no aceptado |
+| Mobile | React Native/Expo planificado | Sin código mobile versionado |
+
+### 4.2 Estructura del repositorio
 
 ```text
 API Graphql/
-|-- Entities/     modelos de dominio
-|-- Data/         DbContext, inicializacion y migraciones
-|-- Services/     reglas de negocio y acceso a datos
-`-- OneITB/       host ASP.NET Core, GraphQL, upload REST, SMTP y middleware
+|-- Entities/          modelos y enums
+|-- Data/              DbContext, migraciones, inicialización y seed
+|-- Services/          dominio, repositorios e interfaces
+|-- Tests/             suites backend
+`-- OneITB/            host, GraphQL, controllers, auth, workers y adaptadores
 
-FrontEnd/OneItb-FE/src/
-|-- Components/   vistas y componentes por dominio
-|-- context/      autenticacion y tema
-|-- data/graphql/ operaciones Apollo
-|-- hooks/        hooks compartidos
-|-- router/       rutas publicas y privadas
-`-- utils/        parsing y utilidades sin estado
+FrontEnd/OneItb-FE/
+|-- src/Components/    vistas y componentes por dominio
+|-- src/context/       autenticación y tema
+|-- src/data/graphql/  provider y operaciones Apollo
+|-- src/hooks/         comportamiento compartido
+|-- src/router/        rutas públicas/privadas y callback Entra
+|-- src/auth/          configuración y flujo Microsoft
+`-- src/utils/         parsing, media y utilidades
 
-Mobile/OneItb-App/
-`-- planificado; no existe codigo versionado en el repositorio actual
+docs/
+|-- project_docs/      alcance, arquitectura y Roadmap
+|-- audit/             runbook, auditoría, estado e historial
+|-- academic/          derivados para defensa
+`-- entrega_final/     memoria y guía de maquetación
 ```
 
-## 3. Contratos de transporte e integraciones
+---
 
-- `/graphql` por HTTP: queries y mutations de aplicacion, incluyendo operaciones admin-only de smoke operativo.
-- `/graphql` por WebSocket: mensajes privados, notificaciones y eventos de ofertas laborales.
-- `POST /api/upload`: transferencia binaria autenticada y desacoplada, maximo 15 MB.
-- `/uploads/{file}`: lectura de archivos estaticos almacenados localmente cuando no se usa Cloudinary.
-- SMTP/pickup: salida de correo para cambios de postulaciones y entrega fuera de banda del Magic Link de empleadores.
-- Onboarding B2B: `submitEmployerRequest` es publico y limitado; `employerRequests`, `approveEmployerRequest`, `rejectEmployerRequest` y `resendEmployerWelcome` son exclusivos de Administrador.
-- Microsoft Entra ID: la SPA obtiene un access token delegado para la API OneITB y lo canjea una sola vez mediante `microsoftLogin`; los resolvers restantes solo aceptan el JWT local.
+## 5. Contratos de transporte
 
-Los binarios no se envian mediante GraphQL. Primero se obtiene una URL desde `/api/upload`; luego GraphQL persiste el descriptor en `SocialAttachment` para publicaciones/comentarios o la URL en `AcademicResource.FileUrl`. `Inquiry.FileUrl` y `Comment.FileUrl` se conservan como compatibilidad con clientes y datos historicos. El feed usa un mosaico acotado y, solo cuando una portada PDF entra en proximidad visual, carga un chunk PDF.js y worker locales para rasterizar la primera pagina en canvas con cancelacion/cleanup. El visor completo recupera el PDF con `fetch`, crea una Blob URL temporal, aborta la descarga y revoca la URL al cerrar; no se relaja `X-Frame-Options: DENY` ni se depende de CDN.
+### 5.1 GraphQL
 
-Controles defensivos vigentes: `/graphql` y `/api/upload` tienen rate limiting fixed-window por IP; GraphQL aplica profundidad maxima configurable (`GraphQL:MaxExecutionDepth`, default 10) y limites globales de paginacion (`DefaultPageSize` 20, `MaxPageSize` 50). El login usa lockout persistente por cuenta (`FailedLoginAttempts`, `LockoutEnd`) para mitigar fuerza bruta aunque el atacante rote IPs. Los perfiles privados se enmascaran en el backend, no solo en React.
+- `/graphql` por HTTP atiende queries y mutations.
+- `/graphql` por WebSocket atiende mensajes, notificaciones y ofertas.
+- HotChocolate registra Query, Mutation y Subscription, proyecciones, filtros, sorting,
+  DataLoaders y autorización.
+- El schema actual contiene **47 resolvers mutacionales**: seis públicos controlados
+  (`registerUser`, `login`, `microsoftLogin`, `requestMagicLink`, `loginWithMagicLink` y
+  `submitEmployerRequest`) y 41 con `[Authorize]`.
+- `GraphQLErrorFilter` evita devolver detalles internos sin procesar.
 
-El acceso de empleadores separa solicitud, aprobacion y consumo. El formulario publico
-no crea cuentas y responde de forma generica ante conflictos; procesa el honeypot antes
-de validar PII y aplica limites con fingerprints HMAC. La aprobacion Admin usa una
-transaccion serializable para persistir solicitud, cuenta, usuario `Empleador`, auditoria
-y Outbox sin duplicados. `requestMagicLink` tampoco revela existencia ni fallos de
-entrega; el token aleatorio de 256 bits viaja por correo dentro de un fragmento URL,
-mientras SQL conserva solamente su digest SHA-256. React elimina el fragmento mediante
-`history.replaceState` antes de usarlo. El consumo atomico, expiracion y proteccion de
-replay permanecen vigentes.
+### 5.2 Límites GraphQL vigentes
 
-El acceso institucional usa dos App Registrations single-tenant: una API que expone el
-scope delegado `access_as_user` y una SPA publica sin client secret. MSAL ejecuta
-Authorization Code + PKCE y conserva su cache en `sessionStorage`. `microsoftLogin`
-valida RS256, metadata OpenID tenant-specific con refresh de claves, emisor, audiencia,
-vigencia, `tid`, `oid`, `scp` y dominio `itbeltran.com.ar`; recien entonces vincula por
-identidad inmutable o email institucional validado. Las altas nuevas reciben rol
-`Estudiante`; las cuentas privilegiadas no se vinculan automaticamente. SQL aplica un
-indice unico filtrado sobre proveedor, tenant y objeto. Ningun token Entra se persiste,
-audita o reutiliza como credencial de los resolvers. Las cuentas SSO-only admiten
-`PasswordHash` nulo bajo un constraint que exige identidad externa completa.
+| Control | Default en código | Propósito |
+|---|---:|---|
+| Profundidad | 15 | Acotar anidación |
+| Costo de campo | 200000 | Limitar carga agregada |
+| Costo de tipo | 200000 | Limitar expansión costosa |
+| Nodos parser | 50000 | Acotar estructura |
+| Tokens parser | 100000 | Acotar entrada léxica |
+| Campos parser | 20000 | Acotar selecciones |
+| Página default | 20 | Evitar colecciones ilimitadas |
+| Página máxima | 50 | Techo global |
 
-Las contrasenas usan `IPasswordHasher` con BCrypt y costo configurable (`PasswordHashing:WorkFactor`, default 12, rango 10-14). Un login correcto actualiza hashes de costo inferior sin degradar hashes mas fuertes. Registro, promocion administrativa, cuentas de empleador y seeder comparten la politica. La clave JWT no existe en archivos rastreados y debe provenir de user-secrets o variables de entorno.
+Son configurables. Los valores altos de parser/costo permiten operaciones reales complejas;
+antes de exposición pública deben calibrarse con telemetría y pruebas de carga.
 
-## 4. Modelo de dominio actual
+### 5.3 Upload REST desacoplado
+
+1. React envía `multipart/form-data` con JWT a `POST /api/upload`.
+2. El controller exige autenticación, tamaño total, extensión y nombre seguro.
+3. `IFileContentInspector` valida firma y estructura antes de persistir.
+4. `IFileStorageService` devuelve URL, nombre original, MIME y tamaño.
+5. GraphQL persiste `SocialAttachment` o `AcademicResource.FileUrl`.
+
+`/uploads/{file}` entrega objetos locales como estáticos. Simplifica demo y rich media,
+pero no autoriza por objeto; este límite se registra como `GAP-FILE-01`.
+
+### 5.4 CORS, headers y proxy
+
+- GraphQL/controllers permiten solo orígenes configurados y no usan cookies; JWT viaja en `Authorization`.
+- WebSocket mantiene su propia allowlist de orígenes.
+- El middleware emite `nosniff`, `X-Frame-Options: DENY`, referrer y permissions policy.
+- Static files agrega CORS `*` y `Cross-Origin-Resource-Policy: cross-origin`.
+- Nginx sirve SPA y proxyea `/graphql`, `/api` y `/uploads`, incluido WebSocket.
+- PDF completo se recupera por `fetch` y Blob URL; no se relaja `X-Frame-Options`.
+
+---
+
+## 6. Identidad y autorización
+
+### 6.1 Cuenta y sesión local
+
+`Account` conserva email/credenciales; `User` conserva perfil, rol y dominio. Comparten
+`Guid` en relación 1:1. El JWT local es la credencial de resolvers protegidos, sea cual
+fuere el origen de identidad.
+
+- BCrypt mediante `IPasswordHasher`, costo 12 default y rango 10-14.
+- Cinco fallos generan lockout persistente de 15 minutos.
+- JWT exige issuer, audience, expiración y clave externa de al menos 32 bytes.
+- Logout/cambio de identidad limpia storage, Apollo, WebSocket y respuestas tardías.
+
+### 6.2 Microsoft Entra ID
+
+```mermaid
+sequenceDiagram
+    actor User as Usuario institucional
+    participant Login as React Login
+    participant MSAL as MSAL / Entra ID
+    participant Callback as Callback dedicado
+    participant GQL as microsoftLogin
+    participant Validator as Token Validator
+    participant DB as SQL Server
+    User->>Login: Iniciar con Microsoft
+    Login->>MSAL: loginRedirect(scope API)
+    MSAL-->>Callback: Authorization Code + PKCE
+    Callback->>MSAL: acquireTokenSilent
+    Callback->>GQL: access token delegado
+    GQL->>Validator: validar RS256, issuer, audience, tid, oid, scp y dominio
+    Validator-->>GQL: identidad validada
+    GQL->>DB: vincular/provisionar Estudiante
+    GQL-->>Callback: JWT OneITB
+    Callback-->>User: sesión y destino interno seguro
+```
+
+La SPA es pública y no posee client secret; la API expone `access_as_user`. La autoridad
+`common` admite múltiples organizaciones, pero backend usa metadata tenant-specific y
+valida `itbeltran.com.ar`. Altas nuevas reciben solo Estudiante; privilegiados no se
+vinculan automáticamente. Falta aceptación con tenant/cuenta Microsoft 365 reales.
+
+### 6.3 Magic Link y empresa
+
+- Credencial aleatoria de 256 bits; SQL conserva solo SHA-256.
+- Respuesta pública genérica, limiter por IP/identidad y fingerprint HMAC.
+- Consumo único, atómico, expirable y protegido contra replay.
+- Token en fragmento URL eliminado por React antes del consumo.
+- Empresa obtiene rol Empleador solo tras aprobación Admin serializable.
+- Outbox desacopla SMTP con lease, reintentos y errores sanitizados.
+
+### 6.4 Modelo de autorización
+
+La primera barrera es declarativa (`[Authorize]` y roles). Los servicios agregan identidad
+activa, ownership, carrera, estado, bloqueo/silenciamiento y relaciones necesarias.
+Los roles son Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador. El
+valor legacy `User` no debe asignarse en nuevos flujos.
+
+Controles cerrados por Spec 201:
+
+- El registro público valida dominio institucional en backend, asigna únicamente
+  `Estudiante`, limita abuso por origen/identidad y no revela duplicados.
+- Las operaciones del Profesor se acotan a las carreras enlazadas por `UserCareer`; esta
+  política equivalente se aplica a recursos, listados y progreso. Administrador conserva
+  alcance global.
+
+### 6.5 Privacidad
+
+`IsPublicProfile` enmascara server-side bio, contacto, carreras, CV y métricas. Solo el
+propietario, Administrador y Moderador acceden a esos datos cuando el perfil es privado.
+La Spec 201 eliminó la arista unilateral `Follow` como fuente de autorización; seguir es
+una relación social y nunca equivale a consentimiento de privacidad.
+
+---
+
+## 7. Modelo de dominio y persistencia
 
 ```mermaid
 erDiagram
@@ -85,13 +326,11 @@ erDiagram
     USER o|--o{ EMPLOYER_REQUEST : processes
     USER o|--o| EMPLOYER_REQUEST : provisioned_as
     EMPLOYER_REQUEST ||--o| EMPLOYER_ONBOARDING_OUTBOX : enqueues
-
     USER ||--o{ USER_CAREER : enrolls
     CAREER ||--o{ USER_CAREER : includes
     CAREER ||--o{ SUBJECT : defines
     SUBJECT ||--o{ SUBJECT_PREREQUISITE : subject
     SUBJECT ||--o{ SUBJECT_PREREQUISITE : prerequisite
-
     USER ||--o{ INQUIRY : authors
     SUBJECT ||--o{ INQUIRY : classifies
     INQUIRY ||--o{ COMMENT : contains
@@ -99,28 +338,24 @@ erDiagram
     USER ||--o{ COMMENT : writes
     INQUIRY ||--o{ REACTION : receives
     USER ||--o{ REACTION : creates
-    INQUIRY ||--o{ SOCIAL_ATTACHMENT : attaches
-    COMMENT ||--o{ SOCIAL_ATTACHMENT : attaches
     COMMENT ||--o{ COMMENT_REACTION : receives
     USER ||--o{ COMMENT_REACTION : creates
+    INQUIRY ||--o{ SOCIAL_ATTACHMENT : attaches
+    COMMENT ||--o{ SOCIAL_ATTACHMENT : attaches
     INQUIRY ||--o{ COMMUNITY_REPORT : reported
     USER ||--o{ COMMUNITY_REPORT : reports
-
     USER ||--o{ USER_INTERACTION : observes
     USER ||--o{ USER_INTERACTION : targeted
     USER ||--o{ MESSAGE : sends
     USER ||--o{ MESSAGE : receives
-
     SUBJECT ||--o{ ACADEMIC_RESOURCE : provides
     USER ||--o{ ACADEMIC_RESOURCE : uploads
     SUBJECT ||--o{ ACADEMIC_PROGRESS : tracks
     USER ||--o{ ACADEMIC_PROGRESS : owns
     USER ||--o{ ACADEMIC_PROGRESS : assigns
-
     USER ||--o{ JOB_OFFER : publishes
     JOB_OFFER ||--o{ JOB_APPLICATION : receives
     USER ||--o{ JOB_APPLICATION : applies
-
     USER ||--o{ NOTIFICATION : receives
     INQUIRY ||--o{ NOTIFICATION : groups
     USER ||--o{ NOTIFICATION_PREFERENCE : configures
@@ -128,152 +363,313 @@ erDiagram
     USER ||--o{ AUDIT_LOG : performs
 ```
 
-Entidades persistidas: `Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`, `Comment`, `Reaction`, `CommentReaction`, `SocialAttachment`, `CommunityReport`, `UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`, `NotificationPreference`, `ModerationAudit`, `AuditLog`, `MagicLink`, `EmployerRequest`, `EmployerOnboardingOutboxMessage`, `JobOffer`, `JobApplication`, `UserCvExperience`, `UserCvEducation`, `UserCvProject`, `UserCvSkill` y `UserCvLanguage`.
+### 7.1 Inventario persistido
 
-Campos destacados recientes:
+`Account`, `User`, `Career`, `UserCareer`, `Subject`, `SubjectPrerequisite`, `Inquiry`,
+`Comment`, `Reaction`, `CommentReaction`, `SocialAttachment`, `CommunityReport`,
+`UserInteraction`, `Message`, `AcademicResource`, `AcademicProgress`, `Notification`,
+`NotificationPreference`, `ModerationAudit`, `AuditLog`, `MagicLink`, `EmployerRequest`,
+`EmployerOnboardingOutboxMessage`, `JobOffer`, `JobApplication`, `UserCvExperience`,
+`UserCvEducation`, `UserCvProject`, `UserCvSkill` y `UserCvLanguage`.
 
-- `AcademicResource`: `Category`, `Version`, `FileUrl`, `ExternalUrl`, `IsActive`.
-- `JobApplication`: `Status` (`Pending`, `Reviewed`, `Rejected`) con indice unico por `JobOfferId + ApplicantId`.
-- `EmployerRequest`: identidad empresarial normalizada, estado, consentimiento, procesamiento, usuario aprovisionado, entrega de correo y `RowVersion`; email/CUIT activos son unicos.
-- `EmployerOnboardingOutboxMessage`: una fila por solicitud aprobada, lease, reintentos, proxima ejecucion y codigo de error sanitizado; no almacena token ni cuerpo del correo.
-- `AuditLog`: `ActorUserId`, `CorrelationId`, `Action`, `EntityName`, `EntityId`, snapshots JSON acotados.
-- `User.IsPublicProfile`: controla si terceros pueden ver bio, contacto, carreras, CV y metricas extendidas del perfil publico.
-- `SocialAttachment`: propietario exclusivo `InquiryId` XOR `CommentId`, URL, nombre original, MIME, tamano y orden; FKs restrictivas.
-- `Inquiry.PreferAttachmentCover`: conserva si la portada elegida es un adjunto o el video detectado; `Inquiry.IsHiddenByModerator` y `Comment.IsHiddenByModerator` separan visibilidad moderada de autoria/soft-delete.
-- `Comment.ReplyToUserId`: destinatario opcional de una respuesta dirigida. La API deriva y valida ese usuario desde un comentario visible del mismo `Inquiry`; la FK usa `DeleteBehavior.Restrict` y la respuesta siempre conserva el comentario raiz como `ParentCommentId`.
-- `UserInteraction`: arista social tipada con unicidad `ObserverId + TargetId + Type`; Follow y Mute pueden coexistir, Block elimina relaciones incompatibles y todas las FKs son restrictivas.
-- `CommentReaction`: reaccion unica por `CommentId + UserId`, con filtro de contenido activo y FKs restrictivas.
-- `Notification`: `GroupKey`, `AggregateCount`, `RelatedInquiryId`, `UpdatedAt` y `RowVersion` para agrupacion persistente y concurrencia optimista.
+### 7.2 Reglas relacionales
 
-## 5. Integridad y borrado
+- Relaciones de dominio usan `DeleteBehavior.Restrict`.
+- `Account`-`User` conserva cascade como excepción de agregado.
+- `Inquiry`/`Comment` filtran `IsActive` e `IsHiddenByModerator`.
+- `SocialAttachment` impone XOR entre Inquiry y Comment.
+- Reacciones son únicas por contenido/usuario.
+- `SubjectPrerequisite` prohíbe autorreferencia.
+- `JobApplication` es única por oferta/postulante.
+- Identidad Entra es única por proveedor/tenant/subject.
+- `RowVersion` protege notificaciones y solicitudes empresariales.
+- No se admiten shadow properties.
 
-- Las relaciones sociales, academicas, de publicaciones, comentarios, mensajes, empleos y postulaciones usan `DeleteBehavior.Restrict`.
-- `Inquiry` y `Comment` usan soft-delete de autor mediante `IsActive` y ocultamiento moderado mediante `IsHiddenByModerator`; ambos estados participan en filtros globales. Ocultar/restaurar exige rol, motivo y un `ModerationAudit` atomico.
-- `AcademicResource` y `JobOffer` usan estado activo para no perder trazabilidad.
-- La relacion 1:1 `Account`-`User` conserva cascade como excepcion explicita del agregado de identidad.
-- Todas las claves foraneas relevantes se modelan de forma explicita; no se admiten shadow properties.
+### 7.3 Trazabilidad
 
-## 6. Flujos principales
+- `Inquiry` y `Comment`: soft delete autoral y ocultamiento moderado separados.
+- `AcademicResource` y `JobOffer`: desactivación lógica.
+- `ModerationAudit`: acciones de moderación con actor/objetivo.
+- `AuditSaveChangesInterceptor`: snapshots acotados en `AuditLog`.
 
-### Publicacion con archivo
+---
+
+## 8. Diseño de módulos
+
+### 8.1 Muro y archivos
 
 ```mermaid
 sequenceDiagram
-    actor User
-    participant FE as React
+    actor User as Usuario
+    participant FE as Feed React
     participant Upload as POST /api/upload
     participant GQL as GraphQL
+    participant Social as SocialService
     participant DB as SQL Server
-    User->>FE: selecciona varios archivos y contenido
-    loop hasta 10 archivos / 15 MB agregados
-        FE->>Upload: multipart/form-data + JWT
-        Upload-->>FE: descriptor con URL, nombre, MIME y tamano
+    User->>FE: contenido y adjuntos
+    loop hasta 10 archivos / 15 MB
+        FE->>Upload: multipart + JWT
+        Upload-->>FE: descriptor seguro
     end
-    FE->>GQL: addInquiry(attachments[])
-    GQL->>DB: INSERT Inquiry + SocialAttachments
-    GQL-->>FE: Inquiry
+    FE->>GQL: addInquiry(input, attachments)
+    GQL->>Social: validar actor, carrera, materia y medios
+    Social->>DB: Inquiry + SocialAttachments
+    DB-->>FE: publicación persistida
 ```
 
-### Mensajeria privada y notificaciones
+`inquiriesPage` usa cursor opaco, orden estable, máximo 25 y scoping por carrera. El media
+grid limita altura, adapta portada/orientación, admite documentos, imágenes y hasta dos
+YouTube. PDF.js se carga diferido y rasteriza la primera página con cleanup.
 
-El historial se persiste en `Messages`. El envio publica un evento al topico privado del emisor y receptor; Apollo reconcilia historial, eventos y estado optimista. El widget mantiene hidratacion de no leidos y subscription mientras esta minimizado, sin depender del Header. Las notificaciones se persisten en `Notifications` y se publican por topico privado `notification:{userId}` respetando preferencias. Los eventos sociales se agrupan al escribir mediante clave unica por destinatario/objetivo/tipo, contador persistente y `RowVersion`; el upsert actualiza el deep-link al ultimo comentario relevante (`/feed?inquiryId={id}&commentId={id}`). Un `BackgroundService` configurable procesa como maximo 500 destinatarios por ciclo y hace upsert idempotente del recordatorio de mensajes con al menos una hora sin leer; cancelacion y fallos se registran sin detener la API.
+### 8.2 Comentarios y moderación
 
-### Recursos y progreso academico
+- Máximo dos niveles; respuestas adicionales usan mención.
+- `ReplyToUserId` deriva de un comentario visible del mismo Inquiry.
+- Likes son únicos y acciones propias no notifican.
+- Reportes evitan duplicados pendientes.
+- Autor edita/elimina; Moderador/Admin oculta/restaura con motivo y auditoría.
+- Silenciamiento se valida antes de leer o mutar estado social.
 
-Los recursos academicos se consultan por materia mediante `academicResources(subjectId, searchTerm, category)` y el alias compatible `resourcesBySubject(subjectId, searchTerm, category)`. Administradores, profesores y usuarios activos inscriptos en la carrera de la materia pueden cargar recursos; la lectura queda restringida por carrera salvo roles institucionales.
+### 8.3 Mensajería y notificaciones
 
-El progreso academico se persiste como un registro actual por estudiante y materia. Administradores y profesores asignan estado/nota mediante `upsertAcademicProgress`; el estudiante consulta solo su propio historial con `myAcademicProgress`.
+Mensajes persistidos se publican en topics privados. Apollo reconcilia historial paginado,
+eventos y optimismo. Notificaciones respetan preferencias y se agrupan con `GroupKey`,
+`AggregateCount`, `UpdatedAt` y `RowVersion`; el badge cuenta solo no leídas.
+El worker de recordatorios procesa hasta 500 destinatarios y hace upsert idempotente.
+Redis distribuye Pub/Sub; memoria sirve únicamente para una instancia local.
 
-### Adaptador SIU
+### 8.4 Académico
 
-La integracion SIU usa `ISiuIntegrationService` para aislar la plataforma externa. La implementacion actual `MockSiuIntegrationService` devuelve calificaciones simuladas; `AcademicService.SyncSiuGradesAsync` hace upsert idempotente en `AcademicProgress`, validando cuenta local, rol estudiante y pertenencia a la carrera.
+- Recursos por materia/carrera con lectura y carga autorizadas según rol/inscripción.
+- Progreso actual por Estudiante/Materia con nota, estado, notas y asignador.
+- Estudiante lee lo propio; Admin posee alcance global.
+- Profesor escribe y lista solo dentro de materias pertenecientes a sus carreras
+  vinculadas; la política se aplica en servicio y cuenta con regresión allow/deny.
+- `ISiuIntegrationService` aísla SIU; el adaptador actual es mock idempotente.
 
-### Empleos y Gestor de Postulaciones
+### 8.5 Bolsa de Trabajo
 
 ```mermaid
 sequenceDiagram
     actor Employer as Empleador
     actor Applicant as Estudiante/Egresado
-    participant FE as React Jobs
     participant GQL as GraphQL
     participant Jobs as JobService
     participant Notify as NotificationService
     participant Email as IEmailSender
     participant DB as SQL Server
-    Employer->>FE: publica oferta laboral
-    FE->>GQL: createJobOffer
-    GQL->>Jobs: validar rol y persistir JobOffer
+    Employer->>GQL: createJobOffer
+    GQL->>Jobs: validar rol y persistir
     Jobs->>DB: INSERT JobOffer
-    GQL->>Notify: notificar nueva oferta
-    GQL-->>FE: oferta creada
-    Applicant->>FE: postularse
-    FE->>GQL: applyToJob
-    GQL->>Jobs: validar rol y unicidad
+    Applicant->>GQL: applyToJob
+    GQL->>Jobs: validar rol, actividad y unicidad
     Jobs->>DB: INSERT JobApplication
-    Employer->>FE: cambia estado
-    FE->>GQL: updateApplicationStatus
-    GQL->>Jobs: validar ownership de oferta
-    Jobs->>DB: UPDATE JobApplication.Status
-    GQL->>Notify: notificar en plataforma
-    GQL->>Email: enviar correo si Reviewed/Rejected
+    Employer->>GQL: updateApplicationStatus
+    GQL->>Jobs: validar ownership
+    Jobs->>DB: UPDATE Status
+    GQL->>Notify: notificar
+    GQL->>Email: correo Reviewed/Rejected
 ```
 
-La mutacion de estado no revierte la postulacion si falla el proveedor SMTP; el correo es un side effect operacional y se registra como warning.
+Un fallo SMTP no revierte el cambio de estado. La UI se denomina Gestor de Ofertas y
+Postulaciones, sin prometer un sistema de selección empresarial completo.
 
-### Onboarding B2B de empleadores
+### 8.6 Onboarding B2B
+
+Honeypot se procesa antes de PII; email/CUIT se normalizan, se exige consentimiento y la
+respuesta es genérica. Admin aprueba/rechaza/reintenta. La aprobación serializable fija rol
+Empleador y encola correo. El audit no copia el motivo sensible de rechazo.
+
+### 8.7 CV y credenciales
+
+El CV usa tablas relacionales para experiencia, educación, proyectos, skills e idiomas.
+Una plantilla reutilizable gobierna impresión. El progreso puede exportarse como CSV y la
+ruta `/certificate/{id}` expone solo progreso aprobado/activo. Open Graph completo queda
+condicionado a SSR o HTML de servidor.
+
+---
+
+## 9. Arquitectura frontend
+
+### 9.1 Composición
+
+1. `GlobalErrorBoundary` envuelve Apollo, Theme y aplicación.
+2. `ThemeProvider` gestiona Clean Tech/Tech Noir e impresión.
+3. Router separa público, privado, callback Microsoft y certificados.
+4. `AuthProvider` es la frontera de identidad local.
+5. `NotificationProvider` escucha solo con sesión válida.
+6. Estudiante sin carreras queda bloqueado en onboarding hasta refetch de `me`.
+
+### 9.2 Apollo y sesión
+
+- `HttpLink` atiende Query/Mutation y `GraphQLWsLink` Subscription mediante `split`.
+- Bearer token por HTTP y connection params por WS.
+- Type policies controlan identidad y merges paginados.
+- Logout/expiración limpia cache, storage y WS e invalida respuestas por epoch.
+- Callback Entra canjea una vez por flow ID aun con Strict Mode.
+- Redirects y deep-links se sanitizan a rutas internas.
+
+### 9.3 Ciclo de vida
+
+- Suscripciones/listeners limpian recursos en `useEffect`.
+- Media fetch usa abort; Blob URLs y observers se revocan.
+- Loading, empty, error y retry forman parte del contrato visual.
+- Token Entra vive solo en memoria/MSAL `sessionStorage`.
+
+---
+
+## 10. Datos, rendimiento y concurrencia
+
+- `AddPooledDbContextFactory` crea contextos y registra auditoría.
+- Split query global reduce explosión cartesiana.
+- Lecturas aplican `AsNoTracking` y `AsSplitQuery` según grafo.
+- Batch DataLoaders agrupan métricas y reportes.
+- `CancellationToken` llega a EF y efectos compatibles.
+- Feed máximo 25; paging global default 20/máximo 50.
+- Mensajes, empleos, estudiantes y listados Admin tienen límites explícitos.
+- Magic Link es atómico; notificaciones y solicitudes usan concurrencia optimista.
+- Seed persiste por fases, limpia `ChangeTracker` y usa IDs determinísticos.
+
+---
+
+## 11. Adaptadores por ambiente
+
+| Interfaz | Development/aceptación | Producción objetivo | Regla |
+|---|---|---|---|
+| SQL | SQL Server Docker + SQL Auth | SQL administrado con TLS validado | Secretos fuera de Git |
+| Pub/Sub | In-memory o Redis local | Redis administrado | Memoria no escala horizontalmente |
+| Storage | `wwwroot/uploads` | Cloudinary | Disco local no es distribuido |
+| Email | Pickup `.eml` o Mailpit | SMTP real | Producción no degrada a pickup |
+| SIU | Mock | Adaptador real futuro | No afirmar integración real |
+| Entra | Deshabilitado sin config | Dos App Registrations | Config parcial habilitada falla al iniciar |
+
+Los fallbacks facilitan desarrollo; no equivalen a verificación productiva.
+
+---
+
+## 12. Despliegue
 
 ```mermaid
-sequenceDiagram
-    actor Company as Empresa
-    actor Admin as Administrador
-    participant FE as React
-    participant GQL as GraphQL
-    participant Service as EmployerRequestService
-    participant DB as SQL Server
-    participant Outbox as Outbox Worker
-    participant Email as IEmailSender
-    Company->>FE: completa solicitud y consentimiento
-    FE->>GQL: submitEmployerRequest(input)
-    GQL->>Service: limitar, normalizar y validar
-    Service->>DB: INSERT Pending
-    GQL-->>FE: confirmacion generica
-    Admin->>GQL: approveEmployerRequest(id)
-    GQL->>Service: validar rol e idempotencia
-    Service->>DB: transaccion request + account + user + audit + outbox
-    GQL-->>Admin: Approved / Pending delivery
-    Outbox->>DB: adquirir lease
-    Outbox->>Email: enviar Magic Link
-    Outbox->>DB: marcar Delivered o programar reintento
+%%{init: {"flowchart": {"curve": "linear"}}}%%
+flowchart TB
+    Browser["Browser"] --> Nginx["Nginx / React"]
+    Nginx -->|"/graphql HTTP + WS"| API["API .NET 8"]
+    Nginx -->|"/api/upload + /uploads"| API
+    API --> SQL["SQL Server 2022"]
+    API --> Redis["Redis"]
+    API --> SMTP["SMTP"]
+    API --> Cloud["Cloudinary opcional"]
+    API --> Entra["Microsoft Entra ID"]
 ```
 
-La solicitud publica no permite enumerar cuentas. Solo el dominio administrativo expone
-PII. El rechazo conserva el motivo en `EmployerRequest`, mientras `AuditLog` registra
-solo que existio un motivo. La aprobacion fija el rol `Empleador`; no acepta un rol desde
-el cliente. El Outbox desacopla SMTP de la transaccion sin perder trazabilidad.
+### 12.1 Local
 
-### Privacidad de perfil y smoke SMTP
+- `docker-compose.yml`: SQL local canónico.
+- `docker-compose.acceptance.yml`: Redis y Mailpit para pruebas finitas.
+- Backend/Vite usan secrets/env fuera de Git.
+- Vite proxyea GraphQL, WS, upload y archivos.
+- Seed demo es idempotente, configurable y deshabilitado por defecto en Production.
 
-`toggleProfilePrivacy(isPublic)` solo actua sobre el usuario autenticado. `publicProfile` y `searchPublicProfiles` devuelven identidad minima para perfiles privados y solo exponen datos sensibles cuando el perfil es publico, el visor es el duenio, el visor tiene rol `Administrador`/`Moderador` o existe una relacion `Follow` desde el visor al usuario objetivo. Esta decision evita confiar en ocultamiento de UI y reduce fuga accidental de CV, contacto, carreras y metricas sociales.
+### 12.2 Compose productivo
 
-`testSmtpConnection(targetEmail)` esta restringida a `Administrador`, valida formato de correo con `MailAddress`, invoca `IEmailSender` y transforma fallos de proveedor en errores GraphQL controlados sin exponer secretos SMTP.
+`docker-compose.prod.yml` contiene SQL, Redis, API y Nginx, Dockerfiles multi-stage,
+health checks, volúmenes y variables obligatorias. Es una plantilla implementada, no un
+despliegue certificado. La Spec 201 retiró la cadena SQL embebida con trust bypass: el
+destino debe inyectar `ONEITB_DB_CONNECTION_STRING` como secreto, con `Encrypt=True`,
+`TrustServerCertificate=False` y una cadena de confianza verificable.
 
-### Topologia productiva
+### 12.3 Escalamiento
 
-`docker-compose.prod.yml` define SQL Server 2022, Redis 7, API .NET y frontend Nginx. Nginx sirve los estaticos de React con fallback SPA y proxyea `/graphql`, `/api` y `/uploads` a la API, preservando WebSockets para subscriptions. La API selecciona Redis Subscriptions cuando existe `ConnectionStrings:Redis`; sin esa variable conserva InMemory para desarrollo local.
+La API puede replicarse cuando Redis y storage son compartidos. Disco local impide
+coherencia horizontal. El proxy debe preservar WebSocket; el destino requiere balanceador,
+health probes y observabilidad central.
 
-### Audit Trail, constancias y credenciales publicas
+---
 
-La trazabilidad transversal usa `AuditSaveChangesInterceptor`, registrado en EF Core, para escribir `AuditLog` sobre cambios de entidades criticas. La query `auditLogs(first, entityName, actorUserId)` esta restringida a administradores.
+## 13. Seguridad y fronteras de confianza
 
-El modulo academico permite exportar el progreso propio como CSV e imprimir una constancia formal desde React sin agregar dependencias de PDF. Para credenciales compartibles, `publicCertificate(id)` devuelve solo progreso aprobado y activo; la ruta publica `/certificate/{id}` renderiza una tarjeta institucional con enlace de compartir en LinkedIn. Open Graph perfecto para crawlers queda condicionado a SSR o HTML renderizado desde backend.
+| Frontera | Amenaza | Control actual | Límite |
+|---|---|---|---|
+| Browser -> GraphQL | Suplantación/DoS | JWT, roles, ownership, rate/cost/depth | Calibrar con carga |
+| Browser -> upload | Archivo hostil | Auth, tipo, magic bytes, estructura y tamaño | Antivirus/CDR |
+| Lectura `/uploads` | Acceso directo | Nombre GUID y masking de metadatos | Sin autorización por objeto |
+| Password | Fuerza bruta | BCrypt, lockout y error genérico | Benchmark destino |
+| Magic Link | Enumeración/replay | Genérico, digest, single-use y limiter | SMTP real |
+| Entra -> API | Token ajeno | RS256, audience, scope, tid, oid y dominio | Tenant real |
+| Solicitud B2B | Spam/PII/privilegio | Honeypot, consentimiento, limiter y Admin | Monitoreo |
+| API -> SQL | MITM/credenciales | TLS y secretos externos | Certificado validado |
+| Sesión A -> B | Session bleed | Clear store, cierre WS y epoch | Regresión final |
 
-## 7. Estado y limites conocidos
+---
 
-- Redis Pub/Sub y Cloudinary son adaptadores condicionales. SMTP cuenta con query de smoke admin-only y es obligatorio en Production; Development usa un pickup local ignorado. Para elevar servicios externos a `[V]` se requiere ejecutarlos con secretos productivos reales.
-- Microsoft Entra queda deshabilitado cuando faltan sus identificadores publicos. Si `EntraId:Enabled=true`, una configuracion parcial detiene el arranque. La aceptacion `[V]` requiere consentimiento del tenant y una cuenta institucional real; la SPA nunca recibe un client secret.
-- El hub academico y el Gestor de Postulaciones cuentan con recorridos autenticados de Spec 194 y smoke GraphQL sobre la base reconstruida en Spec 196. La validacion visual final en el equipo de defensa sigue siendo una actividad manual, no una brecha del modelo.
-- El runtime local canonico usa SQL Server 2022 en Docker con SQL Auth por `dotnet user-secrets`; LocalDB/SQLEXPRESS con Windows Auth queda descartado para validacion de specs.
-- El seeding demo es idempotente, configurable y deshabilitado por defecto en produccion. Cuando se habilita requiere `Seed:DemoPassword`/`ONEITB_SEED_DEMO_PASSWORD`, recibe `IPasswordHasher` desde el composition root y no resetea passwords existentes.
-- La topologia demo canonica comprende 15 cuentas/usuarios, 9 carreras institucionales, 6 materias de muestra, recursos y progreso academico, CV relacional, grafo social, mensajeria, notificaciones y empleos. Cada fase persiste y limpia el `ChangeTracker`; una segunda ejecucion conserva exactamente el inventario.
-- La reconstruccion demo es una operacion separada y explicita: valida destino local, crea y verifica backup, reaplica migraciones y ejecuta dos seeds. Esta prohibida para produccion y no elimina el volumen Docker ni los uploads.
-- El cliente mobile React Native/Expo esta planificado, pero no existe codigo versionado; antes de implementarlo se deben definir queries/fragments compartidos con el cliente Web para no duplicar logica de Apollo Cache.
+## 14. Observabilidad y recuperación
+
+- `CorrelationIdMiddleware` identifica solicitudes y se propaga a logs/auditoría.
+- Logging usa consola/debug; falta backend central aceptado.
+- `/health/live` verifica vida del proceso; `/health/ready` comprueba conectividad SQL y
+  `/health` conserva el agregado. Los adaptadores externos requieren probes/alertas del
+  ambiente de destino.
+- `AuditLog` cubre cambios críticos y `ModerationAudit` semántica específica.
+- Workers registran fallos y continúan según reintento.
+- Rebaseline demo valida destino, crea backup, migra y ejecuta seed dos veces.
+- Producción requiere alertas, retención, backup/restore, rotación, rollback e incident response.
+
+---
+
+## 15. Decisiones y brechas vigentes
+
+### 15.1 Decisiones consolidadas
+
+| Decisión | Consecuencia |
+|---|---|
+| GraphQL de negocio; REST solo upload | Contratos centralizados y binarios desacoplados |
+| JWT local canónico | Password, Magic Link y Entra convergen |
+| `DeleteBehavior.Restrict` (AD-004) | Evita cascadas; exige soft delete/eliminación explícita |
+| SQL Docker local | Evita Windows Auth/LocalDB |
+| Adaptadores Redis/Cloudinary/SMTP | Reemplazo por ambiente |
+| CV relacional | Consultable y evolucionable |
+| Outbox empresarial | SMTP fuera de transacción con reintentos |
+| Soft delete + hide moderado | Autoría y auditoría sin edición de terceros |
+| Código/GraphQL inglés, UI español (AD-012) | Consistencia técnica e institucional |
+
+### 15.2 Brechas
+
+| ID | Severidad recomendada | Brecha | Tratamiento |
+|---|---|---|---|
+| `GAP-AUTH-01` | Alta piloto | **Resuelta:** registro público Student-only, dominio backend, anti-enumeración y limiter | Mantener pruebas y aprovisionar roles staff por flujo confiable |
+| `GAP-AUTH-02` | Alta piloto | **Resuelta:** Profesor acotado a materias de carreras vinculadas | Evolución opcional a Profesor-Materia/Cursada si se requiere granularidad adicional |
+| `GAP-PRIV-01` | Alta privacidad | **Resuelta:** Follow ya no habilita perfil privado | Mantener consentimiento explícito si se incorpora Follow aprobado |
+| `GAP-FILE-01` | Alta piloto externo | **Aceptada solo para demo controlada:** `/uploads` sin autorización por objeto | Storage privado, URL firmada o endpoint autorizado antes de piloto abierto |
+| `GAP-INFRA-01` | Alta producción | **Remediada en plantilla:** conexión completa externa sin trust bypass predeterminado | Proveer CA/endpoint real y ejecutar smoke TLS en destino |
+| `GAP-OPS-01` | Media | **Parcial:** correlation ID, logs estructurados y probes live/ready; sin plataforma central aceptada | Integrar métricas/traces, alertas y respuesta a incidentes en destino |
+
+`GAP-FILE-01` y la aceptación externa de infraestructura/observabilidad no bloquean una
+demostración local con datos demo y usuarios conocidos. Sí bloquean una afirmación de
+producción pública hasta que exista evidencia del ambiente de destino.
+
+### 15.3 Gates externos
+
+- Microsoft Entra con App Registrations, consentimiento y cuenta Microsoft 365.
+- SMTP, Redis administrado y Cloudinary con proveedores reales.
+- Benchmark BCrypt y realtime con dos sesiones sobre el SHA candidato.
+- Antivirus/CDR antes de exposición amplia.
+- Mobile/Azure como evolución postdefensa.
+
+---
+
+## 16. Trazabilidad y mantenimiento
+
+| Necesidad | Fuente |
+|---|---|
+| Alcance, actores y reglas | `docs/project_docs/scope-and-requirements.md` |
+| Estado, prioridades y tiempos | `docs/project_docs/ROADMAP.md` |
+| Riesgos y dictamen | `docs/audit/FINAL_AUDIT_REPORT.md` |
+| Instalación, secretos y recuperación | `docs/audit/RUNBOOK_DEV.md` |
+| Historial | `docs/audit/DEVELOPMENT_LOG.md` |
+| Diagramas derivados | `docs/academic/04-design-diagrams.md` |
+| Memoria | `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` |
+
+Este documento se actualiza ante cambios en entidades/relaciones, contratos, identidad,
+roles, privacidad, adaptadores, topología, caché, realtime, workers o fronteras de confianza.
+Cada cambio debe propagarse al alcance, Roadmap, auditoría, runbook, diagramas y memoria.
+La evidencia concreta permanece en la spec o el informe de auditoría, no se duplica aquí.

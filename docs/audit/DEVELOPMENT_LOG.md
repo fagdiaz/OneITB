@@ -1,9 +1,119 @@
-# Historial de Desarrollo y Cambios - OneITB23
+# Historial de desarrollo y cambios - OneITB23
 
-Este archivo registra las specs y cambios completados que tienen respaldo en el codigo o la documentacion vigente, en orden cronologico inverso.
-La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
+Este archivo conserva la trazabilidad técnica de las especificaciones y cambios con
+respaldo en el repositorio. Las entradas están ordenadas de la más reciente a la más
+antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloque.
+
+**Criterio de lectura**:
+
+- Cada número de Spec tiene una única entrada principal. Las ampliaciones de una misma
+  Spec se conservan como subsecciones de esa entrada, no como cierres independientes.
+- Las validaciones consignadas describen la evidencia disponible en la fecha del cambio;
+  no sustituyen el estado vigente ni una nueva prueba de regresión.
+- El estado operativo actual, los pendientes y los indicadores `[I]`/`[V]` se consultan
+  exclusivamente en [`ROADMAP.md`](../project_docs/ROADMAP.md).
+- Las limitaciones y riesgos vigentes se consultan en
+  [`FINAL_AUDIT_REPORT.md`](FINAL_AUDIT_REPORT.md). Ante una contradicción, prevalece la
+  evidencia más reciente y reproducible.
+- Desde la Spec 098 se aplica el protocolo Speckit. Las entradas anteriores se mantienen
+  como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+
+## [2026-08-03] - Spec 201: cierre de auditoría, autorización y evidencia
+
+* **Objetivo**: convertir `temp_audit_review.md` en remediaciones verificables y separar
+  con rigor lo resuelto en código de los gates manuales, externos y de release.
+* **Seguridad y autorización**:
+  - El registro público asigna exclusivamente `Estudiante`, valida
+    `@itbeltran.com.ar` en backend y frontend, normaliza la identidad, usa respuesta
+    genérica ante duplicados y aplica limitación por IP/email con HMAC, memoria acotada y
+    adaptador Redis.
+  - El Profesor solo puede crear/moderar recursos, listar estudiantes y actualizar
+    progreso en materias de carreras vinculadas por `UserCareer`; Administrador conserva
+    alcance global y Estudiante quedó excluido de escritura académica.
+  - Follow dejó de ser una concesión implícita para CV, contacto o carreras de perfiles
+    privados; solo propietario, Administrador y Moderador mantienen acceso sensible.
+* **Infraestructura y resiliencia**:
+  - `docker-compose.prod.yml` exige `ONEITB_DB_CONNECTION_STRING` externa y ya no incluye
+    `TrustServerCertificate=True` como valor rastreado.
+  - La API agrega `/health/live` y `/health/ready`; readiness ejecuta `CanConnectAsync`
+    mediante `IDbContextFactory` y conserva logging sanitizado con correlation ID.
+  - Se corrigió el carácter de reemplazo visible en el correo de registro.
+* **Evidencia finita sobre el worktree**:
+  - QA pre-implementación: PASS; `git diff --check` inicial: PASS.
+  - Backend Release: 0 advertencias y 0 errores.
+  - Pruebas focalizadas de registro/academia/privacidad: 32/32.
+  - Suite backend completa: 198/198; frontend: 144/144.
+  - Vite: 551 módulos, 0 errores, 776 ms; EF Core: sin cambios pendientes.
+* **Pendiente honesto**: `GAP-FILE-01` solo está aceptado para demo controlada;
+  observabilidad central y TLS SQL real requieren ambiente de destino. El gate combinado
+  debe repetirse sobre un SHA limpio. Diagramas, DOCX/PDF, impresión y revisión visual
+  siguen pendientes y no fueron convertidos artificialmente en PASS.
+
+## [2026-08-03] - Spec 200: Microsoft Entra redirect auth hardening
+
+* **Objetivo**: eliminar `block_nested_popups` y hacer que el acceso Microsoft 365 sea
+  compatible con mobile, accesible e idempotente sin cambiar el contrato backend.
+* **Resultado**:
+  - `MicrosoftInstitutionalLogin` ya no abre popups ni canjea tokens: registra un
+    destino interno seguro, bloquea todos los estados MSAL ocupados y ejecuta
+    `loginRedirect` una sola vez.
+  - La configuración exige `/auth/microsoft/callback`, usa
+    `navigateToLoginRequestUrl: false` y separa el destino de logout `/login`.
+  - `MicrosoftRedirectCallback` es una vista aislada sin acciones de autenticación;
+    selecciona la cuenta retornada, adquiere el access token delegado del scope OneITB,
+    ejecuta `microsoftLogin` y atraviesa `AuthContext.login`, que purga la sesión Apollo
+    anterior antes de hidratar la nueva identidad.
+  - `microsoftRedirectFlow.js` conserva únicamente flow ID, destino sanitizado y
+    timestamp en `sessionStorage`. Una promesa compartida evita canjes duplicados ante
+    rerenders o Strict Mode; un fallo libera la barrera para un nuevo intento explícito.
+  - Se corrigió una carrera detectada por tests: la limpieza MSAL posterior a un error
+    ya no reemplaza el diagnóstico específico por un mensaje genérico.
+* **Evidencia finita**:
+  - Speckit QA HIGH: PASS; backend Release baseline: 0 warnings / 0 errores.
+  - Pruebas focalizadas: 41/41; suite frontend completa: 144/144.
+  - Vite: 551 módulos, 0 errores, 1,69 s.
+  - Búsqueda estática: cero llamadas activas a `loginPopup` o `acquireTokenPopup`.
+  - La cuenta del evento MSAL exitoso queda activa; múltiples cuentas sin identidad
+    activa fallan de forma controlada en vez de seleccionar una arbitrariamente.
+* **Pendiente honesto**: registrar el callback exacto en las App Registrations y ejecutar
+  el recorrido real Microsoft 365 en navegador; no se levantaron servidores.
+
+## [2026-07-31] - Spec 199: UX B2B y onboarding académico obligatorio
+
+* **Objetivo**: estabilizar el acceso Microsoft 365, hacer visible el alta empresarial
+  desde la navegación pública y evitar que un Estudiante nuevo ingrese a un Feed vacío
+  por no tener carreras asociadas.
+* **Resultado**:
+  - `microsoftEntraConfig.js` centraliza la configuración pública, prioriza
+    `VITE_ENTRA_CLIENT_ID`, admite el alias temporal solo como fallback y acepta
+    únicamente un tenant GUID o `common`; proveedor MSAL y Login consumen la misma
+    resolución fail-closed.
+  - El Header compartido incorpora `Soy empresa` en escritorio y menú móvil, mientras
+    Landing reutiliza la misma ruta y terminología para `/empleos/solicitud`.
+  - `RequireAcademicOnboarding` se ejecuta antes de `PrivateLayout`, compara
+    `me.id` con la sesión vigente y bloquea exclusivamente a `Estudiante` sin carreras.
+  - `/onboarding/academic` ofrece catálogo activo, selección múltiple accesible,
+    reintento y cierre de sesión. La aplicación solo se habilita cuando
+    `linkUserToCareers` finaliza y un refetch de `me` confirma la asociación persistida.
+  - Se corrigió el contrato Apollo de `linkUserToCareers`, que solicitaba campos de
+    payload inexistentes aunque HotChocolate devuelve una lista de carreras.
+  - La documentación canónica se alineó con Microsoft Entra organizacional
+    multi-tenant y con el nuevo flujo académico, sin alterar el 117/117 del Roadmap.
+* **Archivos clave**:
+  - `FrontEnd/OneItb-FE/src/auth/microsoftEntraConfig.js`
+  - `FrontEnd/OneItb-FE/src/Components/onboarding/`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Nav.jsx`
+  - `FrontEnd/OneItb-FE/src/router/Routing.jsx`
+  - `docs/project_docs/ROADMAP.md`
+* **Validaciones ejecutadas**:
+  - Speckit QA preimplementación PASS; baseline backend 0 warnings/0 errores.
+  - Tests focalizados 34/34 y suite frontend completa 118/118 PASS.
+  - Build Vite productivo PASS en 686 ms.
+* **Estado**: Implementada `[I]`. No se iniciaron servidores. La regresión visual
+  responsive, el flujo real con una cuenta sin carreras y la aceptación Microsoft 365
+  permanecen como verificaciones manual/externa.
 
 ## [2026-07-30] - Spec 198: Onboarding B2B de empleadores
 
@@ -44,8 +154,10 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
 ## [2026-07-30] - Spec 197: Microsoft Entra Institutional SSO
 
 * **Objetivo**: Reemplazar el plan Google OAuth por una integracion institucional
-  Microsoft Entra ID/Microsoft 365 single-tenant, sin retirar password local ni Magic
-  Link de empleadores y sin usar tokens externos para autorizar resolvers OneITB.
+  Microsoft Entra ID/Microsoft 365 (base inicial acotada al tenant institucional,
+  ampliada a autoridad organizacional `common` por Spec 199), sin retirar password
+  local ni Magic Link de
+  empleadores y sin usar tokens externos para autorizar resolvers OneITB.
 * **Resultado**:
   - React integra MSAL Browser/React con Authorization Code + PKCE, autoridad del tenant,
     scope delegado de la API, cache en `sessionStorage`, boton institucional condicional
@@ -1380,7 +1492,7 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/index.css`
   - `specs/152-master-quality-interconnectivity-fixes/evidence.md`
 
-## [2026-06-30] - Spec 152: Header Spotlight Effect (superseded by Master Quality)
+### Entrega inicial integrada en la Spec 152: Header Spotlight Effect
 
 * **Objetivo**: Implementar un efecto "Spotlight" interactivo en el Header principal y mejorar el relieve interactivo de los elementos de navegación en hover.
 * **Resultado**:
@@ -1499,7 +1611,7 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `FrontEnd/OneItb-FE/src/Components/layout/private/PrivateLayout.jsx`
   - `specs/147-profile-cv-print-styles/` (spec.md, tasks.md ampliados a v2)
 
-## [2026-06-29] - Spec 146: Data Normalization (Nombres propios)
+## [2026-06-29] - Hotfix: normalización de nombres propios
 
 * **Objetivo**: Interceptar cadenas de texto (nombres, roles, instituciones, etc.) en los servicios de Registro y Edición de Perfil para normalizarlas automáticamente a Title Case antes de persistir en Entity Framework Core.
 * **Resultado**:
@@ -1680,7 +1792,7 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `API Graphql/Services/Users/IUsersService.cs` y `UsersService.cs`
   - `API Graphql/Services/Accounts/IAccountService.cs` y `AccountsService.cs`
 
-## [2026-06-26] - Nullability Strict Fix (Spec: 140-nullability-strict-fix)
+### Implementación inicial consolidada en la Spec 140: Nullability Strict Fix
 
 * **Objetivo**: Revertir la supresión de advertencias `<NoWarn>` introducida en los quick wins, habilitar validación estricta de nullability (`<Nullable>enable</Nullable>`) y solucionar el problema real de raíz en el código fuente de C#.
 * **Resultado**:
@@ -2365,6 +2477,10 @@ La entrada mas reciente debe agregarse inmediatamente debajo de este bloque.
   - `specs/098-feed-stabilization/`
 
 ---
+
+**Corte histórico**: a partir de la siguiente entrada comienza el registro previo a la
+adopción formal del protocolo Speckit. Se conserva para trazabilidad y no debe utilizarse
+como descripción del contrato o del estado operativo actual.
 
 ## [2026-06-13] - Documentation: Stabilization Governance and Feed Baseline (Rama: 049-estabilizacion)
 

@@ -5,7 +5,7 @@ import { useForm } from '../../hooks/useForm'
 import { ADD_USER } from '../../data/graphql/mutations/addUser'
 import { GET_CAREERS } from '../../data/graphql/queries/careers'
 
-const PUBLIC_ROLES = ['Estudiante', 'Profesor', 'Egresado']
+const PUBLIC_ROLES = ['Estudiante']
 
 export const Register = () => {
   const { form, changed } = useForm({ role: 'Estudiante' })
@@ -55,7 +55,7 @@ export const Register = () => {
     if (!form.surname?.trim()) return setValidationError('El campo Apellidos es obligatorio.')
     const normalizedEmail = form.email?.trim().toLowerCase()
 
-    if (!normalizedEmail) return setValidationError('El campo Correo electr�nico es obligatorio.')
+    if (!normalizedEmail) return setValidationError('El campo Correo electrónico es obligatorio.')
     if (!form.password) return setValidationError('El campo Contraseña es obligatorio.')
     if (!form.confirmPassword) return setValidationError('Confirma la contraseña.')
 

@@ -1,36 +1,61 @@
-# Roadmap unico de OneITB23
+# Roadmap único de OneITB23
 
-**Ultima revision**: 2026-07-30
+**Ultima revision**: 2026-08-03
 
-**Estado global**: 100% (117 de 117 items)
+## 1. Estado ejecutivo y criterio de medición
 
-**Feature Complete funcional core**: 100%. Las remediaciones 186-193 cuentan con
-evidencia automatizada y aceptacion operativa local. Las Specs 194-196 verificaron los
-recorridos principales, la infraestructura local y la base demo canonica. La Spec 197
-implemento el acceso institucional Microsoft Entra ID con Authorization Code + PKCE,
-validacion backend del access token y canje por el JWT canonico de OneITB. La aceptacion
-contra el tenant real permanece como gate externo y no se contabiliza como `[V]`.
-La Spec 198 incorporo el onboarding B2B de empresas con solicitud publica, revision
-administrativa, aprovisionamiento transaccional de cuentas `Empleador` y entrega
-asincronica de Magic Link mediante Outbox.
+| Indicador | Estado | Evidencia o alcance |
+|---|---|---|
+| Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
+| Verificación runtime `[V]` | **45 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
+| Implementación comprobada `[I]` | **72 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
+| Backend automatizado más reciente | **198/198** | Ejecución completa del worktree de Spec 201; todavía no equivale a evidencia sobre SHA candidato |
+| Frontend automatizado más reciente | **144/144** | Ejecución completa del mismo worktree de Spec 201; falta repetirla tras congelar el SHA |
+| Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; preparación documental y logística pendiente |
 
-Este archivo concentra avance funcional, estabilizacion, deuda tecnica y prioridades. No existe un roadmap paralelo.
-El porcentaje global cuenta los items funcionales y de auditoria; P5/P6 describen
-evolucion futura de despliegue y ecosistema movil fuera del cierre academico.
+El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de
+auditoría incluidas en el denominador están implementados. No significa despliegue cloud
+productivo ni finalización material de la defensa. La aceptación con proveedores reales,
+la regresión visual final, la exportación DOCX/PDF, la presentación y la logística se
+administran como gates separados y no inflan ni reducen el 117/117.
 
-## Convencion de estado
+Las Specs 194-196 verificaron los recorridos principales, la infraestructura local y la
+base demo canónica. La Spec 197 implementó Microsoft Entra ID; la 198 incorporó el alta
+B2B de empleadores; la 199 agregó configuración multi-tenant y onboarding académico; y
+la 200 reemplazó el popup institucional por redirect, callback aislado e intercambio
+GraphQL idempotente. La aceptación Microsoft 365 real permanece en `PR-04`.
+
+Este documento es la única fuente de avance, estabilización, deuda y prioridades. Ante
+una contradicción prevalecen, en este orden: código y esquema ejecutado, evidencia de la
+spec, este roadmap y documentación narrativa. No existe un roadmap paralelo.
+
+### 1.1 Qué queda fuera del 117/117
+
+1. **Cierre técnico del corte**: integración Git, worktree limpio, gates de predefensa,
+   regresión manual por roles, realtime con dos sesiones y congelamiento del SHA.
+2. **Entrega académica**: portada definitiva, diagramas exportados, DOCX/PDF, presentación,
+   guion, ensayo, impresión y respaldos.
+3. **Gates externos de producción**: SMTP público, Redis administrado, Cloudinary real,
+   aceptación Microsoft Entra, benchmark BCrypt, observabilidad y antivirus/CDR.
+4. **Evolución posterior**: Azure App Service/SQL y ecosistema móvil.
+
+## 2. Convención de estados
 
 - `[x] [V]`: completado y verificado mediante runtime.
 - `[x] [I]`: implementado con evidencia de codigo, build, migracion o prueba aislada; puede requerir regresion runtime.
 - `[ ] [P]`: pendiente.
 - `[ ] [B]`: implementacion o validacion bloqueada por una condicion concreta.
 
-Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre implementacion y verificacion.
+Los porcentajes cuentan ítems `[x]`. La etiqueta conserva la diferencia entre
+implementación y verificación. Un ítem `[I]` no debe promoverse a `[V]` por inferencia:
+requiere evidencia runtime proporcional al riesgo y al contrato afectado.
 
-## Modulo 1 - Identidad, cuentas y seguridad: 100% (9/9)
+## 3. Alcance funcional consolidado
+
+### 3.1 Módulo 1 - Identidad, cuentas y seguridad: 100% (9/9)
 
 - [x] [V] Relacion 1:1 `Account`-`User` y passwords BCrypt `char(60)`.
-- [x] [V] Registro y login con JWT.
+- [x] [V] Registro estudiantil institucional y login con JWT: dominio backend, anti-enumeración y limitador específico por origen/identidad.
 - [x] [V] Bloqueo de acceso para cuentas inactivas.
 - [x] [V] Expiracion JWT, pipeline de autenticacion y CORS restringido.
 - [x] [V] Sesion frontend normalizada sobre `token` y `user`.
@@ -39,7 +64,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Suite automatizada backend de registro, login, cuentas inactivas y autorizacion administrativa.
 - [x] [I] Lockout persistente por cuenta ante fuerza bruta de login, con tests automatizados.
 
-## Modulo 2 - Perfiles e identidad social: 100% (8/8)
+### 3.2 Módulo 2 - Perfiles e identidad social: 100% (8/8)
 
 - [x] [V] Perfil publico y perfil propio autenticado.
 - [x] [V] Edicion aislada del perfil y CV con persistencia relacional normalizada, cancelacion limpia e impresion formal A4.
@@ -48,19 +73,19 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Resumen de publicaciones en perfil publico.
 - [x] [I] Roles diferenciados e insignias de participacion.
 - [x] [I] Seguir/dejar de seguir con estado explicito e idempotente, ademas de silenciar y bloquear usuarios sin sobrescribir relaciones compatibles.
-- [x] [I] Controles de privacidad del perfil con masking backend-side para CV, bio, contacto y carreras ante terceros no autorizados.
+- [x] [I] Controles de privacidad con masking backend-side: Follow unilateral no concede acceso; solo propietario, Administrador o Moderador ven datos sensibles de un perfil privado.
 
-## Modulo 3 - Carreras y materias: 100% (7/7)
+### 3.3 Módulo 3 - Carreras y materias: 100% (7/7)
 
 - [x] [I] CRUD y estado activo de carreras.
 - [x] [I] Materias asociadas obligatoriamente a una carrera.
 - [x] [I] Anio de cursada validado entre 1 y 6.
 - [x] [I] Correlatividades N:M con integridad restrictiva.
-- [x] [I] Inscripcion de usuarios a multiples carreras.
+- [x] [I] Inscripcion de usuarios a multiples carreras, con onboarding obligatorio para Estudiantes sin identidad academica persistida.
 - [x] [I] Selectores en cascada carrera-materia en feed y administracion.
 - [x] [I] Progreso academico, cursadas y notas por usuario.
 
-## Modulo 4 - Feed, comentarios y multimedia: 100% (25/25)
+### 3.4 Módulo 4 - Feed, comentarios y multimedia: 100% (25/25)
 
 - [x] [V] `Inquiry` vinculada a autor y materia sin N+1.
 - [x] [V] Creacion, lectura, refetch y persistencia de publicaciones.
@@ -88,7 +113,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Enlaces compartibles por publicacion con deep-link estable y feedback controlado.
 - [x] [I] Drag-and-drop de adjuntos, restauracion de foco en visores y fallback defensivo para previews rotas.
 
-## Modulo 5 - Mensajeria privada: 100% (9/9)
+### 3.5 Módulo 5 - Mensajería privada: 100% (9/9)
 
 - [x] [V] Persistencia de mensajes uno a uno.
 - [x] [V] Contactos e historial paginados.
@@ -100,7 +125,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Reemplazar pub/sub en memoria por transporte distribuido Redis configurable.
 - [x] [I] Badges de no leidos independientes en navegacion/widget minimizado y recordatorio persistente, acotado e idempotente para mensajes con mas de una hora, respetando preferencias.
 
-## Modulo 6 - Administracion y moderacion: 100% (10/10)
+### 3.6 Módulo 6 - Administración y moderación: 100% (10/10)
 
 - [x] [I] Gestion de usuarios, roles y estado.
 - [x] [I] Proteccion de cuentas administradoras y promocion con password.
@@ -113,7 +138,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [V] Auditoria persistente de acciones administrativas y moderacion reversible con motivo, separada de la edicion exclusiva del autor.
 - [x] [V] Regresion runtime del panel tras cambios de materias y superadmin.
 
-## Modulo 7 - Empleos y Gestor de Postulaciones: 100% (10/10)
+### 3.7 Módulo 7 - Empleos y Gestor de Postulaciones: 100% (10/10)
 
 - [x] [I] Entidad `JobOffer` con FK explicita a `User` y `DeleteBehavior.Restrict`.
 - [x] [I] Entidad `JobApplication` con estados `Pending`, `Reviewed` y `Rejected`, FKs restrictivas e indice unico por oferta/postulante.
@@ -126,16 +151,16 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] QA/security del gestor: validacion por rol, ownership estricto de oferta, auditoria persistente y build/migracion sin errores.
 - [x] [I] Onboarding B2B de empleadores: solicitud publica con anti-enumeracion y rate limiting, revision Admin, aprovisionamiento atomico de cuenta `Empleador`, auditoria sanitizada y entrega reintentable de Magic Link mediante Outbox.
 
-## Modulo 8 - Recursos y seguimiento academico: 100% (6/6)
+### 3.8 Módulo 8 - Recursos y seguimiento académico: 100% (6/6)
 
 - [x] [I] Entidad y repositorio de recursos academicos independiente del feed.
-- [x] [I] Permisos de recursos por carrera, materia y rol.
+- [x] [I] Permisos de recursos/progreso por rol y carrera: Profesor acotado a materias de carreras vinculadas; Administrador global.
 - [x] [I] Busqueda, categorias y versionado de recursos.
 - [x] [I] Visualizacion de notas y progreso academico.
 - [x] [I] Adaptador o simulador desacoplado para SIU Guarani.
 - [x] [I] Preferencias de notificacion por materia.
 
-## Modulo 9 - Calidad, operacion y escalabilidad: 100% (20/20)
+### 3.9 Módulo 9 - Calidad, operación y escalabilidad: 100% (20/20)
 
 - [x] [I] Stack normalizado en .NET 8, EF Core 8 y HotChocolate 14.
 - [x] [I] FKs explicitas, `DeleteBehavior.Restrict` y soft-delete social.
@@ -152,23 +177,28 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 - [x] [I] Actualizacion controlada de dependencias y division del bundle frontend.
 - [x] [I] Sistema visual Clean Tech / Tech Noir con tema persistente, branding OneITB definitivo, textura global tenue, landing premium, Header institucional auto-hide accesible, Footer unificado y superficies principales dual-theme.
 - [x] [I] Dockerizacion productiva multi-stage para API .NET y frontend Nginx con reverse proxy SPA/WebSocket.
-- [x] [I] Orquestacion productiva `docker-compose.prod.yml` con SQL Server, Redis, API y frontend sin secretos versionados.
+- [x] [I] Orquestacion productiva `docker-compose.prod.yml` con SQL Server, Redis, API y frontend sin secretos versionados; conexión SQL completa inyectada sin trust bypass predeterminado.
 - [x] [I] Almacenamiento cloud opcional con Cloudinary y fallback local para `/api/upload`.
-- [x] [I] Hardening HTTP productivo con rate limiting por IP, healthcheck y security headers.
+- [x] [I] Hardening HTTP productivo con rate limiting por IP, probes `/health/live` y `/health/ready`, correlation ID y security headers.
 - [x] [I] Hardening GraphQL anti-DoS con profundidad maxima y paging global configurable.
 - [x] [I] Seeding demo/productivo configurable, idempotente y sin reset de passwords existentes.
 
-## Modulo Extra - Caracteristicas de Alto Impacto (Efecto WOW): 100% (5/5)
+### 3.10 Módulo extra - Características de alto impacto: 100% (5/5)
 
 - [x] [I] Trazabilidad academica transversal mediante `AuditLog` y `SaveChangesInterceptor` de EF Core para entidades criticas.
 - [x] [I] Generacion de constancias y exportacion CSV/impresion formal desde el modulo academico.
-- [x] [I] Integracion institucional Microsoft Entra ID single-tenant mediante MSAL Authorization Code + PKCE, validacion criptografica del access token de la API y emision del JWT canonico OneITB; la aceptacion con el tenant Microsoft 365 real permanece como gate externo.
+- [x] [I] Integracion institucional Microsoft Entra ID organizacional multi-tenant mediante MSAL Authorization Code + PKCE, validacion criptografica tenant-specific del access token de la API y emision del JWT canonico OneITB; la aceptacion con Microsoft 365 real permanece como gate externo.
 - [x] [I] Credenciales digitales publicas para progreso aprobado mediante ruta `/certificate/{id}` y query GraphQL publica limitada.
 - [x] [I] Toast notifications globales conectadas a GraphQL Subscriptions existentes.
 
-## Prioridades
+## 4. Horizontes técnicos y evolución posterior
 
-### P0 - Estabilizacion inmediata
+Las etiquetas P0-P4 se conservan como trazabilidad de las prioridades que llevaron el
+proyecto al Release Candidate actual. Ya no representan una cola activa de desarrollo:
+están cerradas o sujetas únicamente a conservación durante el Code Freeze. P5 y P6 son
+evolución posterior a la defensa y no forman parte del alcance académico contabilizado.
+
+### 4.1 P0 - Estabilización inmediata: cerrada y en conservación
 
 1. Mantener el Code Freeze funcional: aceptar solo defectos reproducibles con prueba de regresion.
 2. Conservar Docker SQL como runtime local canonico para evitar SSPI/LocalDB.
@@ -178,32 +208,32 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 4. Ejecutar `scripts/validate-predefense.ps1` antes de la defensa y de cada entrega.
 5. Validar SMTP, Redis y Cloudinary solo cuando existan secretos no versionados y un ambiente aprobado.
 
-### P1 - Cierre del nucleo social
+### 4.2 P1 - Cierre del núcleo social: cerrado
 
 1. Paginacion del feed: verificada en runtime contra Docker SQL.
 2. Limpieza de uploads huerfanos: verificada en runtime contra Docker SQL.
 3. Auditoria persistente de moderacion: verificada en runtime contra Docker SQL.
 4. Adjuntos multiples, reacciones de comentarios y notificaciones agrupadas: verificados por tests y smoke GraphQL autenticado contra Docker SQL.
 
-### P2 - Alcance academico
+### 4.3 P2 - Alcance académico y empleabilidad: cerrado
 
 1. Cerrado a nivel de implementacion y hardening tecnico; el hub academico fue recorrido con Estudiante y Profesor durante la Spec 194.
 2. Empleos y Gestor de Postulaciones fueron recorridos con Egresado y Empleador durante la Spec 194.
 
-### P3 - Escalabilidad y operacion
+### 4.4 P3 - Escalabilidad y operación: base implementada
 
 1. `[x] [V]` Pub/sub distribuido Redis, activado por `ConnectionStrings:Redis` y fallback InMemory local; entrega exacta e aislamiento de topic verificados entre dos proveedores independientes contra Redis Docker.
 2. `[x] [I]` Almacenamiento compartido opcional con Cloudinary, activado por `CloudinarySettings:Url` y fallback local.
 3. `[x] [I]` Hardening operativo: rate limiting, security headers, healthcheck y auditoria npm sin hallazgos altos/criticos; dos avisos moderados upstream de React Router quedan documentados y el destino interno de notificaciones se sanitiza.
 4. `[x] [I]` Hardening GraphQL anti-DoS: profundidad maxima configurable y limites globales de paginacion.
-5. `[x] [I]` SSO institucional Microsoft Entra ID single-tenant; configuracion fail-closed, vinculacion segura, auditoria y limpieza de sesion implementadas. El consentimiento y smoke del tenant real permanecen en `PR-04`.
+5. `[x] [I]` SSO institucional Microsoft Entra ID organizacional multi-tenant; configuracion fail-closed, vinculacion segura por `tid`, auditoria y limpieza de sesion implementadas. El consentimiento y smoke real permanecen en `PR-04`.
 
-### P4 - Contenedores y CI/CD
+### 4.5 P4 - Contenedores y CI/CD: base implementada
 
 1. `[x] [I]` Dockerizacion del entorno local y de produccion.
 2. `[x] [I]` Integracion y despliegue continuo con GitHub Actions.
 
-### P5 - Despliegue Cloud Gratuito
+### 4.6 P5 - Despliegue cloud: evolución postdefensa
 
 1. `[ ] [P]` Migracion y despliegue del backend en Azure App Service F1. Estimacion:
    **8-12 h**, una vez definida la suscripcion, region, variables y estrategia de rollback.
@@ -211,7 +241,7 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
    **6-10 h**, incluyendo backup, migraciones, smoke de integridad y plan de retorno.
 3. `[x] [I]` Integracion de Cloudinary para el alojamiento de imagenes y archivos estaticos.
 
-### P6 - Ecosistema Movil
+### 4.7 P6 - Ecosistema móvil: evolución postdefensa
 
 1. `[ ] [P]` Inicializacion del proyecto movil con React Native + Expo. Estimacion:
    **8-12 h** para estructura, autenticacion y navegacion base.
@@ -220,28 +250,35 @@ Los porcentajes cuentan items `[x]`. La etiqueta conserva la diferencia entre im
 3. `[ ] [P]` Compilacion de APK y distribucion en entornos de prueba. Estimacion:
    **6-10 h** luego de cerrar los dos puntos anteriores.
 
-## Auditoria de Cierre y Seguridad - Etapa 1: 100% (4/4)
+## 5. Trazabilidad del cierre técnico
+
+Esta sección explica cómo se alcanzó el estado actual. No duplica el denominador de los
+módulos: solamente las ocho remediaciones 186-193 forman parte de los 117 ítems. Las
+Specs 194-201 son aceptación, rebaseline, ampliaciones aprobadas o cierre de auditoría y se documentan sin
+alterar retroactivamente el porcentaje.
+
+### 5.1 Auditoría de cierre y seguridad - Etapa 1: 100% (4/4)
 
 - [x] [V] **Spec 186 - Employer Authentication JWT Remediation**: emision JWT centralizada, sin tokens mock/placeholder, Magic Link atomico y validado contra SQL Server Docker.
 - [x] [V] **Spec 187 - Mutation Cancellation Propagation**: `CancellationToken` propagado desde todas las mutaciones asincronas hasta EF Core y efectos soportados, con guard automatizado.
 - [x] [V] **Spec 188 - Apollo Logout Session Isolation**: frontera de sesion idempotente para React, Apollo HTTP/cache y WebSocket, con regresion A -> B automatizada y browser smoke limpio.
 - [x] [V] **Spec 189 - Declarative GraphQL Mutation Authorization**: matriz declarativa completa, ampliada por Spec 197 a 43 mutaciones y cinco entradas publicas; controles contextuales de ownership preservados.
 
-## Auditoria de Cierre y Seguridad - Etapa 2: 100% (4/4)
+### 5.2 Auditoría de cierre y seguridad - Etapa 2: 100% (4/4)
 
 - [x] [V] **Spec 190 - Upload and Magic Link Abuse Hardening**: inspeccion binaria/estructural previa a storage y limites especificos por operacion, origen e identidad; upload valido/hostil/truncado y limites de Magic Link con recuperacion cuentan con evidencia ejecutada.
 - [x] [V] **Spec 191 - Async Query and Pagination Hardening**: I/O social asincronico y cancelable, contrato ilimitado retirado y paginacion social/academica verificadas con orden, limite, deduplicacion, filtro de autor y autorizacion.
 - [x] [V] **Spec 192 - Credential Delivery and Cryptographic Policy Hardening**: respuesta generica, pickup local, digest SQL y consumo unico verificados; SMTP real permanece como gate externo bloqueado y no afecta la validacion del fallback de Development.
 - [x] [V] **Spec 193 - Social Policy and UI Bootstrap Resilience**: silenciamiento like/unlike verificado sin persistencia ni notificaciones; browser limpio y aislamiento A -> logout -> B comprobado.
 
-## Aceptacion operacional final - Spec 194
+### 5.3 Aceptación operacional final - Spec 194
 
 La Spec 194 cerro los gates locales controlables con 147 pruebas backend, 79 frontend,
 builds Release/Vite, modelo EF sincronizado, pruebas runtime focalizadas y recorridos de
 Estudiante, Profesor, Egresado, Administrador y Empleador. Los bloqueos locales de
 identidad Moderador, Redis y SMTP capturado fueron tratados por la Spec 195.
 
-## Aceptacion de infraestructura local y Moderador - Spec 195
+### 5.4 Aceptación de infraestructura local y Moderador - Spec 195
 
 La Spec 195 agrego una identidad Moderador canonica e idempotente, probo su JWT y sus
 limites de autorizacion, y verifico el reemplazo de sesion Estudiante -> Moderador. Un
@@ -253,7 +290,7 @@ Permanecen `[B]` el SMTP publico, Cloudinary, la aceptacion Microsoft Entra en e
 institucional y el handshake WebSocket de red con dos navegadores; Redis local y Mailpit
 no se presentan como validacion cloud.
 
-## Aceptacion de base demo canonica - Spec 196
+### 5.5 Aceptación de base demo canónica - Spec 196
 
 La Spec 196 elimino la dependencia de datos historicos del puesto de desarrollo. El
 procedimiento protegido genero y verifico un backup, reconstruyo `OneItb` desde 32
@@ -267,11 +304,12 @@ notificaciones, empleos, administracion, moderacion y upload. Ese corte mantuvo 
 porque se trato de estabilizacion operativa y documental; la feature institucional que
 faltaba fue implementada posteriormente por la Spec 197.
 
-## Identidad institucional Microsoft Entra ID - Spec 197
+### 5.6 Identidad institucional Microsoft Entra ID - Spec 197
 
 La Spec 197 reemplazo el plan Google OAuth por la plataforma que utiliza la institucion:
 Microsoft Entra ID/Microsoft 365. La SPA usa MSAL con Authorization Code + PKCE,
-autoridad single-tenant, scope delegado propio de la API y cache en `sessionStorage`.
+autoridad organizacional multi-tenant `common`, scope delegado propio de la API y cache
+en `sessionStorage`.
 El backend valida firma RS256, emisor, audiencia, vigencia, `tid`, `oid`, scope y dominio
 institucional antes de vincular o aprovisionar una cuenta sin privilegios y emitir el
 JWT local. No persiste tokens externos ni secretos; logout limpia MSAL, Apollo y
@@ -279,7 +317,7 @@ WebSocket. La migracion agrega identidad externa unica y password local nullable
 para cuentas SSO-only. Tests, builds, EF y schema runtime cuentan con evidencia; el
 consentimiento y la prueba con una cuenta real del tenant siguen en `PR-04`.
 
-## Onboarding B2B de empleadores - Spec 198
+### 5.7 Onboarding B2B de empleadores - Spec 198
 
 La Spec 198 cierra el alta controlada de empresas externas sin habilitar un registro
 publico directo con privilegios. La solicitud valida CUIT, normaliza datos, aplica
@@ -295,45 +333,113 @@ pickup local cuentan con evidencia automatizada. La regresion visual de
 `/empleos/solicitud` y la pestaña administrativa queda como recorrido manual previo a
 la defensa y no se presenta como ejecutada.
 
-## Plan operativo de cierre para la defensa
+### 5.8 UX B2B y configuración académica inicial - Spec 199
+
+La Spec 199 unifica la configuracion publica de Microsoft Entra: el client ID canonico
+tiene precedencia sobre el alias temporal, `common` se acepta como autoridad
+organizacional y una configuracion parcial mantiene oculto el acceso. El Header publico
+expone `Soy empresa` en escritorio y movil reutilizando `/empleos/solicitud`.
+
+Antes de montar el layout privado, `RequireAcademicOnboarding` relee el perfil canonico
+y valida que pertenezca a la sesion actual. Solo `Estudiante` sin carreras es dirigido
+a `/onboarding/academic`; el guard no afecta otros roles. La seleccion persiste mediante
+GraphQL y el acceso se habilita exclusivamente despues de que `me` confirme la carrera.
+Tests y build cuentan con evidencia automatizada; la regresion visual y el tenant real
+permanecen pendientes sin alterar el 117/117.
+
+### 5.9 Autenticación Microsoft por redirect - Spec 200
+
+La Spec 200 elimina el flujo popup que podia reingresar a `/login` y producir
+`block_nested_popups`. La SPA usa `loginRedirect`, conserva MSAL en
+`/auth/microsoft/callback` y bloquea cualquier segunda accion mientras el estado de
+interaccion sea distinto de `None`. El callback no muestra botones de acceso: selecciona
+la cuenta retornada, adquiere silenciosamente el access token delegado y ejecuta una
+sola vez `microsoftLogin` y la frontera canonica de sesion/Apollo.
+
+Un descriptor efimero de pestaña no contiene credenciales, limita su vigencia y solo
+restaura destinos internos sanitizados. La barrera de promesas por flow ID evita
+duplicados por rerender o Strict Mode y libera el intento ante error explicito. Las 144
+pruebas frontend y el build Vite cuentan con evidencia automatizada; el recorrido con
+Microsoft 365 real permanece en `PR-04` sin alterar el 117/117.
+
+### 5.10 Cierre de auditoría documental y autorización - Spec 201
+
+La Spec 201 procesó la bitácora `temp_audit_review.md` y cerró las brechas controlables
+sin expandir el alcance funcional. El registro público ahora es Student-only, valida el
+dominio institucional en backend, evita enumerar duplicados y aplica limitación específica
+por origen e identidad. El Profesor queda acotado a materias de carreras vinculadas en
+recursos, listados y progreso. Follow dejó de habilitar datos sensibles de perfiles
+privados. La plantilla productiva exige una cadena SQL externa sin trust bypass y la API
+separa liveness de readiness SQL.
+
+Sobre el worktree actual pasaron backend **198/198**, frontend **144/144**, builds Release/
+Vite y EF sin drift. Esta evidencia permite afirmar remediación técnica, pero `REL-001`
+sigue abierto hasta repetir el gate sobre un SHA limpio. `GAP-FILE-01`, observabilidad
+central, proveedores reales y los entregables DOCX/PDF/figuras conservan sus gates
+explícitos.
+
+## 6. Plan operativo de cierre para la defensa
 
 Este plan no agrega alcance funcional ni modifica el calculo de 117/117 items. Convierte
 el Release Candidate academico en un paquete reproducible de defensa. Las estimaciones
 representan tiempo efectivo de una persona con el entorno ya instalado; no incluyen
 esperas institucionales, aprobacion de credenciales ni incidentes de terceros.
 
-### A. Integracion, higiene y aceptacion final
+**Regla de ejecución hasta la mesa:** no incorporar features nuevas. Solo se aceptan
+correcciones de defectos reproducibles que bloqueen la demostración, con prueba de
+regresión y actualización de evidencia. Los trabajos documentales, visuales y logísticos
+tienen prioridad sobre mejoras cosméticas no comprometidas.
+
+### 6.1 Secuencia recomendada del 3 al 7 de agosto
+
+| Jornada | Foco principal | Carga sugerida | Resultado esperado al cerrar el día |
+|---|---|---:|---|
+| **Lunes 03/08** | Cierre de Spec 201, integración Git, higiene y gates automáticos | 5-7 h | Rama final identificada, worktree explicable y baseline técnico verde |
+| **Martes 04/08** | Diagramas, maquetación DOCX, auditoría PDF y envío a imprenta | 10-14 h, con trabajo visual en paralelo | Memoria final enviada a impresión a color; copia digital verificada |
+| **Miércoles 05/08** | Regresión por seis roles, realtime con dos sesiones, capturas y presentación | 8-11 h | Checklist funcional cerrado, material visual de contingencia y PPTX/PDF estructurado |
+| **Jueves 06/08** | Congelamiento del SHA, backups, retiro de impresión y dos ensayos | 6-8 h | Corte inmutable, paquete físico/digital completo y exposición dentro de 20-30 minutos |
+| **Viernes 07/08** | Contingencia mínima y presentación | Llegada 08:15-08:30 | Notebook, HDMI, pendrive, copia impresa y demo listos antes de las 09:00 |
+
+El orden debe solaparse el 4 de agosto para cumplir la imprenta. No debe exportarse el PDF
+definitivo antes de cerrar los diagramas. Desde que el PDF se envía a imprimir solo se
+admiten correcciones técnicas bloqueantes; cualquier cambio debe registrarse y no puede
+contradecir la memoria impresa.
+
+### 6.2 Integración, higiene y aceptación final
 
 | ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
 |---|---|---|---:|---|---|
-| `CF-01` | Publicar y revisar el corte de Spec 197; integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota, revision y merge sin perder evidencia |
-| `CF-02` | Resolver `prompt_modulo1.txt` y confirmar higiene del worktree | `[ ] [P]` | 15-30 min | Decision de conservar, mover o ignorar el archivo | `git status` limpio y sin artefactos de trabajo accidentalmente versionados |
-| `CF-03` | Ejecutar los gates de predefensa, infraestructura local y base demo | `[ ] [P]` | 75-105 min | Docker operativo | Tests, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS |
+| `CF-01` | Consolidar y publicar el corte de Specs 198-201; revisar e integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota y SHA candidato identificados, sin perder código ni evidencia de las cuatro specs |
+| `CF-02` | Completar la auditoría de archivos auxiliares de raíz y secretos ignorados; el prompt histórico `prompt_modulo1.txt` fue retirado el 2026-08-03 | `[ ] [P]` | 15-30 min | Decisión explícita de conservar, mover, ignorar o eliminar cada artefacto restante | `git status` limpio; ningún secreto, fixture personal o archivo de trabajo entra al corte |
+| `CF-03` | Ejecutar gates de predefensa, infraestructura local y base demo sobre el SHA candidato | `[ ] [P]` | 75-105 min | Docker operativo | Backend 198/198 o mayor, frontend 144/144 o mayor, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS o con desviación documentada |
 | `CF-04` | Regresion manual guiada por roles: Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador | `[ ] [P]` | 3-4 h | `CF-03` | Checklist firmado, consola limpia y capturas de los flujos principales |
 | `CF-05` | Validar chat/notificaciones con dos navegadores o perfiles aislados | `[ ] [P]` | 60-90 min | API y frontend temporales, dos identidades | Handshake WebSocket, aislamiento de topic, badges y lectura comprobados |
-| `CF-06` | Consolidar evidencia, congelar el corte y etiquetar el commit presentado | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, resultados y limitaciones coinciden en todos los documentos |
+| `CF-06` | Consolidar evidencia, congelar el corte y etiquetar el commit presentado | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, métricas, resultados, limitaciones y versión documental coinciden en repositorio, auditoría y presentación |
 
 **Subtotal estimado:** **6 h 45 min a 9 h 30 min**. La ruta critica es
 `CF-01 -> CF-03 -> CF-04/CF-05 -> CF-06`.
 
-### B. Entrega final academica
+### 6.3 Entrega final académica
 
 | ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
 |---|---|---|---:|---|---|
 | `DF-01` | Completar nombre, docentes, fecha y datos institucionales de portada | `[ ] [P]` | 20-30 min | Datos oficiales | Portada sin marcadores `[Completar]` |
-| `DF-02` | Sincronizar memoria y guia con Specs 194-197, 174/82 pruebas y riesgos vigentes | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown alineado con roadmap y auditoria al 2026-07-30 |
+| `DF-02` | Sincronizar memoria y guía con Specs 194-201, baseline conjunto 198/144 y riesgos vigentes | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown alineado con roadmap y auditoría al 2026-08-03; aceptación Entra real, archivos privados y proveedores externos permanecen explícitos |
 | `DF-03` | Renderizar y revisar los 10 diagramas Mermaid exportables | `[ ] [P]` | 2-3 h | `DF-02` | SVG/PNG legibles, numerados y sin errores de sintaxis |
 | `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | 4 fuentes editables y 4 PNG/SVG consistentes con el modelo |
 | `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[ ] [P]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable, estilos APA, tablas/figuras dentro de margenes |
 | `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[ ] [P]` | 2-3 h | `DF-05` | PDF revisado pagina por pagina, enlaces y accesibilidad basica |
-| `DF-07` | Preparar paquete de defensa, guion y ensayo cronometrado | `[ ] [P]` | 4-5 h | `CF-06` y `DF-06` | Exposicion base de 22-25 min dentro del rango oficial de 20-30 min, fallback y respuestas sobre limites reales |
+| `DF-07` | Diseñar presentación de defensa en PPTX/PDF con narrativa problema-solución-arquitectura-demo-evidencia | `[ ] [P]` | 2 h 30 min-4 h | `DF-03`, `DF-04` y evidencia de `CF-03` | Presentación legible, visual, con demo guiada, métricas verificables y límites honestos; sin copiar páginas completas de la memoria |
+| `DF-08` | Preparar guion, contingencias y ejecutar al menos dos ensayos cronometrados | `[ ] [P]` | 3-4 h | `CF-06`, `DF-06` y `DF-07` | Exposición base de 22-25 min dentro del rango oficial de 20-30 min, transiciones ensayadas y respuestas preparadas sobre seguridad, arquitectura y límites |
 
-**Subtotal pendiente estimado:** **15 h 20 min a 21 h 30 min**, porque `DF-02` ya
-quedo implementado documentalmente. La entrega academica completa, incluyendo el cierre
-tecnico del bloque A, requiere aproximadamente **22-31 h efectivas**, equivalentes a
-**3-4 jornadas concentradas**.
+**Subtotal pendiente estimado:** **16 h 50 min a 24 h 30 min**, porque `DF-02` ya
+quedó implementado documentalmente. La entrega académica completa, incluyendo el cierre
+técnico del bloque 6.2, requiere aproximadamente **23 h 35 min a 34 h efectivas**. Es un
+plan exigente de cuatro jornadas: los rangos altos requieren delegar la impresión,
+evitar refactors no bloqueantes y trabajar presentación/documentación en paralelo con
+la regresión manual.
 
-### C. Condiciones oficiales y logistica de mesa
+### 6.4 Condiciones oficiales y logística de mesa
 
 La mesa comienza el **viernes 7 de agosto de 2026 a las 09:00**. El aula o laboratorio
 se confirmara ese mismo dia. La duracion oficial de exposicion es **20-30 minutos** y
@@ -348,11 +454,11 @@ para transiciones sin redefinir el requisito de la catedra.
 | `LG-04` | Confirmar repositorio remoto actualizado y conservar un snapshot offline | `[ ] [P]` | 30-45 min | Corte presentado identificable y recuperable sin Internet |
 | `LG-05` | Llegar entre 08:15 y 08:30 y confirmar aula/equipamiento | `[ ] [P]` | 15-30 min in situ | Recomendacion operativa; la mesa inicia a las 09:00 |
 
-Las estimaciones `LG-01` a `LG-04` se solapan con `DF-05` a `DF-07` y no deben sumarse
+Las estimaciones `LG-01` a `LG-04` se solapan con `DF-05` a `DF-08` y no deben sumarse
 por segunda vez al subtotal documental. No se requiere un Manual de Usuario separado:
 su contenido permanece integrado en la seccion 6 de la memoria tecnica.
 
-### D. Gates productivos externos
+### 6.5 Gates productivos externos
 
 Estos puntos no bloquean la defensa controlada y no deben presentarse como verificados
 hasta ejecutarse en el ambiente de destino.
@@ -362,7 +468,7 @@ hasta ejecutarse en el ambiente de destino.
 | `PR-01` | Smoke con proveedor SMTP publico | `[ ] [B]` | 1-3 h | Host, puerto, cuenta y politica institucional |
 | `PR-02` | Smoke con Redis administrado | `[ ] [B]` | 1-3 h | Endpoint TLS, credenciales y red permitida |
 | `PR-03` | Smoke de Cloudinary y ciclo upload/delete | `[ ] [B]` | 1-3 h | Cuenta, URL firmada y cuota aprobada |
-| `PR-04` | Aceptacion Microsoft Entra en tenant institucional | `[ ] [B]` | 3-6 h | Tenant ID, dos App Registrations, scope delegado, redirect URIs, consentimiento y cuenta de prueba |
+| `PR-04` | Aceptacion Microsoft Entra en tenant institucional | `[ ] [B]` | 3-6 h | Tenant ID, dos App Registrations, scope delegado, callback `/auth/microsoft/callback`, consentimiento y cuenta de prueba |
 | `PR-05` | Benchmark BCrypt en hardware objetivo | `[ ] [B]` | 1-2 h | Host productivo representativo |
 | `PR-06` | Alertas operativas y politica de I/O persistente | `[ ] [B]` | 2-4 h | Plataforma de monitoreo seleccionada |
 | `PR-07` | Antivirus/CDR externo para uploads | `[ ] [B]` | 8-16 h | Seleccion de proveedor, API, presupuesto y privacidad |
@@ -371,17 +477,17 @@ hasta ejecutarse en el ambiente de destino.
 provisionamiento. La aceptacion Entra, cloud publico y antivirus/CDR son evolucion productiva;
 no forman parte del Definition of Done academico del MVP.
 
-### Definition of Done de la entrega academica
+### 6.6 Definition of Done de la entrega académica
 
 1. `CF-01` a `CF-06` completados y evidenciados sobre un SHA inmutable.
-2. `DF-01` y `DF-03` a `DF-07` completados; DOCX/PDF coinciden con el Markdown canonico.
+2. `DF-01` y `DF-03` a `DF-08` completados; DOCX/PDF coinciden con el Markdown canonico.
 3. Ningun gate externo figura como verificado sin credenciales y evidencia de destino.
 4. La exposicion utiliza la formula: **Release Candidate academico, Feature Complete
    core y Code Freeze operativo local**.
 5. Los limites se explican como decisiones de alcance o gates externos, no como
    funcionalidades productivas ya disponibles.
 
-## Definition of Done por feature
+## 7. Definition of Done por feature
 
 1. Spec, plan y tasks completos.
 2. Backend/frontend compilan cuando son afectados.

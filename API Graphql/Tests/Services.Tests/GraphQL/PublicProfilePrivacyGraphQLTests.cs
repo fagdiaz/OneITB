@@ -2,6 +2,7 @@ using HotChocolate.Execution;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Claims;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using Services.Tests.TestSupport;
@@ -125,6 +126,79 @@ public sealed class PublicProfilePrivacyGraphQLTests
         Assert.Null(profile["phone"]);
         Assert.Empty(Assert.IsAssignableFrom<IReadOnlyList<object?>>(profile["careers"]));
         Assert.Empty(Assert.IsAssignableFrom<IReadOnlyList<object?>>(profile["cvSkills"]));
+    }
+
+    [Fact]
+    public async Task PublicProfile_MasksSensitiveFields_WhenViewerOnlyFollowsPrivateProfile()
+    {
+        string databaseName = $"oneitb-profile-follower-privacy-{Guid.NewGuid():N}";
+        var httpContextAccessor = new HttpContextAccessor
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(
+                    new[]
+                    {
+                        new Claim(
+                            ClaimTypes.NameIdentifier,
+                            ServiceTestData.OtherStudentUserId.ToString())
+                    },
+                    "test"))
+            }
+        };
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
+        services.AddDbContext<OneItbContext>(options => options.UseInMemoryDatabase(databaseName));
+        services
+            .AddGraphQLServer()
+            .AddProjections()
+            .AddFiltering()
+            .AddSorting()
+            .AddAuthorization()
+            .AddQueryType<Query>();
+
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        await SeedPrivateProfileAsync(provider);
+        await using (AsyncServiceScope scope = provider.CreateAsyncScope())
+        {
+            OneItbContext context = scope.ServiceProvider.GetRequiredService<OneItbContext>();
+            context.UserInteractions.Add(new UserInteraction
+            {
+                Id = Guid.NewGuid(),
+                ObserverId = ServiceTestData.OtherStudentUserId,
+                TargetId = ServiceTestData.StudentUserId,
+                Type = InteractionType.Follow
+            });
+            await context.SaveChangesAsync();
+        }
+
+        IRequestExecutor executor = await provider
+            .GetRequiredService<IRequestExecutorResolver>()
+            .GetRequestExecutorAsync();
+        IExecutionResult result = await executor.ExecuteAsync($$"""
+            query {
+              publicProfile(userId: "{{ServiceTestData.StudentUserId}}") {
+                biography
+                phone
+                canViewSensitiveProfile
+                careers
+              }
+            }
+            """);
+
+        Assert.Null(result.GetType().GetProperty("Errors")?.GetValue(result));
+        IReadOnlyDictionary<string, object?> data =
+            Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(
+                result.GetType().GetProperty("Data")?.GetValue(result));
+        IReadOnlyDictionary<string, object?> profile =
+            Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(data["publicProfile"]);
+
+        Assert.False((bool)profile["canViewSensitiveProfile"]!);
+        Assert.Null(profile["biography"]);
+        Assert.Null(profile["phone"]);
+        Assert.Empty(Assert.IsAssignableFrom<IReadOnlyList<object?>>(profile["careers"]));
     }
 
     private static async Task SeedPrivateProfileAsync(IServiceProvider provider)

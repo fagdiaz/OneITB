@@ -219,8 +219,8 @@ export const Login = () => {
                 <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
               </div>
               <MicrosoftInstitutionalLogin
-                onAuthenticated={completeLogin}
                 onError={handleMicrosoftError}
+                returnTo={location.state?.from}
               />
               <p className="mt-3 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">
                 Exclusivo para cuentas institucionales autorizadas de Microsoft 365.

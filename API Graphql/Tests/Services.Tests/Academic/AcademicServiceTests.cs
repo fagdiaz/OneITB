@@ -1,4 +1,5 @@
 using Moq;
+using Microsoft.EntityFrameworkCore;
 using OneItb.Entities.Models;
 using Services.Academic;
 using Services.Notifications;
@@ -57,7 +58,7 @@ public sealed class AcademicServiceTests
     }
 
     [Fact]
-    public async Task AddAcademicResourceAsync_EnrolledStudentPersistsCategoryVersionAndNotifies()
+    public async Task AddAcademicResourceAsync_LinkedProfessorPersistsCategoryVersionAndNotifies()
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
@@ -66,8 +67,8 @@ public sealed class AcademicServiceTests
         var service = new AcademicService(context, notifications.Object, siu.Object);
 
         AcademicResource resource = await service.AddAcademicResourceAsync(
-            ServiceTestData.StudentUserId,
-            "Estudiante",
+            ServiceTestData.TeacherUserId,
+            "Profesor",
             ServiceTestData.SubjectId,
             "Guia de laboratorio",
             "Practica de arrays",
@@ -76,7 +77,7 @@ public sealed class AcademicServiceTests
             "/uploads/guia.pdf",
             null);
 
-        Assert.Equal(ServiceTestData.StudentUserId, resource.UploaderId);
+        Assert.Equal(ServiceTestData.TeacherUserId, resource.UploaderId);
         Assert.Equal(AcademicResourceCategory.Apunte, resource.Category);
         Assert.Equal(3, resource.Version);
         Assert.Equal("File", resource.ResourceType);
@@ -92,6 +93,32 @@ public sealed class AcademicServiceTests
     }
 
     [Fact]
+    public async Task AddAcademicResourceAsync_RejectsEnrolledStudent()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddAcademicResourceAsync(
+                ServiceTestData.StudentUserId,
+                "Estudiante",
+                ServiceTestData.SubjectId,
+                "Intento sin permisos",
+                null,
+                AcademicResourceCategory.Apunte,
+                1,
+                "/uploads/intento.pdf",
+                null));
+
+        Assert.Contains("permisos", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(context.AcademicResources);
+        notifications.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task DeleteResourceAsync_SoftDeletesResourceForUploader()
     {
         await using var context = ServiceTestData.CreateContext();
@@ -101,8 +128,8 @@ public sealed class AcademicServiceTests
         var service = new AcademicService(context, notifications.Object, siu.Object);
 
         AcademicResource resource = await service.AddAcademicResourceAsync(
-            ServiceTestData.StudentUserId,
-            "Estudiante",
+            ServiceTestData.TeacherUserId,
+            "Profesor",
             ServiceTestData.SubjectId,
             "Apunte a remover",
             null,
@@ -112,18 +139,57 @@ public sealed class AcademicServiceTests
             "https://itbeltran.test/apunte");
 
         AcademicResource deleted = await service.DeleteResourceAsync(
-            ServiceTestData.StudentUserId,
-            "Estudiante",
+            ServiceTestData.TeacherUserId,
+            "Profesor",
             resource.Id);
         IReadOnlyList<AcademicResource> visible = await service.GetAcademicResourcesAsync(
-            ServiceTestData.StudentUserId,
-            "Estudiante",
+            ServiceTestData.TeacherUserId,
+            "Profesor",
             ServiceTestData.SubjectId,
             null,
             null);
 
         Assert.False(deleted.IsActive);
         Assert.Empty(visible);
+    }
+
+    [Fact]
+    public async Task DeleteResourceAsync_RejectsLegacyStudentUploader()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        var legacyResource = new AcademicResource
+        {
+            Id = Guid.NewGuid(),
+            SubjectId = ServiceTestData.SubjectId,
+            UploaderId = ServiceTestData.StudentUserId,
+            Title = "Recurso legado",
+            ExternalUrl = "https://itbeltran.test/recurso-legado",
+            ResourceType = "Link",
+            Category = AcademicResourceCategory.Otro,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+        context.AcademicResources.Add(legacyResource);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.DeleteResourceAsync(
+                ServiceTestData.StudentUserId,
+                "Estudiante",
+                legacyResource.Id));
+
+        Assert.Contains("permisos", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.True(await context.AcademicResources
+            .IgnoreQueryFilters()
+            .Where(item => item.Id == legacyResource.Id)
+            .Select(item => item.IsActive)
+            .SingleAsync());
     }
 
     [Fact]
@@ -223,6 +289,31 @@ public sealed class AcademicServiceTests
     }
 
     [Fact]
+    public async Task GetAcademicStudentsPageAsync_RejectsProfessorOutsideSubjectCareer()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        UserCareer professorLink = await context.UserCareers.SingleAsync(link =>
+            link.UserId == ServiceTestData.TeacherUserId &&
+            link.CareerId == ServiceTestData.CareerId);
+        context.UserCareers.Remove(professorLink);
+        await context.SaveChangesAsync();
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetAcademicStudentsPageAsync(
+                ServiceTestData.TeacherUserId,
+                "Profesor",
+                ServiceTestData.SubjectId,
+                25,
+                null));
+
+        Assert.Contains("carreras asignadas", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task GetAcademicStudentsPageAsync_PropagatesCancellation()
     {
         await using var context = ServiceTestData.CreateContext();
@@ -287,6 +378,35 @@ public sealed class AcademicServiceTests
 
         Assert.Contains("no pertenece", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(context.AcademicProgressRecords);
+    }
+
+    [Fact]
+    public async Task UpsertAcademicProgressAsync_RejectsProfessorOutsideSubjectCareer()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        UserCareer professorLink = await context.UserCareers.SingleAsync(link =>
+            link.UserId == ServiceTestData.TeacherUserId &&
+            link.CareerId == ServiceTestData.CareerId);
+        context.UserCareers.Remove(professorLink);
+        await context.SaveChangesAsync();
+        Mock<INotificationService> notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.UpsertAcademicProgressAsync(
+                ServiceTestData.TeacherUserId,
+                "Profesor",
+                ServiceTestData.StudentUserId,
+                ServiceTestData.SubjectId,
+                8,
+                AcademicProgressStatus.Approved,
+                null));
+
+        Assert.Contains("carreras asignadas", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(context.AcademicProgressRecords);
+        notifications.VerifyNoOtherCalls();
     }
 
     [Fact]

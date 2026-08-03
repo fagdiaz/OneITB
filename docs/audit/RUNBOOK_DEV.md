@@ -1,51 +1,267 @@
-# Runbook de desarrollo - OneITB23
+# Runbook de desarrollo, validación y recuperación - OneITB23
 
-**Ultima revision**: 2026-07-30
+| Dato de control | Valor |
+|---|---|
+| **Última revisión contra repositorio** | 3 de agosto de 2026 |
+| **Entorno local canónico** | Windows + PowerShell + SQL Server 2022 en Docker |
+| **Backend** | `https://localhost:44397` y `http://localhost:5000` mediante perfil `OneITB` |
+| **Frontend** | `http://localhost:5173` mediante Vite |
+| **Base local** | `localhost,1433`, base `OneItb`, SQL Auth y secreto fuera de Git |
+| **Propósito** | Instalar, iniciar, validar, recuperar y preparar la demo sin conocimiento implícito |
+| **Fuente de arquitectura** | `docs/project_docs/architecture-and-design.md` |
+| **Fuente de estado** | `docs/project_docs/ROADMAP.md` |
 
-## Requisitos
+Este runbook contiene operaciones concretas. No acredita por sí mismo que una ejecución
+haya ocurrido: cada validación debe conservar fecha, SHA, ambiente y resultado. Los comandos
+se clasifican para evitar confundir una comprobación finita con un servidor bloqueante o una
+reconstrucción destructiva.
 
-- .NET SDK 8.
-- Docker Desktop o Docker Engine con Compose para SQL Server local.
-- Node.js compatible con Vite 8.
-- Certificado HTTPS de desarrollo confiable.
+---
 
-## Backend
+## 1. Convenciones de seguridad y operación
 
-Antes de levantar el backend por primera vez, iniciar SQL Server en Docker y configurar el secreto local de conexion:
+### 1.1 Clasificación de comandos
+
+| Clase | Ejemplos | Regla |
+|---|---|---|
+| **Finito y no destructivo** | build, tests, `docker compose config`, drift EF | Puede usarse como gate ordinario |
+| **Finito con infraestructura temporal** | `validate-local-infrastructure.ps1` | Inicia contenedores con `-d` y los elimina en `finally` salvo opción explícita |
+| **Finito con backend temporal** | `validate-demo-database.ps1`, `validate-predefense.ps1 -IncludeRuntime` | Inicia un proceso aislado, espera readiness y lo detiene; requiere ventana aprobada |
+| **Bloqueante interactivo** | `dotnet run`, `npm.cmd run dev` | Ejecutar en terminales dedicadas; finalizar con `Ctrl+C` |
+| **Destructivo** | `reset-demo-database.ps1 -ConfirmDatabaseReset` | Solo base demo local, backup verificado y confirmación explícita |
+| **Externo** | SMTP/Cloudinary/Entra reales | Requiere credenciales, consentimiento y evidencia sin secretos |
+
+### 1.2 Reglas obligatorias
+
+1. Ejecutar comandos desde la raíz del repositorio, salvo que se indique otro directorio.
+2. No copiar secretos, JWT, hashes, connection strings ni passwords a documentación, logs o commits.
+3. No usar LocalDB ni `SQLEXPRESS` con Windows Auth para validar el proyecto.
+4. No ejecutar el reset si el destino no es exactamente contenedor `oneitb23-sql`, puerto 1433 y base `OneItb`.
+5. No presentar una plantilla Docker como despliegue productivo aceptado.
+6. No ejecutar simultáneamente un backend manual y un validador runtime sobre el mismo puerto.
+7. No compartir `inyectar-secretos.ps1`, `.env`, `.env.local` ni el contenido de user-secrets.
+
+### 1.3 Directorios y archivos sensibles ignorados
 
 ```powershell
-Copy-Item .env.example .env
-# Editar .env y definir ONEITB_SQL_SA_PASSWORD con un password fuerte local.
-docker compose up -d
-
-$password = ((Get-Content .env | Where-Object { $_ -like 'ONEITB_SQL_SA_PASSWORD=*' }) -replace '^ONEITB_SQL_SA_PASSWORD=', '')
-$connection = "Server=localhost,1433;Database=OneItb;User Id=sa;Password=$password;Encrypt=False;TrustServerCertificate=True;"
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" $connection --project "API Graphql/OneITB/GraphQL.csproj"
-$jwtKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
-dotnet user-secrets set "Jwt:Key" $jwtKey --project "API Graphql/OneITB/GraphQL.csproj"
-dotnet user-secrets set "Seed:DemoPassword" "<password-demo-local-fuerte>" --project "API Graphql/OneITB/GraphQL.csproj"
-dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
+git check-ignore -v .env
+git check-ignore -v inyectar-secretos.ps1
+git check-ignore -v FrontEnd/OneItb-FE/.env
+git check-ignore -v FrontEnd/OneItb-FE/.env.local
 ```
 
-`appsettings.Development.json` contiene un placeholder no usable para SQL. La cadena real, la clave JWT y la contrasena del seeder deben venir de `dotnet user-secrets` o de variables de entorno. La clave JWT rastreada fue retirada: el host falla de forma explicita si falta o no alcanza 32 bytes y diversidad suficiente.
+Los cuatro comandos deben mostrar una regla. Si alguno no está ignorado, detener la
+operación antes de agregar archivos a Git. `inyectar-secretos.ps1` es un helper local, no
+una fuente canónica ni un entregable. Debe ejecutarse con `-NoStartPrompt` cuando solo se
+quiera configurar secretos sin abrir procesos:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\inyectar-secretos.ps1 -NoStartPrompt
+```
+
+Antes de ejecutarlo, comprobar manualmente que el callback sea
+`http://localhost:5173/auth/microsoft/callback`. No imprimir ni pegar sus valores en
+evidencias. Si el archivo o una captura con valores reales salió del equipo, rotar las
+credenciales afectadas.
+
+---
+
+## 2. Requisitos verificables
+
+| Componente | Versión/condición |
+|---|---|
+| .NET SDK | 8.x; el equipo auditado dispone de 9.x compatible, pero el target es `net8.0` |
+| EF CLI | `dotnet-ef` 8.0.6 |
+| Node.js | `^20.19.0` o `>=22.12.0`, requerido por Vite 8 |
+| npm | Compatible con el Node elegido y `package-lock.json` |
+| Docker | Engine/Desktop activo con Compose v2 |
+| PowerShell | 5.1 o superior para scripts `.ps1` |
+| Certificado | Certificado HTTPS de desarrollo confiable para acceso directo al backend |
+| Puertos | 1433 SQL, 44397 HTTPS API, 5000 HTTP API, 5173 Vite; 16379/11025/18025 para aceptación |
+
+Comprobación inicial:
+
+```powershell
+dotnet --info
+dotnet ef --version
+node --version
+npm.cmd --version
+docker version
+docker compose version
+```
+
+Si `dotnet ef` no existe:
+
+```powershell
+dotnet tool install --global dotnet-ef --version 8.0.6
+```
+
+Si existe con otra versión compatible pero se requiere reproducibilidad exacta:
+
+```powershell
+dotnet tool update --global dotnet-ef --version 8.0.6
+```
+
+---
+
+## 3. Preparación inicial del entorno local
+
+### 3.1 Crear configuración Docker local
+
+No sobrescribir un `.env` existente:
+
+```powershell
+if (-not (Test-Path .env)) {
+  Copy-Item .env.example .env
+}
+```
+
+Editar `.env` y reemplazar `ONEITB_SQL_SA_PASSWORD` por una contraseña local fuerte. Los
+valores de ejemplo no son credenciales válidas para un ambiente compartido.
+
+Validar y levantar únicamente SQL en segundo plano:
+
+```powershell
+docker compose config --quiet
+docker compose up -d oneitb-sql
+docker compose ps
+docker inspect oneitb23-sql --format "{{json .State.Health}}"
+```
+
+Continuar solo cuando el estado sea `healthy`.
+
+### 3.2 Configurar user-secrets backend
+
+```powershell
+$password = ((Get-Content .env | Where-Object {
+  $_ -like 'ONEITB_SQL_SA_PASSWORD=*'
+}) -replace '^ONEITB_SQL_SA_PASSWORD=', '')
+
+if ([string]::IsNullOrWhiteSpace($password)) {
+  throw "ONEITB_SQL_SA_PASSWORD no está definido en .env"
+}
+
+$connection = "Server=localhost,1433;Database=OneItb;User Id=sa;Password=$password;Encrypt=False;TrustServerCertificate=True;"
+$jwtKey = [Convert]::ToBase64String(
+  [Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" $connection `
+  --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "Jwt:Key" $jwtKey `
+  --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "Seed:DemoPassword" "<PASSWORD_DEMO_LOCAL_FUERTE>" `
+  --project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+La cadena de `appsettings.Development.json` contiene un placeholder deliberadamente
+inutilizable. User-secrets debe prevalecer. `Encrypt=False` y
+`TrustServerCertificate=True` solo se admiten contra el contenedor Development local.
+
+### 3.3 Restaurar dependencias
 
 ```powershell
 dotnet restore "API Graphql/OneITB/GraphQL.csproj"
-dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release
+dotnet restore "API Graphql/Tests/Services.Tests/Services.Tests.csproj"
+
+Push-Location "FrontEnd/OneItb-FE"
+npm.cmd ci
+Pop-Location
+```
+
+Los gates usan `--no-restore`; esta preparación debe completarse primero.
+
+### 3.4 Aplicar migraciones
+
+```powershell
+dotnet ef migrations list `
+  --project "API Graphql/Data/Data.csproj" `
+  --startup-project "API Graphql/OneITB/GraphQL.csproj"
+
+dotnet ef database update `
+  --project "API Graphql/Data/Data.csproj" `
+  --startup-project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+El modelo vigente contiene 34 migraciones, hasta `AddEmployerOnboardingWorkflow`. El
+número sirve como control de orientación y debe actualizarse si se crea una migración.
+
+### 3.5 Certificado HTTPS
+
+```powershell
+dotnet dev-certs https --check
+dotnet dev-certs https --check --trust
+```
+
+Solo si el certificado está dañado o no confiado:
+
+```powershell
+dotnet dev-certs https --clean
+dotnet dev-certs https --trust
+dotnet dev-certs https --check --trust
+```
+
+`--clean` elimina certificados de desarrollo existentes y puede afectar otros proyectos;
+no usarlo como primer intento.
+
+---
+
+## 4. Inicio y detención ordinarios
+
+### 4.1 Terminal 1 - Backend
+
+```powershell
 dotnet run --project "API Graphql/OneITB/GraphQL.csproj" --launch-profile OneITB
 ```
 
-Endpoints locales esperados:
+Es bloqueante. Mantener esa terminal abierta y detener con `Ctrl+C`. Endpoints directos:
 
-- GraphQL HTTP/WebSocket: `https://localhost:44397/graphql`
-- Upload REST: `https://localhost:44397/api/upload`
-- Archivos: `https://localhost:44397/uploads/{file}`
+- Health agregado: `https://localhost:44397/health`
+- Liveness del proceso: `https://localhost:44397/health/live`
+- Readiness SQL: `https://localhost:44397/health/ready`
+- GraphQL HTTP/WS: `https://localhost:44397/graphql`
+- Upload: `https://localhost:44397/api/upload`
+- Archivos locales: `https://localhost:44397/uploads/{file}`
 
-### Credenciales de acceso por defecto (Data Seeder)
+### 4.2 Terminal 2 - Frontend
 
-Una vez levantada la base de datos con el Seeder, puedes iniciar sesion usando usuarios generados por `EnterpriseDemoSeeder`. Todos comparten la contrasena configurada de forma externa en `Seed:DemoPassword` / `ONEITB_SEED_DEMO_PASSWORD`. No existe una contrasena fallback hardcodeada.
+```powershell
+Push-Location "FrontEnd/OneItb-FE"
+npm.cmd run dev
+```
 
-| Rol | Usuario demo |
+También es bloqueante. La aplicación se abre en `http://localhost:5173`. Vite usa rutas
+same-origin `/graphql`, `/api` y `/uploads` y las proxyea al backend HTTPS con
+`secure:false` solo dentro del servidor de desarrollo.
+
+### 4.3 Detención
+
+1. Presionar `Ctrl+C` en Vite.
+2. Presionar `Ctrl+C` en backend.
+3. Mantener SQL activo entre sesiones o detenerlo sin borrar volumen:
+
+```powershell
+docker compose stop oneitb-sql
+```
+
+Para volver a iniciarlo:
+
+```powershell
+docker compose up -d oneitb-sql
+```
+
+No usar `docker compose down -v`: elimina el volumen de datos.
+
+---
+
+## 5. Seed y cuentas de demostración
+
+En Development, `Seed:EnableDemoData=true`. El arranque ejecuta `DbInitializer` de forma
+idempotente si existe `Seed:DemoPassword`. Un error de seed se registra; no debe asumirse
+que la base quedó lista solo porque Kestrel inició.
+
+### 5.1 Identidades canónicas
+
+| Rol | Email |
 |---|---|
 | Administrador | `admin1@itbeltran.com.ar` |
 | Moderador | `moderador1@itbeltran.com.ar` |
@@ -54,23 +270,84 @@ Una vez levantada la base de datos con el Seeder, puedes iniciar sesion usando u
 | Egresado | `egresado1@itbeltran.com.ar` |
 | Empleador | `empleador1@itbeltran.com.ar` |
 
-El seeder normal es idempotente y **no reemplaza hashes de cuentas existentes**. Cambiar
-`Seed:DemoPassword` no cambia automaticamente la clave de una base ya poblada. Para
-estandarizar todas las credenciales demo se debe ejecutar el rebaseline controlado
-descrito a continuacion; no se deben editar hashes ni cuentas directamente en SQL.
+Todos usan el valor local de `Seed:DemoPassword`. El seeder no reescribe hashes existentes:
+cambiar el secreto no cambia cuentas ya creadas. No editar hashes manualmente en SQL.
 
-### Rebaseline controlado de la base demo
+### 5.2 Inventario canónico tras rebaseline
 
-Este procedimiento es destructivo y esta limitado por guardas al contenedor local
-`oneitb23-sql`, puerto `1433` y base `OneItb`. Nunca debe ejecutarse contra una base
-externa o productiva. Antes de eliminar la base, el script:
+| Conjunto | Cantidad |
+|---|---:|
+| Accounts / Users | 15 / 15 |
+| Careers / Subjects / Prerequisites | 9 / 6 / 4 |
+| UserCareer | 10 |
+| AcademicResource / AcademicProgress | 12 / 18 |
+| Inquiry / Comment / Reaction | 60 / 80 / 240 |
+| Report / UserInteraction | 2 / 10 |
+| Message / Preference / Notification | 280 / 120 / 127 |
+| JobOffer / JobApplication | 4 / 6 |
+| Filas CV normalizadas | 60 |
 
-1. valida contenedor, destino, secretos, build Release y ausencia de drift EF;
-2. crea un backup `COPY_ONLY` con checksum;
-3. ejecuta `RESTORE VERIFYONLY`;
-4. copia el `.bak` a `backups/local-demo/`, ruta ignorada por Git;
-5. reconstruye el esquema exclusivamente desde migraciones;
-6. inicia el seeder dos veces y exige inventarios identicos.
+Validar inventario, integridad y seis logins con el procedimiento de la sección 9.3.
+
+---
+
+## 6. Ciclo de Entity Framework Core
+
+### 6.1 Comprobación ordinaria
+
+```powershell
+dotnet ef migrations has-pending-model-changes `
+  --configuration Release `
+  --project "API Graphql/Data/Data.csproj" `
+  --startup-project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+Exit code cero significa que el modelo coincide con snapshot/migraciones; no demuestra
+que la migración esté aplicada en una base particular.
+
+### 6.2 Crear una migración
+
+Solo después de revisar modelo, constraints, índices y estrategia de datos:
+
+```powershell
+dotnet ef migrations add <MigrationName> `
+  --project "API Graphql/Data/Data.csproj" `
+  --startup-project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+Antes de aplicar:
+
+1. Revisar `Up`, `Down` y snapshot.
+2. Confirmar que renombres usan `RenameColumn`/`RenameTable` y no drop/create accidental.
+3. Confirmar `DeleteBehavior.Restrict` en nuevas relaciones de dominio.
+4. Revisar índices únicos, filtros y constraints.
+5. Definir backfill si la columna no admite null.
+6. Crear backup si hay datos relevantes.
+
+### 6.3 Aplicación
+
+```powershell
+dotnet ef database update `
+  --project "API Graphql/Data/Data.csproj" `
+  --startup-project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+No aplicar migraciones de prueba a producción desde una notebook de desarrollo.
+
+---
+
+## 7. Rebaseline y restauración de la base demo
+
+### 7.1 Advertencia
+
+El rebaseline **elimina la base `OneItb` local**. Sus guardas limitan contenedor, puerto y
+nombre, crean backup `COPY_ONLY` con checksum, ejecutan `RESTORE VERIFYONLY`, copian el
+`.bak` a almacenamiento ignorado, migran y ejecutan seed dos veces.
+
+Cerrar backend/IIS Express antes de comenzar. Restaurar dependencias previamente porque el
+script usa `--no-restore`.
+
+### 7.2 Ejecución
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/reset-demo-database.ps1 `
@@ -79,37 +356,22 @@ powershell -ExecutionPolicy Bypass -File scripts/reset-demo-database.ps1 `
 powershell -ExecutionPolicy Bypass -File scripts/validate-demo-database.ps1
 ```
 
-El segundo comando es finito: inicia una API temporal compilada, valida integridad,
-autentica los seis roles y prueba feed, academico, chat, notificaciones, empleos,
-administracion, moderacion y upload. El proceso temporal y el archivo de prueba se
-eliminan siempre en `finally`; SQL Docker queda disponible.
+Ambos scripts son finitos, pero inician APIs temporales con `Start-Process` y las detienen en
+`finally`. No ejecutarlos si una política de la sesión prohíbe iniciar servidores.
 
-Inventario canonico esperado despues del rebaseline:
+Evidencia mínima esperada:
 
-| Conjunto | Cantidad |
-|---|---:|
-| Cuentas / usuarios | 15 / 15 |
-| Carreras / materias / correlatividades | 9 / 6 / 4 |
-| Inscripciones `UserCareer` | 10 |
-| Recursos / progresos academicos | 12 / 18 |
-| Publicaciones / comentarios / reacciones | 60 / 80 / 240 |
-| Reportes / interacciones sociales | 2 / 10 |
-| Mensajes / preferencias / notificaciones | 280 / 120 / 127 |
-| Ofertas / postulaciones | 4 / 6 |
-| Filas CV normalizadas | 60 |
+- `RestoreVerifyOnly: PASS`
+- `Idempotent: True`
+- `IntegrityViolations: 0`
+- `RoleLogins: 6`
 
-La evidencia de una ejecucion valida debe mostrar `RestoreVerifyOnly: PASS`,
-`Idempotent: True`, `IntegrityViolations: 0` y `RoleLogins: 6`. Nunca copiar a
-documentacion contrasenas, JWT, hashes, connection strings ni el password `sa`.
+### 7.3 Restauración
 
-#### Restauracion de la base demo
-
-Si la reconstruccion posterior al backup falla, usar exclusivamente el nombre
-`BackupFile` informado por el script. El archivo verificado permanece en el contenedor
-bajo `/var/opt/mssql/backup/` y existe una copia local ignorada:
+Usar exclusivamente `BackupFile` informado por el reset:
 
 ```powershell
-$backupName = "<BackupFile informado por el reset>"
+$backupName = "<BackupFile informado>"
 $password = ((Get-Content .env | Where-Object {
   $_ -like 'ONEITB_SQL_SA_PASSWORD=*'
 }) -replace '^ONEITB_SQL_SA_PASSWORD=', '')
@@ -129,350 +391,376 @@ docker exec oneitb23-sql /opt/mssql-tools18/bin/sqlcmd `
   -C -b -S localhost -U sa -P $password -d master -Q $restoreSql
 ```
 
-Tras restaurar, ejecutar `scripts/validate-demo-database.ps1`. Si el `.bak` ya no se
-encuentra dentro del contenedor, copiar primero la version local mediante
-`docker cp`; no improvisar una recreacion parcial.
+Si solo existe la copia local `backups/local-demo/`, copiarla primero al contenedor con
+`docker cp`. Después ejecutar `validate-demo-database.ps1`.
 
-## Entity Framework Core
+---
 
-```powershell
-dotnet ef migrations list --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
-dotnet ef database update --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
-dotnet ef migrations has-pending-model-changes --configuration Release --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
+## 8. Frontend y configuración Microsoft
+
+### 8.1 Variables frontend
+
+El archivo rastreado `.env.example` contiene identificadores vacíos y el callback correcto:
+
+```dotenv
+VITE_ENTRA_CLIENT_ID=
+VITE_ENTRA_TENANT_ID=
+VITE_ENTRA_API_SCOPE=
+VITE_ENTRA_REDIRECT_URI=http://localhost:5173/auth/microsoft/callback
 ```
 
-Cada migracion debe revisarse antes de aplicarse. Un cambio de nombre debe usar `RenameColumn`; las nuevas FKs deben declarar su comportamiento de borrado.
+Copiar a `.env.local` o usar el helper ignorado. `VITE_ENTRA_CLIENT_ID` es canónico;
+`VITE_MICROSOFT_CLIENT_ID` es alias temporal y no debe tener un valor distinto.
 
-## Frontend
+### 8.2 App Registration API
 
-```powershell
-Set-Location "FrontEnd/OneItb-FE"
-npm.cmd ci
-npm.cmd run build
-npm.cmd run dev
-```
+1. Tipo: cuentas en cualquier directorio organizativo.
+2. Exponer `api://<API_CLIENT_ID>`.
+3. Crear scope delegado `access_as_user`.
+4. Configurar `requestedAccessTokenVersion: 2`.
+5. No usar Microsoft Graph como audience del token enviado a OneITB.
 
-En desarrollo, el frontend usa por defecto rutas same-origin (`/graphql`, `/api` y
-`/uploads`) que Vite reenvia al perfil HTTPS `OneITB` en
-`https://localhost:44397`. Esto evita que la sesion del navegador dependa del almacen
-de certificados particular de Firefox o Chromium. `VITE_GRAPHQL_URL` y
-`VITE_GRAPHQL_WS_URL` tienen prioridad cuando se necesita apuntar a un host explicito.
-El proxy con `secure: false` existe solo en el servidor de desarrollo de Vite; no
-debilita TLS ni CORS del backend y no forma parte del bundle productivo.
+### 8.3 App Registration SPA
 
-## Docker productivo y servicios opcionales
+1. Aplicación pública, sin client secret.
+2. Plataforma Single-page application.
+3. Redirect exacto local: `http://localhost:5173/auth/microsoft/callback`.
+4. Registrar el equivalente del ambiente desplegado.
+5. Agregar permiso delegado `api://<API_CLIENT_ID>/access_as_user` y consentimiento.
+6. No registrar `/login`: reproduce el flujo anidado que la Spec 200 eliminó.
 
-El entorno local de desarrollo sigue usando `docker-compose.yml` solo para SQL Server. El compose productivo separado agrega Redis, API y frontend Nginx:
-
-```powershell
-$env:ONEITB_SQL_SA_PASSWORD = "<password-fuerte>"
-$env:ONEITB_JWT_ISSUER = "https://oneitb.example.edu/"
-$env:ONEITB_JWT_AUDIENCE = "https://oneitb.example.edu/"
-$env:ONEITB_JWT_KEY = "<clave-jwt-de-32-caracteres-o-mas>"
-$env:ONEITB_MAGIC_LINK_FRONTEND_URL = "https://oneitb.example.edu"
-$env:ONEITB_CORS_ORIGIN = "http://localhost"
-
-# Redis y Cloudinary son opcionales
-$env:ONEITB_REDIS_CONNECTION = "oneitb-redis:6379,abortConnect=false"
-$env:ONEITB_CLOUDINARY_URL = "cloudinary://api_key:api_secret@cloud_name"
-
-# SMTP es obligatorio en Production
-$env:ONEITB_SMTP_HOST = "smtp.example.edu"
-$env:ONEITB_SMTP_PORT = "587"
-$env:ONEITB_SMTP_USER = "oneitb@example.edu"
-$env:ONEITB_SMTP_PASS = "<smtp-secret>"
-$env:ONEITB_SMTP_FROM = "oneitb@example.edu"
-$env:ONEITB_SMTP_ENABLE_SSL = "true"
-
-# Demo data queda deshabilitada por defecto en Production
-$env:ONEITB_SEED_ENABLE_DEMO_DATA = "false"
-
-# Microsoft Entra es opcional y queda deshabilitado sin App Registrations
-$env:ONEITB_ENTRA_ENABLED = "false"
-
-docker compose -f docker-compose.prod.yml config
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
-```
-
-Si `ConnectionStrings:Redis` no existe, HotChocolate usa Pub/Sub en memoria. Si `CloudinarySettings:Url` no existe, `/api/upload` escribe en disco local bajo `wwwroot/uploads`. En Development, la ausencia total de SMTP activa `PickupDirectoryEmailService` y escribe archivos `.eml` ignorados bajo `API Graphql/OneITB/App_Data/MailDrop`; una configuracion SMTP parcial falla para evitar falsos positivos. En Production, SMTP completo es obligatorio.
-
-`ONEITB_SEED_DEMO_PASSWORD` solo es obligatorio cuando `ONEITB_SEED_ENABLE_DEMO_DATA=true`. El seeder usa la misma politica BCrypt inyectada que el registro y no contiene contrasenas por defecto.
-
-### SMTP real para cambios de postulacion
-
-La plataforma envia correos cuando el empleador cambia una postulacion a `Reviewed` o `Rejected`. El envio real se activa solo si estas claves existen:
-
-```powershell
-dotnet user-secrets set "SmtpSettings:Host" "smtp.example.edu" --project "API Graphql/OneITB/GraphQL.csproj"
-dotnet user-secrets set "SmtpSettings:Port" "587" --project "API Graphql/OneITB/GraphQL.csproj"
-dotnet user-secrets set "SmtpSettings:User" "oneitb@example.edu" --project "API Graphql/OneITB/GraphQL.csproj"
-dotnet user-secrets set "SmtpSettings:Pass" "<smtp-secret>" --project "API Graphql/OneITB/GraphQL.csproj"
-dotnet user-secrets set "SmtpSettings:From" "oneitb@example.edu" --project "API Graphql/OneITB/GraphQL.csproj"
-dotnet user-secrets set "SmtpSettings:EnableSsl" "true" --project "API Graphql/OneITB/GraphQL.csproj"
-```
-
-No versionar credenciales SMTP. Para una demo local sin proveedor real, dejar todas las claves SMTP vacias y abrir el archivo `.eml` mas reciente de `App_Data/MailDrop`. El cuerpo y las credenciales temporales nunca se escriben en logs.
-
-### Onboarding B2B de empleadores
-
-El alta de una empresa no se realiza desde registro general ni desde
-`requestMagicLink`. El recorrido valido es:
-
-1. abrir `/empleos/solicitud` y enviar una solicitud empresarial;
-2. iniciar sesion como Administrador;
-3. abrir **Solicitudes de Empleadores** y aprobar o rechazar;
-4. si se aprueba, comprobar el estado `Pending`/`Delivered` del correo;
-5. en Development, abrir el `.eml` de `App_Data/MailDrop` y consumir el enlace una vez.
-
-La confirmacion publica es deliberadamente generica. No usar diferencias de mensaje para
-diagnosticar duplicados; esa informacion solo se consulta desde el panel Admin. Una
-aprobacion repetida no debe crear otra cuenta. Si el correo falla, utilizar
-**Reintentar envio** luego de corregir SMTP; no editar SQL manualmente ni volver a
-aprobar la solicitud.
-
-La migracion asociada es `AddEmployerOnboardingWorkflow`. Antes de una demo comprobar:
-
-```powershell
-dotnet ef migrations has-pending-model-changes --configuration Release --project "API Graphql/Data/Data.csproj" --startup-project "API Graphql/OneITB/GraphQL.csproj"
-```
-
-### Magic Link de empleadores
-
-`requestMagicLink` devuelve solamente `{ accepted, message }`. La credencial aleatoria se envia en el fragmento `#token=` del enlace, se persiste como digest SHA-256 y se consume una sola vez. Al abrir el enlace, React retira el fragmento de la barra de direcciones antes de permitir el login.
-
-En Development:
-
-1. solicitar el enlace desde `/employer-login`;
-2. abrir el `.eml` nuevo de `API Graphql/OneITB/App_Data/MailDrop`;
-3. navegar al enlace incluido;
-4. confirmar el acceso;
-5. comprobar que el mismo enlace falla al reutilizarse.
-
-### Microsoft Entra ID institucional
-
-La integracion usa Authorization Code + PKCE en la SPA y un access token delegado
-destinado a la API OneITB. No usa Google, Microsoft Graph como audiencia, implicit flow
-ni client secret en React.
-
-#### 1. Registrar la API
-
-1. En Microsoft Entra admin center, crear una App Registration con tipo de cuenta
-   **Accounts in this organizational directory only**.
-2. Conservar `Directory (tenant) ID` y `Application (client) ID`.
-3. En **Expose an API**, definir el Application ID URI `api://<API_CLIENT_ID>`.
-4. Crear el scope delegado `access_as_user`; habilitarlo para usuarios o
-   administradores segun la politica institucional.
-5. En el manifest de la API, establecer `requestedAccessTokenVersion` en `2`.
-
-#### 2. Registrar la SPA
-
-1. Crear una segunda App Registration single-tenant.
-2. En **Authentication**, agregar plataforma **Single-page application**.
-3. Registrar exactamente `http://localhost:5173/login` y la URL `/login` del ambiente
-   desplegado; no utilizar comodines.
-4. En **API permissions**, agregar el permiso delegado
-   `api://<API_CLIENT_ID>/access_as_user` y completar el consentimiento que exija el
-   tenant.
-5. No crear ni copiar un client secret a Vite. Tenant ID, client IDs, scope y redirect
-   URI son identificadores publicos; los tokens siguen siendo credenciales efimeras.
-
-#### 3. Configurar el backend
+### 8.4 Backend Entra
 
 ```powershell
 dotnet user-secrets set "EntraId:Enabled" "true" --project "API Graphql/OneITB/GraphQL.csproj"
-dotnet user-secrets set "EntraId:TenantId" "<TENANT_ID>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "EntraId:TenantId" "common" --project "API Graphql/OneITB/GraphQL.csproj"
 dotnet user-secrets set "EntraId:ClientId" "<API_CLIENT_ID>" --project "API Graphql/OneITB/GraphQL.csproj"
 dotnet user-secrets set "EntraId:Audience" "<API_CLIENT_ID>" --project "API Graphql/OneITB/GraphQL.csproj"
 dotnet user-secrets set "EntraId:RequiredScope" "access_as_user" --project "API Graphql/OneITB/GraphQL.csproj"
 dotnet user-secrets set "EntraId:AllowedDomain" "itbeltran.com.ar" --project "API Graphql/OneITB/GraphQL.csproj"
 ```
 
-Una configuracion backend parcial con `Enabled=true` detiene el arranque. Con
-`Enabled=false`, password local y Magic Link continuan disponibles.
+`TenantId=common` es válido. Una configuración parcial con `Enabled=true` debe impedir el
+arranque. Con `false`, password y Magic Link continúan funcionando.
 
-#### 4. Configurar la SPA
+### 8.5 Gate manual Entra
 
-Crear `FrontEnd/OneItb-FE/.env.local` (ignorado por Git):
+1. Login redirige y vuelve exclusivamente por callback, sin popup ni bucle.
+2. Consentimiento solicita solo el scope OneITB.
+3. `institutionalAccountLinked` queda verdadero para la propia identidad.
+4. Cuenta nueva recibe Estudiante y onboarding académico si no tiene carreras.
+5. Logout elimina Apollo, WS, sesión local y estado MSAL.
+6. Tokens de otra audience, tenant no admitido o dominio son rechazados.
+7. No capturar tokens, authorization codes ni JWT en evidencia.
 
-```dotenv
-VITE_ENTRA_CLIENT_ID=<SPA_CLIENT_ID>
-VITE_ENTRA_TENANT_ID=<TENANT_ID>
-VITE_ENTRA_API_SCOPE=api://<API_CLIENT_ID>/access_as_user
-VITE_ENTRA_REDIRECT_URI=http://localhost:5173/login
-```
+Hasta completar este recorrido con una cuenta Microsoft 365 real, Entra permanece `[I]/[B]`
+según el gate del Roadmap.
 
-La accion Microsoft se oculta si faltan valores. MSAL usa `sessionStorage`; al cerrar
-o reemplazar una sesion, OneITB purga MSAL, Apollo y WebSocket. Una cuenta nueva recibe
-rol `Estudiante`. El primer enlace automatico de cuentas `Administrador`, `Moderador`,
-`Profesor` o `Empleador` se rechaza y requiere una vinculacion institucional
-preaprobada; esos usuarios conservan el login local mientras tanto.
+---
 
-#### 5. Gate de aceptacion real
+## 9. Gates automatizados
 
-La implementacion local se valida con tests, migracion, build y schema GraphQL. Para
-elevarla de `[I]` a `[V]` se requiere una cuenta Microsoft 365 institucional real:
+### 9.1 Matriz de scripts
 
-1. iniciar sesion desde `/login`;
-2. comprobar que el consentimiento solicita solo el scope OneITB;
-3. verificar el alta/vinculacion y el Boolean `institutionalAccountLinked`;
-4. cerrar sesion y confirmar que no quedan datos de la cuenta anterior;
-5. rechazar un token de otro tenant, audiencia o dominio;
-6. conservar evidencia sin copiar access tokens, authorization codes ni JWT.
+| Script | Inicia servidor web | Infra temporal | Destructivo | Uso |
+|---|---|---|---|---|
+| `validate-predefense.ps1` | No por defecto | No | No | Baseline conjunto, drift, Compose, npm audit y Git |
+| `validate-predefense.ps1 -IncludeRuntime` | Sí, temporal | No | Muta fixtures y restaura | Aceptación GraphQL/upload/Magic Link aprobada |
+| `validate-local-infrastructure.ps1` | No | Redis + Mailpit en `-d` | No | Integración Redis/SMTP y suites completas |
+| `validate-demo-database.ps1` | Sí, temporal | Usa SQL existente | No, salvo fixtures que limpia | Inventario, seis roles y smoke de dominios |
+| `reset-demo-database.ps1 -ConfirmDatabaseReset` | Sí, temporal para seed | Usa SQL existente | **Sí** | Backup, drop, migración y seed canónico |
 
-Si el certificado HTTPS local no esta instalado o confiado:
+### 9.2 Gate estático predefensa
 
-```powershell
-dotnet dev-certs https --check
-dotnet dev-certs https --clean
-dotnet dev-certs https --trust
-dotnet dev-certs https --check --trust
-```
-
-## Validacion por tipo de cambio
-
-### Gates locales obligatorios
-
-```powershell
-dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore
-dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore
-Push-Location "FrontEnd/OneItb-FE"
-npm.cmd run build
-Pop-Location
-git diff --check
-```
-
-El workflow `.github/workflows/quality-gates.yml` ejecuta estos gates en CI y agrega una verificacion de modelo EF sin secretos versionados.
-
-### Gate predefensa reproducible
-
-El validador consolidado ejecuta tests, builds, consistencia del modelo EF, parseo de
-Compose, auditoria de dependencias y controles de higiene sin dejar servidores activos:
+Precondiciones: SQL healthy, user-secrets de conexión/seed, restores completos y Docker
+accesible. El modo default no inicia backend:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/validate-predefense.ps1
 ```
 
-El modo runtime esta deshabilitado por defecto. Solo debe habilitarse en una ventana de
-mantenimiento expresamente aprobada, contra una base de demostracion respaldada:
+Ejecuta backend tests, frontend tests, builds, drift EF, parse Compose, salud SQL, npm audit,
+`git diff --check`, cobertura de cancelación y estado de proveedores.
+
+### 9.3 Gate integral de base demo
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/validate-demo-database.ps1
+```
+
+Inicia una API temporal en puerto 5097, valida integridad, seis roles, aislamiento JWT,
+feed, académico, chat, notificaciones, empleo, Admin, Moderador y upload, y limpia proceso/
+archivo en `finally`.
+
+### 9.4 Redis y SMTP local
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/validate-local-infrastructure.ps1
+```
+
+El script levanta Redis 16379 y Mailpit SMTP 11025/UI 18025 en modo detached, ejecuta
+tests de infraestructura, sesión, suites, builds y drift, verifica que SQL no cambió y
+elimina los contenedores al terminar. `-KeepContainers` solo se usa para inspección manual.
+
+### 9.5 Runtime predefensa explícito
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/validate-predefense.ps1 -IncludeRuntime
 ```
 
-Ese modo usa un puerto temporal configurable, datos acotados y un bloque `finally` para
-restaurar silenciamientos, eliminar uploads/correos de prueba y detener el proceso que
-inicio. No debe utilizarse para el ensayo ordinario de rate limiting si la politica
-operativa vigente prohibe levantar instancias.
+Inicia una API temporal en 5094, prueba GraphQL, los seis roles, upload, paginación,
+silenciamiento y Magic Link, restaura estado y detiene el proceso. No usar para una prueba
+ordinaria de rate limiting si la sesión prohíbe servidores.
 
-Interpretacion del resultado:
+### 9.6 Interpretación
 
-- `PASS`: gate ejecutado y resultado observado.
-- `BLOCKED`: falta configuracion externa, acceso a Docker/registry o aprobacion
-  institucional; no equivale a un fallo del codigo.
-- `SKIPPED`: gate no solicitado en esa ejecucion.
-- `FAIL`: defecto reproducible que impide el cierre.
+| Resultado | Significado |
+|---|---|
+| PASS | Comando ejecutado y resultado observado |
+| FAIL | Defecto reproducible o cleanup incompleto |
+| BLOCKED | Falta proveedor, credencial, red, Docker o aprobación externa |
+| SKIPPED | Gate no solicitado; no equivale a PASS |
 
-Los proveedores SMTP, Redis y Cloudinary solo pueden elevarse a verificados usando
-secretos no versionados. La auditoria npm debe informar por severidad: en el corte
-2026-07-28 no hay vulnerabilidades altas o criticas; permanecen dos avisos moderados
-upstream de React Router 6.30.4. OneITB es SPA sin SSR y sanitiza destinos internos de
-notificaciones antes de entregarlos a React Router. La rama 7.x no se adopto durante
-Code Freeze porque su corte evaluado introducia vulnerabilidades altas.
+---
 
-### Backend o GraphQL
+## 10. Gates manuales por rol
 
-1. Build Release sin errores.
-2. Migraciones sincronizadas.
-3. Introspeccion del campo afectado en el servidor real.
-4. Ejecucion autenticada de la query/mutation.
+Ejecutar sobre dos perfiles de navegador aislados cuando se valida realtime. Registrar
+solo capturas sin PII sensible ni tokens.
 
-### Frontend
+### 10.1 Estudiante
 
-1. Build Vite.
-2. Verificacion en navegador del flujo modificado.
-3. Revision de consola y Network.
-4. Recarga para confirmar cache y persistencia.
+- Login local y, si corresponde, onboarding de carrera.
+- Feed acotado a carreras, publicación, adjuntos, comentarios y reacciones.
+- Perfil/CV, privacidad, recursos y progreso propio.
+- Chat, badges y notificaciones.
+- Postulación laboral y constancia.
 
-### Archivos
+### 10.2 Profesor
 
-1. Upload sin JWT devuelve `401`.
-2. Archivo invalido o mayor a 15 MB se rechaza.
-3. URL devuelta comienza con `/uploads/` en modo local o es HTTPS de Cloudinary cuando `CloudinarySettings:Url` esta configurado.
-4. Publicacion/comentario conserva la URL tras recargar.
+- Recursos académicos y estudiantes por materia.
+- Carga de progreso con actor autorizado.
+- Confirmar que materias de carreras vinculadas permiten gestión.
+- Confirmar que una materia fuera de sus carreras devuelve rechazo controlado y no
+  persiste recursos ni progreso (política equivalente cerrada en Spec 201).
 
-## Problemas locales conocidos
+### 10.3 Egresado
 
-### SQL Server Docker local
+- Perfil/CV, muro permitido, recursos y Bolsa de Trabajo.
+- Postulación y seguimiento de estado.
 
-El runtime local canonico usa SQL Server 2022 en Docker para evitar dependencias de Windows Auth, SPN, Kerberos, LocalDB y `SQLEXPRESS`.
+### 10.4 Empleador
 
-Comandos utiles:
+- Magic Link single-use y acceso al Gestor de Ofertas y Postulaciones.
+- Crear oferta, ver postulantes propios, cambiar estado y notificación/correo.
+- Denegar acceso a ofertas ajenas y funciones académicas/Admin.
+
+### 10.5 Moderador
+
+- Reportes, hide/restore, silenciamiento y `ModerationAudit`.
+- No editar texto ajeno ni ejecutar funciones Admin-only.
+
+### 10.6 Administrador
+
+- Usuarios, carreras, materias, reportes, contenido, auditoría y solicitudes empresariales.
+- Aprobar/rechazar/reintentar onboarding B2B.
+- Proteger cuentas Administrador de cambio/desactivación.
+- Smoke SMTP solo desde rol Admin.
+
+### 10.7 Sesión y realtime
+
+1. Abrir usuario A en perfil normal y B en perfil privado/incógnito.
+2. Enviar mensaje A -> B y verificar topic/badge.
+3. Marcar leído y confirmar conteo no leído.
+4. Cerrar A, ingresar con otra identidad y comprobar cache/WS limpios.
+5. Repetir notificación sin fuga entre usuarios.
+
+---
+
+## 11. Correo, Magic Link y onboarding B2B
+
+### 11.1 Development sin SMTP real
+
+Si todas las claves SMTP están vacías, `PickupDirectoryEmailService` escribe `.eml` en:
+
+```text
+API Graphql/OneITB/App_Data/MailDrop
+```
+
+La carpeta está ignorada. Una configuración SMTP parcial falla para evitar falsos positivos.
+
+### 11.2 SMTP por user-secrets
 
 ```powershell
-docker compose up -d
+dotnet user-secrets set "SmtpSettings:Host" "<HOST>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:Port" "587" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:User" "<USER>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:Pass" "<SECRET>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:From" "<FROM>" --project "API Graphql/OneITB/GraphQL.csproj"
+dotnet user-secrets set "SmtpSettings:EnableSsl" "true" --project "API Graphql/OneITB/GraphQL.csproj"
+```
+
+No incluir valores reales en evidencias. Para aceptación local preferir Mailpit.
+
+### 11.3 Solicitud empresarial
+
+1. Enviar `/empleos/solicitud`.
+2. Admin abre Solicitudes de Empleadores.
+3. Aprobar o rechazar con confirmación.
+4. Aprobación repetida no crea otra cuenta.
+5. Verificar Outbox `Pending`/`Delivered` y correo pickup/Mailpit.
+6. Consumir Magic Link una vez; el replay debe fallar.
+7. Si SMTP falla, corregir configuración y usar Reintentar envío; no editar SQL.
+
+La respuesta pública es intencionalmente genérica y no debe utilizarse para diagnosticar
+duplicados. Esa información pertenece al panel Admin.
+
+---
+
+## 12. Plantilla Docker de producción
+
+### 12.1 Validación sin despliegue
+
+```powershell
+docker compose -f docker-compose.prod.yml config --quiet
+docker compose -f docker-compose.prod.yml build
+```
+
+Para `config`, definir las variables obligatorias en la sesión sin imprimirlas. No guardarlas
+en scripts rastreados.
+
+### 12.2 Inicio detached
+
+```powershell
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml ps
+```
+
+El compose incluye SQL, Redis, API y Nginx. SMTP es obligatorio en Production; demo seed
+está deshabilitado. Cloudinary y Entra son opcionales por configuración. La API exige
+`ONEITB_DB_CONNECTION_STRING` completa como secreto: debe incluir `Encrypt=True`,
+`TrustServerCertificate=False` y apuntar a un SQL con certificado verificable. La
+contraseña SA del contenedor no reemplaza esa cadena de aplicación.
+
+### 12.3 Limitaciones que impiden certificar producción
+
+- `GAP-INFRA-01`: la plantilla ya no embebe `TrustServerCertificate=True`; su cierre
+  productivo requiere inyectar la cadena segura y comprobar handshake TLS contra el SQL
+  real. Sin esa evidencia, permanece como gate de destino.
+- `GAP-FILE-01`: `/uploads` local no autoriza por objeto; usar storage privado/URLs firmadas.
+- Disco local no permite múltiples réplicas coherentes; usar storage compartido.
+- La API expone `/health/live`, `/health/ready`, correlation ID y logs estructurados; faltan
+  plataforma central, alertas, backup/restore de destino, rollback e incident response.
+- SMTP, Redis administrado, Cloudinary y Entra requieren smokes con secretos reales.
+
+Por estas razones `docker-compose.prod.yml` es una plantilla productiva implementada, no
+evidencia de una producción aceptada.
+
+---
+
+## 13. Troubleshooting
+
+### 13.1 Login devuelve NetworkError/CORS null
+
+Orden de diagnóstico:
+
+1. Confirmar que backend sigue ejecutándose y `/health` responde.
+2. Confirmar que Vite usa `/graphql` same-origin y no una URL antigua absoluta.
+3. Revisar Network: si no hay status HTTP, suele ser backend caído/certificado, no CORS lógico.
+4. Abrir una vez `https://localhost:44397/health` y aceptar el certificado Development si corresponde.
+5. Verificar perfil `OneITB` y puerto 44397.
+
+### 13.2 Credenciales demo rechazadas
+
+- Verificar que se usa exactamente el valor actual de `Seed:DemoPassword`.
+- Recordar que cambiar el secreto no rehashea cuentas existentes.
+- Ejecutar `validate-demo-database.ps1` para seis logins.
+- Si se necesita normalizar passwords, usar rebaseline con backup; no editar hash SQL.
+
+### 13.3 `block_nested_popups` o callback en Login
+
+- Confirmar `VITE_ENTRA_REDIRECT_URI=http://localhost:5173/auth/microsoft/callback`.
+- Confirmar la misma URI exacta en App Registration SPA.
+- Reiniciar Vite después de cambiar `.env`.
+- No configurar `/login`, `loginPopup` ni redirect wildcard.
+
+### 13.4 SQL Docker
+
+```powershell
 docker compose ps
 docker inspect oneitb23-sql --format "{{json .State.Health}}"
 docker compose logs oneitb-sql --tail 80
 ```
 
-La cadena local validada usa SQL Auth contra `localhost,1433` y vive en user-secrets:
+### 13.5 SSPI/Kerberos
 
-```powershell
-$password = ((Get-Content .env | Where-Object { $_ -like 'ONEITB_SQL_SA_PASSWORD=*' }) -replace '^ONEITB_SQL_SA_PASSWORD=', '')
-$connection = "Server=localhost,1433;Database=OneItb;User Id=sa;Password=$password;Encrypt=False;TrustServerCertificate=True;"
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" $connection --project "API Graphql/OneITB/GraphQL.csproj"
-```
+`Failed to generate SSPI context` pertenece a Windows Integrated Security/SPN, no al
+certificado HTTPS. Usar SQL Docker con SQL Auth y user-secrets; no volver a
+`localhost\SQLEXPRESS` ni LocalDB para gates.
 
-`Encrypt=False` esta permitido solo en Development contra el contenedor local. No copiar esta cadena a produccion.
+### 13.6 SQL exige cifrado
 
-### SQL Server exige cifrado
+En Development controlado puede usarse la cadena Docker de la sección 3.2. No copiar
+`Encrypt=False` o `TrustServerCertificate=True` a un destino real.
 
-Si aparece `The instance of SQL Server ... requires encryption`, revisar la cadena del entorno local y el certificado. `TrustServerCertificate=True` solo es aceptable en desarrollo controlado; no debe copiarse a produccion.
+### 13.7 Windows Event Log
 
-Configuracion historica reemplazada: antes se intento usar LocalDB para evitar dependencia de SPN/Kerberos de `localhost\SQLEXPRESS`, pero ese camino queda descartado para validaciones de specs:
+El host limpia providers y usa Console/Debug. Si aparece denegación del Event Log, comprobar
+que se ejecuta el host actual y no un perfil/configuración histórica.
 
-Usar la cadena Docker documentada en la seccion anterior.
-
-Si `sqllocaldb create` devuelve exito pero `sqllocaldb info MSSQLLocalDB` sigue informando que la instancia automatica no existe, el runtime LocalDB del host esta danado o bloqueado por Windows. En ese caso no marcar runtime como verificado; usar SQL Auth por `user-secrets` o reparar LocalDB fuera del repo.
-
-### SQL SSPI / Kerberos
-
-`Failed to generate SSPI context` no es un error de certificado TLS. Es un problema de Windows Integrated Security, Kerberos o SPN contra la instancia SQL configurada.
-
-Opciones locales permitidas:
-
-1. Usar Docker SQL con SQL Auth mediante `dotnet user-secrets` o variable de entorno `ConnectionStrings__DefaultConnection`.
-2. No commitear passwords.
-3. Evitar `localhost\SQLEXPRESS` con Windows Auth y LocalDB para validaciones de specs.
-
-Ejemplo de override local no versionado:
-
-```powershell
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=OneItb;User Id=sa;Password=<local-secret>;Encrypt=False;TrustServerCertificate=True;" --project "API Graphql/OneITB/GraphQL.csproj"
-```
-
-### Windows Event Log deniega acceso
-
-El host puede ocultar el error original al intentar escribir en Event Log sin permisos. Para diagnostico local usar logging de consola/archivo o ejecutar con una configuracion que no registre en Event Log.
-
-El host actual limpia providers y registra Console/Debug en `Program.cs`; no registra Windows Event Log.
-
-### Puerto HTTPS ocupado por IIS Express
-
-Si `dotnet run` falla con `Failed to bind to address https://localhost:44397` o `SocketException (10013)`, revisar si IIS Express quedo activo desde Visual Studio:
+### 13.8 Puerto ocupado
 
 ```powershell
 Get-Process iisexpress -ErrorAction SilentlyContinue
+Get-NetTCPConnection -LocalPort 44397 -ErrorAction SilentlyContinue |
+  Select-Object LocalAddress,LocalPort,State,OwningProcess
 ```
 
-Cerrar solo IIS Express libera los binarios y el puerto local. Si Visual Studio mantiene archivos `Debug` bloqueados, validar con el build ya probado:
+Cerrar únicamente el proceso identificado y propio. No matar procesos por nombre o PID sin
+confirmar su línea de comando.
 
-```powershell
-dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release
-dotnet run --project "API Graphql/OneITB/GraphQL.csproj" --launch-profile OneITB -c Release --no-build
-```
+### 13.9 Reset o validación interrumpidos
 
-## Criterio de evidencia
+1. Confirmar que no quede el proceso temporal en 5094, 5096 o 5097.
+2. Revisar la salida final/`finally` del script.
+3. No repetir el reset hasta comprobar backup e integridad de SQL.
+4. Restaurar con el `.bak` verificado si la base fue eliminada y la migración falló.
 
-Compilar no demuestra que GraphQL, autenticacion o persistencia funcionen. Si el runtime no puede iniciarse, registrar el bloqueo exacto en `specs/<feature>/evidence.md` y no declarar el flujo como verificado.
+---
+
+## 14. Evidencia y cierre predefensa
+
+### 14.1 Evidencia mínima por ejecución
+
+- Fecha/hora y zona horaria.
+- SHA exacto y estado limpio/sucio del worktree.
+- Versiones de .NET, Node, npm y Docker.
+- Comando exacto sin valores sensibles.
+- Resultado PASS/FAIL/BLOCKED/SKIPPED.
+- Conteos de tests/build y duración relevante.
+- Resultado drift EF y salud de SQL.
+- Roles y flujos recorridos.
+- Capturas sanitizadas de UI/Network/Console cuando corresponda.
+- Cleanup y puertos liberados.
+
+### 14.2 Checklist del SHA candidato
+
+1. Integrar cambios y comprobar que no hay secretos/artefactos temporales rastreados.
+2. Ejecutar `validate-predefense.ps1`.
+3. Ejecutar `validate-local-infrastructure.ps1`.
+4. Ejecutar `validate-demo-database.ps1` en ventana aprobada.
+5. Recorrer manualmente los seis roles.
+6. Probar chat/notificaciones con dos perfiles aislados.
+7. Probar onboarding B2B y acceso Empleador.
+8. Confirmar que se mantienen los cierres de `GAP-AUTH-01`, `GAP-AUTH-02` y
+   `GAP-PRIV-01`; registrar
+   `GAP-FILE-01` como aceptación exclusiva de demo controlada y `GAP-INFRA-01` como gate
+   de TLS del destino.
+9. Etiquetar el SHA que se presentará y crear snapshot offline.
+10. No modificar código después del gate sin repetir la validación afectada.
+
+### 14.3 Criterio de evidencia
+
+Compilar no demuestra GraphQL, autenticación, realtime o persistencia. Si una dependencia
+externa no puede probarse, registrar `BLOCKED` con causa concreta y utilizar un fallback
+local únicamente para la demo. Nunca convertir ausencia de configuración en PASS.

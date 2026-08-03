@@ -51,7 +51,7 @@ public sealed class UsersServiceTests
         using var unitOfWork = new UnitOfWork(context);
         var service = CreateService(unitOfWork, context);
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        PublicRegistrationException exception = await Assert.ThrowsAsync<PublicRegistrationException>(() =>
             service.RegisterAsync(new RegisterInput(
                 "admin.intent@itbeltran.com.ar",
                 "Test1234!",
@@ -60,6 +60,80 @@ public sealed class UsersServiceTests
                 "Administrador",
                 new[] { ServiceTestData.CareerId },
                 null)));
+
+        Assert.Equal("REGISTRATION_POLICY_REJECTED", exception.Code);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_RejectsProfessorRoleFromPublicRegistration()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        using var unitOfWork = new UnitOfWork(context);
+        var service = CreateService(unitOfWork, context);
+
+        PublicRegistrationException exception = await Assert.ThrowsAsync<PublicRegistrationException>(() =>
+            service.RegisterAsync(new RegisterInput(
+                "profesor.publico@itbeltran.com.ar",
+                "Test1234!",
+                "Paula",
+                "Profesora",
+                "Profesor",
+                new[] { ServiceTestData.CareerId },
+                null)));
+
+        Assert.Equal("REGISTRATION_POLICY_REJECTED", exception.Code);
+        Assert.False(await context.Accounts.AnyAsync(
+            account => account.Email == "profesor.publico@itbeltran.com.ar"));
+    }
+
+    [Fact]
+    public async Task RegisterAsync_RejectsExternalDomainBeforePersisting()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        using var unitOfWork = new UnitOfWork(context);
+        var service = CreateService(unitOfWork, context);
+
+        PublicRegistrationException exception = await Assert.ThrowsAsync<PublicRegistrationException>(() =>
+            service.RegisterAsync(new RegisterInput(
+                "student@example.com",
+                "Test1234!",
+                "Eva",
+                "Externa",
+                "Estudiante",
+                new[] { ServiceTestData.CareerId },
+                null)));
+
+        Assert.Equal("REGISTRATION_POLICY_REJECTED", exception.Code);
+        Assert.False(await context.Accounts.AnyAsync(
+            account => account.Email == "student@example.com"));
+    }
+
+    [Fact]
+    public async Task RegisterAsync_DuplicateIdentityUsesGenericNonEnumeratingContract()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        context.Accounts.Single(account => account.Id == ServiceTestData.StudentUserId).Email =
+            "student@itbeltran.com.ar";
+        await context.SaveChangesAsync();
+        using var unitOfWork = new UnitOfWork(context);
+        var service = CreateService(unitOfWork, context);
+
+        PublicRegistrationException exception = await Assert.ThrowsAsync<PublicRegistrationException>(() =>
+            service.RegisterAsync(new RegisterInput(
+                "STUDENT@ITBELTRAN.COM.AR",
+                "Test1234!",
+                "Sofia",
+                "Duplicada",
+                "Estudiante",
+                new[] { ServiceTestData.CareerId },
+                null)));
+
+        Assert.Equal("REGISTRATION_NOT_AVAILABLE", exception.Code);
+        Assert.DoesNotContain("existe", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("cuenta", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -147,6 +221,7 @@ public sealed class UsersServiceTests
         return new UsersService(
             unitOfWork,
             context,
-            new BcryptPasswordHasher(new PasswordHashingOptions(10)));
+            new BcryptPasswordHasher(new PasswordHashingOptions(10)),
+            new PublicRegistrationPolicy("itbeltran.com.ar"));
     }
 }

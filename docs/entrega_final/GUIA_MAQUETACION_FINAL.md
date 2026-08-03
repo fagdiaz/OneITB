@@ -3,16 +3,18 @@
 **Proyecto:** OneITB23<br>
 **Documento fuente:** `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`<br>
 **Resultado esperado:** archivo `.docx` editable y archivo `.pdf` listo para presentar<br>
-**Versión de la guía:** 2.4 - Identidad institucional y contingencia de defensa<br>
-**Inventario gráfico vigente:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos
+**Versión de la guía:** 3.1 - procedimiento final alineado a la Spec 201 del 3 de agosto de 2026<br>
+**Inventario gráfico vigente:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos<br>
 **Criterio editorial:** APA 7, sujeto a los requisitos particulares del Instituto Tecnológico Beltrán
 
 > El documento Markdown es la fuente canónica. No debe reemplazarse ni editarse destructivamente durante la maquetación. Se recomienda trabajar sobre una copia y conservar los diagramas originales en formato Mermaid.
 
-> **Estado de entrada (30 de julio de 2026).** La memoria fuente está alineada con el
-> Release Candidate académico: 174 pruebas backend, 82 frontend, builds limpios, EF sin
-> drift, base demo canónica, Microsoft Entra implementado, Redis local y SMTP Mailpit
-> verificados. Todavía no existen en esta carpeta los
+> **Estado de entrada (3 de agosto de 2026).** La memoria fuente está alineada con el
+> Release Candidate académico: 117/117 ítems contabilizados (45 verificados y 72
+> implementados), ejecución conjunta de 198 pruebas backend y 144 frontend sobre el
+> worktree de Spec 201, builds limpios, 34 migraciones, base demo canónica, Microsoft
+> Entra implementado, Redis local y SMTP Mailpit verificados. Esa corrida no equivale al
+> gate integral del SHA candidato, que continúa pendiente. Todavía no existen en esta carpeta los
 > diagramas exportados, `DOCUMENTO_MAQUETACION.md`, el DOCX ni el PDF. Esta guía convierte
 > esos faltantes en una secuencia verificable y no debe utilizarse para declarar como
 > productivos los proveedores externos pendientes.
@@ -28,7 +30,7 @@ Todas las opciones indicadas en esta guía disponen de una modalidad completamen
 | [Visual Studio Code](https://code.visualstudio.com/) | Revisar el Markdown y abrir su vista previa | Aplicación gratuita para Windows, Linux y macOS |
 | [Pandoc](https://pandoc.org/installing.html) | Convertir Markdown a `.docx` | Software libre y gratuito |
 | [Mermaid Live Editor](https://mermaid.live/) | Renderizar y exportar los diagramas Mermaid | Aplicación web gratuita, sin cuenta obligatoria |
-| [Markdown Preview Mermaid Support](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) | Visualizar bloques Mermaid en versiones anteriores de VS Code | Extensión gratuita; desde VS Code 1.121 la función está integrada y no requiere esta extensión |
+| [Markdown Preview Mermaid Support](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) | Visualizar bloques Mermaid cuando la vista previa instalada no los renderiza | Extensión gratuita y opcional; comprobar primero la vista previa nativa |
 | [Draw.io / diagrams.net](https://app.diagrams.net/) | Recrear diagramas con control visual completo | Aplicación web gratuita |
 | [LibreOffice Writer](https://www.libreoffice.org/download/download-libreoffice/) | Editar `.docx` y exportar a PDF sin licencia comercial | Suite de escritorio libre y gratuita |
 | [Word para la Web](https://www.microsoft365.com/launch/word) | Editar `.docx` desde el navegador | Versión web gratuita con una cuenta Microsoft |
@@ -101,6 +103,8 @@ La versión actual del documento ya incluye las siguientes decisiones. No deben 
 | Metodología híbrida | Se justificó el ciclo Water-Scrum-Fall: diseño predictivo en 2023, pausa y construcción ágil en 2026 |
 | Gestión para anexos | Se definieron Cronograma Macro, Calendario Scrum y Red PERT con ruta crítica |
 | Rigor académico | Se agregaron citas y referencias APA para Cascada, Scrum y Water-Scrum-Fall |
+| Cierre de autorización Spec 201 | Registro Student-only con dominio backend, Profesor acotado por carrera y perfil privado sin excepción Follow |
+| Infraestructura verificable | Cadena SQL productiva externa sin trust bypass predeterminado y probes separados live/ready |
 
 ### 1.4 Plan de trabajo y tiempos realistas
 
@@ -110,19 +114,36 @@ plan de cierre de `docs/project_docs/ROADMAP.md`.
 
 | Orden | ID | Trabajo | Estimación | Salida verificable |
 |---:|---|---|---:|---|
-| 1 | `DF-01` | Completar portada y datos institucionales | 20-30 min | No quedan marcadores `[Completar]` |
+| 1 | `DF-01` | Confirmar portada y datos institucionales precargados | 20-30 min | Nombre, mesa, fecha y versión revisados por el alumno |
 | 2 | `DF-03` | Exportar los 10 diagramas Mermaid recomendados | 2-3 h | SVG y PNG numerados, legibles y sin errores |
 | 3 | `DF-04` | Recrear DER, Cronograma Macro, Calendario Scrum y PERT | 4-6 h | 4 archivos editables y 4 exportaciones |
 | 4 | `DF-05` | Crear documento de maquetación, DOCX e índice | 3-4 h | DOCX APA editable y completo |
 | 5 | `DF-06` | Auditar, corregir y exportar PDF | 2-3 h | PDF revisado página por página |
-| 6 | `DF-07` | Preparar paquete y ensayo de defensa | 4-5 h | Guion, respaldo y exposición base de 22-25 min dentro del rango oficial de 20-30 min |
+| 6 | `DF-07` | Diseñar presentación PPTX/PDF | 2 h 30 min-4 h | Narrativa visual, demo guiada, evidencia y límites técnicos |
+| 7 | `DF-08` | Preparar guion, contingencia y ensayos | 3-4 h | Dos ensayos; exposición base de 22-25 min dentro del rango oficial de 20-30 min |
 
-El tiempo documental pendiente es de **15 h 20 min a 21 h 30 min**. Debe reservarse
-una jornada adicional para los gates técnicos `CF-01` a `CF-06`; el cierre académico
-completo requiere aproximadamente **22-31 horas efectivas** o **3-4 jornadas**.
+El tiempo académico pendiente es de **16 h 50 min a 24 h 30 min**. Debe reservarse
+además el bloque técnico `CF-01` a `CF-06`; el cierre completo requiere aproximadamente
+**23 h 35 min a 34 h efectivas**, distribuidas en cuatro jornadas concentradas.
 
-**Ruta crítica documental:** `DF-01 -> DF-03/DF-04 -> DF-05 -> DF-06 -> DF-07`.
+**Ruta crítica documental:** `DF-01 -> DF-03/DF-04 -> DF-05 -> DF-06 -> DF-07 -> DF-08`.
 Los diagramas Mermaid y los cuatro gráficos manuales pueden producirse en paralelo.
+
+### 1.5 Orden de congelamiento y aprobación
+
+No avanzar por fecha solamente. Cada gate debe estar aprobado antes de producir el
+siguiente artefacto:
+
+| Gate | Condición de entrada | Evidencia de salida |
+|---|---|---|
+| A. Contenido | Memoria Markdown normalizada | Portada confirmada, cifras contrastadas y `git diff` documental revisado |
+| B. Figuras | Gate A aprobado | 13 figuras numeradas, legibles a tamaño A4, con fuentes editables y control en escala de grises |
+| C. DOCX | Gates A y B aprobados | Índice actualizado, estilos APA, tablas/figuras estables y ausencia de instrucciones editoriales |
+| D. PDF e imprenta | Gate C aprobado | PDF auditado en cuatro pasadas, hash SHA-256, copia abierta en otro equipo y orden de impresión autorizado |
+
+La fecha objetivo para enviar el material a imprenta es el **4 de agosto de 2026**. Si
+un gate no puede cerrarse, se debe reducir decoración o cantidad de láminas auxiliares,
+pero nunca omitir la revisión de contenido, el DER, la arquitectura ni el PDF final.
 
 ---
 
@@ -149,8 +170,8 @@ Antes de convertir el documento, cada uno de los diez bloques comprendidos entre
 #### Opción A2: Vista previa local en VS Code
 
 1. Abrir `DOCUMENTO_MAQUETACION.md` y presionar `Ctrl+Shift+V` para probar la vista previa Markdown integrada.
-2. En VS Code 1.121 o posterior, Mermaid ya está integrado. No instalar extensiones adicionales.
-3. Solo en una versión anterior que no renderice los bloques, instalar la extensión gratuita **Markdown Preview Mermaid Support**.
+2. Comprobar primero si la instalación actual renderiza Mermaid sin extensiones.
+3. Solo si la vista previa no lo soporta, instalar **Markdown Preview Mermaid Support**.
 4. Confirmar que los diez diagramas se rendericen sin errores ni textos truncados.
 5. Para una exportación limpia, copiar cada bloque a Mermaid Live Editor y descargarlo. Usar una captura solamente como último recurso.
 6. Si se realiza una captura, configurar el zoom del sistema al 100 %, ampliar el diagrama y evitar que aparezcan menús, cursores o fondos del editor.
@@ -234,7 +255,11 @@ Los gráficos 11 a 13 no tienen un bloque Mermaid embebido. Deben construirse a 
 2. **Calendario Scrum:** grilla de dos semanas por cinco días, ceremonias con duración, actividades técnicas y marcador de incremento.
 3. **Red PERT:** nodos con Inicio Temprano, Fin Temprano y duración. La ruta crítica `A -> B -> C -> D -> E -> G -> H` debe destacarse en rojo; la rama `D -> F -> G` debe mostrar dos semanas de holgura.
 
-En `DOCUMENTO_MAQUETACION.md`, insertar estas tres figuras bajo un nuevo apartado `7.9 Gráficos de gestión del proyecto`. La descripción técnica permanece en la sección 5 y las láminas de mayor tamaño se concentran en Anexos para no interrumpir la lectura principal.
+En `DOCUMENTO_MAQUETACION.md`, insertar estas tres figuras bajo un nuevo apartado
+`7.10 Gráficos de gestión del proyecto`. La numeración 7.9 ya pertenece a las condiciones
+oficiales de presentación y no debe reutilizarse. La descripción técnica permanece en
+la sección 5 y las láminas de mayor tamaño se concentran en Anexos para no interrumpir
+la lectura principal.
 
 ### 2.3 Reemplazar los bloques Mermaid
 
@@ -266,7 +291,10 @@ Reglas para todas las figuras:
 
 ## 3. CONVERSIÓN DE MARKDOWN A WORD (.docx)
 
-La conversión debe ejecutarse sobre `DOCUMENTO_MAQUETACION.md`, después de reemplazar los diez bloques Mermaid e insertar los tres gráficos de gestión en el apartado 7.9 de Anexos. Pandoc no convierte automáticamente los bloques Mermaid en imágenes dentro de Word.
+La conversión debe ejecutarse sobre `DOCUMENTO_MAQUETACION.md`, después de reemplazar
+los diez bloques Mermaid e insertar los tres gráficos de gestión en el apartado 7.10 de
+Anexos. Pandoc no convierte automáticamente los bloques Mermaid en imágenes dentro de
+Word.
 
 ### Alternativa A: Método automatizado con Pandoc
 
@@ -285,13 +313,13 @@ pandoc `
   --toc `
   --toc-depth=3 `
   --resource-path=".\docs\entrega_final" `
-  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx"
+  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx"
 ```
 
 El equivalente mínimo es:
 
 ```powershell
-pandoc ".\docs\entrega_final\DOCUMENTO_MAQUETACION.md" -o ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx"
+pandoc ".\docs\entrega_final\DOCUMENTO_MAQUETACION.md" -o ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx"
 ```
 
 #### Conversión profesional con documento de referencia
@@ -321,7 +349,7 @@ pandoc `
   --toc-depth=3 `
   --resource-path=".\docs\entrega_final" `
   --reference-doc=".\docs\entrega_final\salida\REFERENCIA_APA.docx" `
-  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx"
+  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx"
 ```
 
 6. Abrir el resultado y actualizar la tabla de contenido completa para recalcular títulos y páginas.
@@ -507,21 +535,43 @@ No intentar revisar todo simultáneamente. Ejecutar cuatro recorridos independie
 Usar nombres de entrega estables, por ejemplo:
 
 ```text
-OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx
-OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf
+OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx
+OneITB23_Memoria_Tecnica_PP3_2026_v2.0.pdf
 ```
 
 Evitar nombres como `final_final`, `nuevo`, `corregido2` o equivalentes. Después de aprobar el PDF, generar una huella de integridad:
 
 ```powershell
 Get-FileHash `
-  ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf" `
+  ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.pdf" `
   -Algorithm SHA256 |
   Format-List |
-  Out-File ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v1.0.sha256.txt"
+  Out-File ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.sha256.txt"
 ```
 
 La huella no necesita adjuntarse salvo solicitud institucional; se conserva como evidencia de que el archivo revisado coincide con el archivo entregado.
+
+### 4.10 Preflight de imprenta
+
+Antes de enviar el PDF:
+
+1. Abrirlo en un segundo visor y, si es posible, en otro equipo.
+2. Confirmar tamaño A4, orientación correcta de páginas especiales y ausencia de hojas
+   en blanco no intencionales.
+3. Verificar que las fuentes estén incrustadas o sustituidas de forma consistente desde
+   las propiedades del PDF.
+4. Revisar las figuras al 200 %: no deben pixelarse, cortarse ni invadir márgenes.
+5. Imprimir dos páginas de muestra: una con texto/tablas y otra con el DER o una figura
+   compleja. Comprobar contraste tanto a color como en escala de grises.
+6. Confirmar con la imprenta: impresión preferentemente a color, simple o doble faz,
+   gramaje disponible, tipo de tapa, anillado o encuadernación y hora de retiro.
+7. Enviar exclusivamente el PDF cuyo SHA-256 fue registrado; no enviar el DOCX como
+   fuente de impresión porque puede repaginarse en otro equipo.
+8. Al retirar la copia, verificar portada, orientación, orden de páginas, encuadernación
+   y legibilidad de al menos tres figuras antes de abandonar la imprenta.
+
+La elección entre simple y doble faz no fue fijada por la cátedra. Debe decidirse por
+legibilidad, espesor y recomendación de la imprenta, sin alterar márgenes ni numeración.
 
 ### Archivos finales sugeridos
 
@@ -551,9 +601,9 @@ docs/entrega_final/
 |   `-- 13-red-pert-ruta-critica.png
 `-- salida/
     |-- REFERENCIA_APA.docx
-    |-- OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx
-    |-- OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf
-    `-- OneITB23_Memoria_Tecnica_PP3_2026_v1.0.sha256.txt
+    |-- OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx
+    |-- OneITB23_Memoria_Tecnica_PP3_2026_v2.0.pdf
+    `-- OneITB23_Memoria_Tecnica_PP3_2026_v2.0.sha256.txt
 ```
 
 El `.docx` debe considerarse el archivo de edición final; el PDF es la versión de entrega. El Markdown permanece como respaldo técnico reproducible.
@@ -594,8 +644,8 @@ el aula, conectar el equipo y comprobar proyección y audio antes del inicio.
 El paquete académico se considera completo cuando contiene:
 
 1. una copia impresa, preferentemente a color, anillada o encuadernada, de la memoria aprobada;
-2. `OneITB23_Memoria_Tecnica_PP3_2026_v1.0.docx`, editable y sin comentarios;
-3. `OneITB23_Memoria_Tecnica_PP3_2026_v1.0.pdf`, idéntico al DOCX aprobado;
+2. `OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx`, editable y sin comentarios;
+3. `OneITB23_Memoria_Tecnica_PP3_2026_v2.0.pdf`, idéntico al DOCX aprobado;
 4. presentación `OneITB23_Defensa_2026.pptx` y su exportación PDF;
 5. las 13 figuras en formato de entrega y sus fuentes editables;
 6. el Markdown canónico utilizado para producir el documento;
@@ -613,9 +663,10 @@ Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
 | Afirmación documental | Fuente de comprobación |
 |---|---|
 | 100 % global y 117/117 ítems | `docs/project_docs/ROADMAP.md` |
-| 174 pruebas backend y 82 frontend | evidencia de Spec 197 y `DOCUMENTATION_STATUS.md` |
+| 198 pruebas backend y 144 frontend ejecutadas juntas en worktree; repetición pendiente sobre SHA | Spec 201, `DEVELOPMENT_LOG.md` y `DOCUMENTATION_STATUS.md` |
 | EF Core sin drift | salida del gate de predefensa |
-| Backup, 33 migraciones, seed doble y seis roles | evidencia de Specs 196-197 |
+| Backup, 34 migraciones, seed doble y seis roles | evidencia de Spec 196, Runbook y auditoría final |
+| 47 mutaciones GraphQL en el schema vigente | arquitectura, auditoría final y schema generado |
 | Redis local y SMTP Mailpit verificados | evidencia de Spec 195 |
 | Microsoft Entra implementado; tenant real pendiente | Roadmap y auditoría final |
 | Feature Complete core | Roadmap, sin reinterpretar P5/P6 como deuda académica |
@@ -699,8 +750,10 @@ las migraciones y capturas de la demostración, no en distribuir la base.
 - [ ] Documento de maquetación generado desde el Markdown canónico.
 - [ ] DOCX validado con estilos APA 7 e índice actualizado.
 - [ ] PDF revisado en las cuatro pasadas y sin instrucciones editoriales visibles.
+- [ ] Gates A-D aprobados en orden y sin cambios posteriores sobre una fuente ya congelada.
 - [ ] Cifras de pruebas, estado y pendientes coinciden con el Roadmap.
 - [ ] SHA-256 del PDF generado después de la última corrección.
+- [ ] PDF abierto en un segundo equipo y páginas de muestra verificadas antes del tiraje completo.
 - [ ] Una copia impresa, preferentemente a color, anillada o encuadernada, preparada para la mesa.
 - [ ] Presentación disponible en PPTX y PDF.
 - [ ] Notebook, cargador y adaptador HDMI probados.

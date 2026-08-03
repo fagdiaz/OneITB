@@ -23,6 +23,7 @@ describe('Landing', () => {
     expect(screen.getByRole('heading', { level: 1, name: /Tu recorrido/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Iniciar sesi/i })).toHaveAttribute('href', '/login');
     expect(screen.getByRole('link', { name: /Crear cuenta institucional/i })).toHaveAttribute('href', '/register');
+    expect(screen.getByRole('link', { name: /Soy empresa/i })).toHaveAttribute('href', '/empleos/solicitud');
     expect(screen.queryByText(/Laboratorio/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Escenario 1/i)).not.toBeInTheDocument();
   });

@@ -46,17 +46,37 @@ namespace OneITB.GraphQL.Mutations
         public async Task<UserPayload> RegisterUserAsync(
             RegisterInput input,
             [Service] IUsersService usersService,
+            [Service] IPublicRegistrationRateLimiter rateLimiter,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ILogger<Mutation> logger,
             CancellationToken cancellationToken)
         {
-            if (input == null) throw new ArgumentNullException(nameof(input));
+            ArgumentNullException.ThrowIfNull(input);
+            MagicLinkRateLimitDecision decision = await rateLimiter.TryAcquireAsync(
+                GetClientSource(httpContextAccessor),
+                input.Email,
+                cancellationToken);
+            EnsurePublicRegistrationAllowed(decision, logger);
+
             try
             {
-                var userDto = await usersService.RegisterAsync(input, cancellationToken);
-                return userDto;
+                return await usersService.RegisterAsync(input, cancellationToken);
             }
-            catch (ArgumentException ex)
+            catch (PublicRegistrationException exception)
             {
-                throw new GraphQLException(ex.Message);
+                throw new GraphQLException(
+                    ErrorBuilder.New()
+                        .SetMessage(exception.Message)
+                        .SetCode(exception.Code)
+                        .Build());
+            }
+            catch (ArgumentException)
+            {
+                throw new GraphQLException(
+                    ErrorBuilder.New()
+                        .SetMessage("No se pudo completar el registro con los datos proporcionados.")
+                        .SetCode("REGISTRATION_NOT_AVAILABLE")
+                        .Build());
             }
         }
 
@@ -1407,6 +1427,37 @@ namespace OneITB.GraphQL.Mutations
                         1,
                         (int)Math.Ceiling(
                             decision.RetryAfter.Value.TotalSeconds)));
+            }
+
+            throw new GraphQLException(builder.Build());
+        }
+
+        private static void EnsurePublicRegistrationAllowed(
+            MagicLinkRateLimitDecision decision,
+            ILogger<Mutation> logger)
+        {
+            if (decision.IsAllowed)
+                return;
+
+            logger.LogWarning(
+                "Public registration rejected by the operation-specific limiter. Reason: {ReasonCode}.",
+                decision.ReasonCode);
+            IErrorBuilder builder = ErrorBuilder.New()
+                .SetMessage(
+                    decision.ReasonCode == "provider-unavailable"
+                        ? "El registro no está disponible temporalmente. Intenta nuevamente más tarde."
+                        : "Se alcanzó el límite temporal de registros. Intenta nuevamente más tarde.")
+                .SetCode(
+                    decision.ReasonCode == "provider-unavailable"
+                        ? "REGISTRATION_TEMPORARILY_UNAVAILABLE"
+                        : "REGISTRATION_RATE_LIMITED");
+            if (decision.RetryAfter.HasValue)
+            {
+                builder.SetExtension(
+                    "retryAfterSeconds",
+                    Math.Max(
+                        1,
+                        (int)Math.Ceiling(decision.RetryAfter.Value.TotalSeconds)));
             }
 
             throw new GraphQLException(builder.Build());

@@ -4,11 +4,12 @@
 **Institución:** Instituto Tecnológico Beltrán<br>
 **Carrera:** Tecnicatura Superior en Análisis de Sistemas<br>
 **Espacio curricular:** Práctica Profesionalizante III<br>
-**Alumno/a:** [Completar nombre y apellido]<br>
-**Docente/s:** [Completar]<br>
+**Alumno:** Francisco Díaz<br>
+**Mesa evaluadora:** Saldivar Sebastian Alfredo (presidente) y Benitez Silvio Daniel (vocal)<br>
 **Ciclo lectivo:** 2026<br>
-**Versión del documento:** 1.7 - Microsoft Entra y onboarding B2B de empleadores<br>
-**Fecha de corte técnico-documental:** 30 de julio de 2026
+**Versión del documento:** 2.0 - normalización integral previa a maquetación<br>
+**Fecha de corte técnico-documental:** 3 de agosto de 2026
+**Fecha prevista de defensa:** 7 de agosto de 2026, 09:00<br>
 
 > **Alcance de esta memoria.** Este documento describe el estado comprobable del repositorio OneITB23 al momento de su redacción. Distingue entre funcionalidades implementadas, validaciones automatizadas y verificaciones externas todavía pendientes. Los nombres y versiones se corresponden con el código fuente: .NET 8 (Microsoft, 2023a), Entity Framework Core 8.0.6 (Microsoft, 2023b), Hot Chocolate 14.2.0 (ChilliCream, s. f.), GraphQL (GraphQL Foundation, 2021), React 18 (React Team, 2022), Apollo Client 3.7 (Apollo GraphQL, s. f.), Vite 8 (Vite Team, 2026), Tailwind CSS 4 (Wathan, 2025) y SQL Server 2022 (Microsoft, 2025).
 
@@ -18,7 +19,25 @@ OneITB23 es una plataforma web institucional que integra comunicación académic
 
 La solución adopta una arquitectura desacoplada: una aplicación de página única o SPA (Mozilla, 2025) consume una API GraphQL desarrollada en .NET 8; Entity Framework Core administra la persistencia en SQL Server; las operaciones en tiempo real utilizan el protocolo WebSocket (Fette & Melnikov, 2011); y la carga binaria se resuelve mediante un endpoint basado en el estilo arquitectónico REST (Fielding, 2000). El despliegue productivo se modela con contenedores Docker (Docker, Inc., s. f.) para NGINX (NGINX, Inc., s. f.), la API, SQL Server y Redis (Redis Ltd., s. f.), con adaptadores opcionales para el protocolo SMTP (Klensin, 2008) y almacenamiento Cloudinary (Cloudinary, 2026). Cuando esas variables externas no existen, el entorno local mantiene mecanismos alternativos seguros y reproducibles.
 
-El núcleo funcional se encuentra implementado y el roadmap registra un 100 % global (117 de 117 ítems), con el core funcional completo. La evidencia automatizada más reciente registra 183 pruebas backend y 85 pruebas frontend aprobadas, compilaciones Release/Vite sin errores y esquema de Entity Framework sin cambios pendientes. La base de demostración fue respaldada y reconstruida desde las migraciones canónicas; las migraciones posteriores incorporaron identidad externa Microsoft Entra y onboarding B2B sin alterar el grafo demo. Dos ejecuciones del seeder produjeron un inventario idéntico, la auditoría relacional obtuvo cero violaciones y seis identidades canónicas autenticaron con el rol esperado. La aceptación local también verificó aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y entrega SMTP capturada mediante Mailpit/pickup local. El acceso institucional Microsoft 365 se implementó con MSAL Authorization Code + PKCE y validación backend del access token (Microsoft, s. f.); el consentimiento y smoke contra el tenant real permanecen como gate externo. El alta empresarial controlada se verificó desde la solicitud GraphQL hasta la aprobación, el Outbox y el correo `.eml`; su recorrido visual público/Admin queda pendiente. También restan como controles de cierre académico la regresión visual manual del rol Moderador, la prueba WebSocket de red con dos sesiones aisladas y la maquetación final.
+El núcleo funcional se encuentra implementado y el roadmap registra un 100 % global
+(117 de 117 ítems): 45 se encuentran verificados `[V]` y 72 implementados `[I]`. Esta
+medición expresa cobertura del alcance contabilizado, no aceptación productiva total.
+La Spec 201 ejecutó conjuntamente sobre el mismo worktree 198 pruebas backend y 144
+pruebas frontend, además de los builds y el control de drift EF. Este resultado no se
+presenta como evidencia de un SHA inmutable: el candidato final requiere repetir el gate
+conjunto antes de congelarse. La base de demostración fue respaldada y reconstruida
+desde las migraciones canónicas; las migraciones posteriores incorporaron identidad
+Microsoft Entra y onboarding B2B sin alterar el grafo demo. Dos ejecuciones del seeder
+produjeron un inventario idéntico, la auditoría relacional obtuvo cero violaciones y seis
+identidades canónicas autenticaron con el rol esperado. La aceptación local también
+verificó aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y
+entrega SMTP capturada mediante Mailpit/pickup local. El acceso institucional Microsoft
+365 se implementó con MSAL Authorization Code + PKCE, redirección completa, callback
+aislado y validación backend del access token (Microsoft, s. f.); consentimiento y smoke
+contra el tenant real permanecen como gate externo. El alta empresarial se verificó
+desde la solicitud GraphQL hasta aprobación, Outbox y correo `.eml`; su recorrido visual
+público/Admin queda pendiente. También restan la regresión manual del rol Moderador, la
+prueba WebSocket con dos sesiones aisladas y la producción material de la entrega.
 
 **Índice**
 
@@ -121,7 +140,7 @@ Una flecha parte del Estudiante hacia OneITB23 con la leyenda “crea su perfil 
 
 ### Descripción General
 
-El sistema se presenta como una aplicación web responsive. Una persona puede registrarse con una identidad permitida, seleccionar rol y carreras, iniciar sesión y acceder a un entorno privado. Las contraseñas se verifican mediante BCrypt (Provos & Mazières, 1999). Como alternativa institucional, MSAL ejecuta Authorization Code + PKCE contra un tenant Microsoft Entra único; la API valida el access token del scope OneITB y lo canjea por la misma sesión local. Una autenticación válida emite un JSON Web Token o JWT (Jones et al., 2015), que el cliente Apollo adjunta a las operaciones GraphQL y a las cargas de archivos autorizadas.
+El sistema se presenta como una aplicación web responsive. El registro público crea únicamente identidades `Estudiante`, exige correo `@itbeltran.com.ar` y al menos una carrera activa; Profesor y los demás roles se aprovisionan mediante flujos confiables. La API aplica esta política, evita enumerar duplicados y limita solicitudes por origen e identidad. Las contraseñas se verifican mediante BCrypt (Provos & Mazières, 1999). Como alternativa institucional, MSAL ejecuta Authorization Code + PKCE mediante una autoridad Microsoft Entra para directorios organizacionales: inicia una redirección de página completa, procesa la respuesta en un callback no interactivo y obtiene el access token delegado del scope OneITB. La API vuelve a validar el tenant concreto y canjea ese token por la misma sesión local. Una autenticación válida emite un JSON Web Token o JWT (Jones et al., 2015), que el cliente Apollo adjunta a las operaciones GraphQL y a las cargas de archivos autorizadas.
 
 Una vez autenticado, el usuario accede a un muro cuyo contenido se limita por la intersección de carreras y materias. Puede crear publicaciones con texto, enlaces de YouTube y varios adjuntos; elegir una portada; comentar hasta dos niveles; mencionar usuarios; reaccionar; seguir, silenciar o bloquear; y reportar contenido. Los archivos se cargan primero al endpoint REST y luego se asocian a la operación de negocio mediante GraphQL, evitando transportar binarios por el esquema.
 
@@ -139,84 +158,123 @@ Administradores y moderadores disponen de herramientas diferentes. El autor cons
 
 ### Requerimientos Funcionales
 
+La presentación siguiente agrupa capacidades para facilitar su lectura. Los identificadores
+canónicos se conservan en la matriz de cobertura al final de la sección y corresponden
+exactamente a los 48 requerimientos de
+[`02-software-requirements.md`](../academic/02-software-requirements.md). Los rótulos de
+las viñetas son descriptivos y no crean una numeración alternativa.
+
 #### Autenticación, cuentas e identidad
 
-- **RF-001 - Registro:** permitir el alta con datos normalizados, contraseña confirmada, rol no administrativo y carreras seleccionadas.
-- **RF-002 - Inicio de sesión:** validar credenciales con BCrypt, emitir JWT y redirigir al área privada.
-- **RF-003 - Bloqueo de cuenta:** rechazar cuentas inactivas y aplicar lockout temporal luego de cinco intentos fallidos durante quince minutos.
-- **RF-004 - Protección administrativa:** impedir modificar o desactivar una cuenta administradora desde los flujos ordinarios; exigir contraseña del administrador actual para promover otra cuenta.
-- **RF-005 - Sesión segura:** limpiar token, estado de autenticación, caché Apollo, chat y notificaciones al cerrar sesión o expirar el JWT.
-- **RF-005B - Identidad institucional:** iniciar sesión con una cuenta Microsoft 365 del tenant autorizado, validar firma, emisor, audiencia, vigencia, tenant, objeto, scope y dominio antes de vincular la identidad y emitir el JWT OneITB.
-- **RF-006 - Perfil y CV:** consultar y editar avatar, biografía, contacto, redes, educación, experiencia, proyectos, habilidades e idiomas.
-- **RF-007 - Carreras:** vincular cada usuario con una o más carreras institucionales mediante una relación explícita.
-- **RF-008 - Privacidad:** permitir perfil público o privado y enmascarar información sensible ante terceros no autorizados.
+- **Registro:** permitir el alta con datos normalizados, contraseña confirmada, rol público permitido y carreras seleccionadas.
+- **Inicio de sesión:** validar credenciales con BCrypt, emitir JWT y redirigir al área privada.
+- **Bloqueo de cuenta:** rechazar cuentas inactivas y aplicar lockout temporal luego de cinco intentos fallidos durante quince minutos.
+- **Protección administrativa:** impedir modificar o desactivar una cuenta administradora desde los flujos ordinarios; exigir contraseña del administrador actual para promover otra cuenta.
+- **Sesión segura:** limpiar token, estado de autenticación, caché Apollo, chat y notificaciones al cerrar sesión o expirar el JWT.
+- **Identidad institucional:** iniciar sesión con una cuenta Microsoft 365 organizacional, validar firma, emisor, audiencia, vigencia, tenant, objeto, scope y dominio antes de vincular la identidad y emitir el JWT OneITB.
+- **Perfil y CV:** consultar y editar avatar, biografía, contacto, redes, educación, experiencia, proyectos, habilidades e idiomas.
+- **Carreras:** vincular cada usuario con una o más carreras institucionales mediante una relación explícita.
+- **Privacidad:** permitir perfil público o privado y enmascarar información sensible ante terceros no autorizados.
 
 #### Muro social y medios
 
-- **RF-009 - Publicaciones:** crear, buscar, filtrar, editar y desactivar publicaciones vinculadas con materias autorizadas.
-- **RF-010 - Feed contextual:** mostrar contenido dentro del alcance de carreras del usuario, priorizar autores seguidos y excluir cuentas silenciadas o bloqueadas.
-- **RF-011 - Comentarios:** admitir comentarios principales y respuestas con un máximo persistido de dos niveles.
-- **RF-012 - Menciones:** convertir menciones válidas en enlaces de perfil y notificar al destinatario, excepto en auto-menciones.
-- **RF-013 - Reacciones:** alternar reacciones sobre publicaciones, comentarios y respuestas; permitir al autor consultar quién reaccionó.
-- **RF-014 - Adjuntos:** aceptar hasta diez archivos y 15 MB agregados por contenido, conservar nombre original, MIME, tamaño y orden.
-- **RF-015 - Multimedia:** combinar imágenes, PDF, documentos y hasta dos enlaces de YouTube en un mosaico acotado, con portada, galería y vista previa.
-- **RF-016 - Edición de medios:** permitir al autor reemplazar adjuntos al editar publicaciones o comentarios.
-- **RF-017 - Notificaciones sociales:** agrupar reacciones y comentarios por publicación, contabilizar solo elementos no leídos y navegar al contenido exacto.
-- **RF-018 - Reportes:** permitir reportar publicaciones y someterlas al circuito de moderación.
+- **Publicaciones:** crear, buscar, filtrar, editar y desactivar publicaciones vinculadas con materias autorizadas.
+- **Feed contextual:** mostrar contenido dentro del alcance de carreras del usuario, priorizar autores seguidos y excluir cuentas silenciadas o bloqueadas.
+- **Comentarios:** admitir comentarios principales y respuestas con un máximo persistido de dos niveles.
+- **Menciones:** convertir menciones válidas en enlaces de perfil y notificar al destinatario, excepto en auto-menciones.
+- **Reacciones:** alternar reacciones sobre publicaciones, comentarios y respuestas; permitir al autor consultar quién reaccionó.
+- **Adjuntos:** aceptar hasta diez archivos y 15 MB agregados por contenido, conservar nombre original, MIME, tamaño y orden.
+- **Multimedia:** combinar imágenes, PDF, documentos y hasta dos enlaces de YouTube en un mosaico acotado, con portada, galería y vista previa.
+- **Edición de medios:** permitir al autor reemplazar adjuntos al editar publicaciones o comentarios.
+- **Notificaciones sociales:** agrupar reacciones y comentarios por publicación, contabilizar solo elementos no leídos y navegar al contenido exacto.
+- **Reportes:** permitir reportar publicaciones y someterlas al circuito de moderación.
 
 #### Carreras, materias y actividad académica
 
-- **RF-019 - Materias:** administrar nombre, código, carrera, año y correlatividades sin borrados en cascada.
-- **RF-020 - Recursos académicos:** publicar y consultar archivos o enlaces por materia, categoría y versión.
-- **RF-021 - Progreso:** registrar y consultar nota, estado y observaciones por estudiante y materia.
-- **RF-022 - Autorización académica:** limitar la lectura y escritura según rol, propiedad y pertenencia a la carrera.
-- **RF-023 - Adaptador SIU:** sincronizar datos simulados mediante una interfaz desacoplada y realizar upsert de progreso.
-- **RF-024 - Constancias:** exportar progreso como CSV e imprimir una constancia académica.
-- **RF-025 - Credencial pública:** consultar una credencial limitada de materia aprobada mediante una ruta pública.
+- **Materias:** administrar nombre, código, carrera, año y correlatividades sin borrados en cascada.
+- **Recursos académicos:** publicar y consultar archivos o enlaces por materia, categoría y versión.
+- **Progreso:** registrar y consultar nota, estado y observaciones por estudiante y materia.
+- **Autorización académica:** limitar la lectura y escritura según rol, propiedad y pertenencia a la carrera.
+- **Adaptador SIU:** sincronizar datos simulados mediante una interfaz desacoplada y realizar upsert de progreso.
+- **Constancias:** exportar progreso como CSV e imprimir una constancia académica de apoyo.
+- **Credencial pública:** consultar una credencial limitada de materia aprobada mediante una ruta pública.
 
 #### Mensajería y notificaciones
 
-- **RF-026 - Chat privado:** mantener conversaciones uno a uno con historial persistente.
-- **RF-027 - Tiempo real:** recibir mensajes y notificaciones mediante suscripciones GraphQL autenticadas.
-- **RF-028 - Lectura:** marcar mensajes y notificaciones como leídos y mostrar badges calculados sobre pendientes reales. Los contadores evitan la acumulación incremental ciega mediante el recálculo estricto de entidades no leídas (`Count(n => !n.IsRead)`), garantizando un resultado idempotente en la interfaz aunque existan lecturas previas o nuevas notificaciones.
-- **RF-029 - Recordatorios:** generar un recordatorio idempotente cuando existan mensajes con una antigüedad mínima configurada.
-- **RF-030 - Preferencias:** habilitar o deshabilitar categorías de notificación desde un panel compacto.
+- **Chat privado:** mantener conversaciones uno a uno con historial persistente.
+- **Tiempo real:** recibir mensajes y notificaciones mediante suscripciones GraphQL autenticadas.
+- **Lectura:** marcar mensajes y notificaciones como leídos y mostrar badges calculados sobre pendientes reales. Los contadores evitan la acumulación incremental ciega mediante el recálculo estricto de entidades no leídas (`Count(n => !n.IsRead)`), garantizando un resultado idempotente en la interfaz aunque existan lecturas previas o nuevas notificaciones.
+- **Recordatorios:** generar un recordatorio idempotente cuando existan mensajes con una antigüedad mínima configurada.
+- **Preferencias:** habilitar o deshabilitar categorías de notificación desde un panel compacto.
 
 #### Bolsa de Trabajo y Gestor de Ofertas y Postulaciones
 
-- **RF-031 - Ofertas:** permitir a empleadores y administradores crear y listar ofertas laborales activas.
-- **RF-032 - Postulación:** permitir una única postulación por estudiante o egresado y oferta.
-- **RF-033 - Gestión:** permitir solo al propietario de la oferta consultar postulantes y cambiar su estado.
-- **RF-034 - Perfil académico del candidato:** mostrar al empleador la información permitida para evaluar una postulación.
-- **RF-035 - Aviso por correo:** enviar una notificación institucional al pasar una postulación a revisada o rechazada.
-- **RF-036 - Prueba SMTP:** permitir a un administrador ejecutar un smoke test de correo sin recorrer el flujo laboral completo.
-- **RF-036A - Solicitud empresarial:** permitir que una empresa sin cuenta presente una solicitud pública con consentimiento, datos normalizados, CUIT válido, protección anti-bot y respuesta resistente a enumeración.
-- **RF-036B - Aprobación empresarial:** permitir exclusivamente a Administradores revisar solicitudes y aprobarlas o rechazarlas; una aprobación debe aprovisionar exactamente una identidad `Empleador`, registrar auditoría y encolar el acceso por Magic Link de manera atómica.
+- **Ofertas:** permitir a empleadores y administradores crear y listar ofertas laborales activas.
+- **Postulación:** permitir una única postulación por estudiante o egresado y oferta.
+- **Gestión:** permitir solo al propietario de la oferta consultar postulantes y cambiar su estado.
+- **Perfil académico del candidato:** mostrar al empleador la información permitida para evaluar una postulación.
+- **Aviso por correo:** enviar una notificación institucional al pasar una postulación a revisada o rechazada.
+- **Prueba SMTP:** permitir a un administrador ejecutar un smoke test de correo sin recorrer el flujo laboral completo.
+- **Solicitud empresarial:** permitir que una empresa sin cuenta presente una solicitud pública con consentimiento, datos normalizados, CUIT válido, protección anti-bot y respuesta resistente a enumeración.
+- **Aprobación empresarial:** permitir exclusivamente a Administradores revisar solicitudes y aprobarlas o rechazarlas; una aprobación debe aprovisionar exactamente una identidad `Empleador`, registrar auditoría y encolar el acceso por Magic Link de manera atómica.
 
 #### Administración, moderación y auditoría
 
-- **RF-037 - Panel administrativo:** gestionar usuarios, carreras, materias, publicaciones, comentarios y reportes según permisos.
-- **RF-038 - Moderación reversible:** ocultar o restaurar contenido con motivo obligatorio, sin editar texto ajeno ni borrar físicamente el contenido social.
-- **RF-039 - Silenciamiento temporal:** permitir a moderadores o administradores silenciar usuarios durante un período.
-- **RF-040 - Auditoría:** registrar actor, fecha, entidad, identificador, acción y valores relevantes en operaciones críticas.
-- **RF-041 - Seeder empresarial:** inicializar, cuando está habilitado, un grafo demo coherente e idempotente para la defensa académica.
+- **Panel administrativo:** gestionar usuarios, carreras, materias, publicaciones, comentarios y reportes según permisos.
+- **Moderación reversible:** ocultar o restaurar contenido con motivo obligatorio, sin editar texto ajeno ni borrar físicamente el contenido social.
+- **Silenciamiento temporal:** permitir a moderadores o administradores silenciar usuarios durante un período.
+- **Auditoría:** registrar actor, fecha, entidad, identificador, acción y valores relevantes en operaciones críticas.
+- **Seeder empresarial:** inicializar, cuando está habilitado, un grafo demo coherente e idempotente para la defensa académica.
+
+#### Matriz canónica de cobertura funcional
+
+| Módulo | Identificadores vigentes |
+|---|---|
+| Identidad y sesión | `RF-001`, `RF-002`, `RF-003`, `RF-004`, `RF-004B`, `RF-004C`, `RF-004D`, `RF-004E`, `RF-004F` |
+| Perfil, CV y catálogo | `RF-005`, `RF-006`, `RF-006B`, `RF-007`, `RF-007B` |
+| Muro y multimedia | `RF-008`, `RF-009`, `RF-010`, `RF-011`, `RF-012`, `RF-013`, `RF-013B`, `RF-013C` |
+| Mensajería y notificaciones | `RF-014`, `RF-015`, `RF-016`, `RF-016B`, `RF-016C` |
+| Administración y moderación | `RF-017`, `RF-018`, `RF-019`, `RF-019B` |
+| Académico | `RF-020`, `RF-021`, `RF-022`, `RF-023`, `RF-024`, `RF-025`, `RF-026`, `RF-027` |
+| Bolsa de Trabajo y B2B | `RF-028`, `RF-029`, `RF-030`, `RF-031`, `RF-031B`, `RF-032`, `RF-033`, `RF-034`, `RF-034B` |
+
+#### Reglas de negocio transversales
+
+| ID | Regla resumida |
+|---|---|
+| `BR-001` | Seis roles canónicos; `User` permanece solo como valor legacy. |
+| `BR-002` | Ningún flujo público crea Administrador, Moderador o Empleador. |
+| `BR-003` | Backend normaliza email y nombres antes de persistir. |
+| `BR-004` | Visibilidad social/académica por intersección de carreras, salvo alcance global explícito. |
+| `BR-005` | Perfil privado conserva identidad básica y enmascara datos sensibles server-side. |
+| `BR-006` | Publicaciones/comentarios usan baja lógica y moderación reversible. |
+| `BR-007` | `SocialAttachment` pertenece a Inquiry XOR Comment. |
+| `BR-008` | FKs explícitas y `DeleteBehavior.Restrict`, salvo excepción documentada. |
+| `BR-009` | Sin auto-notificaciones; badges cuentan estrictamente no leídos. |
+| `BR-010` | Claims, no IDs del cliente, determinan actor y rol. |
+| `BR-011` | Secretos y credenciales de un uso no se registran ni versionan. |
+| `BR-012` | Fechas operativas en UTC y localización exclusiva de presentación. |
 
 ### Requerimientos No Funcionales
 
 | Código | Categoría | Requerimiento y criterio aplicado |
 |---|---|---|
-| RNF-001 | Seguridad | Autenticación JWT, hash BCrypt, bloqueo de fuerza bruta, autorización por rol/propiedad, access tokens Entra validados y no persistidos, y secretos fuera del repositorio. |
-| RNF-002 | Protección API | Rate limiting por IP, profundidad GraphQL máxima configurable, paginación global y validación de entradas, en concordancia con las defensas recomendadas para disponibilidad y control de costos (OWASP Foundation, s. f.). |
-| RNF-003 | Privacidad | Enmascaramiento backend de perfiles privados y aislamiento por usuario en mensajes, notas y notificaciones. |
-| RNF-004 | Integridad | Todas las claves foráneas relevantes se modelan explícitamente; se utiliza `DeleteBehavior.Restrict` para evitar rutas de cascada no deseadas. |
-| RNF-005 | Rendimiento | Consultas de lectura con `AsNoTracking`, carga dividida, proyecciones o DataLoaders para agrupación y caché por solicitud (GraphQL Foundation, s. f.); paginación del feed y límites de resultados. |
-| RNF-006 | Escalabilidad | API sin estado de sesión en memoria, Redis Pub/Sub opcional, almacenamiento Cloudinary opcional y contenedores independientes. |
-| RNF-007 | Disponibilidad | Health checks de API, SQL Server y Redis; fallbacks locales para correo, archivos y suscripciones. |
-| RNF-008 | Usabilidad | Interfaz responsive, estados de carga, empty states, un error boundary global para contener errores de renderizado (React Team, s. f.), temas claro/oscuro y feedback inmediato. |
-| RNF-009 | Accesibilidad | Navegación por foco, etiquetas, contraste, reducción de movimiento y controles con semántica básica. No se declara certificación WCAG formal. |
-| RNF-010 | Mantenibilidad | Separación por capas, contratos GraphQL tipados, servicios inyectables, documentación canónica y flujo Spec Kit de desarrollo guiado por especificaciones (GitHub, s. f.-b). |
-| RNF-011 | Observabilidad | Correlation ID, logging estructurado, auditoría de negocio y errores GraphQL sanitizados. |
-| RNF-012 | Portabilidad | Desarrollo reproducible en Windows con SQL Server Docker y despliegue productivo multicontenedor mediante Nginx. |
+| RNF-001 | Seguridad | JWT externalizado de al menos 32 bytes, BCrypt configurable entre 10 y 14, bloqueo de cuenta tras 5 intentos durante 15 minutos, autorización declarativa, CORS explícito, uploads autenticados y rate limiting. |
+| RNF-002 | Integridad | Claves foráneas explícitas, `DeleteBehavior.Restrict`, índices únicos, constraints XOR/completitud, transacciones y soft delete social. |
+| RNF-003 | Rendimiento | Ausencia de I/O síncrono en rutas asíncronas; `AsNoTracking`, proyecciones o DataLoaders para agrupación y caché por solicitud (GraphQL Foundation, s. f.), `AsSplitQuery`, paginación y límites GraphQL. |
+| RNF-004 | Escalabilidad | API stateless respecto de JWT, Redis condicional, almacenamiento intercambiable y servicios separables por contenedor. |
+| RNF-005 | Usabilidad | Interfaz responsive Clean Tech/Tech Noir con estados de carga, error y vacío, skeletons, feedback inmediato, foco y teclado. |
+| RNF-006 | Accesibilidad | Contraste, etiquetas, foco visible, reducción de movimiento, alternativas textuales e impresión independiente del tema; la auditoría WCAG formal permanece pendiente. |
+| RNF-007 | Trazabilidad | Correlation ID, logs estructurados, Audit Trail, `ModerationAudit`, specs y evidencia sin datos personales innecesarios. |
+| RNF-008 | Operabilidad | Health checks, rate limiting, security headers, Docker, configuración por entorno, scripts finitos, comportamiento fail-closed y backup/restore. |
+| RNF-009 | Reproducibilidad | Base demo identificada, backup verificado, migraciones canónicas, doble seed idempotente, seis roles e integridad relacional. |
+| RNF-010 | Resiliencia frontend | Error Boundary sobre los providers, fallback previo al montaje, logout idempotente y descarte de respuestas según la época de sesión. |
+| RNF-011 | Calidad | Builds sin errores, pruebas proporcionales al riesgo, control de drift EF, schema ejecutado y regresión manual para flujos visuales y realtime. |
+| RNF-012 | Privacidad | Minimización, masking server-side, prevención de enumeración, auditoría sanitizada y secretos fuera de Git; no se declara cumplimiento legal integral. |
+
+Estos requerimientos no funcionales constituyen un baseline técnico verificable. No
+equivalen a una certificación WCAG, un pentest externo, un SLA productivo ni una
+prueba formal de carga.
 
 **Restricciones técnicas relevantes**
 
@@ -224,7 +282,7 @@ Administradores y moderadores disponen de herramientas diferentes. El autor cons
 - La configuración productiva no contiene contraseñas; utiliza variables de entorno y secretos.
 - El tamaño agregado de adjuntos sociales se limita a 15 MB y a diez archivos.
 - La paginación global usa un tamaño predeterminado de 20 y un máximo de 50 cuando corresponde.
-- La profundidad máxima GraphQL se mantiene en un valor prudente configurable, con base actual de 10.
+- La profundidad máxima GraphQL se mantiene en un valor prudente configurable, con base actual de 15.
 - La API no debe exponer stack traces ni errores internos al cliente final.
 
 ---
@@ -346,7 +404,6 @@ sequenceDiagram
     autonumber
     actor U as Usuario
     participant F as Frontend (React)
-    participant E as Microsoft Entra ID
     participant C as API GraphQL OneITB
     participant DB as SQL Server
 
@@ -369,7 +426,7 @@ sequenceDiagram
     deactivate F
 ```
 
-**Nota descriptiva.** La secuencia representa un registro sin inicio de sesión implícito. La contraseña se transforma mediante BCrypt antes de la persistencia y la respuesta excluye el token de sesión; por ello, el cliente redirige a la pantalla de acceso con una confirmación de alta exitosa.
+**Nota descriptiva.** La secuencia representa un registro estudiantil sin inicio de sesión implícito. Antes de persistir, el backend valida dominio, carrera y rol; el limitador protege origen e identidad. La contraseña se transforma mediante BCrypt y la respuesta excluye el token de sesión; por ello, el cliente redirige a la pantalla de acceso con una confirmación de alta exitosa.
 
 **B) Inicio de sesión**
 
@@ -378,6 +435,7 @@ sequenceDiagram
     autonumber
     actor U as Usuario
     participant F as Frontend (React)
+    participant E as Microsoft Entra ID
     participant C as API (Controlador Auth)
     participant DB as SQL Server
 
@@ -396,8 +454,11 @@ sequenceDiagram
         C-->>F: AuthPayload o error genérico
         deactivate C
     else Microsoft 365 institucional
-        F->>E: Authorization Code + PKCE
-        E-->>F: access token para scope API OneITB
+        F->>E: loginRedirect con Authorization Code + PKCE
+        E-->>F: retorno a /auth/microsoft/callback
+        F->>F: bloquear interacción y deduplicar flow ID
+        F->>E: acquireTokenSilent(scope API OneITB)
+        E-->>F: access token delegado
         F->>C: microsoftLogin(accessToken)
         activate C
         C->>E: obtener metadata/keys OpenID cacheadas
@@ -412,11 +473,16 @@ sequenceDiagram
     deactivate F
 ```
 
-**Nota descriptiva.** Ambos métodos terminan en el mismo JWT local. El token Entra solo
+**Nota descriptiva.** Ambos métodos terminan en el mismo JWT local. El callback de Entra
+no contiene botones de acceso y una barrera idempotente evita repetir el canje ante
+rerenders. El token Entra solo
 se utiliza para validar y vincular la identidad institucional; no se persiste ni
-autoriza otras operaciones GraphQL. La autoridad es single-tenant y una cuenta nueva se
-aprovisiona sin privilegios. Password local y Magic Link de empleadores permanecen como
-flujos independientes.
+autoriza otras operaciones GraphQL. La autoridad `common` admite cuentas de
+directorios organizacionales, mientras la API vuelve a validar el tenant concreto,
+emisor, audiencia, scope y dominio institucional de cada token. Una cuenta nueva se
+aprovisiona sin privilegios y, si corresponde al rol Estudiante, debe completar su
+identidad academica antes de acceder al Feed. Password local y Magic Link de
+empleadores permanecen como flujos independientes.
 
 ### Modelo de Dominio (DER)
 
@@ -571,6 +637,7 @@ erDiagram
     NOTIFICATION {
         uuid Id PK
         uuid UserId FK
+        uuid RelatedInquiryId FK
         string Type
         string Message
         string ActionUrl
@@ -578,6 +645,7 @@ erDiagram
         string GroupKey
         int AggregateCount
         datetime CreatedAt
+        datetime UpdatedAt
     }
     NOTIFICATION_PREFERENCE {
         uuid Id PK
@@ -623,7 +691,7 @@ erDiagram
         string Status
         datetime AppliedAt
     }
-    CV_EXPERIENCE {
+    USER_CV_EXPERIENCE {
         uuid Id PK
         uuid UserId FK
         string Company
@@ -631,7 +699,7 @@ erDiagram
         bool IsHidden
         int SortOrder
     }
-    CV_EDUCATION {
+    USER_CV_EDUCATION {
         uuid Id PK
         uuid UserId FK
         string Institution
@@ -639,7 +707,7 @@ erDiagram
         bool IsHidden
         int SortOrder
     }
-    CV_PROJECT {
+    USER_CV_PROJECT {
         uuid Id PK
         uuid UserId FK
         string Name
@@ -647,14 +715,14 @@ erDiagram
         string Url
         bool IsHidden
     }
-    CV_SKILL {
+    USER_CV_SKILL {
         uuid Id PK
         uuid UserId FK
         string Name
         string Level
         bool IsHidden
     }
-    CV_LANGUAGE {
+    USER_CV_LANGUAGE {
         uuid Id PK
         uuid UserId FK
         string Name
@@ -698,6 +766,7 @@ erDiagram
     SUBJECT ||--o{ INQUIRY : classifies
     INQUIRY ||--o{ COMMENT : receives
     USER ||--o{ COMMENT : writes
+    USER o|--o{ COMMENT : mentioned
     COMMENT o|--o{ COMMENT : replies
     INQUIRY o|--o{ SOCIAL_ATTACHMENT : has
     COMMENT o|--o{ SOCIAL_ATTACHMENT : has
@@ -712,6 +781,7 @@ erDiagram
     USER ||--o{ MESSAGE : sends
     USER ||--o{ MESSAGE : receives
     USER ||--o{ NOTIFICATION : receives
+    INQUIRY o|--o{ NOTIFICATION : groups
     USER ||--o{ NOTIFICATION_PREFERENCE : configures
     SUBJECT ||--o{ ACADEMIC_RESOURCE : groups
     USER ||--o{ ACADEMIC_RESOURCE : uploads
@@ -721,13 +791,17 @@ erDiagram
     USER ||--o{ JOB_OFFER : publishes
     JOB_OFFER ||--o{ JOB_APPLICATION : receives
     USER ||--o{ JOB_APPLICATION : submits
-    USER ||--o{ CV_EXPERIENCE : records
-    USER ||--o{ CV_EDUCATION : records
-    USER ||--o{ CV_PROJECT : records
-    USER ||--o{ CV_SKILL : records
-    USER ||--o{ CV_LANGUAGE : records
+    USER ||--o{ USER_CV_EXPERIENCE : records
+    USER ||--o{ USER_CV_EDUCATION : records
+    USER ||--o{ USER_CV_PROJECT : records
+    USER ||--o{ USER_CV_SKILL : records
+    USER ||--o{ USER_CV_LANGUAGE : records
     USER o|--o{ AUDIT_LOG : acts
     USER ||--o{ MODERATION_AUDIT : performs
+    USER o|--o{ MODERATION_AUDIT : target_user
+    INQUIRY o|--o{ MODERATION_AUDIT : target_inquiry
+    COMMENT o|--o{ MODERATION_AUDIT : target_comment
+    COMMUNITY_REPORT o|--o{ MODERATION_AUDIT : target_report
 ```
 
 **B) Descripción descriptiva exhaustiva**
@@ -736,9 +810,9 @@ El DER debe dibujarse por dominios para conservar legibilidad. En el centro se u
 
 El dominio social se pinta en celeste: `INQUIRY`, `COMMENT`, `SOCIAL_ATTACHMENT`, `REACTION`, `COMMENT_REACTION`, `COMMUNITY_REPORT` y `USER_INTERACTION`. `COMMENT` debe mostrar una flecha hacia sí misma para representar respuestas, con cardinalidad opcional en el padre y múltiple en los hijos. `SOCIAL_ATTACHMENT` puede pertenecer a una publicación o a un comentario; la validación de negocio aplica un **Constraint de Exclusividad Mutua (XOR)**: el archivo pertenece a una `Inquiry` o a un `Comment`, pero jamás a ambos simultáneamente. Se debe añadir una nota visual indicando que la relación exige exactamente un propietario.
 
-El dominio de comunicación se pinta en violeta tenue: `MESSAGE`, `NOTIFICATION` y `NOTIFICATION_PREFERENCE`. Deben salir dos relaciones desde `USER` hacia `MESSAGE`, rotuladas “envía” y “recibe”. El dominio académico operativo se pinta en verde más intenso: `ACADEMIC_RESOURCE` depende de Materia y Usuario cargador; `ACADEMIC_PROGRESS` depende de Estudiante, Materia y Usuario asignador.
+El dominio de comunicación se pinta en violeta tenue: `MESSAGE`, `NOTIFICATION` y `NOTIFICATION_PREFERENCE`. Deben salir dos relaciones desde `USER` hacia `MESSAGE`, rotuladas “envía” y “recibe”. `NOTIFICATION` puede referenciar una publicación para agrupar eventos y navegar al contenido relacionado. El dominio académico operativo se pinta en verde más intenso: `ACADEMIC_RESOURCE` depende de Materia y Usuario cargador; `ACADEMIC_PROGRESS` depende de Estudiante, Materia y Usuario asignador.
 
-El dominio laboral se pinta en naranja suave: `JOB_OFFER` pertenece al empleador y `JOB_APPLICATION` une la oferta con el postulante. Debe destacarse con una nota que el par oferta-postulante es único. `EMPLOYER_REQUEST` representa el alta B2B previa a la cuenta y se relaciona opcionalmente con el Administrador que la procesa y con el usuario aprovisionado. `EMPLOYER_ONBOARDING_OUTBOX` mantiene una relación uno a cero-o-uno con la solicitud aprobada y conserva solo estado técnico, intentos, lease y código de error sanitizado. Las cinco tablas `CV_*` se ubican alrededor de Usuario en gris azulado y se conectan uno a muchos; cada registro puede ocultarse y posee orden de presentación.
+El dominio laboral se pinta en naranja suave: `JOB_OFFER` pertenece al empleador y `JOB_APPLICATION` une la oferta con el postulante. Debe destacarse con una nota que el par oferta-postulante es único. `EMPLOYER_REQUEST` representa el alta B2B previa a la cuenta y se relaciona opcionalmente con el Administrador que la procesa y con el usuario aprovisionado. `EMPLOYER_ONBOARDING_OUTBOX` mantiene una relación uno a cero-o-uno con la solicitud aprobada y conserva solo estado técnico, intentos, lease y código de error sanitizado. Las cinco tablas `USER_CV_*` se ubican alrededor de Usuario en gris azulado y se conectan uno a muchos; cada registro puede ocultarse y posee orden de presentación.
 
 Finalmente, `AUDIT_LOG` y `MODERATION_AUDIT` se pintan en rojo muy claro. `AUDIT_LOG` conserva valores anteriores y nuevos serializados para trazabilidad transversal. `MODERATION_AUDIT` referencia al actor y, opcionalmente, a usuario, publicación, comentario o reporte objetivo. Todas las relaciones críticas deben acompañarse con la leyenda “FK explícita / DeleteBehavior.Restrict”.
 
@@ -1003,19 +1077,23 @@ La estrategia combina análisis estático, pruebas automatizadas, compilación, 
 
 **Evidencia automatizada de cierre disponible**
 
+Los baselines siguientes corresponden a una ejecución conjunta del worktree de Spec 201.
+Todavía no reemplazan el gate integral sobre el SHA candidato: el árbol debe congelarse,
+quedar limpio y repetir los controles sin cambios posteriores.
+
 | Control | Resultado documentado más reciente |
 |---|---|
-| Pruebas backend | 174/174 aprobadas |
-| Pruebas frontend | 32 archivos y 82/82 pruebas aprobadas |
+| Pruebas backend | 198/198 aprobadas en el worktree de Spec 201; 32/32 focalizadas en registro, academia y privacidad |
+| Pruebas frontend | 144/144 aprobadas en el mismo worktree |
 | Build backend Release | 0 errores y 0 advertencias |
-| Build frontend Vite | 539 módulos; 0,85 s; 0 errores |
+| Build frontend Vite | 551 módulos; 776 ms; 0 errores en Spec 201 |
 | Modelo EF Core | Sin cambios pendientes respecto de migraciones |
 | Sesión y roles | Reemplazo Estudiante -> Moderador sin fuga de identidad, caché ni transporte |
 | Redis local | Entrega exacta entre dos proveedores Hot Chocolate y aislamiento de topic |
 | SMTP local | Tres mensajes capturados e inspeccionados mediante Mailpit |
-| Base demo e integridad | Backup verificado; 33 migraciones; seed doble estable; cero violaciones |
+| Base demo e integridad | Backup verificado; 34 migraciones; seed doble estable; cero violaciones |
 | Runtime GraphQL | Seis roles; feed, académico, chat, notificaciones, empleos, administración, moderación y upload aprobados |
-| Microsoft Entra | 43 mutaciones en schema; `microsoftLogin` publicado y rechazo controlado; tenant real pendiente |
+| Microsoft Entra | 47 mutaciones en schema; redirect/callback idempotente, `microsoftLogin` publicado y rechazo controlado; tenant real pendiente |
 
 **Comandos canónicos de verificación**
 
@@ -1046,6 +1124,16 @@ npm.cmd run build
 
 **Riesgos residuales y criterio de honestidad técnica**
 
+La Spec 201 cerró tres brechas de autorización/privacidad: registro público Student-only
+con dominio server-side, Profesor acotado a carreras vinculadas y Follow sin capacidad de
+revelar perfiles privados. También retiró el trust bypass SQL de la plantilla rastreada y
+agregó probes diferenciados. Persisten límites de destino que no bloquean una demostración
+local controlada, pero sí una afirmación de producción pública:
+
+- `GAP-FILE-01`: `/uploads` sirve archivos estáticos sin autorización por recurso; un piloto externo requiere storage privado, URLs firmadas o un endpoint autorizado.
+- `GAP-INFRA-01`: la configuración rastreada exige una cadena segura, pero su cierre requiere certificado CA verificable y smoke TLS en el SQL real.
+- `GAP-OPS-01`: existen correlation ID, logs estructurados y `/health/live`/`ready`; todavía no existe una plataforma central de logs, métricas, trazas y alertas aceptada en un ambiente remoto.
+
 - La regresión visual final debe repetirse en el navegador y la resolución que se utilizarán durante la defensa. Estudiante, Profesor, Egresado, Administrador y Empleador fueron recorridos en la aceptación operacional; resta documentar el recorrido visual de Moderador.
 - Redis fue verificado localmente entre proveedores independientes. Falta el handshake WebSocket completo a través de la red con dos navegadores aislados.
 - SMTP local fue verificado con Mailpit. SMTP público, Redis administrado y Cloudinary deben probarse con secretos reales antes de declarar validación productiva.
@@ -1056,7 +1144,7 @@ npm.cmd run build
 
 **Checklist manual previo a la defensa**
 
-- [ ] Publicar e integrar el corte de Spec 197 y confirmar `git status` limpio.
+- [ ] Consolidar las Specs 198-201, identificar el SHA candidato y confirmar `git status` limpio.
 - [ ] Ejecutar `scripts/validate-predefense.ps1`.
 - [ ] Ejecutar `scripts/validate-local-infrastructure.ps1` y comprobar que libere contenedores y puertos.
 - [ ] Ejecutar `docker compose up -d` y verificar salud de SQL Server.
@@ -1083,7 +1171,7 @@ mantienen en `docs/project_docs/ROADMAP.md`.
 
 | Actividad | Estimación | Resultado esperado |
 |---|---:|---|
-| Integrar Spec 197 y limpiar el repositorio | 45-75 min | SHA remoto e inmutable, sin artefactos accidentales |
+| Consolidar el SHA candidato y limpiar el repositorio | 50-85 min | Rama integrada, SHA remoto e inmutable, sin artefactos accidentales |
 | Ejecutar los tres gates automatizados de predefensa | 75-105 min | Tests, builds, EF, base demo, Redis, Mailpit y cleanup en verde |
 | Regresión manual por seis roles | 3-4 h | Evidencia visual y consola limpia |
 | Chat y notificaciones con dos sesiones aisladas | 60-90 min | WebSocket, badges, lectura y aislamiento comprobados |
@@ -1093,15 +1181,15 @@ mantienen en `docs/project_docs/ROADMAP.md`.
 
 | Actividad | Estimación | Resultado esperado |
 |---|---:|---|
-| Completar datos oficiales de portada | 20-30 min | Sin marcadores pendientes |
-| Exportar los nueve diagramas Mermaid recomendados | 2-3 h | SVG/PNG legibles y numerados |
+| Confirmar portada, metadatos y responsables | 10-20 min | Datos oficiales revisados y sin marcadores pendientes |
+| Exportar los diez diagramas Mermaid renderizables | 2-3 h | SVG/PNG legibles, numerados y revisados visualmente |
 | Recrear DER y tres gráficos de gestión en Draw.io | 4-6 h | Fuentes editables y exportaciones consistentes |
 | Convertir a DOCX y aplicar APA 7 | 3-4 h | Documento editable con índice, estilos y figuras |
 | Auditar y exportar PDF final | 2-3 h | PDF revisado página por página |
 | Preparar guion, respaldo y ensayo | 4-5 h | Exposición base de 22-25 minutos dentro del rango oficial de 20-30 minutos, con contingencia |
 
-El cierre académico pendiente demanda aproximadamente **22 a 31 horas efectivas**,
-equivalentes a **tres o cuatro jornadas concentradas**. Los proveedores públicos,
+El cierre técnico y académico pendiente demanda aproximadamente **23 horas 35 minutos
+a 34 horas efectivas**, equivalentes a **cuatro jornadas concentradas**. Los proveedores públicos,
 la aceptación Microsoft Entra, benchmark BCrypt y antivirus/CDR requieren entre **17 y 37 horas técnicas**
 adicionales, además de tiempos de aprobación; no bloquean la defensa controlada ni deben
 confundirse con funcionalidades ya verificadas.
@@ -1119,7 +1207,7 @@ separado porque sus flujos se encuentran integrados en la memoria técnica gener
 1. Abrir la página principal de OneITB23.
 2. Seleccionar **Registrarse**.
 3. Completar nombre, apellido, correo institucional, contraseña y confirmación.
-4. Elegir un único rol permitido y una o más carreras.
+4. Seleccionar una o más carreras; el alta pública asigna el rol `Estudiante`.
 5. Confirmar el registro y volver al inicio de sesión.
 6. Ingresar correo y contraseña. Si se supera el límite de intentos fallidos, esperar el período de bloqueo informado.
 
@@ -1260,7 +1348,7 @@ Las migraciones se generan desde el proyecto `Data` utilizando `GraphQL.csproj` 
 Para la defensa se definió una base demo canónica y reproducible. El procedimiento
 `scripts/reset-demo-database.ps1` identifica de forma estricta el SQL Server Docker
 local, verifica un backup antes de cualquier eliminación, reconstruye el esquema desde
-las 33 migraciones y exige que dos ejecuciones consecutivas del seeder produzcan el
+las 34 migraciones y exige que dos ejecuciones consecutivas del seeder produzcan el
 mismo inventario. El grafo resultante contiene 15 cuentas/usuarios, 9 carreras
 institucionales, 6 materias de muestra, recursos y progreso académico, CV relacional,
 60 publicaciones, 80 comentarios, 240 reacciones, 280 mensajes, 127 notificaciones,
@@ -1312,7 +1400,7 @@ La presentación debe diferenciar con precisión:
 - **Condicional:** requiere variables, secretos o proveedor externo.
 - **Pendiente de validación manual:** requiere recorrido visual final en navegador.
 
-Al corte del 30 de julio de 2026, SMTP con Mailpit y Redis local poseen evidencia de
+Al corte del 3 de agosto de 2026, SMTP con Mailpit y Redis local poseen evidencia de
 integración; no equivalen a validación de proveedor público. La aceptación Microsoft
 Entra en el tenant institucional, Cloudinary productivo, Redis administrado, SMTP
 público y el handshake WebSocket con dos navegadores

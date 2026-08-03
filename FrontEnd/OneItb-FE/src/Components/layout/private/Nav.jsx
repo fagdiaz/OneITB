@@ -8,6 +8,7 @@ import { GET_USER_PROFILE } from '../../../data/graphql/queries/getUserProfile'
 import { GET_MESSAGING_CONTACTS } from '../../../data/graphql/chat'
 import { JOB_OFFER_CREATED } from '../../../data/graphql/jobs'
 import { apiBaseUrl } from '../../../utils/uploadFile'
+import { EMPLOYER_REQUEST_NAVIGATION } from '../../jobs/employerNavigation'
 
 /**
  * Nav — REFACTOR 037 / 040 / Spotlight-hover
@@ -261,6 +262,14 @@ export const Nav = () => {
 
               {!isAuthenticatedUser && (
                 <>
+                  <NavLink
+                    to={EMPLOYER_REQUEST_NAVIGATION.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={mobileNavClassFor(EMPLOYER_REQUEST_NAVIGATION.path)}
+                  >
+                    <i className="fa-solid fa-building w-4 text-xs text-cyan-200" />
+                    <span>{EMPLOYER_REQUEST_NAVIGATION.shortLabel}</span>
+                  </NavLink>
                   <NavLink to="/login" onClick={() => setMobileMenuOpen(false)} className={mobileNavClassFor('/login')}>
                     <i className="fa-solid fa-right-to-bracket w-4 text-xs text-blue-200" />
                     <span>Iniciar Sesion</span>
@@ -369,6 +378,12 @@ export const Nav = () => {
           </>
         ) : (
           <div data-testid="desktop-auth-actions" className="hidden items-center gap-2 md:flex">
+            <Link
+              to={EMPLOYER_REQUEST_NAVIGATION.path}
+              className="rounded-lg border border-cyan-300/35 bg-cyan-300/5 px-3 py-1.5 text-sm font-semibold text-cyan-100 transition-all duration-150 hover:-translate-y-0.5 hover:border-cyan-200/60 hover:bg-cyan-300/10 hover:text-white hover:shadow-[0_4px_14px_rgba(34,211,238,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            >
+              {EMPLOYER_REQUEST_NAVIGATION.shortLabel}
+            </Link>
             <Link
               to="/login"
               className={`${NAV_BASE} ${NAV_INACTIVE}`}
