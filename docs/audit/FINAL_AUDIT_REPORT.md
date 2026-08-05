@@ -2,11 +2,11 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Fecha de corte documental** | 2026-08-03 |
+| **Fecha de corte documental** | 2026-08-04 |
 | **Stack auditado** | .NET 8, EF Core 8, HotChocolate 14, React 18, Apollo Client 3, SQL Server 2022 en Docker |
 | **Estado funcional del roadmap** | 100%: 117/117 ítems, compuesto por 109 ítems funcionales/operativos y 8 remediaciones de auditoría |
 | **Distribución de evidencia** | 45 ítems verificados `[V]` y 72 implementados `[I]` |
-| **Corte técnico documentado** | Specs 186-201; el último gate integral combinado debe repetirse sobre el SHA candidato de defensa |
+| **Corte técnico documentado** | Specs 186-211; el último gate integral combinado debe repetirse sobre el SHA candidato de defensa |
 | **Clasificación recomendada** | **Release Candidate académico, core Feature Complete y Code Freeze operativo local** |
 | **Producción pública** | No certificada: conserva gates externos, operativos y de seguridad en profundidad |
 
@@ -25,11 +25,17 @@ La auditoría no mantiene hallazgos **Críticos** o **Altos** en su condición v
 original dentro del código evaluado. Las Specs 186-193 corrigieron las brechas de JWT,
 cancelación, aislamiento de sesión, autorización declarativa, validación de uploads,
 abuso de Magic Link, paginación, I/O síncrono, política criptográfica, moderación y
-resiliencia del bootstrap frontend. Las Specs 194-201 ampliaron la aceptación local,
+resiliencia del bootstrap frontend. Las Specs 194-203 ampliaron la aceptación local,
 reconstruyeron la base demo, incorporaron Microsoft Entra, formalizaron el onboarding
-B2B y endurecieron el flujo de autenticación redirect. La Spec 201 cerró el registro
+B2B y endurecieron el flujo de autenticación redirect. La Spec 202 acotó `AADSTS50011`
+a la App Registration, validó el callback local exacto y prohibió HTTP fuera de loopback
+sin debilitar CORS/CSP. La Spec 203 corrigió la limpieza prematura de MSAL y la carrera
+entre canje, commit de sesión y guard privado. La Spec 201 cerró el registro
 público privilegiado, el alcance académico cross-career y la excepción de privacidad por
 Follow; además retiró el trust bypass SQL de la plantilla y agregó readiness de base.
+Las Specs 204-211 cerraron cardinalidad académica, hidratación de perfil, navegación
+adaptativa, recursos visuales locales, CV semántico, recuperación de schema activo,
+composición de marca/tema e integridad reproducible de la fuente de iconos.
 
 El sistema puede presentarse ante la mesa académica como un **Release Candidate estable
 en un entorno controlado**, siempre que antes de la defensa se ejecute el gate integral
@@ -118,7 +124,7 @@ Son condiciones pendientes para aceptación manual, piloto institucional o produ
 | ID | Riesgo o gate | Nivel actual | Estado | Tratamiento requerido | Roadmap | Bloquea defensa | Bloquea producción |
 |---|---|---|---|---|---|---|---|
 | `RR-01` | SMTP, Redis administrado y Cloudinary no probados con secretos/proveedores reales | Medio operativo | `[B]` | Ejecutar smokes en ambiente seguro, registrar endpoint/versión/resultado sin exponer secretos y probar fallback/fallo | `PR-01` a `PR-03` | No | Sí |
-| `RR-02` | Microsoft Entra no aceptado con App Registrations, consentimiento y cuenta Microsoft 365 real | Alto para SSO institucional | `[B]` | Configurar las dos aplicaciones, scope delegado, autoridad organizacional y callback `/auth/microsoft/callback`; probar éxito, cancelación, error y logout | `PR-04` | No, si la demo usa login local | Sí, si SSO forma parte del despliegue |
+| `RR-02` | Microsoft Entra conserva casos pendientes de aceptación con cuenta Microsoft 365 real | Medio para SSO institucional | `[I]` | Éxito real hasta onboarding/muro verificado el 2026-08-04; completar cancelación/error, logout y aislamiento de segunda cuenta | `PR-04` | No | Sí, si SSO forma parte del despliegue |
 | `RR-03` | Costo BCrypt 12 no medido sobre hardware productivo objetivo | Medio | `[I]` | Medir p50/p95 de registro/login, uso de CPU y concurrencia; ajustar dentro del rango aprobado sin degradar hashes existentes | `PR-05` | No | Sí |
 | `RR-04` | Recorrido visual completo del rol Moderador pendiente | Bajo funcional | `[I]` | Validar hide/restore, mute, reportes, denegaciones Admin-only, auditoría y consola | `CF-04` | Sí | Sí |
 | `RR-05` | Handshake WebSocket con dos navegadores/perfiles aislados pendiente | Medio funcional | `[I]` | Verificar conexión, reconexión, aislamiento de topics, badges, lectura y logout A -> B | `CF-05` | Sí | Sí |
@@ -129,17 +135,27 @@ Son condiciones pendientes para aceptación manual, piloto institucional o produ
 | `RR-10` | Backend y frontend pasaron juntos en el worktree de Spec 201, pero no sobre un SHA candidato congelado | Medio de liberación | `[I]` | Congelar el SHA, repetir gates integrales y registrar fecha, versiones y resultados | `CF-01`, `CF-03`, `CF-06` | Sí | Sí |
 | `RR-11` | `/uploads` local entrega objetos por URL directa sin autorización por recurso | Alto para piloto abierto | Aceptado solo para demo controlada | Migrar a storage privado con URL firmada o endpoint autorizado según ownership/carrera antes de admitir usuarios externos | `PR-03` y evolución de storage | No | Sí |
 | `RR-12` | TLS SQL, observabilidad y alertas no aceptados en un ambiente remoto | Alto operativo de destino | `[B]` | Inyectar cadena con certificado verificable, probar `/health/ready`, centralizar logs/métricas/traces y aprobar alertas/incident response | `PR-06` | No | Sí |
+| `RR-13` | La cardinalidad académica de Estudiante requería selección única y reconciliación de datos heredados | Bajo de aceptación | `[I]` | Spec 204 cerró los bypasses de onboarding, registro, perfil y mutación legacy con servicio transaccional y pruebas; resta repetir el recorrido Microsoft/onboarding/feed en el runtime recompilado | Spec 204 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
+| `RR-14` | `/profile/edit` mostraba datos provisionales y no distinguía storage de asociación persistida | Bajo de aceptación | `[I]` | Spec 205 eliminó fallback editable desde Auth, protegió drafts, hizo abortable el upload y exige refetch confirmatorio; resta validar red lenta/avatar/refresh en navegador. Cloudinary real sigue separado en `PR-03` | Spec 205 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación y `PR-03` |
+| `RR-15` | El header usaba un breakpoint fijo y el branding raster perdía contraste en dark mode | Bajo de aceptación visual | `[I]` | Spec 206 implementó overflow por ancho real, descriptores únicos y lockup sin bloom; ejecutar matriz por rol/ancho/tema/teclado | Spec 206 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
+| `RR-16` | Tipografía, iconos y avatares fallback dependían de hosts externos | Bajo de aceptación offline | `[I]` | Spec 207 eliminó Google Fonts/cdnjs/ui-avatars, validó WOFF2 locales y preimpresión CV; ejecutar rutas offline y diálogo nativo de impresión/PDF | Spec 207 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
+| `RR-17` | El CV usaba dos representaciones, altura A4 fija, overflow oculto y paginación DOM simulada | Bajo de interoperabilidad documental | `[I]` | Spec 208 unificó vista/edición en un documento semántico lineal, impresión aislada y analizador Poppler sin retención de PII. Ejecutar diálogo nativo y analizar un PDF real de dos páginas | Spec 208 / `CF-04` | Sí hasta aceptación del artefacto | Sí hasta aceptación del artefacto |
+| `RR-18` | Un proceso backend antiguo podía servir un schema sin `confirmStudentCareer` | Bajo operativo local | `[I]` | Spec 209 identificó el PID obsoleto, restauró el schema vigente y agregó introspección/runbook; repetir confirmación Estudiante sobre el corte congelado | Spec 209 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
+| `RR-19` | El lockup duplicaba la `O` y onboarding podía heredar modo oscuro persistido | Bajo visual | `[I]` | Spec 210 fijó isotipo `O` + `neITB` y override claro transitorio sin modificar la preferencia; ejecutar matriz 320-1440 px | Spec 210 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
+| `RR-20` | Font Awesome 6.1.2 vendorizado provocaba ajustes `glyf bbox` en Firefox | Bajo de aceptación offline | `[I]` | Spec 211 migró a paquete oficial 6.7.2 exacto con integridad SHA-512 y retiró la copia; repetir Firefox con caché/red externa bloqueadas | Spec 211 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
 
 ### 3.1 Acciones obligatorias antes de la defensa
 
-1. Integrar y publicar el corte de Specs 198-201 sin archivos auxiliares ni secretos.
-2. Ejecutar `scripts/validate-predefense.ps1`,
+1. Ejecutar la aceptación manual coordinada de Specs 204 a 208, incluyendo onboarding,
+   perfil/avatar, navegación responsive, temas, teclado, offline y PDF optimizado para ATS.
+2. Integrar y publicar el corte vigente sin archivos auxiliares ni secretos.
+3. Ejecutar `scripts/validate-predefense.ps1`,
    `scripts/validate-local-infrastructure.ps1` y
    `scripts/validate-demo-database.ps1` sobre el SHA candidato.
-3. Recorrer Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador.
-4. Validar chat/notificaciones con dos perfiles de navegador aislados.
-5. Recorrer solicitud empresarial, aprobación/rechazo y acceso del Empleador.
-6. Consolidar resultados, desviaciones y capturas; etiquetar el SHA presentado.
+4. Recorrer Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador.
+5. Validar chat/notificaciones con dos perfiles de navegador aislados.
+6. Recorrer solicitud empresarial, aprobación/rechazo y acceso del Empleador.
+7. Consolidar resultados, desviaciones y capturas; etiquetar el SHA presentado.
 
 ### 3.2 Acciones obligatorias antes de producción pública
 
@@ -321,6 +337,44 @@ Adquiere silenciosamente el access token, conserva el contrato backend y usa un
 descriptor efímero sin credenciales con destino sanitizado. Una promesa por flow ID
 deduplica adquisición, canje GraphQL, limpieza Apollo e hidratación frente a rerenders o
 Strict Mode. El corte incluye 41/41 pruebas focalizadas, 144/144 frontend y build Vite.
+
+### 6.8 Spec 202 - Alineación del redirect Microsoft Entra
+
+El incidente `AADSTS50011` se diagnosticó como divergencia entre la URI solicitada por
+la SPA y la registrada en Microsoft Entra, no como un fallo CORS de OneITB. La revisión
+segura, sin imprimir valores, confirmó que `.env` solicita exactamente
+`http://localhost:5173/auth/microsoft/callback` y que las claves backend requeridas están
+presentes y son estructuralmente válidas.
+
+La validación frontend ahora acepta HTTP solo en `localhost`/loopback, exige HTTPS fuera
+del entorno local y rechaza query, fragmento o credenciales embebidas. Pasaron 46/46
+pruebas Entra focalizadas, 151/151 frontend y el build Vite de 551 módulos en 862 ms.
+Los warnings de CSP, BSSO, cookies y telemetría emitidos por páginas Microsoft quedaron
+clasificados como externos/no causales. La aceptación real conserva estado `[B]` hasta
+registrar/propagar el callback en la App Registration correcta y ejecutar el smoke con
+una cuenta Microsoft 365 institucional.
+
+### 6.9 Spec 203 - Commit de sesión Microsoft posterior al redirect
+
+Tras aceptar Azure el callback, el retorno a `/login` quedó localizado en dos condiciones
+frontend. La sesión canónica limpiaba MSAL de forma incondicional y el callback navegaba
+después de resolver `login`, pero antes de que React expusiera el nuevo contexto al guard.
+
+`AuthContext` distingue ahora el establecimiento local del Microsoft: conserva la cuenta
+MSAL únicamente para este último y mantiene la purga completa en accesos locales, logout,
+expiración y reemplazo. El callback conserva el canje exactamente una vez, espera JWT,
+estado autenticado e identidad coincidente, y recién entonces completa el flow y navega.
+Un timeout acotado elimina estado parcial; Login recupera una sesión ya comprometida.
+La segunda iteración eliminó además dos redirecciones silenciosas: las sesiones
+persistidas incompletas se purgan y Apollo ya no convierte un error controlado de una
+operación pública de identidad en expiración global. Si MSAL restaura `/login`, se retoma
+el callback únicamente con flow vigente y una cuenta retornada inequívoca.
+
+Pasaron 34/34 pruebas focalizadas de sesión, 11/11 del callback final, 163/163 pruebas
+frontend y build Vite de 551 módulos sin errores. El 2026-08-04 una cuenta institucional
+completó selección Microsoft, callback, commit OneITB, onboarding y llegada al muro. El
+camino exitoso queda aceptado; `RR-02` continúa `[I]` hasta completar cancelación/error,
+logout y aislamiento de una segunda cuenta.
 
 ---
 
@@ -617,17 +671,25 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 | **Spec 199** | No modifica el baseline backend | Evidencia focalizada registrada en la spec | CTA B2B y guard académico persistente | Cambio frontend; no debe inventarse un total combinado |
 | **Spec 200** | No modifica el baseline backend | 144/144, más 41/41 focalizadas | Build Vite y flujo redirect idempotente | Último baseline frontend documentado |
 | **Spec 201** | 198/198 | 144/144 | Builds Release/Vite, EF sin drift, registro/academia/privacidad focalizados 32/32 | Ejecución conjunta del worktree; falta repetir tras congelar un SHA limpio |
+| **Spec 204** | 210/210 | 172/172 | Builds, schema y EF sin drift; cardinalidad Student y reconciliación cubiertas | Implementación académica; aceptación Microsoft/onboarding/feed pendiente |
+| **Spec 205** | 216/216 | 186/186 | Builds limpios; hidratación, drafts, cancelación y selección de storage cubiertos | Baseline más reciente del worktree; navegador y Cloudinary real pendientes |
+| **Specs 206-207** | No modifican el baseline backend | 205/205 | Build Vite de 558 módulos en 3,88 s en gate concurrente; WOFF2 locales, guards de impresión/movimiento, preimpresión CV y artifact scan sin hosts visuales externos | Matriz responsive aprobada; teclado/zoom, offline y diálogo nativo de impresión pendientes |
+| **Spec 208** | No modifica el baseline backend | 217/217, más 23/23 focalizadas | Build Vite de 559 módulos en 2,17 s; browser Estudiante con paridad de rutas, DOM semántico, consola limpia y matriz 320-1440 px PASS | Implementación ATS `[I]`; perfil de dos páginas, diálogo nativo y Poppler completo bloqueados, sin afirmación universal ni `[V]` |
+| **Spec 209** | 216/216 | 220/220 | Builds limpios e introspección HTTP 200 con `confirmStudentCareer(careerId)` | Confirmación Estudiante posterior pendiente |
+| **Spec 210** | No modifica el baseline backend | 223/223, más 20/20 focalizadas | Vite 559 módulos en 1,31 s; tema persistido/efectivo y lockup cubiertos | Matriz visual 320-1440 px pendiente |
+| **Spec 211** | 216/216 | 224/224, más 6/6 focalizadas | Backend Release 0/0, EF sin drift, Vite 559 módulos en 733 ms, paquete oficial con lockfile SHA-512 | Firefox offline/DevTools pendiente |
 
-La referencia operativa para el siguiente gate es **197 tests backend y 144 frontend**.
-Ambas suites pasaron juntas en el worktree de Spec 201, pero el árbol contiene cambios no
-congelados; por ello todavía no constituyen certificación sobre un SHA candidato.
+La referencia operativa para el siguiente gate es **216 tests backend y 224 frontend**.
+Ambas suites se ejecutaron sobre el mismo worktree de Spec 211, junto con builds y EF sin
+drift. El árbol todavía debe convertirse en un commit candidato y repetir los gates sobre
+ese SHA antes de declarar `CF-06`.
 
 ### 8.2 Evidencias que debe producir el gate final
 
 | Gate | Resultado requerido | Evidencia mínima |
 |---|---|---|
-| Backend tests | 198/198 o mayor, sin fallos | Comando, SHA, fecha, duración y salida completa |
-| Frontend tests | 144/144 o mayor, sin fallos | Comando, SHA, fecha y salida completa |
+| Backend tests | 216/216 o mayor, sin fallos | Comando, SHA, fecha, duración y salida completa |
+| Frontend tests | 224/224 o mayor, sin fallos | Comando, SHA, fecha y salida completa |
 | Backend Release | 0 warnings / 0 errores | Build sobre el mismo SHA |
 | Frontend Vite | Build limpio | Cantidad de módulos, duración y artefacto generado |
 | EF model drift | Sin cambios pendientes | Modelo, última migración y destino SQL identificados |
@@ -688,7 +750,7 @@ como sobreprometer controles que aún dependen de infraestructura externa.
 8. El commit presentado queda etiquetado o registrado de forma inmutable y existe un
    respaldo offline recuperable.
 
-### 8.6 Decisión Go/No-Go por destino al 3 de agosto de 2026
+### 8.6 Decisión Go/No-Go por destino al 4 de agosto de 2026
 
 | Destino | Decisión actual | Condición para avanzar |
 |---|---|---|
@@ -698,6 +760,7 @@ como sobreprometer controles que aún dependen de infraestructura externa.
 | Piloto institucional abierto | **NO-GO** | Cerrar `GAP-FILE-01`, aceptar Microsoft Entra y completar controles operativos/de privacidad del destino |
 | Producción pública | **NO-GO** | Además del piloto: TLS SQL real, SMTP/Redis/storage administrados, observabilidad, backup/restore, alertas, antivirus/CDR y pruebas de carga/seguridad |
 
-El código automatizado queda verde en el worktree de Spec 201, pero esa evidencia no
+El código automatizado queda verde en el worktree integrado hasta Spec 211, pero los
+gates aún deben repetirse sobre el SHA candidato ya creado. Esta evidencia no
 autoriza por sí sola el congelamiento ni la impresión. La demo pasa a **GO definitivo**
 solo cuando las condiciones locales y documentales anteriores tengan evidencia fechada.

@@ -1,21 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { InteractionStatus } from '@azure/msal-browser';
 import { useMsal } from '@azure/msal-react';
+import { useNavigate } from 'react-router-dom';
 import {
   clearMicrosoftIdentitySession,
   microsoftLoginRequest,
 } from '../../auth/microsoftEntra';
+import { MICROSOFT_CALLBACK_PATH } from '../../auth/microsoftEntraConfig';
 import {
   beginMicrosoftRedirectFlow,
   clearMicrosoftRedirectFlow,
+  readMicrosoftRedirectFlow,
 } from '../../auth/microsoftRedirectFlow';
 
 export const MicrosoftInstitutionalLogin = ({
   onError = () => {},
   returnTo = '/feed',
 }) => {
-  const { instance, inProgress } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();
+  const navigate = useNavigate();
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  useEffect(() => {
+    if (isRedirecting || inProgress !== InteractionStatus.None) return;
+
+    const flow = readMicrosoftRedirectFlow();
+    if (!flow || flow.completed) return;
+
+    const activeAccount = instance.getActiveAccount?.();
+    const returnedAccount = activeAccount || (accounts.length === 1 ? accounts[0] : null);
+    if (returnedAccount) {
+      navigate(MICROSOFT_CALLBACK_PATH, { replace: true });
+    }
+  }, [accounts, inProgress, instance, isRedirecting, navigate]);
 
   const handleMicrosoftLogin = async () => {
     if (isRedirecting || inProgress !== InteractionStatus.None) return;

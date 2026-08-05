@@ -19,7 +19,13 @@ export const Login = () => {
   const [loginError, setLoginError] = useState('');
   const [registrationMessage, setRegistrationMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const {
+    auth,
+    isAuthenticated,
+    isLoading: isSessionLoading,
+    login,
+    token,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,6 +43,11 @@ export const Login = () => {
     setSaved('registered');
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.pathname, location.state, navigate]);
+
+  useEffect(() => {
+    if (isSessionLoading || !isAuthenticated || !token || !auth?.id) return;
+    navigate('/feed', { replace: true });
+  }, [auth?.id, isAuthenticated, isSessionLoading, navigate, token]);
 
   const loginUser = async (e) => {
     e.preventDefault();
@@ -97,7 +108,6 @@ export const Login = () => {
       role,
     });
     setSaved('login');
-    setTimeout(() => navigate('/feed'), 1000);
   };
 
   const handleMicrosoftError = (message) => {
@@ -120,6 +130,24 @@ export const Login = () => {
       setLoginError(gqlMessage || netMessage || err.message || 'Usuario o contraseña incorrectos.');
     },
   });
+
+  if (isSessionLoading || (isAuthenticated && token && auth?.id)) {
+    return (
+      <main className="flex min-h-full items-center justify-center px-4 py-12">
+        <div
+          className="w-full max-w-sm rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center shadow-sm dark:border-white/10 dark:bg-slate-900"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <span className="mx-auto block h-8 w-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" aria-hidden="true" />
+          <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Preparando tu sesión institucional...
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-full flex items-center justify-center px-4 py-12">

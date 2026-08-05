@@ -63,7 +63,8 @@ reproducible.
 ### Objetivos específicos
 
 - Centralizar publicaciones, comentarios, respuestas, reacciones, menciones y reportes.
-- Relacionar usuarios con una o más carreras y contextualizar el contenido por materia.
+- Confirmar una carrera actual para cada Estudiante, conservar asociaciones múltiples
+  sólo para roles o importaciones compatibles y contextualizar el contenido por materia.
 - Facilitar el intercambio de archivos, enlaces, imágenes, PDF y multimedia educativa.
 - Representar la identidad académica y profesional mediante un perfil con formato de CV.
 - Proporcionar mensajería privada y notificaciones dentro de la plataforma.

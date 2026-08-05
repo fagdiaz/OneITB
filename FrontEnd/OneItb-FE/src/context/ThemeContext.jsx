@@ -1,4 +1,13 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 const STORAGE_KEY = 'oneitb-theme';
 const ThemeContext = createContext(null);
@@ -29,7 +38,10 @@ const TRANSITION_DURATION_MS = 800;
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(getInitialTheme);
+  const [themeOverride, setThemeOverride] = useState(null);
+  const overrideStackRef = useRef([]);
   const transitionTimerRef = useRef(null);
+  const effectiveTheme = themeOverride ?? theme;
 
   const beginThemeTransition = useCallback(() => {
     if (!isBrowser || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
@@ -62,9 +74,27 @@ export const ThemeProvider = ({ children }) => {
     });
   }, [beginThemeTransition]);
 
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+  const registerThemeOverride = useCallback((requestedTheme) => {
+    const resolvedTheme = normalizeTheme(requestedTheme);
+    if (!resolvedTheme) return () => {};
+
+    const override = { id: Symbol('theme-override'), theme: resolvedTheme };
+    overrideStackRef.current = [...overrideStackRef.current, override];
+    setThemeOverride(resolvedTheme);
+
+    return () => {
+      overrideStackRef.current = overrideStackRef.current.filter(
+        (candidate) => candidate.id !== override.id,
+      );
+      setThemeOverride(
+        overrideStackRef.current.at(-1)?.theme ?? null,
+      );
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    applyTheme(effectiveTheme);
+  }, [effectiveTheme]);
 
   useEffect(() => () => {
     if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
@@ -73,10 +103,12 @@ export const ThemeProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     theme,
-    isDark: theme === 'dark',
+    effectiveTheme,
+    isDark: effectiveTheme === 'dark',
+    registerThemeOverride,
     setTheme,
     toggleTheme,
-  }), [theme, setTheme, toggleTheme]);
+  }), [effectiveTheme, registerThemeOverride, theme, setTheme, toggleTheme]);
 
   return (
     <ThemeContext.Provider value={value}>
@@ -91,4 +123,13 @@ export const useTheme = () => {
     throw new Error('useTheme must be used within ThemeProvider');
   }
   return context;
+};
+
+export const useThemeOverride = (theme) => {
+  const { registerThemeOverride } = useTheme();
+
+  useLayoutEffect(
+    () => registerThemeOverride(theme),
+    [registerThemeOverride, theme],
+  );
 };

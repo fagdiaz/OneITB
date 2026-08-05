@@ -54,7 +54,7 @@ cada capacidad se consulta en el [`ROADMAP.md`](../project_docs/ROADMAP.md).
 **Flujo principal**
 
 1. El visitante completa nombre, apellido, email institucional, contraseña y confirmación.
-2. Selecciona al menos una carrera activa; el rol público se asigna como Estudiante.
+2. Selecciona exactamente una carrera activa; el rol público se asigna como Estudiante.
 3. React valida formato y coincidencia de contraseña y normaliza el email a minúsculas.
 4. GraphQL vuelve a validar campos, duplicados, rol y carrera.
 5. El backend normaliza identidad, genera el hash BCrypt y guarda la cuenta y el usuario.
@@ -150,19 +150,20 @@ cada capacidad se consulta en el [`ROADMAP.md`](../project_docs/ROADMAP.md).
 
 | Campo | Definición |
 |---|---|
-| **Actor principal** | Estudiante autenticado sin carreras |
-| **Objetivo** | Asociar al menos una carrera antes de usar el área privada |
+| **Actor principal** | Estudiante autenticado con cero o varias carreras |
+| **Objetivo** | Confirmar exactamente una carrera actual antes de usar el área privada |
 | **Precondiciones** | Sesión válida, rol Estudiante y catálogo activo |
 | **Postcondiciones** | `UserCareer` persistido y layout desbloqueado después de refetch de la misma identidad |
 | **Requisitos** | `RF-004D`, `RF-006` |
 
 **Flujo principal**
 
-1. El guard detecta que `me.careers` está vacío.
+1. El guard detecta que `me.careers` no contiene exactamente una asociación.
 2. Redirige a una vista obligatoria que no se cierra con Escape ni click-outside.
-3. El estudiante selecciona una o más carreras y guarda.
-4. La mutación reemplaza las asociaciones válidas.
-5. Un refetch de `me` confirma persistencia y habilita la navegación.
+3. El estudiante selecciona una carrera mediante un control de opción única.
+4. Confirma expresamente que esa es la carrera que cursa; cancelar no persiste cambios.
+5. La mutación valida actor, rol, existencia y actividad y reemplaza los vínculos de forma atómica.
+6. Un refetch de `me` confirma esa asociación exacta y habilita la navegación.
 
 ### CU-06 Cerrar sesión o sustituir una identidad
 
@@ -199,7 +200,8 @@ cada capacidad se consulta en el [`ROADMAP.md`](../project_docs/ROADMAP.md).
 2. El usuario edita los campos y, si corresponde, procesa el avatar en Canvas.
 3. El binario final se carga por `/api/upload`; la URL resultante integra el formulario.
 4. Una mutación centralizada persiste perfil, carreras y colecciones CV.
-5. La vista pública se actualiza y el usuario puede abrir la plantilla formal de impresión.
+5. La vista pública se actualiza y el usuario puede abrir el mismo documento semántico
+   utilizado por el editor para imprimir o guardar un **PDF optimizado para ATS**.
 
 **Alternativas y errores**
 

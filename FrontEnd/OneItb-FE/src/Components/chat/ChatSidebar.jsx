@@ -98,7 +98,7 @@ export const ChatSidebar = ({
       
       <div className="border-b border-slate-200 p-2 dark:border-white/10">
         <div className="relative">
-          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
           <input 
             type="text" 
             placeholder="Buscar usuarios..." 

@@ -83,6 +83,35 @@ describe('resolveMicrosoftEntraConfig', () => {
     expect(configuration.isConfigured).toBe(true);
   });
 
+  it.each([
+    'http://localhost:5173/auth/microsoft/callback',
+    'http://127.0.0.1:5173/auth/microsoft/callback',
+    'https://oneitb.example/auth/microsoft/callback',
+  ])('accepts a secure callback boundary for %s', (redirectUri) => {
+    const configuration = resolveMicrosoftEntraConfig({
+      ...completeEnvironment,
+      VITE_ENTRA_REDIRECT_URI: redirectUri,
+    });
+
+    expect(configuration.redirectUri).toBe(redirectUri);
+    expect(configuration.isConfigured).toBe(true);
+  });
+
+  it.each([
+    'http://oneitb.example/auth/microsoft/callback',
+    'http://localhost:5173/auth/microsoft/callback?returnTo=/feed',
+    'http://localhost:5173/auth/microsoft/callback#token',
+    'http://user:password@localhost:5173/auth/microsoft/callback',
+  ])('rejects an unsafe callback boundary for %s', (redirectUri) => {
+    const configuration = resolveMicrosoftEntraConfig({
+      ...completeEnvironment,
+      VITE_ENTRA_REDIRECT_URI: redirectUri,
+    });
+
+    expect(configuration.redirectUri).toBe('');
+    expect(configuration.isConfigured).toBe(false);
+  });
+
   it('fails closed when neither redirect nor a valid origin can be resolved', () => {
     const configuration = resolveMicrosoftEntraConfig(
       {

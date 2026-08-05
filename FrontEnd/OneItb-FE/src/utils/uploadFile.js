@@ -52,8 +52,9 @@ export const validateAttachmentFiles = (files) => {
   return normalized;
 };
 
-export const uploadAttachmentDescriptor = async (file, token) => {
+export const uploadAttachmentDescriptor = async (file, token, options = {}) => {
   if (!file) return null;
+  if (!token) throw new Error('Tu sesion no esta disponible para subir archivos.');
   validateAttachmentFiles([file]);
 
   const formData = new FormData();
@@ -63,6 +64,7 @@ export const uploadAttachmentDescriptor = async (file, token) => {
     method: 'POST',
     body: formData,
     headers: { Authorization: `Bearer ${token}` },
+    signal: options.signal,
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -77,11 +79,12 @@ export const uploadAttachmentDescriptor = async (file, token) => {
     originalFileName: payload.originalFileName || file.name,
     contentType: payload.contentType || file.type,
     size: Number(payload.size ?? file.size),
+    storageMode: payload.storageMode || null,
   };
 };
 
-export const uploadAttachment = async (file, token) => {
-  const descriptor = await uploadAttachmentDescriptor(file, token);
+export const uploadAttachment = async (file, token, options = {}) => {
+  const descriptor = await uploadAttachmentDescriptor(file, token, options);
   return descriptor?.fileUrl ?? null;
 };
 

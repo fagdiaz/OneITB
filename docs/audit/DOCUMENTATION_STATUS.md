@@ -2,8 +2,8 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Última revisión de este índice** | 2026-08-03 |
-| **Estado funcional de referencia** | 117/117 ítems: 45 verificados `[V]` y 72 implementados `[I]` |
+| **Última revisión de este índice** | 2026-08-04 |
+| **Estado funcional de referencia** | 117/117 ítems: 45 verificados `[V]` y 72 implementados `[I]`; Specs 202-203 y 208-211 son gates de calidad fuera del denominador |
 | **Clasificación del producto** | Release Candidate académico, core Feature Complete y Code Freeze operativo local |
 | **Próxima mesa** | Viernes 7 de agosto de 2026, 09:00 |
 | **Fuentes normalizadas en esta pasada** | `ROADMAP.md`, `FINAL_AUDIT_REPORT.md`, `scope-and-requirements.md`, `architecture-and-design.md`, `RUNBOOK_DEV.md`, `DEVELOPMENT_LOG.md`, `01-project-overview.md`, `02-software-requirements.md`, `03-use-cases.md`, `04-design-diagrams.md` y este documento |
@@ -138,10 +138,11 @@ vista resumida claramente identificada y de mantenimiento razonable.
 
 ### 6.1 Baseline técnico documentado
 
-- Último baseline backend: **198/198** en el worktree de Spec 201.
-- Último baseline frontend: **144/144** en la misma ejecución de Spec 201.
-- Ambos pasaron en conjunto, pero deben repetirse sobre el SHA candidato limpio antes de
-  convertirlos en evidencia de release (`REL-001`).
+- Último baseline backend: **216/216** en el worktree de Spec 205.
+- Último baseline frontend: **224/224** en el worktree de Spec 211.
+- Son los baselines más recientes por capa, pero no se ejecutaron juntos después de
+  Spec 208; deben repetirse sobre el SHA candidato limpio antes de convertirlos en
+  evidencia de release (`REL-001`).
 - Base local canónica: SQL Server 2022 en Docker con SQL Auth y secretos fuera de Git.
 - No quedan hallazgos Críticos/Altos de Specs 186-193 en condición vulnerable original.
 - El schema actual contiene **47 resolvers mutacionales**: seis públicos controlados y 41
@@ -171,8 +172,8 @@ vista resumida claramente identificada y de mantenimiento razonable.
 ### 6.4 Gates externos y evolución
 
 - `PR-01` a `PR-03`: SMTP, Redis administrado y Cloudinary reales.
-- `PR-04`: aceptación Microsoft Entra con App Registrations, consentimiento y cuenta
-  Microsoft 365 organizacional.
+- `PR-04`: el acceso Microsoft Entra real ya alcanzó onboarding/muro; restan
+  cancelación/error, logout y aislamiento con una segunda cuenta organizacional.
 - `PR-05`: benchmark BCrypt sobre hardware objetivo.
 - `PR-06`: alertas y política de fallos persistentes de I/O.
 - `PR-07`: antivirus/CDR para uploads.
@@ -194,6 +195,15 @@ estado actual prevalecen las secciones 3 y 6, el roadmap y el informe final de a
 
 | Spec | Estado verificable |
 |---|---|
+| `specs/204-student-enrollment-onboarding` | **Implementada `[I]`**: confirmación única para Estudiantes, reconciliación de múltiples vínculos, enforcement en servicio/registro/perfil/legacy y puerto ITB/SIU manual fail-closed. Backend 210/210, frontend 172/172, builds y schema PASS, EF sin drift. Navegador confirmó un Estudiante persistido con una sola carrera en feed/perfil/editor; resta ejecutar el ciclo cero/múltiples -> cancelar -> confirmar -> relogin para `[V]` |
+| `specs/205-profile-hydration-avatar-storage` | **Implementada `[I]`**: hidratación exclusiva desde `me` coincidente, skeleton integral, protección de borradores, upload cancelable, preservación de avatar y confirmación por refetch. Backend 216/216, frontend 186/186 y builds PASS. El navegador no reprodujo el flash de nombre/selección provisional; upload-refresh, sesión A -> B y Cloudinary real permanecen como gates separados |
+| `specs/206-adaptive-navigation-brand-lockup` | **Implementada `[I]`**: descriptores por rol, overflow medido por ancho real, conservación de badges/estado, cierre accesible y lockup atómico sin bloom. Focalizadas 27/27, frontend 205/205 y Vite PASS. Matriz real Anonymous/Student/Employer/Admin en 320-1440 px sin overflow y ruta Admin desde menú PASS; restan teclado, zoom y reduced-motion para `[V]` |
+| `specs/207-local-visual-assets-resilience` | **Implementada `[I]`**: Google Fonts/cdnjs y avatares remotos retirados, Font Awesome local validado contra metadata, stack de sistema, metadata española y favicon OneITB. Build sin referencias visuales externas y rutas reales legibles en light/dark a 320-1440 px; preimpresión CV compartida PASS. Restan red bloqueada y diálogo nativo de impresión/PDF para `[V]` |
+| `specs/208-ats-friendly-cv-export` | **Implementada `[I]`**: `/profile` y `/profile/edit` comparten un único documento semántico de una columna e impresión aislada con `react-to-print`; se retiraron altura fija, overflow oculto, paginación DOM simulada y componentes duplicados. Analizador Poppler acotado y sin persistencia de PII. Focalizadas 23/23, frontend 217/217 y Vite 559 módulos PASS. Browser Estudiante confirmó paridad, estructura lineal, consola limpia y ausencia de overflow entre 320-1440 px; PDF nativo de dos páginas/extracción siguen bloqueados por diálogo y herramientas faltantes, por lo que no corresponde `[V]` |
+| `specs/210-brand-lockup-theme-contract` | **Implementada `[I]`**: lockup definitivo isotipo `O` + `neITB`, nombre accesible OneITB y asset sin filtros; preferencia persistida separada de overrides visuales apilables. Onboarding fuerza claro sin alterar `oneitb-theme` y restaura el tema al salir. Focalizadas 20/20, frontend 223/223 y Vite 559 módulos PASS; matriz visual 320-1440 px pendiente para `[V]` |
+| `specs/211-local-icon-font-integrity` | **Implementada `[I]`**: copia Font Awesome 6.1.2 retirada y reemplazada por paquete oficial 6.7.2 exacto con integridad SHA-512, licencia y guard de CSS/metadata/WOFF2/iconos. Focalizadas 6/6, frontend 224/224 y Vite 559 módulos PASS; aceptación Firefox offline pendiente para `[V]` |
+| `specs/203-microsoft-session-commit-stabilization` | Limpieza diferenciada por proveedor, commit observado, purga de sesiones parciales, operaciones públicas fuera de la expiración global, recuperación acotada si MSAL restaura Login y timeout cancelable de backend. QA HIGH PASS, callback 11/11, frontend 163/163 y Vite sin errores; acceso institucional real aceptado hasta onboarding/muro, con logout/segunda cuenta pendientes |
+| `specs/202-entra-redirect-acceptance` | `AADSTS50011` acotado a App Registration; callback local/configuración backend verificados sin exponer valores, HTTP restringido a loopback y casos de URI inseguros cubiertos. QA HIGH PASS, Entra focalizadas 46/46, frontend 151/151 y Vite 862 ms; aceptación Microsoft 365 real continúa bloqueada hasta el smoke de tenant |
 | `specs/201-final-audit-closure` | Registro Student-only con dominio/anti-enumeración/limiter, Profesor acotado por carrera, privacidad sin Follow, SQL productivo sin trust bypass predeterminado y probes live/ready. Backend 198/198, frontend 144/144, builds y EF PASS en worktree; SHA, DOCX/PDF y diagramas siguen como gates separados |
 | `specs/200-microsoft-entra-redirect-auth` | Popup eliminado; `loginRedirect`, callback aislado, selección de cuenta fail-closed, adquisición silenciosa del scope API, canje GraphQL idempotente y destino interno sanitizado implementados. Speckit QA PASS, focalizadas 41/41, frontend 144/144 y Vite 1,69 s; App Registration y aceptación Microsoft 365 real pendientes |
 | `specs/199-ux-b2b-and-academic-onboarding` | Configuracion Entra centralizada con `common`, client ID canonico y alias temporal; CTA empresarial responsive; guard previo al layout y seleccion academica persistida/refetch para Estudiantes sin carreras. Speckit QA PASS, tests focalizados 34/34, frontend 118/118 y build Vite 686 ms; regresion visual y tenant real pendientes |

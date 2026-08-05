@@ -54,9 +54,8 @@ namespace OneItb.GraphQL.Services.Storage
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning(
-                    "Cloudinary upload failed with status {StatusCode}. Payload: {Payload}",
-                    (int)response.StatusCode,
-                    payload);
+                    "Cloudinary upload failed with status {StatusCode}",
+                    (int)response.StatusCode);
                 throw new InvalidOperationException("No se pudo almacenar el archivo en Cloudinary.");
             }
 

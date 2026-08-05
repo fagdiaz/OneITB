@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BrandLogo } from '../branding/BrandLogo';
+import { BrandLockup } from '../branding/BrandLockup';
 import { RevealOnScroll } from '../common/RevealOnScroll';
 import { usePointerSpotlight } from '../../hooks/usePointerSpotlight';
 import { EMPLOYER_REQUEST_NAVIGATION } from '../jobs/employerNavigation';
@@ -59,11 +60,10 @@ export const Landing = () => {
 
       <section className="relative z-10 mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.08fr_0.92fr] lg:px-10 lg:py-20">
         <div className="max-w-3xl">
-          <BrandLogo
+          <BrandLockup
             variant="full"
-            alt="OneITB, red académica del Instituto Tecnológico Beltrán"
-            className="h-auto w-52 object-contain sm:w-64"
-            fetchPriority="high"
+            label="OneITB, red académica del Instituto Tecnológico Beltrán"
+            fetchpriority="high"
           />
           <p className="mt-10 inline-flex items-center gap-2 rounded-full border border-cyan-700/15 bg-cyan-50/70 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-cyan-800 shadow-sm backdrop-blur-md dark:border-cyan-300/15 dark:bg-cyan-300/5 dark:text-cyan-200">
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.7)]" />
@@ -184,7 +184,7 @@ export const Landing = () => {
           </div>
           <div className="relative flex min-h-72 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_70%_25%,rgba(34,211,238,0.28),transparent_30%),linear-gradient(135deg,#e2e8f0,#dbeafe_48%,#e0e7ff)] p-10 dark:bg-[radial-gradient(circle_at_70%_25%,rgba(34,211,238,0.17),transparent_30%),linear-gradient(135deg,#0f172a,#172554_48%,#1e1b4b)]">
             <div aria-hidden="true" className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(71,85,105,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(71,85,105,0.12)_1px,transparent_1px)] [background-size:32px_32px] dark:opacity-25" />
-            <BrandLogo variant="full" alt="Identidad visual de OneITB" className="relative z-10 h-auto w-full max-w-sm object-contain drop-shadow-[0_16px_30px_rgba(15,23,42,0.18)]" loading="lazy" />
+            <BrandLockup variant="full" label="Identidad visual de OneITB" className="relative z-10" loading="lazy" />
           </div>
         </div>
       </RevealOnScroll>
@@ -199,7 +199,7 @@ export const Landing = () => {
 
       <footer className="relative z-10 border-t border-slate-300/60 bg-slate-100/70 px-5 py-9 backdrop-blur-lg dark:border-white/10 dark:bg-slate-950/45">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 sm:flex-row">
-          <BrandLogo variant="full" alt="OneITB" className="h-auto w-36 object-contain" loading="lazy" />
+          <BrandLockup label="OneITB" loading="lazy" />
           <p className="text-center text-xs leading-5 text-slate-500 sm:text-right dark:text-slate-400">Instituto Tecnológico Beltrán<br />Red académica institucional · 2026</p>
         </div>
       </footer>

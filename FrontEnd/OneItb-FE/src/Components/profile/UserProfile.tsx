@@ -1,15 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { GET_PUBLIC_PROFILE } from '../../data/graphql/queries/publicProfile';
 import { GET_MY_ACADEMIC_PROGRESS } from '../../data/graphql/queries/academic';
 import { apiBaseUrl } from '../../utils/uploadFile';
-import { CVPrintTemplate } from '../resume/CVPrintTemplate';
+import { CVATSPrintTemplate } from '../resume/CVATSPrintTemplate';
 import { CVData } from '../../types/resume';
 import { GET_MY_FOLLOWED_USER_IDS } from '../../data/graphql/social';
 import { FollowButton } from '../social/FollowButton';
 import { useInquiryPage } from '../../hooks/useInquiryPage';
+import { useCvAtsPrint } from '../../hooks/useCvAtsPrint';
 
 const roleStyles: Record<string, string> = {
   Administrador: 'bg-blue-50 text-blue-800 ring-blue-200',
@@ -81,6 +82,8 @@ export const UserProfile = () => {
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [followOverride, setFollowOverride] = useState<boolean | null>(null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const cvDocumentRef = useRef<HTMLElement>(null);
 
   const targetUserId = id || auth.id;
   const isOwnProfile = Boolean(auth?.id && targetUserId && String(auth.id).toLowerCase() === String(targetUserId).toLowerCase());
@@ -118,6 +121,19 @@ export const UserProfile = () => {
   }, [targetUserId]);
 
   const profile = data?.publicProfile;
+  const {
+    printCv,
+    isPrinting,
+    printError,
+  } = useCvAtsPrint({
+    contentRef: cvDocumentRef,
+    documentTitle: profile?.fullName ? `CV-${profile.fullName}-OneITB` : 'OneITB-CV-ATS',
+  });
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [profile?.avatarUrl, targetUserId]);
+
   const canViewSensitiveProfile = profile?.canViewSensitiveProfile !== false;
   const isFollowing = followOverride ?? Boolean(targetUserId && followedData?.myFollowedUserIds?.includes(targetUserId));
 
@@ -175,8 +191,7 @@ export const UserProfile = () => {
     : 'Este perfil esta configurado como privado. Solo el titular, sus seguidores y el equipo institucional pueden ver el CV, contacto y trayectoria.';
   const careers = profile.careers ?? [];
   const roleClass = roleStyles[profile.role] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
-  const avatarUrl = resolveAssetUrl(profile.avatarUrl) ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName)}&background=0f172a&color=fff&size=192`;
+  const avatarUrl = resolveAssetUrl(profile.avatarUrl);
   const sortVisibleCvItems = (items?: any[]) =>
     [...(items ?? [])]
       .filter((item) => !item.hidden)
@@ -212,7 +227,7 @@ export const UserProfile = () => {
         normalizeExternalUrl(profile.facebook, 'facebook') ||
         normalizeExternalUrl(profile.instagram, 'instagram') ||
         '',
-      profileImage: avatarUrl,
+      profileImage: avatarUrl && !avatarFailed ? avatarUrl : '',
     },
     summary: biography,
     experience: cvExperiences.map((item: any) => ({
@@ -292,14 +307,27 @@ export const UserProfile = () => {
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
                 <div className="relative h-36 w-36 shrink-0 print:-ml-2">
-                  <img
-                    src={avatarUrl}
-                    className="h-36 w-36 rounded-3xl border-4 border-white/20 object-cover shadow-2xl"
-                    alt={`Avatar de ${profile.fullName}`}
-                  />
-                  <div className="absolute -bottom-3 -right-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg">
-                    {getInitials(profile.fullName)}
-                  </div>
+                  {avatarUrl && !avatarFailed ? (
+                    <>
+                      <img
+                        src={avatarUrl}
+                        onError={() => setAvatarFailed(true)}
+                        className="h-36 w-36 rounded-3xl border-4 border-white/20 object-cover shadow-2xl"
+                        alt={`Avatar de ${profile.fullName}`}
+                      />
+                      <div className="absolute -bottom-3 -right-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg">
+                        {getInitials(profile.fullName)}
+                      </div>
+                    </>
+                  ) : (
+                    <div
+                      role="img"
+                      aria-label={`Iniciales de ${profile.fullName}`}
+                      className="flex h-36 w-36 items-center justify-center rounded-3xl border-4 border-white/20 bg-slate-800 text-4xl font-black text-white shadow-2xl"
+                    >
+                      {getInitials(profile.fullName)}
+                    </div>
+                  )}
                 </div>
 
                 <div className="min-w-0">
@@ -334,7 +362,7 @@ export const UserProfile = () => {
                     className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-white/20"
                   >
                     <i className="fa-solid fa-print" />
-                    Imprimir CV
+                    PDF optimizado para ATS
                   </button>
                   <Link
                     to="/profile/edit"
@@ -765,8 +793,8 @@ export const UserProfile = () => {
           <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-100 shadow-2xl print:block print:h-auto print:max-w-none print:overflow-visible print:rounded-none print:border-0 print:bg-white print:shadow-none">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 print:hidden">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Previsualizacion de CV</p>
-                <h2 className="mt-1 text-lg font-black text-slate-950">Curriculum institucional listo para imprimir</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Previsualización de CV</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">PDF optimizado para ATS</h2>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -778,16 +806,22 @@ export const UserProfile = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.print()}
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-800"
+                  onClick={printCv}
+                  disabled={isPrinting}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-wait disabled:opacity-60"
                 >
                   <i className="fa-solid fa-print" />
-                  Imprimir / PDF
+                  {isPrinting ? 'Preparando...' : 'Imprimir / guardar PDF'}
                 </button>
               </div>
             </div>
+            {printError && (
+              <p role="alert" className="border-b border-red-200 bg-red-50 px-5 py-2 text-sm font-semibold text-red-700 print:hidden">
+                {printError}
+              </p>
+            )}
             <div className="min-h-0 flex-1 overflow-auto bg-slate-200/70 py-6 print:overflow-visible print:bg-white print:py-0">
-              <CVPrintTemplate data={printCvData} activeTheme="graphite" />
+              <CVATSPrintTemplate ref={cvDocumentRef} data={printCvData} activeTheme="graphite" />
             </div>
           </div>
         </div>

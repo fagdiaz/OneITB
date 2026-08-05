@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BrandLogo } from '../branding/BrandLogo';
+import { BrandLockup } from '../branding/BrandLockup';
 
 export const Footer = () => (
   <footer className="print:hidden relative z-10 mt-auto border-t border-slate-300/60 bg-slate-100/75 px-5 py-8 backdrop-blur-xl dark:border-white/10 dark:bg-slate-800/80">
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-        <BrandLogo variant="full" alt="OneITB" className="h-auto w-32 object-contain" loading="lazy" />
+        <BrandLockup label="OneITB" loading="lazy" />
         <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-300">
           Red social académica del Instituto Tecnológico Beltrán.
         </p>

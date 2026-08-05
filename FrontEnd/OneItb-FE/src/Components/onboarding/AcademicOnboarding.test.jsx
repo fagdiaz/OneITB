@@ -6,6 +6,7 @@ import {
   Routes,
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ThemeProvider } from '../../context/ThemeContext';
 import { AcademicOnboarding } from './AcademicOnboarding';
 
 const state = vi.hoisted(() => ({
@@ -66,23 +67,27 @@ vi.mock('@apollo/client', async (importOriginal) => {
 });
 
 const renderOnboarding = () => render(
-  <MemoryRouter
-    initialEntries={[{
-      pathname: '/onboarding/academic',
-      state: { from: '/academic?tab=resources' },
-    }]}
-  >
-    <Routes>
-      <Route path="/onboarding/academic" element={<AcademicOnboarding />} />
-      <Route path="/academic" element={<div>Destino académico</div>} />
-      <Route path="/feed" element={<div>Feed</div>} />
-      <Route path="/login" element={<div>Login</div>} />
-    </Routes>
-  </MemoryRouter>,
+  <ThemeProvider>
+    <MemoryRouter
+      initialEntries={[{
+        pathname: '/onboarding/academic',
+        state: { from: '/academic?tab=resources' },
+      }]}
+    >
+      <Routes>
+        <Route path="/onboarding/academic" element={<AcademicOnboarding />} />
+        <Route path="/academic" element={<div>Destino académico</div>} />
+        <Route path="/feed" element={<div>Feed</div>} />
+        <Route path="/login" element={<div>Login</div>} />
+      </Routes>
+    </MemoryRouter>
+  </ThemeProvider>,
 );
 
 describe('AcademicOnboarding', () => {
   beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.className = '';
     state.auth = {
       auth: { id: 'user-1', role: 'Estudiante' },
       isAuthenticated: true,
@@ -121,7 +126,7 @@ describe('AcademicOnboarding', () => {
   it('requires a selection before allowing save', () => {
     renderOnboarding();
     expect(
-      screen.getByRole('button', { name: 'Guardar y continuar' }),
+      screen.getByRole('button', { name: 'Revisar y continuar' }),
     ).toBeDisabled();
   });
 
@@ -129,9 +134,10 @@ describe('AcademicOnboarding', () => {
     state.mutate.mockRejectedValue(new Error('Servicio no disponible'));
     renderOnboarding();
 
-    const career = screen.getByRole('checkbox', { name: /Análisis de Sistemas/i });
+    const career = screen.getByRole('radio', { name: /Análisis de Sistemas/i });
     fireEvent.click(career);
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar y continuar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, confirmar carrera' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Servicio no disponible',
@@ -140,12 +146,34 @@ describe('AcademicOnboarding', () => {
     expect(screen.queryByText('Destino académico')).not.toBeInTheDocument();
   });
 
+  it('does not expose schema internals when the active API is outdated', async () => {
+    state.mutate.mockRejectedValue({
+      graphQLErrors: [{
+        message: 'The field `confirmStudentCareer` does not exist on the type `Mutation`.',
+        extensions: { code: 'GRAPHQL_VALIDATION_FAILED' },
+      }, {
+        message: 'The following variables were not used: careerId.',
+        extensions: { code: 'GRAPHQL_VALIDATION_FAILED' },
+      }],
+    });
+    renderOnboarding();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Análisis de Sistemas/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar y continuar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, confirmar carrera' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('servicio académico local está desactualizado');
+    expect(alert).not.toHaveTextContent('confirmStudentCareer');
+    expect(alert).not.toHaveTextContent('Mutation');
+  });
+
   it('unlocks only after the refetched current profile contains a career', async () => {
     state.mutate.mockResolvedValue({
       data: {
-        linkUserToCareers: [
-          { id: 1, name: 'Análisis de Sistemas', code: 'TSAS', isActive: true },
-        ],
+        confirmStudentCareer: {
+          id: 1, name: 'Análisis de Sistemas', code: 'TSAS', isActive: true,
+        },
       },
     });
     state.profile.refetch.mockResolvedValue({
@@ -160,13 +188,14 @@ describe('AcademicOnboarding', () => {
     renderOnboarding();
 
     fireEvent.click(
-      screen.getByRole('checkbox', { name: /Análisis de Sistemas/i }),
+      screen.getByRole('radio', { name: /Análisis de Sistemas/i }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar y continuar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, confirmar carrera' }));
 
     await waitFor(() => {
       expect(state.mutate).toHaveBeenCalledWith({
-        variables: { careerIds: [1] },
+        variables: { careerId: 1 },
       });
       expect(state.profile.refetch).toHaveBeenCalledTimes(1);
     });
@@ -176,9 +205,9 @@ describe('AcademicOnboarding', () => {
   it('does not unlock if the persisted profile still lacks careers', async () => {
     state.mutate.mockResolvedValue({
       data: {
-        linkUserToCareers: [
-          { id: 1, name: 'Análisis de Sistemas', code: 'TSAS', isActive: true },
-        ],
+        confirmStudentCareer: {
+          id: 1, name: 'Análisis de Sistemas', code: 'TSAS', isActive: true,
+        },
       },
     });
     state.profile.refetch.mockResolvedValue({
@@ -193,9 +222,10 @@ describe('AcademicOnboarding', () => {
     renderOnboarding();
 
     fireEvent.click(
-      screen.getByRole('checkbox', { name: /Análisis de Sistemas/i }),
+      screen.getByRole('radio', { name: /Análisis de Sistemas/i }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar y continuar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, confirmar carrera' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'todavía no confirmó',
@@ -242,7 +272,57 @@ describe('AcademicOnboarding', () => {
       name: 'No hay carreras disponibles',
     })).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Guardar y continuar' }),
+      screen.queryByRole('button', { name: 'Revisar y continuar' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('allows only one career selection at a time', () => {
+    renderOnboarding();
+
+    const systems = screen.getByRole('radio', { name: /Análisis de Sistemas/i });
+    const radiology = screen.getByRole('radio', { name: /Radiología/i });
+    fireEvent.click(systems);
+    expect(systems).toBeChecked();
+
+    fireEvent.click(radiology);
+    expect(radiology).toBeChecked();
+    expect(systems).not.toBeChecked();
+  });
+
+  it('forces a light onboarding surface without overwriting a dark preference', () => {
+    localStorage.setItem('token', 'token');
+    localStorage.setItem('user', JSON.stringify({ id: 'user-1' }));
+    localStorage.setItem('oneitb-theme', 'dark');
+    renderOnboarding();
+
+    expect(document.documentElement).not.toHaveClass('dark');
+    expect(localStorage.getItem('oneitb-theme')).toBe('dark');
+    expect(screen.getByRole('img', { name: 'OneITB' })).toHaveTextContent('neITB');
+  });
+
+  it('does not persist when confirmation is canceled', () => {
+    renderOnboarding();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Análisis de Sistemas/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar y continuar' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      '¿Estás seguro de que esta es la carrera que estás cursando?',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Volver y revisar' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(state.mutate).not.toHaveBeenCalled();
+  });
+
+  it('keeps an over-scoped Student in reconciliation until one career is confirmed', () => {
+    state.profile.data.me.userCareers = [
+      { career: { id: 1 } },
+      { career: { id: 2 } },
+    ];
+
+    renderOnboarding();
+
+    expect(screen.getByRole('heading', { name: 'Confirmá tu carrera actual' })).toBeInTheDocument();
+    expect(screen.queryByText('Destino académico')).not.toBeInTheDocument();
   });
 });

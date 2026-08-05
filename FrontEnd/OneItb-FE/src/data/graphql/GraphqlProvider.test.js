@@ -2,8 +2,11 @@ import { parse } from 'graphql';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   GraphQLProvider,
+  hasCanonicalPersistedSession,
+  isAuthorizationFailure,
   resolveHttpUri,
   resolveWsUri,
+  shouldTerminateSessionForOperation,
 } from './GraphqlProvider';
 
 const ENTITY_TYPES = [
@@ -92,5 +95,30 @@ describe('GraphQLProvider local transport', () => {
     expect(resolveWsUri('/graphql')).toBe(
       `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/graphql`,
     );
+  });
+});
+
+describe('GraphQLProvider authorization classification', () => {
+  const authErrors = [{
+    message: 'The current user is not authorized.',
+    extensions: { code: 'AUTH_NOT_AUTHORIZED' },
+  }];
+
+  it('recognizes authorization failures without treating public identity exchanges as expiry', () => {
+    expect(isAuthorizationFailure(authErrors)).toBe(true);
+    expect(
+      shouldTerminateSessionForOperation('MicrosoftLogin', authErrors),
+    ).toBe(false);
+    expect(
+      shouldTerminateSessionForOperation('GetUserProfile', authErrors),
+    ).toBe(true);
+  });
+
+  it('requires both a token and a valid user identity before expiring a session', () => {
+    localStorage.setItem('token', 'orphan-token');
+    expect(hasCanonicalPersistedSession()).toBe(false);
+
+    localStorage.setItem('user', JSON.stringify({ id: 'user-1' }));
+    expect(hasCanonicalPersistedSession()).toBe(true);
   });
 });

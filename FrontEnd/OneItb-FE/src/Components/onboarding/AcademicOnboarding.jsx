@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
-import { LINK_USER_TO_CAREERS } from '../../data/graphql/mutations/careers';
+import { CONFIRM_STUDENT_CAREER } from '../../data/graphql/mutations/careers';
 import { GET_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_USER_PROFILE } from '../../data/graphql/queries/getUserProfile';
 import {
@@ -14,7 +14,6 @@ import {
   getGraphQLErrorMessage,
   isCurrentSessionProfile,
   normalizeActiveCareers,
-  normalizeCareerSelection,
   requiresAcademicOnboarding,
   sanitizeOnboardingDestination,
 } from './academicOnboardingState';
@@ -56,7 +55,8 @@ export const AcademicOnboarding = () => {
   const navigate = useNavigate();
   const destination = sanitizeOnboardingDestination(location.state?.from);
   const hasSession = Boolean(isAuthenticated && token && auth?.id);
-  const [selectedCareerIds, setSelectedCareerIds] = useState([]);
+  const [selectedCareerId, setSelectedCareerId] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [formError, setFormError] = useState('');
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -74,14 +74,15 @@ export const AcademicOnboarding = () => {
     notifyOnNetworkStatusChange: true,
     context: { sessionVersion },
   });
-  const [linkUserToCareers, { loading: isSubmitting }] = useMutation(
-    LINK_USER_TO_CAREERS,
+  const [confirmStudentCareer, { loading: isSubmitting }] = useMutation(
+    CONFIRM_STUDENT_CAREER,
   );
 
   const activeCareers = useMemo(
     () => normalizeActiveCareers(careersQuery.data?.careers),
     [careersQuery.data],
   );
+  const selectedCareer = activeCareers.find((career) => career.id === selectedCareerId);
 
   if (isSessionLoading) {
     return <AcademicOnboardingLoading />;
@@ -171,50 +172,52 @@ export const AcademicOnboarding = () => {
     );
   }
 
-  const toggleCareer = (careerId) => {
+  const selectCareer = (careerId) => {
     setFormError('');
-    setSelectedCareerIds((current) => (
-      current.includes(careerId)
-        ? current.filter((id) => id !== careerId)
-        : [...current, careerId]
-    ));
+    setSelectedCareerId(careerId);
   };
 
-  const handleSubmit = async (event) => {
+  const requestConfirmation = (event) => {
     event.preventDefault();
     if (isSubmitting) return;
-
-    const normalizedIds = normalizeCareerSelection(selectedCareerIds);
-    if (normalizedIds.length === 0) {
-      setFormError('Seleccioná al menos una carrera para continuar.');
+    if (!selectedCareer) {
+      setFormError('Seleccioná una carrera para continuar.');
       return;
     }
 
     setFormError('');
+    setShowConfirmation(true);
+  };
+
+  const confirmSelection = async () => {
+    if (isSubmitting || !selectedCareer) return;
+
+    setFormError('');
     try {
-      const mutationResult = await linkUserToCareers({
-        variables: { careerIds: normalizedIds },
+      const mutationResult = await confirmStudentCareer({
+        variables: { careerId: selectedCareer.id },
       });
-      const persistedIds = normalizeCareerSelection(
-        mutationResult.data?.linkUserToCareers?.map((career) => career.id),
-      );
-      if (!normalizedIds.every((id) => persistedIds.includes(id))) {
-        throw new Error('La API no confirmó todas las carreras seleccionadas.');
+      const persistedId = Number(mutationResult.data?.confirmStudentCareer?.id);
+      if (persistedId !== selectedCareer.id) {
+        throw new Error('La API no confirmó la carrera seleccionada.');
       }
 
       const refreshed = await profileQuery.refetch();
       const refreshedProfile = refreshed.data?.me;
+      const refreshedCareerIds = extractCareerIds(refreshedProfile);
       if (
         !isCurrentSessionProfile(auth, refreshedProfile)
-        || extractCareerIds(refreshedProfile).length === 0
+        || refreshedCareerIds.length !== 1
+        || refreshedCareerIds[0] !== selectedCareer.id
       ) {
         throw new Error(
-          'La carrera se guardó, pero el perfil todavía no confirmó la asociación.',
+          'La carrera se guardó, pero el perfil todavía no confirmó la asociación exacta.',
         );
       }
 
       navigate(destination, { replace: true });
     } catch (error) {
+      setShowConfirmation(false);
       setFormError(getGraphQLErrorMessage(
         error,
         'No se pudo guardar tu identidad académica. Intentá nuevamente.',
@@ -224,17 +227,17 @@ export const AcademicOnboarding = () => {
 
   return (
     <AcademicOnboardingFrame
-      title="Elegí tu carrera"
-      description="Esta información permite mostrarte materias, publicaciones y recursos vinculados con tu recorrido institucional."
+      title="Confirmá tu carrera actual"
+      description="Elegí una única carrera. Esta identidad define las materias, publicaciones y recursos institucionales que vas a consultar."
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={requestConfirmation}>
         <fieldset disabled={isSubmitting}>
           <legend className="text-sm font-bold text-slate-800 dark:text-slate-100">
             Carreras disponibles
           </legend>
           <div className="mt-3 grid max-h-72 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
             {activeCareers.map((career) => {
-              const selected = selectedCareerIds.includes(career.id);
+              const selected = selectedCareerId === career.id;
               return (
                 <label
                   key={career.id}
@@ -246,9 +249,10 @@ export const AcademicOnboarding = () => {
                   ].join(' ')}
                 >
                   <input
-                    type="checkbox"
+                    type="radio"
+                    name="student-career"
                     checked={selected}
-                    onChange={() => toggleCareer(career.id)}
+                    onChange={() => selectCareer(career.id)}
                     className="mt-0.5 h-4 w-4 accent-blue-600"
                   />
                   <span>
@@ -285,13 +289,59 @@ export const AcademicOnboarding = () => {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting || selectedCareerIds.length === 0}
+            disabled={isSubmitting || !selectedCareer}
             className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-slate-50 shadow-lg shadow-blue-900/15 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting ? 'Guardando...' : 'Guardar y continuar'}
+            {isSubmitting ? 'Guardando...' : 'Revisar y continuar'}
           </button>
         </div>
       </form>
+
+      {showConfirmation && selectedCareer && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="career-confirmation-title"
+        >
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-200"
+              aria-hidden="true"
+            >
+              <i className="fa-solid fa-graduation-cap" />
+            </div>
+            <h2
+              id="career-confirmation-title"
+              className="mt-4 text-xl font-black tracking-tight text-slate-950 dark:text-slate-50"
+            >
+              ¿Estás seguro de que esta es la carrera que estás cursando?
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Vas a confirmar <strong>{selectedCareer.name}</strong>
+              {selectedCareer.code ? ` (${selectedCareer.code})` : ''}. Esta selección define tu alcance académico actual.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => setShowConfirmation(false)}
+                className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-60 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/10"
+              >
+                Volver y revisar
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={confirmSelection}
+                className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-slate-50 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? 'Confirmando...' : 'Sí, confirmar carrera'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AcademicOnboardingFrame>
   );
 };

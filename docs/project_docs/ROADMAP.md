@@ -1,6 +1,6 @@
 # Roadmap único de OneITB23
 
-**Ultima revision**: 2026-08-03
+**Ultima revision**: 2026-08-04
 
 ## 1. Estado ejecutivo y criterio de medición
 
@@ -9,8 +9,8 @@
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
 | Verificación runtime `[V]` | **45 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **72 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
-| Backend automatizado más reciente | **198/198** | Ejecución completa del worktree de Spec 201; todavía no equivale a evidencia sobre SHA candidato |
-| Frontend automatizado más reciente | **144/144** | Ejecución completa del mismo worktree de Spec 201; falta repetirla tras congelar el SHA |
+| Backend automatizado más reciente | **216/216** | Suite completa del worktree de Spec 205; todavía no equivale a evidencia sobre SHA candidato |
+| Frontend automatizado más reciente | **224/224** | Suite completa del worktree de Spec 211; falta repetirla tras congelar el SHA |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; preparación documental y logística pendiente |
 
 El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de
@@ -23,7 +23,10 @@ Las Specs 194-196 verificaron los recorridos principales, la infraestructura loc
 base demo canónica. La Spec 197 implementó Microsoft Entra ID; la 198 incorporó el alta
 B2B de empleadores; la 199 agregó configuración multi-tenant y onboarding académico; y
 la 200 reemplazó el popup institucional por redirect, callback aislado e intercambio
-GraphQL idempotente. La aceptación Microsoft 365 real permanece en `PR-04`.
+GraphQL idempotente. La Spec 202 alineó y endureció el contrato exacto de redirect local;
+la 203 corrigió la carrera entre MSAL, el commit de `AuthContext` y los guards. El
+recorrido real con una cuenta Microsoft 365 ya alcanzó onboarding y muro; `PR-04`
+permanece abierto solo para cancelación/error, logout y aislamiento de segunda cuenta.
 
 Este documento es la única fuente de avance, estabilización, deuda y prioridades. Ante
 una contradicción prevalecen, en este orden: código y esquema ejecutado, evidencia de la
@@ -378,6 +381,144 @@ sigue abierto hasta repetir el gate sobre un SHA limpio. `GAP-FILE-01`, observab
 central, proveedores reales y los entregables DOCX/PDF/figuras conservan sus gates
 explícitos.
 
+### 5.11 Alineación y aceptación del redirect Microsoft Entra - Spec 202
+
+La Spec 202 respondió al `AADSTS50011` observado con la cuenta institucional. La
+auditoría segura confirmó que frontend y backend ya utilizan la configuración Entra
+esperada y que la SPA solicita exactamente
+`http://localhost:5173/auth/microsoft/callback`; por lo tanto, la causa se acotó a la
+URI ausente o distinta en la App Registration indicada por el `client_id`.
+
+El frontend ahora solo admite callbacks HTTP en `localhost`/loopback, exige HTTPS para
+hosts remotos y rechaza query, fragmento o credenciales embebidas. Las pruebas Entra
+focalizadas pasaron 46/46, la suite frontend 151/151 y Vite compiló 551 módulos en
+862 ms. El guardado de la URI bajo plataforma SPA y el recorrido real de éxito,
+cancelación/reintento, logout y aislamiento de una segunda cuenta continúan formando el
+gate externo `PR-04`; no se debilitaron CORS ni CSP para ocultar warnings de Microsoft.
+
+### 5.12 Commit de sesión posterior al redirect Microsoft - Spec 203
+
+Una vez registrada la URI SPA, Microsoft volvió correctamente a OneITB pero el navegador
+terminaba otra vez en `/login`. La causa no era CORS ni la telemetría de Microsoft:
+`AuthContext.login` borraba MSAL también para accesos Microsoft y el callback navegaba
+antes de que React confirmara la nueva identidad ante el guard privado.
+
+La frontera de sesión ahora conserva MSAL solo durante el establecimiento Microsoft y
+mantiene la limpieza completa para password, empleador, logout, expiración y reemplazo de
+cuenta. El callback separa intercambio y commit, deduplica el canje y navega únicamente
+cuando el contexto expone el mismo usuario y un JWT OneITB. `/login` incorpora una
+recuperación defensiva para sesiones ya comprometidas. La ampliación de hardening purga
+sesiones parciales, preserva los errores controlados de operaciones públicas y retoma el
+callback cuando MSAL restaura Login con un flow/cuenta inequívocos. Pasaron 34/34 pruebas
+focalizadas, 163/163 frontend y Vite compiló 551 módulos sin errores. El 2026-08-04 una
+cuenta institucional completó Microsoft, onboarding y llegada al muro. `PR-04` continúa
+abierto para cancelación/error, logout y aislamiento de una segunda identidad.
+
+### 5.13 Remediaciones derivadas de la auditoría manual - Specs 204 a 207
+
+Estos trabajos son correcciones de calidad y reglas de negocio detectadas durante la
+regresión final. No amplían el denominador 117/117 ni autorizan a declarar aceptación
+antes de implementar y ejecutar su evidencia.
+
+- [x] [I] **Spec 204 - Student Enrollment Onboarding**: selección única y confirmación
+  explícita para Estudiantes, reconciliación de estados con varias carreras, enforcement
+  backend también en registro/perfil/mutación legacy y puerto desacoplado para una futura
+  API institucional ITB/SIU sin simular una integración inexistente. Evidencia: backend
+  210/210, frontend 172/172, builds limpios, schema real y EF sin drift. Resta **30-45 min**
+  de aceptación manual institucional para promoverla a `[V]`.
+- [x] [I] **Spec 205 - Profile Hydration and Avatar Storage**: editor bloqueado hasta
+  hidratar el `me` de la identidad activa, snapshot único que no pisa borradores, upload
+  abortable y avatar candidato preservado hasta que GraphQL/refetch confirman la URL.
+  El backend informa `Local`/`Cloudinary`, rechaza configuración cloud incompleta y mapea
+  fallos de storage a `UPLOAD_STORAGE_UNAVAILABLE`. Evidencia: backend 216/216, frontend
+  186/186 y builds limpios. Restan **45-60 min** de aceptación visual local; Cloudinary
+  real permanece en `PR-03` y no bloquea la defensa controlada.
+- [x] [I] **Spec 206 - Adaptive Navigation and Brand Lockup**: navegación por rol desde
+  descriptores únicos, overflow progresivo según el ancho real observado y lockup atómico
+  isotipo + wordmark compartido sin bloom oscuro en Header, Landing y Footer. Spec 210
+  corrigió luego su composición visible definitiva a isotipo `O` + `neITB`. El algoritmo conserva
+  rutas, estado activo y badges al mover destinos; Escape, clic exterior y navegación
+  cierran el menú. Evidencia conjunta: 27/27 focalizadas, frontend 205/205 y build Vite
+  de 558 módulos en 3,88 s en el gate final concurrente. La matriz de roles y anchos
+  320-1440 px pasó sin overflow; restan teclado real, zoom y movimiento reducido para
+  promoverla a `[V]`.
+- [x] [I] **Spec 207 - Local Visual Asset Resilience**: Google Fonts y cdnjs retirados;
+  Font Awesome se empaqueta desde el repositorio, la tipografía usa el stack del sistema,
+  los aliases incompatibles fueron corregidos y los avatares fallback son iniciales
+  locales. El build emitió WOFF2 versionados y su artefacto no contiene referencias a
+  Google Fonts, gstatic, cdnjs ni `ui-avatars.com`. Resta **30-45 min** de aceptación
+  offline, rutas principales y diálogo nativo de impresión/PDF para promoverla a `[V]`;
+  la preimpresión CV compartida ya pasó en navegador.
+
+### 5.14 Calidad de exportación del CV - Spec 208
+
+- [x] [I] **Spec 208 - ATS-Friendly CV Export**: sustituyó las dos representaciones
+  divergentes del CV por un único documento semántico, lineal y sin altura fija,
+  compartido por `/profile` y `/profile/edit`; imprimir solamente ese nodo mediante
+  `react-to-print` y validar el PDF real con extracción de texto, orden de secciones,
+  Unicode, A4, fuentes, enlaces y ausencia de cifrado. La comunicación debe utilizar
+  **"PDF optimizado para ATS"** y no prometer compatibilidad universal. Estimación:
+  **3-5 h** de implementación y pruebas automáticas, más **30-45 min** de aceptación con
+  el diálogo nativo y un PDF real. Evidencia: 23/23 pruebas focalizadas, frontend 217/217
+  y build Vite de 559 módulos en 2,17 s. La aceptación browser posterior confirmó paridad
+  de secciones y valores entre ambas rutas, estructura semántica, consola limpia y
+  navegación Estudiante sin overflow entre 320-1440 px. Faltan un perfil aprobado de dos
+  páginas, el diálogo
+  nativo y `pdftotext`/`pdffonts`; el artefacto PDF permanece `[B]`, no PASS. Este gate no
+  altera el denominador funcional 117/117.
+
+**Orden actualizado:** aceptar el PDF real de Spec 208 antes de exportar el CV definitivo;
+luego completar la aceptación manual coordinada de `204` a `207` y continuar con
+`CF-01` a `CF-06` sobre el corte integrado y congelado.
+
+### 5.15 Recuperación del schema de onboarding - Spec 209
+
+- [x] [I] **Spec 209 - Runtime Schema Onboarding Recovery**: confirmó que fuente,
+  autorización, registro HotChocolate y documento Apollo ya coincidían, y aisló el error
+  observado en un proceso Debug iniciado el 02/08 que servía un schema anterior. El
+  cliente ahora mapea esa incompatibilidad a una recuperación institucional sin exponer
+  nombres internos ni usar la mutación legacy como fallback. El runbook incorpora una
+  introspección finita y reemplazo acotado del PID. Evidencia: backend 216/216, frontend
+  220/220, ambos builds limpios y endpoint activo HTTP 200 con
+  `confirmStudentCareer(careerId)`. Resta el clic manual de confirmación y navegación del
+  Estudiante para promover el flujo a `[V]`; Specs 210 y 211 quedan planificadas para
+  branding/tema e integridad de la fuente local. No altera 117/117.
+
+### 5.16 Contrato de marca y tema de onboarding - Spec 210
+
+- [x] [I] **Spec 210 - Brand Lockup and Theme Contract**: normalizó la composición
+  visual como isotipo `O` + `neITB`, mantuvo `OneITB` como nombre accesible y protegió
+  el asset contra filtros o bloom por defecto. `ThemeProvider` ahora separa la
+  preferencia persistida del tema efectivo y permite overrides temporales apilables con
+  cleanup; `/onboarding/academic` permanece claro incluso tras recarga sin sobrescribir
+  `oneitb-theme`, y restaura la preferencia al desmontarse. Header, Landing, Hero y Footer
+  consumen el lockup compartido. Evidencia: 20/20 pruebas focalizadas, frontend 223/223 y
+  build Vite de 559 módulos en 1,31 s. Resta la pasada visual manual de 320-1440 px para
+  promoverla a `[V]`. Spec 211 conserva por separado la integridad de Font Awesome en
+  Firefox. No altera el denominador 117/117.
+
+### 5.17 Integridad local de iconos - Spec 211
+
+- [x] [I] **Spec 211 - Local Icon Font Integrity**: reemplazó la copia manual de Font
+  Awesome 6.1.2 por `@fortawesome/fontawesome-free` 6.7.2 exacto, con tarball e
+  integridad SHA-512 en lockfile. CSS, metadata y WOFF2 proceden ahora de una única
+  distribución oficial; el guard automatizado comprueba versión, licencia, archivos e
+  iconos activos. Se retiró la carpeta vendorizada completa y el build no contiene sus
+  rutas ni referencias a CDNs. Evidencia: 6/6 focalizadas, frontend 224/224 y Vite 559
+  módulos en 733 ms; `npm audit --omit=dev` solo conserva `RR-09`, sin hallazgos de la
+  nueva dependencia. Falta recarga Firefox con caché/red externa bloqueadas para
+  confirmar ausencia de `download failed`/`glyf bbox` y promover a `[V]`. No altera
+  117/117.
+
+**Corte parcial de aceptación del 04/08/2026:** el navegador confirmó el invariante de
+una carrera ya persistida y la hidratación inicial estable del editor. También ejecutó la
+matriz Anonymous/Student/Employer/Admin a 320, 375, 768, 1024, 1280 y 1440 px, sin
+overflow horizontal, con navegación real desde el menú secundario a `/admin` y branding
+legible en light/dark. Permanecen abiertos: reconciliación cero/múltiples completa
+(**20-30 min**), avatar upload-refresh y sesión A -> B (**30-45 min**), teclado/zoom/
+reduced-motion (**20-30 min**) y red offline + print preview (**20-30 min**). Estos pases
+parciales no cambian `[I]` a `[V]`.
+
 ## 6. Plan operativo de cierre para la defensa
 
 Este plan no agrega alcance funcional ni modifica el calculo de 117/117 items. Convierte
@@ -468,7 +609,7 @@ hasta ejecutarse en el ambiente de destino.
 | `PR-01` | Smoke con proveedor SMTP publico | `[ ] [B]` | 1-3 h | Host, puerto, cuenta y politica institucional |
 | `PR-02` | Smoke con Redis administrado | `[ ] [B]` | 1-3 h | Endpoint TLS, credenciales y red permitida |
 | `PR-03` | Smoke de Cloudinary y ciclo upload/delete | `[ ] [B]` | 1-3 h | Cuenta, URL firmada y cuota aprobada |
-| `PR-04` | Aceptacion Microsoft Entra en tenant institucional | `[ ] [B]` | 3-6 h | Tenant ID, dos App Registrations, scope delegado, callback `/auth/microsoft/callback`, consentimiento y cuenta de prueba |
+| `PR-04` | Aceptacion Microsoft Entra en tenant institucional | `[ ] [P]` | 20-45 min restantes | Éxito real hasta onboarding/muro verificado el 2026-08-04; resta cancelación/error, logout y aislamiento con segunda cuenta |
 | `PR-05` | Benchmark BCrypt en hardware objetivo | `[ ] [B]` | 1-2 h | Host productivo representativo |
 | `PR-06` | Alertas operativas y politica de I/O persistente | `[ ] [B]` | 2-4 h | Plataforma de monitoreo seleccionada |
 | `PR-07` | Antivirus/CDR externo para uploads | `[ ] [B]` | 8-16 h | Seleccion de proveedor, API, presupuesto y privacidad |

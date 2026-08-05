@@ -21,10 +21,13 @@ describe('Header', () => {
     });
   });
 
-  it('renders the approved symbol as the only home action', () => {
+  it('renders the atomic OneITB lockup as the only home action', () => {
     render(<MemoryRouter><Header /></MemoryRouter>);
     expect(screen.getByRole('link', { name: 'Ir al inicio de OneITB' })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('img', { name: 'OneITB' })).toHaveAttribute('src', expect.stringContaining('only-logo.png'));
+    const homeLink = screen.getByRole('link', { name: 'Ir al inicio de OneITB' });
+    expect(homeLink).toHaveTextContent('neITB');
+    expect(homeLink).not.toHaveTextContent('oneITB');
+    expect(homeLink.querySelector('img')).toHaveAttribute('src', expect.stringContaining('only-logo.png'));
     expect(screen.queryByText('ONEITB')).not.toBeInTheDocument();
     expect(screen.queryByText('Buscador')).not.toBeInTheDocument();
   });

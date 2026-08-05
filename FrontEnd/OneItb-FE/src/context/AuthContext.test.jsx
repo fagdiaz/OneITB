@@ -40,7 +40,11 @@ vi.mock('../data/graphql/GraphqlProvider', () => ({
 
 vi.mock('../auth/microsoftEntra', () => microsoftSessionMock);
 
-import { AuthContext, AuthProvider } from './AuthContext';
+import {
+  AUTH_IDENTITY_PROVIDERS,
+  AuthContext,
+  AuthProvider,
+} from './AuthContext';
 
 const SessionProbe = () => {
   const session = useContext(AuthContext);
@@ -56,6 +60,16 @@ const SessionProbe = () => {
         onClick={() => session.login('token-b', { id: 'user-b', role: 'Moderador' })}
       >
         login-b
+      </button>
+      <button
+        type="button"
+        onClick={() => session.login(
+          'token-microsoft',
+          { id: 'user-microsoft', role: 'Estudiante' },
+          { identityProvider: AUTH_IDENTITY_PROVIDERS.MICROSOFT },
+        )}
+      >
+        login-microsoft
       </button>
     </div>
   );
@@ -75,6 +89,20 @@ describe('AuthContext session isolation', () => {
   it('discards malformed persisted identity instead of crashing hydration', async () => {
     localStorage.setItem('token', 'stale-token');
     localStorage.setItem('user', '{malformed');
+
+    render(<AuthProvider><SessionProbe /></AuthProvider>);
+
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('user')).toBeNull();
+  });
+
+  it.each([
+    ['token', 'stale-token'],
+    ['user', JSON.stringify({ id: 'orphan-user' })],
+  ])('purges a partial persisted session containing only %s', async (key, value) => {
+    localStorage.setItem(key, value);
 
     render(<AuthProvider><SessionProbe /></AuthProvider>);
 
@@ -108,5 +136,38 @@ describe('AuthContext session isolation', () => {
     expect(screen.getByTestId('user-role')).toHaveTextContent('Moderador');
     expect(localStorage.getItem('token')).toBe('token-b');
     expect(localStorage.getItem('user')).toContain('user-b');
+  });
+
+  it('preserves the MSAL account while committing a Microsoft-backed session', async () => {
+    render(<AuthProvider><SessionProbe /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'login-microsoft' }).click();
+    });
+
+    expect(microsoftSessionMock.clearMicrosoftIdentitySession).not.toHaveBeenCalled();
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
+    expect(screen.getByTestId('user-id')).toHaveTextContent('user-microsoft');
+    expect(localStorage.getItem('token')).toBe('token-microsoft');
+  });
+
+  it('rejects an unknown identity provider before mutating session state', async () => {
+    let capturedSession;
+    const CaptureSession = () => {
+      capturedSession = useContext(AuthContext);
+      return null;
+    };
+    render(<AuthProvider><CaptureSession /></AuthProvider>);
+    await waitFor(() => expect(capturedSession.isLoading).toBe(false));
+
+    await expect(capturedSession.login(
+      'token',
+      { id: 'user-1' },
+      { identityProvider: 'untrusted-provider' },
+    )).rejects.toThrow('proveedor de identidad');
+
+    expect(graphQlProviderMock.api.invalidateSessionTransport).not.toHaveBeenCalled();
+    expect(localStorage.getItem('token')).toBeNull();
   });
 });

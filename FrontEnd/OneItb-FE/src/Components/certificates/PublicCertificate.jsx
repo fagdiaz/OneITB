@@ -119,7 +119,7 @@ export const PublicCertificate = () => {
 
               <aside className="rounded-3xl border border-slate-200 bg-slate-50 p-6 dark:border-white/10 dark:bg-slate-950/60">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-2xl text-white shadow-lg shadow-blue-600/20">
-                  <i className="fa-solid fa-shield-check" />
+                  <i className="fa-solid fa-shield-halved" />
                 </div>
                 <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500">Identificador</p>
                 <p className="mt-1 break-all font-mono text-xs text-slate-600 dark:text-slate-300">#{certificate.id.slice(-8).toUpperCase()}</p>

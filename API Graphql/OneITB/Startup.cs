@@ -25,6 +25,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using OneItb.Data;
 using OneItb.Entities.Models;
@@ -369,6 +370,10 @@ namespace OneItb.GraphQL
             services.AddScoped<ISocialService, SocialService>();
             services.AddScoped<ISocialGraphService, SocialGraphService>();
             services.AddScoped<IAcademicService, AcademicService>();
+            services.AddScoped<IStudentEnrollmentService, StudentEnrollmentService>();
+            services.AddSingleton(new InstitutionalEnrollmentOptions(
+                Configuration["InstitutionalEnrollment:Mode"]));
+            services.AddScoped<IInstitutionalEnrollmentProvider, ManualInstitutionalEnrollmentProvider>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ISiuIntegrationService, MockSiuIntegrationService>();
             services.AddScoped<IJobService, JobService>();
@@ -433,8 +438,15 @@ namespace OneItb.GraphQL
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(
+            IApplicationBuilder app,
+            IWebHostEnvironment env,
+            ILogger<Startup> logger,
+            FileStorageRuntimeInfo fileStorageRuntimeInfo)
         {
+            logger.LogInformation(
+                "File storage provider selected: {StorageMode}",
+                fileStorageRuntimeInfo.Mode);
             app.UseForwardedHeaders();
 
             if (env.IsDevelopment())
@@ -513,16 +525,7 @@ namespace OneItb.GraphQL
         private void ConfigureFileStorage(IServiceCollection services)
         {
             services.AddSingleton<IFileContentInspector, FileContentInspector>();
-            services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
-
-            string? cloudinaryUrl = Configuration["CloudinarySettings:Url"];
-            if (string.IsNullOrWhiteSpace(cloudinaryUrl))
-            {
-                services.AddScoped<IFileStorageService, LocalFileStorageService>();
-                return;
-            }
-
-            services.AddHttpClient<IFileStorageService, CloudinaryStorageService>();
+            services.AddOneItbFileStorage(Configuration);
         }
 
         private void ConfigureEmailSender(IServiceCollection services)

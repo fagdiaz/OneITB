@@ -20,6 +20,266 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
 
 ---
 
+## [2026-08-04] - Spec 211: Local Icon Font Integrity
+
+* **Objetivo**: eliminar los warnings propios de tablas `glyf` observados por Firefox
+  sin silenciar consola ni reintroducir dependencias visuales remotas.
+* **Implementación**: se sustituyó la distribución 6.1.2 copiada dentro de `src` por
+  `@fortawesome/fontawesome-free` 6.7.2 exacto. `main.jsx` importa el CSS oficial y Vite
+  resuelve sus webfonts; `visualAssets.test.js` valida manifiesto, lockfile SHA-512,
+  licencia, CSS, metadata, WOFF2 e inventario de iconos. La carpeta antigua fue retirada.
+* **Validación**: guard focalizado 6/6, suite frontend 224/224 y build de 559 módulos en
+  733 ms. El artefacto emite cuatro WOFF2 locales con hash y no contiene rutas 6.1.2 ni
+  hosts visuales externos. `npm audit --omit=dev` conserva únicamente los dos advisories
+  moderados de React Router 6 registrados como `RR-09`; Font Awesome no agrega hallazgos.
+* **Pendiente honesto**: la pasada Firefox offline/DevTools no se ejecutó porque no había
+  frontend activo; la spec permanece `[I]` hasta confirmar la consola real.
+
+## [2026-08-04] - Spec 210: Brand Lockup and Theme Contract
+
+* **Objetivo**: corregir la composición de marca y evitar que el onboarding académico
+  herede o persista accidentalmente el modo oscuro durante la configuración obligatoria.
+* **Implementación**: `BrandLockup` representa el nombre con isotipo `O` + texto
+  `neITB`, conserva `OneITB` como etiqueta accesible y no aplica filtros al asset. El
+  provider separa `theme` persistido de `effectiveTheme` y expone un override temporal,
+  apilable y con cleanup; el frame académico lo usa para renderizar siempre en claro sin
+  modificar `oneitb-theme`.
+* **Consistencia**: Header, Landing, Hero, identidad y ambos footers consumen el mismo
+  componente atómico. La deuda de la fuente Font Awesome observada en Firefox queda
+  deliberadamente fuera de alcance y se mantiene en Spec 211.
+* **Validación**: pruebas focalizadas 20/20, suite frontend completa 223/223 y build Vite
+  de 559 módulos en 1,31 s. La matriz visual manual 320-1440 px permanece pendiente, por
+  lo que el estado es `[I]`, no `[V]`.
+
+## [2026-08-04] - Spec 209: Runtime Schema Onboarding Recovery
+
+* **Objetivo**: resolver el bloqueo posterior a Microsoft SSO que informaba la ausencia
+  de `confirmStudentCareer` sin debilitar la regla de carrera única ni ocultar un contrato
+  backend incompatible.
+* **Diagnóstico**: la fuente, la autorización `Estudiante`, el registro HotChocolate y la
+  mutación Apollo coincidían. La introspección del PID 18376, iniciado el 02/08 desde el
+  binario Debug del workspace, demostró que ese proceso servía un schema anterior.
+* **Implementación**: el frontend clasifica únicamente la incompatibilidad del contrato
+  académico y presenta recuperación en español sin filtrar nombres de schema; se amplió
+  la prueba ejecutable del schema y el runbook documenta introspección y reinicio por PID.
+* **Validación**: 16/16 pruebas frontend focalizadas, 1/1 contrato GraphQL, backend
+  216/216, frontend 220/220, builds Release/Vite sin errores y schema activo HTTP 200 con
+  `confirmStudentCareer(careerId)`. El backend recompilado quedó disponible en
+  `https://localhost:44397`/`http://localhost:5000`; falta repetir el clic de confirmación
+  con la sesión Estudiante para promover el recorrido a `[V]`.
+* **Continuidad**: Specs 210 y 211 quedaron especificadas para corregir el lockup
+  `O + neITB`, el tema del onboarding y la fuente Font Awesome local de Firefox.
+
+## [2026-08-04] - Spec 208: ATS-Friendly CV Export
+
+* **Objetivo**: corregir el riesgo de truncado/orden de lectura del CV y unificar la
+  previsualización e impresión de `/profile` y `/profile/edit` en un artefacto medible,
+  sin prometer compatibilidad universal con productos ATS.
+* **Implementación**:
+  - `CVATSPrintTemplate.tsx` proyecta el `CVData` existente como texto semántico de una
+    columna, con enlaces visibles, secciones deterministas y exclusión de datos ocultos.
+    Avatar, canvas, tablas y decoración no son necesarios para interpretar el documento.
+  - `useCvAtsPrint.ts` aísla el nodo mediante `react-to-print`, aplica A4 con márgenes
+    seguros y transforma fallos del driver en feedback recuperable en español.
+  - Se retiraron `ResumePreview.tsx`, `CVPrintTemplate.tsx`, alturas 297 mm,
+    `overflow-hidden`, grillas de impresión y paginación simulada por traslación del DOM.
+  - `analyzeAtsPdf.mjs` inspecciona de forma finita texto, términos/orden, Unicode,
+    páginas, A4, cifrado, fuentes y enlaces mediante Poppler; usa un temporal descartable
+    y no imprime ni persiste el contenido extraído.
+* **Archivos principales**: `Components/resume/CVATSPrintTemplate.tsx`,
+  `hooks/useCvAtsPrint.ts`, `scripts/analyzeAtsPdf.mjs`, `Components/profile/UserProfile.tsx`,
+  `Components/profile/CvEditorProfile.tsx`, `src/index.css` y sus pruebas focalizadas.
+* **Validación**: 23/23 pruebas focalizadas, suite frontend 217/217 y build Vite de 559
+  módulos en 2,17 s. La pasada browser Estudiante confirmó un único documento en ambas
+  rutas, orden/texto equivalentes, cero imágenes/canvas/tablas, `overflow: visible`,
+  consola limpia y navegación sin overflow entre 320-1440 px. `npm audit --omit=dev`
+  conserva dos advisories moderados de React
+  Router 6.30.4 ya aceptados como `RR-09`; el fix exige una migración mayor fuera del
+  Code Freeze. Faltan un perfil aprobado de dos páginas, el diálogo nativo y
+  `pdftotext`/`pdffonts`, por lo que el PDF, extracción y paginación real permanecen
+  `[B]`; estado `[I]`, no `[V]`.
+* **Trazabilidad**: estado vigente en
+  [`DOCUMENTATION_STATUS.md`](DOCUMENTATION_STATUS.md) y
+  [`ROADMAP.md`](../project_docs/ROADMAP.md).
+
+## [2026-08-04] - Spec 207: Local Visual Asset Resilience
+
+* **Objetivo**: eliminar dependencias visuales de terceros que degradaban la demo sin
+  Internet y asegurar que tipografía, iconos, identidad y avatares fallback pertenezcan
+  al artefacto OneITB o al sistema operativo.
+* **Implementación**:
+  - Se retiraron Google Fonts y cdnjs; Vite empaquetaba inicialmente Font Awesome 6.1.2
+    desde `src/assets/fonts`. Spec 211 sustituyó esa copia por el paquete oficial 6.7.2.
+    El texto usa un stack nativo de sistema con fallbacks de impresión.
+  - Un guard automatizado compara las clases `fa-*` activas con la metadata local,
+    controla idioma/título/favicon y evita reintroducir fuentes o avatares remotos.
+  - Header y perfil generan iniciales locales cuando no hay avatar o la imagen falla. El
+    bundle ya no contiene referencias a `ui-avatars.com`.
+* **Validación**: QA PASS; pruebas focalizadas 27/27, suite frontend 205/205, build Vite
+  de 558 módulos en 3,88 s en el gate final concurrente y WOFF2 locales emitidos. El
+  guard adicional protege A4, fallback tipográfico, plantilla CV compartida y movimiento
+  reducido. El scan de `dist` no encontró Google
+  Fonts, gstatic, cdnjs ni `ui-avatars.com`. `npm audit` mantiene los dos advisories
+  moderados de React Router 6.30.4 aceptados como `RR-09`.
+* **Aceptación parcial**: rutas principales y preimpresión CV compartida pasaron en
+  navegador. Modo offline y diálogo nativo de impresión/PDF deben aceptarse antes de
+  marcar `[V]`; banners de DevTools y warnings en páginas Microsoft no pertenecen al
+  código OneITB.
+
+## [2026-08-04] - Spec 206: Adaptive Navigation and Brand Lockup
+
+* **Objetivo**: aprovechar el ancho real del Header sin ocultar módulos innecesariamente
+  y unificar la marca aprobada en temas claro/oscuro sin bloom artificial.
+* **Implementación**:
+  - `navigationItems.js` centraliza ruta, rol, prioridad, activo y badge; directos y
+    overflow se derivan del mismo descriptor, evitando divergencias por breakpoint.
+  - `useProgressiveNavigation.js` observa el contenedor, mide elementos y reserva un solo
+    control para el sufijo que no entra. La medición tiene cleanup y batching por frame.
+  - El menú conserva badges, cierra con Escape/clic exterior/navegación y restaura foco.
+    `BrandLockup` compone isotipo transparente y wordmark como unidad atómica en Header,
+    Hero, identidad y Footer. Spec 210 corrigió la composición textual definitiva a
+    isotipo `O` + `neITB`.
+* **Validación**: QA PASS; 27/27 pruebas focalizadas compartidas con Spec 207, frontend
+  completo 205/205 y build Vite limpio. La matriz real Anonymous/Student/Employer/Admin
+  pasó entre 320 y 1440 px sin overflow; también pasaron badges, Escape, clic exterior,
+  navegación, temas y semántica del lockup.
+* **Pendiente honesto**: faltan teclado real, zoom y emulación de movimiento reducido;
+  por ello permanece `[I]`, no `[V]`.
+
+## [2026-08-04] - Spec 205: Profile Hydration and Avatar Storage
+
+* **Objetivo**: eliminar valores provisionales y reseteos tardíos en `/profile/edit`,
+  preservar el avatar previo durante todo el flujo y hacer observable el modo real de
+  almacenamiento sin exponer secretos.
+* **Implementación**:
+  - El editor espera un `me` completo de la identidad activa, hidrata un snapshot una vez
+    por sesión y mantiene los borradores frente a refetches. Loading, mismatch y error
+    tienen estados explícitos y no habilitan inputs con datos parciales.
+  - FileReader, Canvas y upload son cancelables o ignoran callbacks obsoletos. La URL
+    subida queda en estado candidato; `updateProfile` y un refetch coincidente deben
+    confirmarla antes de navegar, mientras el avatar anterior se conserva ante fallos.
+  - `AddOneItbFileStorage` centraliza la selección `Local`/`Cloudinary`, valida temprano la
+    URL cloud y publica solo el nombre del modo. Upload responde `storageMode` y traduce
+    errores del proveedor a `UPLOAD_STORAGE_UNAVAILABLE` con logging sanitizado.
+* **Validación automatizada**: QA HIGH PASS; 17/17 pruebas frontend focalizadas, 32/32
+  pruebas backend de uploads/storage, suites completas backend 216/216 y frontend 186/186,
+  builds Release/Vite limpios. `npm audit` conserva dos advisories moderados conocidos de
+  React Router 6.30.4 (`RR-09`), cuya corrección automática exige migrar a v7 durante Code
+  Freeze.
+* **Pendiente honesto**: el recorrido con red lenta, avatar/refresh y cambio de cuenta debe
+  aceptarse manualmente para promover a `[V]`. Cloudinary real continúa en `PR-03`; las
+  pruebas de DI no prueban credenciales ni disponibilidad externa.
+* **Archivos principales**:
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/profileEditorState.ts`
+  - `FrontEnd/OneItb-FE/src/Components/profile/ProfileEditorSkeleton.tsx`
+  - `API Graphql/OneITB/Services/Storage/FileStorageRegistration.cs`
+  - `API Graphql/OneITB/Controllers/UploadController.cs`
+  - `docs/audit/RUNBOOK_DEV.md`
+
+## [2026-08-04] - Spec 204: Student Enrollment Onboarding
+
+* **Objetivo**: impedir que un Estudiante amplíe accidentalmente su alcance académico,
+  reconciliar cuentas heredadas con varias carreras y formalizar un puerto futuro de
+  matrícula ITB/SIU sin presentar una integración inexistente.
+* **Implementación**:
+  - `StudentEnrollmentService` centraliza actor, rol, carrera activa, cardinalidad,
+    idempotencia y reemplazo diferencial dentro de una transacción serializable SQL.
+  - GraphQL expone `confirmStudentCareer(careerId)` para Estudiantes. Registro público,
+    edición de perfil y `linkUserToCareers` aplican la misma regla server-side; Profesor
+    y roles compatibles conservan asociaciones múltiples.
+  - React reemplaza checkboxes por radio, exige una confirmación nominada, bloquea cero
+    o múltiples vínculos y relee `me` antes de habilitar `/feed`.
+  - Login conserva un estado no interactivo durante el commit institucional. El puerto
+    `IInstitutionalEnrollmentProvider` distingue manual/indisponible y no fabrica datos.
+* **Validación**: QA HIGH PASS; backend 210/210, frontend 172/172, Release/Vite sin
+  errores, contrato HotChocolate real y EF sin drift. `npm audit` mantiene dos
+  advisories moderados aceptados de React Router 6.30.4 (`RR-09`). El recorrido visual
+  con la cuenta Microsoft queda pendiente tras reiniciar el runtime con este build, por
+  lo que el estado es `[I]`, no `[V]`.
+* **Archivos principales**:
+  - `API Graphql/Services/Academic/StudentEnrollmentService.cs`
+  - `API Graphql/Services/Academic/InstitutionalEnrollmentModels.cs`
+  - `API Graphql/OneITB/GraphQL/Mutation.cs`
+  - `FrontEnd/OneItb-FE/src/Components/onboarding/AcademicOnboarding.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+  - `docs/project_docs/architecture-and-design.md`
+* **Secuencia restante**: aceptar manualmente Spec 204 y continuar con
+  `205 -> (206 + 207)`; estos tres trabajos permanecen `[P]`.
+
+## [2026-08-03] - Spec 203: estabilización del commit de sesión Microsoft
+
+* **Objetivo**: corregir el retorno silencioso a `/login` después de que Microsoft Entra
+  aceptara el callback, sin debilitar guards, CORS, CSP ni el contrato backend.
+* **Causa raíz**:
+  - `AuthContext.login` limpiaba la caché MSAL de forma incondicional, incluso mientras
+    establecía una sesión originada en Microsoft.
+  - El callback marcaba el flujo como completo y navegaba inmediatamente después de
+    programar los setters de React; el guard privado podía observar todavía la sesión
+    anterior y redirigir al Login.
+  - Las pruebas previas mockeaban `login` como confirmación instantánea y no representaban
+    el límite real entre promesa resuelta y render confirmado.
+* **Corrección**:
+  - La frontera de autenticación distingue proveedores `local` y `microsoft`: el acceso
+    Microsoft conserva MSAL; accesos locales, logout, expiración y reemplazo siguen
+    purgando proveedor, Apollo, WebSocket y storage.
+  - `MicrosoftRedirectCallback` separa canje y commit. Solo completa el flow y navega
+    cuando `AuthContext` expone JWT, estado autenticado y el mismo `userId`; un timeout
+    de 10 segundos limpia una sesión parcial y muestra recuperación controlada.
+  - `/login` redirige defensivamente a `/feed` si ya existe una sesión canónica completa,
+    dejando que el guard académico determine onboarding o acceso privado.
+  - Una ampliación posterior purga pares parciales `token`/`user`, exige una sesión
+    persistida canónica antes de ejecutar expiración global y evita que las operaciones
+    públicas `MicrosoftLogin`/Login/Magic Link sean confundidas con una sesión protegida
+    expirada.
+  - Si MSAL restaura excepcionalmente `/login`, el componente retoma el callback solo con
+    flow vigente, MSAL inactivo y una cuenta retornada inequívoca; sin esos invariantes no
+    navega ni crea un bucle.
+  - El callback limita a 20 segundos el canje GraphQL y cancela la petición al desmontarse,
+    evitando una espera indefinida si SQL u otra dependencia backend queda indisponible.
+  - El 2026-08-04 se reprodujo esa condición: API GraphQL viva, consulta EF agotando el
+    timeout y daemon Docker apagado. Tras iniciar Docker y dejar `oneitb23-sql` en estado
+    `healthy`, el probe de carreras volvió a responder HTTP 200.
+* **Evidencia finita**:
+  - QA pre-implementación HIGH: PASS; build Vite inicial en 844 ms.
+  - Regresión dirigida de identidad/Apollo/callback/Login: 34/34.
+  - Suite frontend completa final: 163/163; Vite: 551 módulos, 0 errores, 20,90 s
+    al ejecutarse en paralelo con toda la suite. Callback focalizado: 11/11.
+  - Cero usos activos de `loginPopup`/`acquireTokenPopup` y cero logging de tokens en la
+    superficie modificada.
+* **Aceptación parcial real (2026-08-04)**: la cuenta institucional completó selección
+  Microsoft, callback, sesión OneITB, onboarding y llegada al muro. Restan únicamente los
+  casos de cancelación/error, logout y aislamiento de segunda cuenta. Los warnings CSP,
+  BSSO, cookies, Quirks y OneCollector emitidos por Microsoft continúan clasificados como
+  externos.
+
+## [2026-08-03] - Spec 202: alineación y aceptación del redirect Microsoft Entra
+
+* **Objetivo**: resolver profesionalmente el `AADSTS50011` observado durante el acceso
+  institucional, sin confundir warnings de terceros con fallos de OneITB ni debilitar
+  controles de navegador.
+* **Diagnóstico**:
+  - La URL de autorización enviaba
+    `http://localhost:5173/auth/microsoft/callback` para el client ID configurado.
+  - Una comprobación segura confirmó callback exacto y estructura válida de la
+    configuración frontend/backend sin mostrar secretos ni tokens.
+  - El bloqueo quedó localizado en la ausencia o divergencia de esa URI dentro de la
+    plataforma SPA de la App Registration correcta.
+* **Hardening**:
+  - `microsoftEntraConfig.js` permite HTTP únicamente en `localhost`/`127.0.0.1`, exige
+    HTTPS en hosts remotos y rechaza query, fragmento y credenciales embebidas.
+  - `.env.example` y `RUNBOOK_DEV.md` documentan coincidencia exacta, propagación,
+    plataforma SPA y el procedimiento reproducible para `AADSTS50011`.
+  - CSP `unsafe-inline`, BSSO, cookies particionadas, Quirks Mode y CORS de OneCollector
+    se clasifican como mensajes externos/no causales; no se ampliaron CORS ni CSP.
+* **Evidencia finita**:
+  - Speckit QA HIGH: PASS; backend Release: 0 advertencias y 0 errores.
+  - Pruebas Microsoft Entra focalizadas: 46/46; frontend completa: 151/151.
+  - Vite: 551 módulos, 0 errores, 862 ms.
+* **Pendiente honesto**: el operador debe guardar/verificar el callback en Azure y
+  completar éxito, cancelación/reintento, logout y aislamiento con una segunda cuenta.
+  Hasta entonces `PR-04`/`RR-02` permanecen `[B]`.
+
 ## [2026-08-03] - Spec 201: cierre de auditoría, autorización y evidencia
 
 * **Objetivo**: convertir `temp_audit_review.md` en remediaciones verificables y separar

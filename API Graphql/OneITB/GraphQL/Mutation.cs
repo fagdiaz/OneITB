@@ -138,6 +138,10 @@ namespace OneITB.GraphQL.Mutations
                 var payload = await usersService.UpdateProfileAsync(input, cancellationToken);
                 return payload;
             }
+            catch (StudentEnrollmentException ex)
+            {
+                throw CreateStudentEnrollmentError(ex);
+            }
             catch (InvalidOperationException ex)
             {
                 throw new GraphQLException(ex.Message);
@@ -626,39 +630,44 @@ namespace OneITB.GraphQL.Mutations
                 cancellationToken);
         }
 
-        [Authorize]
-        public async Task<IReadOnlyList<Career>> LinkUserToCareers(
-            IReadOnlyList<int> careerIds,
-            [Service] OneItbContext context,
+        [Authorize(Roles = new[] { GraphQlRoles.Student })]
+        public async Task<Career> ConfirmStudentCareer(
+            int careerId,
+            [Service] IStudentEnrollmentService enrollmentService,
             [Service] IHttpContextAccessor httpContextAccessor,
             CancellationToken cancellationToken)
         {
-            Guid userId = GetAuthenticatedUserId(httpContextAccessor);
-            int[] normalizedIds = careerIds?.Distinct().ToArray() ?? Array.Empty<int>();
-            if (normalizedIds.Length == 0)
-                throw new GraphQLException("SeleccionÃ¡ al menos una carrera.");
-
-            var careers = await context.Careers
-                .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
-                .OrderBy(career => career.Name)
-                .ToListAsync(cancellationToken);
-
-            if (careers.Count != normalizedIds.Length)
-                throw new GraphQLException("Una o mÃ¡s carreras seleccionadas no existen.");
-
-            var existingLinks = await context.UserCareers
-                .Where(link => link.UserId == userId)
-                .ToListAsync(cancellationToken);
-
-            context.UserCareers.RemoveRange(existingLinks);
-            context.UserCareers.AddRange(careers.Select(career => new UserCareer
+            try
             {
-                UserId = userId,
-                CareerId = career.Id
-            }));
+                return await enrollmentService.ConfirmStudentCareerAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    careerId,
+                    cancellationToken);
+            }
+            catch (StudentEnrollmentException exception)
+            {
+                throw CreateStudentEnrollmentError(exception);
+            }
+        }
 
-            await context.SaveChangesAsync(cancellationToken);
-            return careers;
+        [Authorize]
+        public async Task<IReadOnlyList<Career>> LinkUserToCareers(
+            IReadOnlyList<int> careerIds,
+            [Service] IStudentEnrollmentService enrollmentService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await enrollmentService.ReplaceSelfServiceCareersAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    careerIds,
+                    cancellationToken);
+            }
+            catch (StudentEnrollmentException exception)
+            {
+                throw CreateStudentEnrollmentError(exception);
+            }
         }
 
         [Authorize]
@@ -1522,6 +1531,16 @@ namespace OneITB.GraphQL.Mutations
                 ErrorBuilder.New()
                     .SetMessage(message)
                     .SetCode("USER_ERROR")
+                    .Build());
+        }
+
+        private static GraphQLException CreateStudentEnrollmentError(
+            StudentEnrollmentException exception)
+        {
+            return new GraphQLException(
+                ErrorBuilder.New()
+                    .SetMessage(exception.Message)
+                    .SetCode(exception.Code)
                     .Build());
         }
 

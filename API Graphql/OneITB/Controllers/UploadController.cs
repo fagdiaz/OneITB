@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace OneItb.Controllers
 {
@@ -40,13 +41,19 @@ namespace OneItb.Controllers
 
         private readonly IFileStorageService _storageService;
         private readonly IFileContentInspector _contentInspector;
+        private readonly FileStorageRuntimeInfo _storageRuntimeInfo;
+        private readonly ILogger<UploadController> _logger;
 
         public UploadController(
             IFileStorageService storageService,
-            IFileContentInspector contentInspector)
+            IFileContentInspector contentInspector,
+            FileStorageRuntimeInfo storageRuntimeInfo,
+            ILogger<UploadController> logger)
         {
             _storageService = storageService;
             _contentInspector = contentInspector;
+            _storageRuntimeInfo = storageRuntimeInfo;
+            _logger = logger;
         }
 
         [HttpPost]
@@ -90,13 +97,38 @@ namespace OneItb.Controllers
                 });
             }
 
-            string fileUrl = await _storageService.SaveAsync(file, extension, cancellationToken);
+            string fileUrl;
+            try
+            {
+                fileUrl = await _storageService.SaveAsync(file, extension, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Upload storage failed. Mode {StorageMode}; correlation {CorrelationId}",
+                    _storageRuntimeInfo.Mode,
+                    HttpContext.TraceIdentifier);
+                return StatusCode(
+                    StatusCodes.Status503ServiceUnavailable,
+                    new
+                    {
+                        message = "El almacenamiento de archivos no esta disponible. Intenta nuevamente.",
+                        code = "UPLOAD_STORAGE_UNAVAILABLE"
+                    });
+            }
+
             return Ok(new
             {
                 fileUrl,
                 originalFileName,
                 contentType,
-                size = file.Length
+                size = file.Length,
+                storageMode = _storageRuntimeInfo.Mode
             });
         }
 

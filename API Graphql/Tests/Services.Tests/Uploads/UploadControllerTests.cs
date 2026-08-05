@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OneItb.Controllers;
 using OneItb.GraphQL.Services.Storage;
@@ -18,7 +19,7 @@ public sealed class UploadControllerTests
         inspector
             .Setup(service => service.InspectAsync(file, ".pdf", It.IsAny<CancellationToken>()))
             .ReturnsAsync(FileInspectionResult.Invalid("FILE_SIGNATURE_MISMATCH"));
-        var controller = new UploadController(storage.Object, inspector.Object);
+        var controller = CreateController(storage.Object, inspector.Object);
 
         IActionResult result = await controller.Upload(file, CancellationToken.None);
 
@@ -43,13 +44,53 @@ public sealed class UploadControllerTests
         storage
             .Setup(service => service.SaveAsync(file, ".pdf", It.IsAny<CancellationToken>()))
             .ReturnsAsync("/uploads/material.pdf");
-        var controller = new UploadController(storage.Object, inspector.Object);
+        var controller = CreateController(storage.Object, inspector.Object);
 
         IActionResult result = await controller.Upload(file, CancellationToken.None);
 
-        Assert.IsType<OkObjectResult>(result);
+        OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
+        object? storageMode = ok.Value?.GetType().GetProperty("storageMode")?.GetValue(ok.Value);
+        Assert.Equal(FileStorageRuntimeInfo.LocalMode, storageMode);
         storage.VerifyAll();
         inspector.VerifyAll();
+    }
+
+    [Fact]
+    public async Task Upload_ReturnsControlledUnavailable_WhenStorageFails()
+    {
+        var storage = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var inspector = new Mock<IFileContentInspector>(MockBehavior.Strict);
+        IFormFile file = CreateFile("%PDF-1.4\n%%EOF"u8.ToArray(), "material.pdf", "application/pdf");
+        inspector
+            .Setup(service => service.InspectAsync(file, ".pdf", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(FileInspectionResult.Valid(DetectedFileFormat.Pdf));
+        storage
+            .Setup(service => service.SaveAsync(file, ".pdf", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("provider unavailable"));
+        UploadController controller = CreateController(storage.Object, inspector.Object);
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { TraceIdentifier = "test-correlation" }
+        };
+
+        IActionResult result = await controller.Upload(file, CancellationToken.None);
+
+        ObjectResult unavailable = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
+        Assert.Equal(
+            "UPLOAD_STORAGE_UNAVAILABLE",
+            unavailable.Value?.GetType().GetProperty("code")?.GetValue(unavailable.Value));
+    }
+
+    private static UploadController CreateController(
+        IFileStorageService storage,
+        IFileContentInspector inspector)
+    {
+        return new UploadController(
+            storage,
+            inspector,
+            new FileStorageRuntimeInfo(FileStorageRuntimeInfo.LocalMode),
+            Mock.Of<ILogger<UploadController>>());
     }
 
     private static IFormFile CreateFile(byte[] content, string fileName, string contentType)

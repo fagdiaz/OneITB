@@ -121,7 +121,16 @@ const sessionBoundaryLink = new ApolloLink((operation, forward) => {
   });
 });
 
-const isAuthorizationFailure = (graphQLErrors, networkError) => {
+const PUBLIC_IDENTITY_OPERATIONS = new Set([
+  'Login',
+  'LoginWithMagicLink',
+  'MicrosoftLogin',
+  'RegisterUser',
+  'RequestMagicLink',
+  'SubmitEmployerRequest',
+]);
+
+export const isAuthorizationFailure = (graphQLErrors, networkError) => {
   const graphQLAuthFailure = graphQLErrors?.some((error) => {
     const code = error?.extensions?.code;
     const message = error?.message || '';
@@ -135,9 +144,28 @@ const isAuthorizationFailure = (graphQLErrors, networkError) => {
   return graphQLAuthFailure || statusCode === 401 || statusCode === 403;
 };
 
+export const hasCanonicalPersistedSession = (storage = localStorage) => {
+  const storedToken = storage?.getItem?.('token');
+  const serializedUser = storage?.getItem?.('user');
+  if (!storedToken || !serializedUser) return false;
+
+  try {
+    const storedUser = JSON.parse(serializedUser);
+    return Boolean(storedUser && typeof storedUser === 'object' && storedUser.id);
+  } catch {
+    return false;
+  }
+};
+
+export const shouldTerminateSessionForOperation = (
+  operationName,
+  graphQLErrors,
+  networkError,
+) => !PUBLIC_IDENTITY_OPERATIONS.has(operationName)
+  && isAuthorizationFailure(graphQLErrors, networkError);
+
 const handleSessionExpired = () => {
-  const hadToken = Boolean(localStorage.getItem('token'));
-  if (!hadToken || sessionExpirationHandled) return;
+  if (!hasCanonicalPersistedSession() || sessionExpirationHandled) return;
 
   sessionExpirationHandled = true;
   void GraphQLProvider.requestSessionTermination('expired');
@@ -154,10 +182,16 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
     && document.visibilityState === 'hidden';
   if (isExpectedPageShutdown) return;
 
-  if (isAuthorizationFailure(graphQLErrors, networkError)) {
+  if (shouldTerminateSessionForOperation(
+    operation.operationName,
+    graphQLErrors,
+    networkError,
+  )) {
     handleSessionExpired();
     return;
   }
+
+  if (isAuthorizationFailure(graphQLErrors, networkError)) return;
 
   console.error('GraphQL operation failed', JSON.stringify({
     operation: operation.operationName,

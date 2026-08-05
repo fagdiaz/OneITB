@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BrandLogo } from '../../branding/BrandLogo';
+import { BrandLockup } from '../../branding/BrandLockup';
 import { usePointerSpotlight } from '../../../hooks/usePointerSpotlight';
 import useAuth from '../../../hooks/useAuth';
 import { GlobalSearch } from './GlobalSearch';
@@ -99,19 +99,18 @@ export const Header = () => {
         <Link
           to="/"
           aria-label="Ir al inicio de OneITB"
-          className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          className="relative z-10 inline-flex h-11 shrink-0 items-center rounded-xl px-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
         >
-          <BrandLogo
-            variant="symbol"
-            alt="OneITB"
-            className="h-8 w-8 object-contain sm:h-10 sm:w-10"
+          <BrandLockup
+            variant="compact"
+            tone="inverse"
+            decorative
             fetchpriority="high"
           />
         </Link>
 
         <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           {isLoggedIn && <GlobalSearch />}
-          <div className="min-w-0 flex-1" />
           <Nav />
         </div>
       </header>

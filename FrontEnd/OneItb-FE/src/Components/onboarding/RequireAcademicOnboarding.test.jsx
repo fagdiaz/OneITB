@@ -42,7 +42,10 @@ vi.mock('@apollo/client', async (importOriginal) => {
 });
 
 const renderGuard = () => render(
-  <MemoryRouter initialEntries={['/academic?tab=resources']}>
+  <MemoryRouter
+    initialEntries={['/academic?tab=resources']}
+    future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+  >
     <Routes>
       <Route element={<RequireAcademicOnboarding />}>
         <Route path="/academic" element={<div>Área privada</div>} />
@@ -87,6 +90,15 @@ describe('RequireAcademicOnboarding', () => {
     testState.profileResult.data.me.userCareers = [{ career: { id: 1 } }];
     renderGuard();
     expect(screen.getByText('Área privada')).toBeInTheDocument();
+  });
+
+  it('redirects an over-scoped Student to explicit reconciliation', () => {
+    testState.profileResult.data.me.userCareers = [
+      { career: { id: 1 } },
+      { career: { id: 2 } },
+    ];
+    renderGuard();
+    expect(screen.getByText('Configuración académica')).toBeInTheDocument();
   });
 
   it.each([

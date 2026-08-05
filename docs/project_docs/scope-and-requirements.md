@@ -138,13 +138,13 @@ mediante `UserCareer`, como política equivalente de mínimo privilegio durante 
 
 | ID | Requerimiento verificable | Criterio de aceptación |
 |---|---|---|
-| `RF-001` | Permitir registro local estudiantil con nombre, apellido, correo institucional, contraseña y al menos una carrera activa. | Backend y frontend exigen `@itbeltran.com.ar`; email normalizado; nombres en Title Case; contraseña de 8-64 caracteres; carrera existente/activa; respuesta de duplicado no enumerable; limitador por origen/identidad; el flujo asigna exclusivamente `Estudiante`. |
+| `RF-001` | Permitir registro local estudiantil con nombre, apellido, correo institucional, contraseña y exactamente una carrera activa. | Backend y frontend exigen `@itbeltran.com.ar`; email normalizado; nombres en Title Case; contraseña de 8-64 caracteres; selección única de carrera existente/activa; respuesta de duplicado no enumerable; limitador por origen/identidad; el flujo asigna exclusivamente `Estudiante`. |
 | `RF-002` | Autenticar cuentas locales y emitir JWT OneITB. | Password BCrypt válido, cuenta/usuario activos, issuer/audience/lifetime correctos y claims canónicos `sub`, `name`, `role`, `email`. |
 | `RF-003` | Rechazar cuentas inactivas sin revelar información sensible. | Login y operaciones protegidas fallan con error controlado; no se emite token. |
 | `RF-004` | Proteger cuentas Administrador contra degradación, desactivación o silenciamiento desde la aplicación. | UI deshabilitada y backend fail-closed; promoción a Administrador exige contraseña del operador Admin. |
 | `RF-004B` | Bloquear fuerza bruta por cuenta. | Cinco fallos generan lockout de 15 minutos; éxito reinicia el contador; respuesta no facilita enumeración. |
 | `RF-004C` | Permitir acceso Microsoft 365 mediante Authorization Code + PKCE. | API valida RS256, issuer, audience, vigencia, tenant concreto, object ID, scope y dominio antes de vincular identidad y emitir JWT local. |
-| `RF-004D` | Exigir configuración académica al Estudiante sin carreras. | Layout privado permanece bloqueado; debe seleccionar al menos una carrera activa y un refetch de `me` de la misma identidad confirma persistencia. |
+| `RF-004D` | Exigir configuración o reconciliación académica al Estudiante que no tenga exactamente una carrera. | Layout privado permanece bloqueado con cero o varios vínculos; debe seleccionar y confirmar una única carrera activa, y un refetch de `me` de la misma identidad confirma la asociación exacta antes de habilitar módulos. |
 | `RF-004E` | Ejecutar Microsoft 365 mediante redirect idempotente. | Callback no interactivo, sin popup, destino interno sanitizado, adquisición silenciosa del access token y un solo canje GraphQL frente a rerenders/Strict Mode. |
 | `RF-004F` | Cerrar completamente la sesión. | Elimina storage local, limpia Apollo, termina WebSocket, incrementa epoch y evita que respuestas de A hidraten la sesión B. |
 
@@ -152,11 +152,11 @@ mediante `UserCareer`, como política equivalente de mínimo privilegio durante 
 
 | ID | Requerimiento verificable | Criterio de aceptación |
 |---|---|---|
-| `RF-005` | Consultar y editar el perfil propio/CV; Administrador puede editar perfiles según el contrato protegido. | Persistencia única para bio, contacto, avatar, redes, experiencia, educación, proyectos, aptitudes, idiomas y carreras; un usuario común no modifica otro perfil. |
-| `RF-006` | Asociar un usuario a una o más carreras activas. | FKs explícitas, sin duplicados; las selecciones se reflejan en `me`, feed, materias, recursos y perfil. |
+| `RF-005` | Consultar y editar el perfil propio/CV; Administrador puede editar perfiles según el contrato protegido. | El editor espera el `me` completo de la identidad activa, hidrata una vez y no pisa borradores con refetch tardíos. Bio, contacto, avatar, redes, experiencia, educación, proyectos, aptitudes, idiomas y carreras persisten como estructura única; el avatar previo se conserva hasta confirmar la nueva URL y un usuario común no modifica otro perfil. |
+| `RF-006` | Asociar usuarios a carreras activas según su rol. | FKs explícitas y sin duplicados; el `Estudiante` autogestiona exactamente una carrera actual, mientras roles institucionales compatibles conservan la relación N:M; las selecciones se reflejan en `me`, feed, materias, recursos y perfil. |
 | `RF-006B` | Permitir perfil público o privado con masking server-side. | En privado solo propietario, Administrador, Moderador o seguidor persistido acceden a bio, contacto, CV, carreras y métricas; terceros reciben identidad básica y colecciones vacías. |
 | `RF-007` | Administrar carreras y materias con código, año, estado y correlatividades. | Solo Administrador; carrera obligatoria; correlatividades autorreferenciales sin ciclos de cascade delete; selector y listados reflejan estado activo. |
-| `RF-007B` | Imprimir/exportar una representación formal del CV. | La plantilla de impresión es reutilizable, consistente entre perfil/edición y fuerza paleta clara independientemente del tema. |
+| `RF-007B` | Imprimir/exportar una representación formal del CV. | `/profile` y `/profile/edit` comparten un único documento semántico de una columna, con texto seleccionable, enlaces visibles y paginación A4 gobernada por contenido. La impresión aísla ese nodo, omite avatar/adornos y fuerza paleta clara. La denominación verificable es **PDF optimizado para ATS**; no se garantiza compatibilidad universal con todos los proveedores. |
 
 ### 4.3 Muro social, medios e interacciones
 
@@ -246,8 +246,8 @@ mediante `UserCareer`, como política equivalente de mínimo privilegio durante 
 | `RNF-002` | Integridad | FKs explícitas, `Restrict`, índices únicos, constraints de completitud/XOR, transacciones para aprovisionamiento y soft delete social. |
 | `RNF-003` | Rendimiento | Sin I/O síncrono en rutas async; `AsNoTracking`, proyecciones/DataLoaders, `AsSplitQuery`, paginación y límites. GraphQL: profundidad 15, page default 20/máxima 50 y límites de costo/parser configurables. |
 | `RNF-004` | Escalabilidad | API stateless respecto de sesión JWT; Pub/Sub Redis condicional; storage local/Cloudinary; SQL, API y frontend separables por contenedor. |
-| `RNF-005` | Usabilidad | UI responsive Clean Tech/Tech Noir, estados loading/error/empty, skeletons, feedback inmediato, click-outside, foco y navegación por teclado en controles críticos. |
-| `RNF-006` | Accesibilidad | Contraste legible, labels, foco visible, reduced-motion, alternativas textuales y plantillas de impresión independientes del tema. Auditoría WCAG formal queda pendiente. |
+| `RNF-005` | Usabilidad | UI responsive Clean Tech/Tech Noir, estados loading/error/empty, skeletons, feedback inmediato y navegación progresiva que muestra el máximo de destinos permitido por el ancho real antes de usar overflow. |
+| `RNF-006` | Accesibilidad | Contraste legible, labels, foco visible, click-outside/Escape con restauración de foco, reduced-motion, alternativas textuales, fallbacks locales de avatar y plantillas de impresión independientes del tema. Tipografía/iconos esenciales no dependen de CDNs; auditoría WCAG formal queda pendiente. |
 | `RNF-007` | Trazabilidad | Correlation ID, logs estructurados, Audit Trail, ModerationAudit, specs/evidence y documentos sincronizados sin PII innecesaria. |
 | `RNF-008` | Operabilidad | Healthcheck, rate limiting, security headers, Docker, configuración por ambiente, scripts finitos, fallos Production fail-closed y procedimiento backup/restore. |
 | `RNF-009` | Reproducibilidad | Base demo identificada, backup `COPY_ONLY` verificado, migraciones como fuente, doble seed idempotente, seis roles e integridad relacional. |

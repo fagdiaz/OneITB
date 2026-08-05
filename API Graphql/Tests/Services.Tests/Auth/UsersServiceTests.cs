@@ -44,6 +44,63 @@ public sealed class UsersServiceTests
     }
 
     [Fact]
+    public async Task RegisterAsync_RejectsMultipleCareersForPublicStudent()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        using var unitOfWork = new UnitOfWork(context);
+        var service = CreateService(unitOfWork, context);
+
+        ArgumentException exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.RegisterAsync(new RegisterInput(
+                "multi.career@itbeltran.com.ar",
+                "Test1234!",
+                "Maria",
+                "Prueba",
+                "Estudiante",
+                new[] { ServiceTestData.CareerId, ServiceTestData.OtherCareerId },
+                null)));
+
+        Assert.Contains("exactamente una carrera", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(await context.Accounts.AnyAsync(account =>
+            account.Email == "multi.career@itbeltran.com.ar"));
+    }
+
+    [Fact]
+    public async Task UpdateProfileAsync_RejectsMultipleCareersForStudentWithoutChangingLinks()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        using var unitOfWork = new UnitOfWork(context);
+        var service = CreateService(unitOfWork, context);
+
+        Services.Academic.StudentEnrollmentException exception =
+            await Assert.ThrowsAsync<Services.Academic.StudentEnrollmentException>(() =>
+                service.UpdateProfileAsync(new UpdateProfileInput(
+                    Id: ServiceTestData.StudentUserId,
+                    Biography: null,
+                    LinkedIn: null,
+                    Facebook: null,
+                    Instagram: null,
+                    Phone: null,
+                    AvatarUrl: null,
+                    CareerIds: new[] { ServiceTestData.CareerId, ServiceTestData.OtherCareerId },
+                    CvExperiences: null,
+                    CvEducations: null,
+                    CvProjects: null,
+                    CvSkills: null,
+                    CvLanguages: null)));
+
+        Assert.Equal("ACADEMIC_STUDENT_SINGLE_CAREER_REQUIRED", exception.Code);
+        Assert.Equal(
+            new[] { ServiceTestData.CareerId },
+            await context.UserCareers
+                .Where(link => link.UserId == ServiceTestData.StudentUserId)
+                .Select(link => link.CareerId)
+                .ToArrayAsync());
+    }
+
+    [Fact]
     public async Task RegisterAsync_RejectsAdministrativeRoleFromPublicRegistration()
     {
         await using var context = ServiceTestData.CreateContext();

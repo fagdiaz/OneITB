@@ -8,7 +8,7 @@ export const initialData = {
     linkedin: 'linkedin.com/in/alejandrosilva',
     github: 'github.com/alesilva',
     website: 'alejandrosilva.dev',
-    profileImage: 'https://ui-avatars.com/api/?name=Alejandro+Silva&background=0f172a&color=fff&size=128'
+    profileImage: ''
   },
   summary: 'Ingeniero de Software con más de 6 años de experiencia especializándose en el desarrollo de aplicaciones web de alto rendimiento. Experto en React, TypeScript, Node.js y arquitectura de frontend moderna. Apasionado por escribir código limpio, mantenible y optimizar la experiencia de usuario y rendimiento a escala.',
   experience: [

@@ -2,7 +2,7 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Última contrastación con código** | 3 de agosto de 2026 |
+| **Última contrastación con código** | 4 de agosto de 2026 |
 | **Estado documental** | Normalizado; arquitectura implementada con gates y brechas explícitas |
 | **Baseline técnico** | .NET 8, EF Core 8.0.6, HotChocolate 14.2.0, React 18, Apollo Client 3.7, Vite 8 y Tailwind CSS 4 |
 | **Ámbito** | Aplicación web, API, persistencia, tiempo real, archivos, correo, identidad e infraestructura |
@@ -223,11 +223,22 @@ antes de exposición pública deben calibrarse con telemetría y pruebas de carg
 
 ### 5.3 Upload REST desacoplado
 
-1. React envía `multipart/form-data` con JWT a `POST /api/upload`.
+1. React envía `multipart/form-data` con JWT a `POST /api/upload`; el request acepta
+   cancelación para que un cambio de sesión o desmontaje no complete trabajo obsoleto.
 2. El controller exige autenticación, tamaño total, extensión y nombre seguro.
 3. `IFileContentInspector` valida firma y estructura antes de persistir.
-4. `IFileStorageService` devuelve URL, nombre original, MIME y tamaño.
-5. GraphQL persiste `SocialAttachment` o `AcademicResource.FileUrl`.
+4. `IFileStorageService` devuelve URL, nombre original, MIME y tamaño; la respuesta REST
+   agrega `storageMode` (`Local` o `Cloudinary`) sin exponer configuración ni credenciales.
+5. El frontend trata esa URL como candidata. GraphQL la asocia al perfil o entidad y un
+   refetch acotado confirma la persistencia antes de reemplazar el valor canónico.
+6. Fallos del proveedor se registran con modo y correlación, nunca con secretos o cuerpos
+   externos, y se mapean a HTTP 503 con `UPLOAD_STORAGE_UNAVAILABLE`.
+
+`CvEditorProfile` no inicializa campos desde el resumen de autenticación. Espera un `me`
+completo cuyo identificador coincida con la sesión, muestra un skeleton integral y aplica
+un único snapshot inicial por identidad. Refetches tardíos no sobrescriben un draft sucio;
+un cambio de sesión aborta upload/lectura pendiente y descarta el estado anterior. El avatar
+persistido se conserva hasta que upload, `updateProfile` y refetch confirman la nueva URL.
 
 `/uploads/{file}` entrega objetos locales como estáticos. Simplifica demo y rich media,
 pero no autoriza por objeto; este límite se registra como `GAP-FILE-01`.
@@ -447,6 +458,22 @@ Redis distribuye Pub/Sub; memoria sirve únicamente para una instancia local.
   vinculadas; la política se aplica en servicio y cuenta con regresión allow/deny.
 - `ISiuIntegrationService` aísla SIU; el adaptador actual es mock idempotente.
 
+La identidad académica manual de un `Estudiante` exige exactamente una carrera activa.
+`IStudentEnrollmentService` obtiene el actor desde el JWT, valida rol y estado de la
+carrera y reemplaza los vínculos dentro de una transacción serializable en SQL Server.
+El frontend utiliza `confirmStudentCareer(careerId)` y no habilita el área privada hasta
+que un refetch de `me` devuelve la misma identidad con ese único vínculo. El resolver
+legacy de listas y `updateProfile` aplican la misma política para impedir bypasses; los
+roles institucionales que pueden representar varias carreras conservan la relación N:M.
+
+`IInstitutionalEnrollmentProvider` es el puerto futuro para consultar matrícula y
+materias en una fuente autorizada del ITB o SIU. Su contrato normaliza códigos conocidos
+y distingue `Confirmed`, `ManualConfirmationRequired` y `Unavailable`. En el corte
+actual se registra `ManualInstitutionalEnrollmentProvider`: no realiza HTTP ni fabrica
+inscripciones. Esta frontera es deliberadamente distinta de `ISiuIntegrationService`,
+que sólo demuestra sincronización mock de calificaciones. Un adaptador real requerirá
+contrato, autenticación, mapeo, aceptación institucional y pruebas con el proveedor.
+
 ### 8.5 Bolsa de Trabajo
 
 ```mermaid
@@ -483,9 +510,15 @@ Empleador y encola correo. El audit no copia el motivo sensible de rechazo.
 ### 8.7 CV y credenciales
 
 El CV usa tablas relacionales para experiencia, educación, proyectos, skills e idiomas.
-Una plantilla reutilizable gobierna impresión. El progreso puede exportarse como CSV y la
-ruta `/certificate/{id}` expone solo progreso aprobado/activo. Open Graph completo queda
-condicionado a SSR o HTML de servidor.
+`CVATSPrintTemplate` proyecta esos datos en un único flujo semántico de una columna que
+comparten `/profile` y `/profile/edit`; los controles permanecen fuera del nodo imprimible.
+`useCvAtsPrint` usa `react-to-print` para clonar solo ese documento, aplicar A4 con márgenes
+seguros y conservar texto/enlaces sin depender de avatar, canvas, tablas ni paginación
+simulada. El contenido crece entre páginas y nunca usa altura fija u `overflow-hidden`.
+Un script local acotado puede inspeccionar el PDF con Poppler sin persistir su texto.
+Esta arquitectura permite afirmar **PDF optimizado para ATS**, no compatibilidad universal.
+El progreso puede exportarse como CSV y la ruta `/certificate/{id}` expone solo progreso
+aprobado/activo. Open Graph completo queda condicionado a SSR o HTML de servidor.
 
 ---
 
@@ -498,7 +531,8 @@ condicionado a SSR o HTML de servidor.
 3. Router separa público, privado, callback Microsoft y certificados.
 4. `AuthProvider` es la frontera de identidad local.
 5. `NotificationProvider` escucha solo con sesión válida.
-6. Estudiante sin carreras queda bloqueado en onboarding hasta refetch de `me`.
+6. Estudiante con cero o más de una carrera queda bloqueado en onboarding hasta
+   confirmar exactamente una y validarla mediante refetch de `me`.
 
 ### 9.2 Apollo y sesión
 
@@ -515,6 +549,33 @@ condicionado a SSR o HTML de servidor.
 - Media fetch usa abort; Blob URLs y observers se revocan.
 - Loading, empty, error y retry forman parte del contrato visual.
 - Token Entra vive solo en memoria/MSAL `sessionStorage`.
+
+### 9.4 Navegación adaptativa e identidad visual
+
+- Los destinos privados se construyen desde descriptores únicos con ruta, roles,
+  prioridad, estado activo y badge. La representación directa y el overflow consumen el
+  mismo contrato para evitar divergencias.
+- Un `ResizeObserver` mide el ancho realmente disponible entre el lockup y los controles
+  fijos. Se muestra el mayor prefijo que entra y se reserva un único botón para el sufijo
+  restante; no existe un breakpoint rígido que oculte todo el menú.
+- El overflow cierra por Escape, clic exterior, navegación, cambio de ruta o sesión y
+  restaura foco cuando corresponde. Los listeners, observer y frames tienen cleanup.
+- `BrandLockup` combina el isotipo transparente, que representa la `O`, con el wordmark
+  DOM exacto `neITB` en una unidad no separable. La legibilidad dark usa color del tema,
+  no bloom raster.
+
+### 9.5 Recursos visuales locales
+
+- La tipografía base es un stack del sistema operativo; impresión usa fallbacks
+  explícitos Arial/Segoe UI.
+- Font Awesome 6.7.2 se fija como dependencia npm exacta; Vite importa su CSS y genera
+  rutas versionadas para WOFF2. Un test compara cada clase activa con la metadata del
+  mismo paquete y valida versión, integridad, licencia y archivos requeridos.
+- Google Fonts, gstatic, cdnjs y generadores remotos de avatar no forman parte del bundle.
+  Los avatares ausentes o fallidos degradan a iniciales locales accesibles.
+- El documento raíz declara español, título OneITB y favicon del repositorio. Estos
+  controles mejoran la contingencia offline, pero su aceptación visual sigue siendo un
+  gate de navegador.
 
 ---
 

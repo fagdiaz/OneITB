@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
 using OneItb.Entities.Models;
 using OneITB.Core.Services.Interfaces;
+using Services.Academic;
 
 namespace Services.Users
 {
@@ -310,9 +311,9 @@ namespace Services.Users
                 .Distinct()
                 .ToArray() ?? Array.Empty<int>();
 
-            if (normalizedIds.Length == 0)
+            if (normalizedIds.Length != 1)
             {
-                throw new ArgumentException("Selecciona al menos una carrera.");
+                throw new ArgumentException("Los estudiantes deben seleccionar exactamente una carrera.");
             }
 
             int[] activeCareerIds = await _context.Careers
@@ -336,17 +337,12 @@ namespace Services.Users
         {
             if (careerIds == null) return;
 
-            int[] normalizedIds = careerIds
-                .Where(id => id > 0)
-                .Distinct()
-                .ToArray();
-
-            if (normalizedIds.Length == 0)
-            {
-                throw new InvalidOperationException("Selecciona al menos una carrera.");
-            }
+            int[] normalizedIds = StudentCareerSelectionPolicy.NormalizeAndValidate(
+                user.Role,
+                careerIds);
 
             List<int> activeCareerIds = await _context.Careers
+                .AsNoTracking()
                 .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
                 .Select(career => career.Id)
                 .ToListAsync(cancellationToken);

@@ -48,7 +48,7 @@ export const isCurrentSessionProfile = (auth, profile) => Boolean(
 export const requiresAcademicOnboarding = (auth, profile) => (
   isCurrentSessionProfile(auth, profile)
   && profile.role === STUDENT_ROLE
-  && extractCareerIds(profile).length === 0
+  && extractCareerIds(profile).length !== 1
 );
 
 export const sanitizeOnboardingDestination = (value) => {
@@ -74,15 +74,40 @@ export const sanitizeOnboardingDestination = (value) => {
   return value;
 };
 
+const collectGraphQLErrors = (error) => [
+  ...(Array.isArray(error?.graphQLErrors) ? error.graphQLErrors : []),
+  ...(Array.isArray(error?.networkError?.result?.errors)
+    ? error.networkError.result.errors
+    : []),
+];
+
+export const isAcademicOnboardingSchemaMismatch = (error) => (
+  collectGraphQLErrors(error).some((item) => {
+    const code = String(item?.extensions?.code || '').toUpperCase();
+    const message = String(item?.message || '');
+    const isValidationFailure = code === 'GRAPHQL_VALIDATION_FAILED'
+      || /does not exist on the type|were not used/i.test(message);
+
+    return isValidationFailure
+      && /confirmStudentCareer|careerId/i.test(message);
+  })
+);
+
 export const getGraphQLErrorMessage = (
   error,
   fallback = 'No se pudo completar la operación.',
-) => (
-  error?.graphQLErrors?.map((item) => item.message).filter(Boolean).join(' ')
-  || error?.networkError?.result?.errors
-    ?.map((item) => item.message)
-    .filter(Boolean)
-    .join(' ')
-  || error?.message
-  || fallback
-);
+) => {
+  if (isAcademicOnboardingSchemaMismatch(error)) {
+    return 'El servicio académico local está desactualizado. Reiniciá la API y reintentá la operación.';
+  }
+
+  return (
+    error?.graphQLErrors?.map((item) => item.message).filter(Boolean).join(' ')
+    || error?.networkError?.result?.errors
+      ?.map((item) => item.message)
+      .filter(Boolean)
+      .join(' ')
+    || error?.message
+    || fallback
+  );
+};

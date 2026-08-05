@@ -39,11 +39,7 @@ export const Register = () => {
 
   const handleCareerToggle = (careerId) => {
     setSaved('not_sended')
-    setSelectedCareerIds((current) =>
-      current.includes(careerId)
-        ? current.filter((id) => id !== careerId)
-        : [...current, careerId],
-    )
+    setSelectedCareerIds([careerId])
   }
 
   const saveUser = async (e) => {
@@ -72,8 +68,8 @@ export const Register = () => {
     if (!PUBLIC_ROLES.includes(form.role)) {
       return setValidationError('Selecciona un rol válido.')
     }
-    if (selectedCareerIds.length === 0) {
-      return setValidationError('Selecciona al menos una carrera.')
+    if (selectedCareerIds.length !== 1) {
+      return setValidationError('Selecciona exactamente una carrera.')
     }
 
     const variables = {
@@ -205,9 +201,9 @@ export const Register = () => {
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
               <div className="flex items-center justify-between gap-3">
-                <label className="text-sm font-semibold text-slate-700">Carreras</label>
+                <label className="text-sm font-semibold text-slate-700">Carrera actual</label>
                 <span className="text-xs font-medium text-slate-500">
-                  {selectedCareerIds.length || 0} seleccionada{selectedCareerIds.length === 1 ? '' : 's'}
+                  Seleccion unica
                 </span>
               </div>
 
@@ -225,7 +221,8 @@ export const Register = () => {
                     }`}
                   >
                     <input
-                      type="checkbox"
+                      type="radio"
+                      name="registration-career"
                       checked={selectedCareerIds.includes(career.id)}
                       onChange={() => handleCareerToggle(career.id)}
                       className="h-4 w-4 rounded border-slate-300 text-blue-600"

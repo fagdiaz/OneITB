@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "test": "vitest",
+    "analyze:ats": "node scripts/analyzeAtsPdf.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
     "@apollo/client": "^3.7.12",
     "@azure/msal-browser": "^5.17.3",
     "@azure/msal-react": "^5.5.4",
+    "@fortawesome/fontawesome-free": "6.7.2",
     "graphql": "^16.6.0",
     "graphql-ws": "^5.16.2",
     "pdfjs-dist": "5.6.205",

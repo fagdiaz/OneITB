@@ -70,6 +70,7 @@ export const AvatarEditorModal = ({
   const imageRef = useRef(null);
   const previewFrameRef = useRef(null);
   const dragStateRef = useRef(null);
+  const exportGenerationRef = useRef(0);
   const [activeTab, setActiveTab] = useState('crop');
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -190,6 +191,7 @@ export const AvatarEditorModal = ({
   useEffect(() => {
     if (!isOpen || !imageSrc) return undefined;
 
+    exportGenerationRef.current += 1;
     resetControls();
     const image = new Image();
     image.onload = () => {
@@ -200,7 +202,12 @@ export const AvatarEditorModal = ({
     image.src = imageSrc;
 
     return () => {
+      exportGenerationRef.current += 1;
+      image.onload = null;
+      image.onerror = null;
+      image.src = '';
       imageRef.current = null;
+      dragStateRef.current = null;
     };
   }, [imageSrc, isOpen, resetControls]);
 
@@ -264,10 +271,11 @@ export const AvatarEditorModal = ({
   const handleSave = () => {
     const canvas = canvasRef.current;
     if (!canvas || saving) return;
+    const exportGeneration = exportGenerationRef.current;
 
     canvas.toBlob(
       (blob) => {
-        if (!blob) return;
+        if (!blob || exportGenerationRef.current !== exportGeneration) return;
         const baseName = (originalFileName || 'avatar').replace(/\.[^.]+$/, '').replace(/[^\w-]+/g, '-');
         const file = new File([blob], `${baseName || 'avatar'}-edited-${Date.now()}.jpg`, {
           type: 'image/jpeg',

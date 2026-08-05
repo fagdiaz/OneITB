@@ -140,13 +140,13 @@ Una flecha parte del Estudiante hacia OneITB23 con la leyenda “crea su perfil 
 
 ### Descripción General
 
-El sistema se presenta como una aplicación web responsive. El registro público crea únicamente identidades `Estudiante`, exige correo `@itbeltran.com.ar` y al menos una carrera activa; Profesor y los demás roles se aprovisionan mediante flujos confiables. La API aplica esta política, evita enumerar duplicados y limita solicitudes por origen e identidad. Las contraseñas se verifican mediante BCrypt (Provos & Mazières, 1999). Como alternativa institucional, MSAL ejecuta Authorization Code + PKCE mediante una autoridad Microsoft Entra para directorios organizacionales: inicia una redirección de página completa, procesa la respuesta en un callback no interactivo y obtiene el access token delegado del scope OneITB. La API vuelve a validar el tenant concreto y canjea ese token por la misma sesión local. Una autenticación válida emite un JSON Web Token o JWT (Jones et al., 2015), que el cliente Apollo adjunta a las operaciones GraphQL y a las cargas de archivos autorizadas.
+El sistema se presenta como una aplicación web responsive. El registro público crea únicamente identidades `Estudiante`, exige correo `@itbeltran.com.ar` y exactamente una carrera activa; Profesor y los demás roles se aprovisionan mediante flujos confiables. La API aplica esta política, evita enumerar duplicados y limita solicitudes por origen e identidad. Las contraseñas se verifican mediante BCrypt (Provos & Mazières, 1999). Como alternativa institucional, MSAL ejecuta Authorization Code + PKCE mediante una autoridad Microsoft Entra para directorios organizacionales: inicia una redirección de página completa, procesa la respuesta en un callback no interactivo y obtiene el access token delegado del scope OneITB. La API vuelve a validar el tenant concreto y canjea ese token por la misma sesión local. Una autenticación válida emite un JSON Web Token o JWT (Jones et al., 2015), que el cliente Apollo adjunta a las operaciones GraphQL y a las cargas de archivos autorizadas. Si el Estudiante llega desde Microsoft con cero vínculos académicos, o conserva varios vínculos heredados, el área privada permanece bloqueada hasta que elija una sola carrera y confirme expresamente que es la que cursa. El sistema sólo continúa cuando una nueva consulta del perfil devuelve esa asociación exacta.
 
 Una vez autenticado, el usuario accede a un muro cuyo contenido se limita por la intersección de carreras y materias. Puede crear publicaciones con texto, enlaces de YouTube y varios adjuntos; elegir una portada; comentar hasta dos niveles; mencionar usuarios; reaccionar; seguir, silenciar o bloquear; y reportar contenido. Los archivos se cargan primero al endpoint REST y luego se asocian a la operación de negocio mediante GraphQL, evitando transportar binarios por el esquema.
 
 El perfil funciona como identidad académica y currículum. Su propietario administra biografía, contacto, avatar, carreras, experiencia, educación, proyectos, habilidades e idiomas. También puede definir el perfil como público o privado. El backend aplica el enmascaramiento de datos sensibles, por lo que la privacidad no depende únicamente de ocultar componentes en React.
 
-El módulo académico organiza materias, correlatividades, recursos, calificaciones y progreso. Profesores y administradores realizan operaciones autorizadas; estudiantes consultan información dentro de su alcance académico. El adaptador SIU simulado demuestra una capa anticorrupción, patrón orientado a proteger el dominio interno frente al contrato de un sistema externo (Evans, 2003), preparada para una integración futura sin acoplar la aplicación al proveedor.
+El módulo académico organiza materias, correlatividades, recursos, calificaciones y progreso. Profesores y administradores realizan operaciones autorizadas; estudiantes consultan información dentro de su alcance académico. La selección manual de carrera está encapsulada en un servicio transaccional y la relación N:M permanece disponible para otros roles e importaciones históricas. El adaptador SIU simulado de calificaciones demuestra una capa anticorrupción, patrón orientado a proteger el dominio interno frente al contrato de un sistema externo (Evans, 2003). En paralelo, un puerto independiente de matrícula (`IInstitutionalEnrollmentProvider`) define cómo una futura API autorizada del ITB o SIU podría devolver carreras y materias normalizadas. El proveedor activo en esta entrega declara explícitamente confirmación manual o indisponibilidad: no ejecuta una integración externa ni fabrica datos académicos.
 
 La mensajería privada conserva historial en SQL Server y utiliza suscripciones GraphQL por WebSocket para entregar nuevos mensajes. Las notificaciones persistentes, sus preferencias y los recordatorios de mensajes no leídos complementan la comunicación en tiempo real.
 
@@ -173,7 +173,7 @@ las viñetas son descriptivos y no crean una numeración alternativa.
 - **Sesión segura:** limpiar token, estado de autenticación, caché Apollo, chat y notificaciones al cerrar sesión o expirar el JWT.
 - **Identidad institucional:** iniciar sesión con una cuenta Microsoft 365 organizacional, validar firma, emisor, audiencia, vigencia, tenant, objeto, scope y dominio antes de vincular la identidad y emitir el JWT OneITB.
 - **Perfil y CV:** consultar y editar avatar, biografía, contacto, redes, educación, experiencia, proyectos, habilidades e idiomas.
-- **Carreras:** vincular cada usuario con una o más carreras institucionales mediante una relación explícita.
+- **Carreras:** exigir al Estudiante una única carrera actual confirmada y conservar una relación explícita N:M para roles institucionales e importaciones compatibles.
 - **Privacidad:** permitir perfil público o privado y enmascarar información sensible ante terceros no autorizados.
 
 #### Muro social y medios
@@ -822,7 +822,7 @@ Finalmente, `AUDIT_LOG` y `MODERATION_AUDIT` se pintan en rojo muy claro. `AUDIT
 
 **Muro principal.** La ruta `/feed` organiza el compositor, búsqueda, filtros y publicaciones. Cada tarjeta muestra autor, rol, materia, texto expandible, mosaico multimedia, reacciones, comentarios y acciones contextuales. El Media Grid limita la altura, combina portada, imágenes, PDF y YouTube, y deriva el excedente a un visor. Su algoritmo calcula dinámicamente el layout y adapta las fracciones disponibles según la orientación y proporción de la portada: una pieza apaisada puede ocupar el ancho superior completo, mientras los medios secundarios se redistribuyen en una grilla compacta. Para documentos PDF utiliza un motor ligero y diferido basado en PDF.js (Mozilla, s. f.), que previsualiza la primera página con una presentación similar a las aplicaciones de mensajería y conserva las acciones de apertura y descarga. Los reproductores de YouTube quedan encapsulados en contenedores con `aspect-ratio` y dimensiones estrictas para impedir que los `iframe` desborden su tarjeta o alteren el DOM circundante. Los comentarios distinguen nivel principal y respuesta mediante sangría y conexión visual.
 
-**Perfil y CV.** `/profile` ofrece una lectura tipo currículum con hero, contacto, carreras, métricas, trayectoria y actividad. `/profile/edit` concentra la edición persistente, carga de avatar, privacidad y relaciones académicas. Una plantilla reutilizable aísla la impresión formal del resto de la interfaz.
+**Perfil y CV.** `/profile` ofrece una lectura tipo currículum con hero, contacto, carreras, métricas, trayectoria y actividad. `/profile/edit` permanece en un skeleton integral hasta recibir el perfil completo que coincide con la sesión, aplica ese snapshot una sola vez y evita que un refetch tardío sobrescriba un borrador. La carga de avatar separa almacenamiento binario y asociación GraphQL: la imagen anterior sigue siendo canónica hasta que el guardado y un nuevo `me` confirman la URL. Ambas rutas comparten una única plantilla semántica de una columna para previsualización e impresión. El nodo exportado conserva texto seleccionable y enlaces visibles, permite paginación A4 guiada por contenido y omite avatar, tablas, canvas y adornos que puedan alterar el orden de lectura automatizada. El producto lo denomina **PDF optimizado para ATS** porque su verificación mide extracción, Unicode, orden, páginas, fuentes y enlaces; no se afirma compatibilidad universal con todos los sistemas de seguimiento de candidatos.
 
 **Módulo académico.** `/academic` combina selector de carrera/materia, buscador local, recursos, progreso, exportaciones y acciones autorizadas. Las tarjetas distinguen archivos, enlaces, categoría y versión. El modal de carga utiliza primero el endpoint REST y luego la mutación GraphQL.
 
@@ -832,7 +832,7 @@ Finalmente, `AUDIT_LOG` y `MODERATION_AUDIT` se pintan en rojo muy claro. `AUDIT
 
 **Administración y moderación.** `/admin` reúne usuarios, carreras, materias, publicaciones, comentarios y reportes. Las tablas y acciones respetan jerarquía de roles. Moderar significa ocultar o restaurar con motivo, no editar contenido ajeno. Las acciones críticas presentan confirmación y feedback.
 
-**Sistema visual.** **Clean Tech** y **Tech Noir** son las nomenclaturas internas utilizadas, respectivamente, para el Modo Claro y el Modo Oscuro. Ambos emplean fondos pizarra, neutros matizados y superficies suaves, evitando el blanco y el negro puros como colores principales. Esta decisión arquitectónica responde a criterios modernos de diseño de interfaces: reduce el contraste extremo y la fatiga visual durante sesiones prolongadas sin sacrificar legibilidad. El encabezado mantiene navegación activa por ruta, dropdowns accesibles y diseño responsive. El error boundary global evita una pantalla en blanco y ofrece recuperación institucional.
+**Sistema visual.** **Clean Tech** y **Tech Noir** son las nomenclaturas internas utilizadas, respectivamente, para el Modo Claro y el Modo Oscuro. Ambos emplean fondos pizarra, neutros matizados y superficies suaves, evitando el blanco y el negro puros como colores principales. Esta decisión arquitectónica responde a criterios modernos de diseño de interfaces: reduce el contraste extremo y la fatiga visual durante sesiones prolongadas sin sacrificar legibilidad. El encabezado mantiene navegación activa por ruta, overflow accesible calculado sobre el ancho real y un lockup indivisible formado por el isotipo, que representa la letra `O`, y el texto DOM `neITB`, sin bloom artificial. La tipografía principal se obtiene del sistema operativo y Font Awesome 6.7.2 se fija como dependencia oficial exacta y se empaqueta localmente mediante Vite; por ello la identidad y los controles esenciales no dependen de Google Fonts ni de CDNs durante una demostración sin Internet. El error boundary global evita una pantalla en blanco y ofrece recuperación institucional.
 
 ---
 
@@ -1077,16 +1077,16 @@ La estrategia combina análisis estático, pruebas automatizadas, compilación, 
 
 **Evidencia automatizada de cierre disponible**
 
-Los baselines siguientes corresponden a una ejecución conjunta del worktree de Spec 201.
+Los baselines siguientes corresponden a una ejecución conjunta del worktree de Spec 205.
 Todavía no reemplazan el gate integral sobre el SHA candidato: el árbol debe congelarse,
 quedar limpio y repetir los controles sin cambios posteriores.
 
 | Control | Resultado documentado más reciente |
 |---|---|
-| Pruebas backend | 198/198 aprobadas en el worktree de Spec 201; 32/32 focalizadas en registro, academia y privacidad |
-| Pruebas frontend | 144/144 aprobadas en el mismo worktree |
+| Pruebas backend | 216/216 aprobadas; incluye regresión de storage, uploads, registro, academia y privacidad |
+| Pruebas frontend | 217/217 aprobadas; incluye hidratación/avatar, navegación adaptativa, branding, recursos visuales locales y CV semántico optimizado para ATS |
 | Build backend Release | 0 errores y 0 advertencias |
-| Build frontend Vite | 551 módulos; 776 ms; 0 errores en Spec 201 |
+| Build frontend Vite | 554 módulos; 1,23 s; 0 errores en Spec 205 |
 | Modelo EF Core | Sin cambios pendientes respecto de migraciones |
 | Sesión y roles | Reemplazo Estudiante -> Moderador sin fuga de identidad, caché ni transporte |
 | Redis local | Entrega exacta entre dos proveedores Hot Chocolate y aislamiento de topic |
@@ -1137,7 +1137,7 @@ local controlada, pero sí una afirmación de producción pública:
 - La regresión visual final debe repetirse en el navegador y la resolución que se utilizarán durante la defensa. Estudiante, Profesor, Egresado, Administrador y Empleador fueron recorridos en la aceptación operacional; resta documentar el recorrido visual de Moderador.
 - Redis fue verificado localmente entre proveedores independientes. Falta el handshake WebSocket completo a través de la red con dos navegadores aislados.
 - SMTP local fue verificado con Mailpit. SMTP público, Redis administrado y Cloudinary deben probarse con secretos reales antes de declarar validación productiva.
-- La integración SIU es simulada; no debe presentarse como conexión oficial.
+- La sincronización SIU de calificaciones es simulada y la validación de matrícula ITB/SIU permanece como puerto futuro en modo manual; ninguna debe presentarse como conexión oficial.
 - Microsoft Entra está implementado; su aceptación en el tenant real permanece pendiente hasta disponer de App Registrations, consentimiento y una cuenta institucional de prueba.
 - Open Graph para crawlers externos puede requerir renderizado del lado servidor para una previsualización universal.
 - El costo BCrypt debe medirse nuevamente sobre el hardware objetivo antes de un despliegue público.
@@ -1207,13 +1207,13 @@ separado porque sus flujos se encuentran integrados en la memoria técnica gener
 1. Abrir la página principal de OneITB23.
 2. Seleccionar **Registrarse**.
 3. Completar nombre, apellido, correo institucional, contraseña y confirmación.
-4. Seleccionar una o más carreras; el alta pública asigna el rol `Estudiante`.
+4. Seleccionar exactamente una carrera; el alta pública asigna el rol `Estudiante`.
 5. Confirmar el registro y volver al inicio de sesión.
 6. Ingresar correo y contraseña. Si se supera el límite de intentos fallidos, esperar el período de bloqueo informado.
 
 ### 6.2 Navegación general
 
-El encabezado permite acceder al muro, módulo académico, mensajes, empleos, notificaciones y menú de usuario. En pantallas pequeñas, las opciones se agrupan en un menú hamburguesa. El logo regresa al inicio. Desde el menú de usuario se accede al perfil, edición, cambio de tema y cierre de sesión.
+El encabezado permite acceder al muro, módulo académico, mensajes, empleos, notificaciones y menú de usuario. Un cálculo basado en el ancho real mantiene visibles todos los destinos que entran y mueve únicamente el excedente a un menú compacto, sin depender de un breakpoint fijo. El lockup atómico de isotipo `O` y texto `neITB` regresa al inicio. Desde el menú de usuario se accede al perfil, edición, cambio de tema y cierre de sesión.
 
 ### 6.3 Perfil y currículum
 
@@ -1223,7 +1223,9 @@ El encabezado permite acceder al muro, módulo académico, mensajes, empleos, no
 4. Completar experiencia, educación, proyectos, habilidades e idiomas.
 5. Activar o desactivar **Perfil público** según la privacidad deseada.
 6. Guardar; la aplicación vuelve a la vista de perfil.
-7. Utilizar **Imprimir CV** para abrir la plantilla formal y generar PDF desde el navegador.
+7. Utilizar **PDF optimizado para ATS** para abrir la plantilla formal compartida y generar
+   el archivo desde el navegador. Comprobar que el texto pueda seleccionarse, buscarse y
+   copiarse en orden antes de enviarlo a una organización.
 
 ### 6.4 Muro y publicaciones
 

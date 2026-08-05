@@ -6,6 +6,14 @@ const trimmed = (value) => (
   typeof value === 'string' ? value.trim() : ''
 );
 
+const isSecureRedirectOrigin = (url) => (
+  url.protocol === 'https:'
+  || (
+    url.protocol === 'http:'
+    && ['localhost', '127.0.0.1'].includes(url.hostname)
+  )
+);
+
 const resolveRedirectUri = (configuredValue, origin) => {
   const configured = trimmed(configuredValue);
 
@@ -17,11 +25,15 @@ const resolveRedirectUri = (configuredValue, origin) => {
     );
     if (!candidate) return '';
     const parsed = new URL(candidate);
-    const isHttp = ['http:', 'https:'].includes(parsed.protocol);
+    const hasNoEmbeddedCredentials = !parsed.username && !parsed.password;
     const isDedicatedCallback = parsed.pathname === MICROSOFT_CALLBACK_PATH
       && !parsed.search
       && !parsed.hash;
-    return isHttp && isDedicatedCallback ? parsed.toString() : '';
+    return isSecureRedirectOrigin(parsed)
+      && hasNoEmbeddedCredentials
+      && isDedicatedCallback
+      ? parsed.toString()
+      : '';
   } catch {
     return '';
   }

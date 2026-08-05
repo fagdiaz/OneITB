@@ -1,11 +1,22 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+} from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Login } from './Login';
 
 const state = vi.hoisted(() => ({
   microsoftAvailable: false,
+  session: {
+    auth: {},
+    isAuthenticated: false,
+    isLoading: false,
+    login: vi.fn(),
+    token: null,
+  },
 }));
 
 vi.mock('../../auth/microsoftEntra', () => ({
@@ -19,7 +30,7 @@ vi.mock('../auth/MicrosoftInstitutionalLogin', () => ({
 }));
 
 vi.mock('../../hooks/useAuth', () => ({
-  default: () => ({ login: vi.fn() }),
+  default: () => state.session,
 }));
 
 vi.mock('../../hooks/useForm', () => ({
@@ -37,11 +48,22 @@ vi.mock('@apollo/client', async (importOriginal) => {
 describe('Login Microsoft visibility', () => {
   beforeEach(() => {
     state.microsoftAvailable = false;
+    state.session = {
+      auth: {},
+      isAuthenticated: false,
+      isLoading: false,
+      login: vi.fn(),
+      token: null,
+    };
     sessionStorage.clear();
   });
 
   it('hides Microsoft access when the shared configuration is unavailable', () => {
-    render(<MemoryRouter><Login /></MemoryRouter>);
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Login />
+      </MemoryRouter>,
+    );
     expect(
       screen.queryByRole('button', { name: 'Continuar con Microsoft 365' }),
     ).not.toBeInTheDocument();
@@ -49,9 +71,58 @@ describe('Login Microsoft visibility', () => {
 
   it('shows Microsoft access when the shared provider is available', () => {
     state.microsoftAvailable = true;
-    render(<MemoryRouter><Login /></MemoryRouter>);
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Login />
+      </MemoryRouter>,
+    );
     expect(
       screen.getByRole('button', { name: 'Continuar con Microsoft 365' }),
     ).toBeInTheDocument();
+  });
+
+  it('recovers an already committed session instead of leaving it on Login', async () => {
+    state.session = {
+      auth: { id: 'user-1', role: 'Estudiante' },
+      isAuthenticated: true,
+      isLoading: false,
+      login: vi.fn(),
+      token: 'oneitb-jwt',
+    };
+
+    render(
+      <MemoryRouter
+        initialEntries={['/login']}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/feed" element={<div>Muro autenticado</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Muro autenticado')).toBeInTheDocument();
+  });
+
+  it('never exposes an actionable Login form while a committed session changes route', () => {
+    state.session = {
+      auth: { id: 'user-1', role: 'Estudiante' },
+      isAuthenticated: true,
+      isLoading: false,
+      login: vi.fn(),
+      token: 'oneitb-jwt',
+    };
+
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Login />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Preparando tu sesión institucional...',
+    );
+    expect(screen.queryByRole('button', { name: 'Ingresar' })).not.toBeInTheDocument();
   });
 });

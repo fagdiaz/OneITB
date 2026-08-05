@@ -396,7 +396,7 @@ export const PrivateChat = () => {
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Conversaciones privadas de la comunidad.</p>
             
             <div className="mt-4 relative">
-              <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+              <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
               <input 
                 type="text" 
                 placeholder="Buscar usuarios o mensajes..." 

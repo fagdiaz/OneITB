@@ -239,14 +239,14 @@ export const GlobalSearch = () => {
         aria-label="Buscar"
         aria-expanded={isOpen}
       >
-        <i className="fa-solid fa-search text-sm" />
+        <i className="fa-solid fa-magnifying-glass text-sm" />
       </button>
 
       {isOpen && (
         <div className="absolute left-0 top-full z-[70] mt-2 w-[min(420px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-slate-950/95 p-3 text-slate-100 shadow-[0_24px_70px_rgba(15,23,42,0.45)] backdrop-blur-xl">
           <form onSubmit={handleSearch} className="space-y-3">
             <div className="flex h-10 items-center gap-2 rounded-full border border-blue-300/30 bg-white/10 px-3 ring-1 ring-blue-300/20">
-              <i className="fa-solid fa-search text-sm text-blue-200" />
+              <i className="fa-solid fa-magnifying-glass text-sm text-blue-200" />
               <input
                 type="text"
                 value={searchTerm}

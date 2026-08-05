@@ -79,7 +79,7 @@ detallan en la [sección 2.9](#29-brechas-y-gates-de-conformidad).
 | `RF-004` | Proteger cuentas Administrador. | No pueden degradarse, desactivarse o silenciarse; la promoción exige contraseña del Admin operador. |
 | `RF-004B` | Bloquear fuerza bruta por cuenta. | Cinco fallos consecutivos generan un lockout de 15 minutos; un acceso exitoso reinicia el contador. |
 | `RF-004C` | Autenticar mediante Microsoft 365. | Authorization Code + PKCE; backend valida firma RS256, issuer, audience, vigencia, tenant, object ID, scope y dominio antes de emitir JWT local. |
-| `RF-004D` | Exigir configuración académica inicial al Estudiante sin carreras. | El layout permanece bloqueado hasta seleccionar una carrera activa y confirmar la persistencia mediante `me`. |
+| `RF-004D` | Exigir configuración o reconciliación académica al Estudiante que no tenga exactamente una carrera. | El layout permanece bloqueado con cero o varios vínculos hasta seleccionar y confirmar una carrera activa; `me` debe devolver esa única asociación antes de continuar. |
 | `RF-004E` | Procesar Microsoft 365 mediante redirect idempotente. | Callback aislado, destino interno sanitizado, adquisición silenciosa y un solo canje GraphQL frente a rerenders. |
 | `RF-004F` | Finalizar completamente una sesión. | Limpia storage, Apollo y WebSocket; incrementa la época de sesión e impide que respuestas anteriores hidraten una identidad nueva. |
 
@@ -88,10 +88,10 @@ detallan en la [sección 2.9](#29-brechas-y-gates-de-conformidad).
 | ID | Requerimiento | Criterio de aceptación resumido |
 |---|---|---|
 | `RF-005` | Consultar y editar el perfil/CV propio. | Bio, contacto, avatar, redes, experiencia, educación, proyectos, aptitudes, idiomas y carreras se persisten en un único contrato; un usuario común no modifica otro perfil. |
-| `RF-006` | Asociar usuarios con una o más carreras activas. | FKs explícitas, sin duplicados y reflejo consistente en identidad, feed, materias, recursos y perfil. |
+| `RF-006` | Asociar usuarios con carreras activas según su rol. | Estudiante autogestiona exactamente una carrera actual; roles institucionales compatibles conservan N:M; FKs explícitas, sin duplicados y reflejo consistente en identidad, feed, materias, recursos y perfil. |
 | `RF-006B` | Alternar privacidad del perfil con masking server-side. | Terceros no autorizados reciben identidad básica y colecciones sensibles vacías; propietario y roles permitidos conservan acceso. |
 | `RF-007` | Administrar carreras, materias, año y correlatividades. | Solo Admin; carrera obligatoria, estado activo y relación autorreferencial sin cascadas cíclicas. |
-| `RF-007B` | Imprimir una representación formal del CV. | Una plantilla reutilizable produce la misma salida desde vista y edición, con paleta clara independiente del tema. |
+| `RF-007B` | Imprimir una representación formal del CV. | Vista y edición comparten un documento semántico de una columna, con texto seleccionable, enlaces visibles, paginación A4 por contenido y paleta clara. Se comunica como **PDF optimizado para ATS**, sin garantía universal de proveedor. |
 
 ### 2.3.3 Muro, archivos e interacciones sociales
 

@@ -9,10 +9,19 @@ import { clearMicrosoftIdentitySession } from '../auth/microsoftEntra';
 
 export const AuthContext = createContext();
 
+export const AUTH_IDENTITY_PROVIDERS = Object.freeze({
+  LOCAL: 'local',
+  MICROSOFT: 'microsoft',
+});
+
 const readPersistedSession = () => {
   const storedToken = localStorage.getItem('token');
   const serializedUser = localStorage.getItem('user');
-  if (!storedToken || !serializedUser) return null;
+  if (!storedToken || !serializedUser) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return null;
+  }
 
   try {
     const storedUser = JSON.parse(serializedUser);
@@ -85,14 +94,23 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const login = useCallback(async (authToken, userObj) => {
+  const login = useCallback(async (
+    authToken,
+    userObj,
+    { identityProvider = AUTH_IDENTITY_PROVIDERS.LOCAL } = {},
+  ) => {
     if (!authToken || !userObj?.id) {
       throw new Error('La sesion recibida no es valida.');
+    }
+    if (!Object.values(AUTH_IDENTITY_PROVIDERS).includes(identityProvider)) {
+      throw new Error('El proveedor de identidad recibido no es valido.');
     }
 
     await GraphQLProvider.waitForSessionTermination();
     await GraphQLProvider.invalidateSessionTransport();
-    await clearMicrosoftIdentitySession();
+    if (identityProvider !== AUTH_IDENTITY_PROVIDERS.MICROSOFT) {
+      await clearMicrosoftIdentitySession();
+    }
     GraphQLProvider.resetSessionExpirationGuard();
 
     GraphQLProvider.setToken(authToken);

@@ -251,6 +251,31 @@ docker compose up -d oneitb-sql
 
 No usar `docker compose down -v`: elimina el volumen de datos.
 
+### 4.4 Verificar perfil y modo de almacenamiento
+
+1. Revisar el log de inicio del backend. Debe informar un único modo seleccionado
+   (`Local` o `Cloudinary`) sin imprimir URL de proveedor, clave, secreto ni connection
+   string.
+2. En Development sin `CloudinarySettings:Url`, comprobar que el modo sea `Local`. Una
+   configuración Cloudinary incompleta debe impedir el inicio con un mensaje sanitizado;
+   nunca debe caer silenciosamente a disco después de intentar seleccionar cloud.
+3. Autenticarse, abrir `/profile/edit` con throttling de red y confirmar que el formulario
+   completo permanece en skeleton hasta recibir el `me` de la identidad activa. No deben
+   aparecer valores parciales provenientes del token o de una sesión anterior.
+4. Modificar un campo y provocar un refetch: el borrador no debe cambiar. Cancelar debe
+   volver al perfil sin persistirlo.
+5. Editar un avatar y comprobar en Network que `POST /api/upload` incluye JWT y responde
+   `fileUrl` más `storageMode`. Antes de Guardar, la URL es solo candidata.
+6. Guardar y recargar `/profile`, `/profile/edit` y el header. Los tres deben mostrar la
+   misma URL confirmada. Repetir con fallo de upload y fallo de `updateProfile`: el avatar
+   anterior y el resto del borrador deben preservarse.
+7. Repetir logout/login con otra cuenta y confirmar que no quedan datos, previews ni
+   requests de la identidad anterior.
+
+El modo Cloudinary solo puede marcarse aceptado después de configurar secretos reales en
+el ambiente objetivo y completar upload, asociación GraphQL, lectura y refresh. Las pruebas
+de selección de DI demuestran configuración, no disponibilidad del proveedor.
+
 ---
 
 ## 5. Seed y cuentas de demostración
@@ -425,9 +450,14 @@ Copiar a `.env.local` o usar el helper ignorado. `VITE_ENTRA_CLIENT_ID` es canó
 1. Aplicación pública, sin client secret.
 2. Plataforma Single-page application.
 3. Redirect exacto local: `http://localhost:5173/auth/microsoft/callback`.
-4. Registrar el equivalente del ambiente desplegado.
-5. Agregar permiso delegado `api://<API_CLIENT_ID>/access_as_user` y consentimiento.
-6. No registrar `/login`: reproduce el flujo anidado que la Spec 200 eliminó.
+4. Confirmar que la aplicación SPA sea la misma cuyo `Application (client) ID` figura en
+   `VITE_ENTRA_CLIENT_ID`; registrar la URI en otra App Registration no corrige
+   `AADSTS50011`.
+5. Registrar el equivalente HTTPS del ambiente desplegado. HTTP solo se admite para
+   `localhost`/loopback de desarrollo y el frontend rechaza HTTP en hosts remotos.
+6. Guardar y contemplar una breve propagación antes del smoke.
+7. Agregar permiso delegado `api://<API_CLIENT_ID>/access_as_user` y consentimiento.
+8. No registrar `/login`: reproduce el flujo anidado que la Spec 200 eliminó.
 
 ### 8.4 Backend Entra
 
@@ -677,14 +707,63 @@ Orden de diagnóstico:
 - Ejecutar `validate-demo-database.ps1` para seis logins.
 - Si se necesita normalizar passwords, usar rebaseline con backup; no editar hash SQL.
 
-### 13.3 `block_nested_popups` o callback en Login
+### 13.3 `AADSTS50011` - redirect URI no registrada
+
+Este error ocurre antes de que Microsoft devuelva el control a OneITB. Significa que la
+URI enviada por la SPA no coincide exactamente con una URI de la App Registration
+indicada por el `client_id` de la solicitud.
+
+1. En la URL de `authorize`, confirmar el `client_id` esperado y decodificar
+   `redirect_uri`.
+2. Abrir **Microsoft Entra ID > App registrations > OneITB > Authentication**.
+3. En la plataforma **Single-page application (SPA)**, registrar exactamente
+   `http://localhost:5173/auth/microsoft/callback`.
+4. Verificar esquema, host, puerto, path y slash final; no agregar query, fragmento ni
+   wildcard.
+5. Guardar, esperar la propagación y repetir desde una pestaña limpia. Reiniciar Vite
+   únicamente si cambió `.env`.
+
+No intentar corregirlo ampliando CORS, deshabilitando CSP, agregando client secrets a la
+SPA ni restaurando `loginPopup`. Los mensajes de CSP `unsafe-inline`, BSSO no soportado,
+cookies particionadas, `Me.htm` en Quirks Mode o CORS de `OneCollector` pertenecen a
+páginas/telemetría de Microsoft y no son la causa de `AADSTS50011`.
+
+### 13.4 `block_nested_popups` o callback en Login
 
 - Confirmar `VITE_ENTRA_REDIRECT_URI=http://localhost:5173/auth/microsoft/callback`.
 - Confirmar la misma URI exacta en App Registration SPA.
 - Reiniciar Vite después de cambiar `.env`.
 - No configurar `/login`, `loginPopup` ni redirect wildcard.
 
-### 13.4 SQL Docker
+### 13.5 Microsoft vuelve a `/login` sin `AADSTS50011`
+
+Si Azure acepta la cuenta y vuelve a la SPA, pero la URL termina en `/login`, separar el
+diagnóstico de los warnings propios de Microsoft:
+
+1. Confirmar que la aplicación cargada incluye la Spec 203 y que Vite recompiló el source.
+2. En **Application > Session Storage**, comprobar solo la presencia de claves MSAL y del
+   descriptor `oneitb-microsoft-redirect-flow`; no copiar sus valores a logs/capturas.
+3. Repetir desde una pestaña limpia. Durante el retorno debe verse primero
+   `Procesando...`/`Preparando tu sesión institucional...` y después `/feed` o
+   `/onboarding/academic`.
+4. Si aparece un error OneITB controlado, registrar solo el mensaje y la operación
+   GraphQL, nunca access tokens, JWT ni claims.
+5. Si vuelve a Login pero ya existen `token` y `user`, limpiar la sesión desde la UI y
+   repetir; no editar manualmente storage para forzar el acceso.
+6. Si Microsoft restaura `/login` con un flow vigente y una cuenta MSAL inequívoca, la
+   aplicación debe reemplazar esa ruta por `/auth/microsoft/callback`. Si el backend
+   rechaza el canje, debe quedar visible el error controlado en el callback y no una nueva
+   expiración silenciosa.
+7. Si el callback llega a `MicrosoftLogin` pero permanece cargando o devuelve
+   `INTERNAL_ERROR`, verificar primero `docker compose ps` y el health de `oneitb23-sql`.
+   Un probe `__typename` solo prueba que HotChocolate está vivo; repetir además una query
+   acotada que use EF Core. No modificar Entra, CORS ni CSP para compensar una base caída.
+
+Los avisos CSP `unsafe-inline`, `BSSO not supported`, cookies particionadas, Quirks Mode de
+`Me.htm` y CORS de `OneCollector` proceden del dominio Microsoft. No se corrigen ampliando
+CORS/CSP de OneITB y no prueban por sí solos un fallo del canje.
+
+### 13.6 SQL Docker
 
 ```powershell
 docker compose ps
@@ -692,23 +771,23 @@ docker inspect oneitb23-sql --format "{{json .State.Health}}"
 docker compose logs oneitb-sql --tail 80
 ```
 
-### 13.5 SSPI/Kerberos
+### 13.7 SSPI/Kerberos
 
 `Failed to generate SSPI context` pertenece a Windows Integrated Security/SPN, no al
 certificado HTTPS. Usar SQL Docker con SQL Auth y user-secrets; no volver a
 `localhost\SQLEXPRESS` ni LocalDB para gates.
 
-### 13.6 SQL exige cifrado
+### 13.8 SQL exige cifrado
 
 En Development controlado puede usarse la cadena Docker de la sección 3.2. No copiar
 `Encrypt=False` o `TrustServerCertificate=True` a un destino real.
 
-### 13.7 Windows Event Log
+### 13.9 Windows Event Log
 
 El host limpia providers y usa Console/Debug. Si aparece denegación del Event Log, comprobar
 que se ejecuta el host actual y no un perfil/configuración histórica.
 
-### 13.8 Puerto ocupado
+### 13.10 Puerto ocupado
 
 ```powershell
 Get-Process iisexpress -ErrorAction SilentlyContinue
@@ -719,12 +798,110 @@ Get-NetTCPConnection -LocalPort 44397 -ErrorAction SilentlyContinue |
 Cerrar únicamente el proceso identificado y propio. No matar procesos por nombre o PID sin
 confirmar su línea de comando.
 
-### 13.9 Reset o validación interrumpidos
+### 13.11 Reset o validación interrumpidos
 
 1. Confirmar que no quede el proceso temporal en 5094, 5096 o 5097.
 2. Revisar la salida final/`finally` del script.
 3. No repetir el reset hasta comprobar backup e integridad de SQL.
 4. Restaurar con el `.bak` verificado si la base fue eliminada y la migración falló.
+
+### 13.12 Aceptación responsive y visual offline (Specs 206-207)
+
+Esta validación es manual y debe ejecutarse sobre el frontend construido desde el SHA
+candidato. No requiere cambiar CSP, CORS ni instalar extensiones.
+
+1. Con sesiones `Estudiante`, `Empleador` y `Administrador`, recorrer 320, 375, 768,
+   split-screen, 1024, 1280 y 1440 px.
+2. Verificar que los enlaces ocupan el espacio disponible antes de pasar al overflow;
+   no debe existir scroll horizontal, solapamiento ni pérdida de badge/estado activo.
+3. Abrir el overflow con teclado, recorrer destinos, cerrar con Escape y comprobar foco.
+   Repetir con zoom del navegador y `prefers-reduced-motion`.
+4. Revisar Header, Hero, sección de identidad y Footer en Clean Tech/Tech Noir: el
+   isotipo `O` y `neITB` deben permanecer alineados, legibles y sin bloom. En modo claro
+   el asset no debe recibir filtros visuales.
+5. Con una preferencia oscura guardada, abrir y recargar `/onboarding/academic`: la ruta
+   debe verse clara sin modificar `oneitb-theme`; al salir debe restaurarse el tema
+   oscuro. Registrar ambos estados sin copiar tokens ni datos de sesión.
+6. En DevTools de Firefox, deshabilitar caché y bloquear o dejar sin red los hosts
+   externos. Recargar
+   Login, feed, académico, empleos, perfil y admin sin cerrar los servicios locales.
+7. Confirmar cero requests a Google Fonts, gstatic, cdnjs o `ui-avatars.com`, cero cajas
+   de glyph ausente, cero `download failed`/`glyf bbox` para archivos OneITB y controles
+   icon-only con nombre accesible. Los WOFF2 deben responder desde el origen local y usar
+   nombres versionados generados por Vite.
+8. Abrir la vista previa de impresión del CV y verificar tipografía, saltos y contraste.
+9. Registrar navegador, ancho, rol, tema, Network/Console, capturas y resultado. Un fallo
+   visual mantiene Specs 206-207 en `[I]`; no debe silenciarse para obtener PASS.
+
+Los banners de React/Apollo DevTools y warnings emitidos dentro de páginas Microsoft son
+ruido de desarrollo o de un tercero y se clasifican por separado de los errores propios.
+
+### 13.12.1 Schema activo desactualizado durante onboarding
+
+Si el cliente informa que `confirmStudentCareer` no existe y que `careerId` no fue usada,
+no se debe cambiar la mutación ni usar `linkUserToCareers` como fallback. Ese par de
+errores demuestra que el proceso que atiende `/graphql` sirve un schema anterior al
+código del repositorio.
+
+1. Ejecutar la prueba finita del contrato:
+
+```powershell
+dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release `
+  --filter "FullyQualifiedName~StudentEnrollmentGraphQLContractTests"
+```
+
+2. Con la API activa, ejecutar una introspección finita y comprobar el campo/argumento:
+
+```powershell
+$body = @{ query = 'query { __type(name:"Mutation") { fields { name args { name } } } }' } |
+  ConvertTo-Json -Compress
+$schema = Invoke-RestMethod -Method Post -Uri 'http://localhost:5173/graphql' `
+  -ContentType 'application/json' -Body $body
+$schema.data.__type.fields |
+  Where-Object name -eq 'confirmStudentCareer' |
+  ConvertTo-Json -Depth 5
+```
+
+3. Si no aparece, identificar el PID que escucha `44397`/`5000`, verificar que su
+ejecutable pertenezca a este workspace y detener solamente ese proceso. Reconstruir e
+iniciar la API actual con el procedimiento acotado de este runbook; no dejar dos procesos
+GraphQL en paralelo.
+4. Repetir la introspección antes de reintentar el onboarding. La UI muestra una
+recuperación controlada, pero eso no convierte un schema obsoleto en PASS.
+
+### 13.13 Aceptación del PDF optimizado para ATS - Spec 208
+
+La validación combina DOM, navegador y artefacto. Una prueba de componentes o un build no
+demuestran por sí solos que el driver elegido genere texto extraíble.
+
+1. Completar un perfil de prueba aprobado con todas las secciones y contenido suficiente
+   para producir al menos dos páginas. No modificar perfiles reales solo para este gate.
+2. Desde `/profile` y `/profile/edit`, confirmar el mismo orden: Contacto, Perfil
+   profesional, Habilidades, Experiencia laboral, Proyectos, Formación académica e Idiomas.
+3. Activar **PDF optimizado para ATS**, imprimir a A4 con escala predeterminada y guardar
+   el archivo fuera del repositorio, por ejemplo en `artifacts/oneitb-cv-ats.pdf`.
+4. Verificar disponibilidad de Poppler sin instalar ni descargar automáticamente:
+
+```powershell
+Get-Command pdftotext,pdfinfo,pdffonts -ErrorAction SilentlyContinue
+```
+
+5. Desde `FrontEnd/OneItb-FE`, ejecutar una inspección finita con términos no sensibles:
+
+```powershell
+npm.cmd run analyze:ats -- .\artifacts\oneitb-cv-ats.pdf `
+  --expect "Perfil profesional" `
+  --expect "Experiencia laboral" `
+  --expect "Formación académica" `
+  --min-pages 2 `
+  --require-links
+```
+
+El resultado aceptable es `PASS`: texto no vacío, términos presentes/en orden, Unicode
+sin reemplazos, páginas A4, `Encrypted: no`, fuentes utilizables y enlaces cuando el
+driver los emite. `POPLER_NOT_AVAILABLE`, falta del diálogo nativo o links no emitidos se
+registran `BLOCKED`; no se convierten en PASS. El script usa un directorio temporal,
+elimina la extracción y nunca imprime el texto completo ni valores personales.
 
 ---
 

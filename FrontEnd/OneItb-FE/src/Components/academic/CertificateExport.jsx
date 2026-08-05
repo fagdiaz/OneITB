@@ -83,7 +83,7 @@ export const CertificateExport = ({ progress, loading, user }) => {
           <meta charset="utf-8" />
           <title>Constancia academica OneITB</title>
           <style>
-            body { margin: 0; font-family: Inter, Arial, sans-serif; color: #0f172a; background: #f8fafc; }
+            body { margin: 0; font-family: Arial, "Segoe UI", sans-serif; color: #0f172a; background: #f8fafc; }
             main { width: 190mm; min-height: 260mm; margin: 10mm auto; background: white; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; }
             header { background: #0f172a; color: white; padding: 28px 34px; }
             h1 { margin: 8px 0 0; font-size: 28px; letter-spacing: -0.04em; }

@@ -2,17 +2,30 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const state = vi.hoisted(() => ({ inProgress: 'none' }));
+const state = vi.hoisted(() => ({
+  accounts: [],
+  activeAccount: null,
+  inProgress: 'none',
+}));
 const mocks = vi.hoisted(() => ({
+  navigate: vi.fn(),
   loginRedirect: vi.fn(),
   clearSession: vi.fn(),
 }));
 
 vi.mock('@azure/msal-react', () => ({
   useMsal: () => ({
-    instance: { loginRedirect: mocks.loginRedirect },
+    accounts: state.accounts,
+    instance: {
+      getActiveAccount: () => state.activeAccount,
+      loginRedirect: mocks.loginRedirect,
+    },
     inProgress: state.inProgress,
   }),
+}));
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mocks.navigate,
 }));
 
 vi.mock('@azure/msal-browser', () => ({
@@ -37,10 +50,43 @@ import { MicrosoftInstitutionalLogin } from './MicrosoftInstitutionalLogin';
 
 describe('MicrosoftInstitutionalLogin', () => {
   beforeEach(() => {
+    state.accounts = [];
+    state.activeAccount = null;
     state.inProgress = 'none';
     sessionStorage.clear();
     Object.values(mocks).forEach((mock) => mock.mockReset());
     mocks.clearSession.mockResolvedValue(undefined);
+  });
+
+  it('resumes the dedicated callback when MSAL returns to Login with an account', async () => {
+    state.accounts = [{ homeAccountId: 'institutional-account' }];
+    sessionStorage.setItem('oneitb-microsoft-redirect-flow', JSON.stringify({
+      id: 'flow-12345678',
+      returnTo: '/feed',
+      createdAt: Date.now(),
+      completed: false,
+    }));
+
+    render(<MicrosoftInstitutionalLogin onError={vi.fn()} />);
+
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(
+      '/auth/microsoft/callback',
+      { replace: true },
+    ));
+    expect(mocks.loginRedirect).not.toHaveBeenCalled();
+  });
+
+  it('does not enter callback recovery without both a flow and a returned account', () => {
+    sessionStorage.setItem('oneitb-microsoft-redirect-flow', JSON.stringify({
+      id: 'flow-12345678',
+      returnTo: '/feed',
+      createdAt: Date.now(),
+      completed: false,
+    }));
+
+    render(<MicrosoftInstitutionalLogin onError={vi.fn()} />);
+
+    expect(mocks.navigate).not.toHaveBeenCalled();
   });
 
   it('starts one redirect and persists the safe return destination', async () => {

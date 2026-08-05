@@ -9,12 +9,16 @@ import {
   clearMicrosoftIdentitySession,
   microsoftLoginRequest,
 } from '../../auth/microsoftEntra';
+import { AUTH_IDENTITY_PROVIDERS } from '../../context/AuthContext';
 import {
   clearMicrosoftRedirectFlow,
   completeMicrosoftRedirectFlowOnce,
   markMicrosoftRedirectFlowCompleted,
   readMicrosoftRedirectFlow,
 } from '../../auth/microsoftRedirectFlow';
+
+const SESSION_COMMIT_TIMEOUT_MS = 10000;
+const TOKEN_EXCHANGE_TIMEOUT_MS = 20000;
 
 const authenticationErrorMessage = (error) => {
   const graphMessage = error?.graphQLErrors
@@ -26,7 +30,10 @@ const authenticationErrorMessage = (error) => {
     || 'No se pudo completar el acceso institucional.';
 };
 
-const interactionLabel = (inProgress) => {
+const interactionLabel = (inProgress, isSessionCommitPending) => {
+  if (isSessionCommitPending) {
+    return 'Preparando tu sesión institucional...';
+  }
   if (inProgress === InteractionStatus.HandleRedirect) {
     return 'Procesando la respuesta de Microsoft...';
   }
@@ -38,13 +45,28 @@ const interactionLabel = (inProgress) => {
 
 export const MicrosoftRedirectCallback = () => {
   const { instance, accounts, inProgress } = useMsal();
-  const { login } = useAuth();
+  const {
+    auth,
+    isAuthenticated,
+    login,
+    logout,
+    sessionVersion,
+    token,
+  } = useAuth();
   const navigate = useNavigate();
   const attemptedFlowIdRef = useRef('');
+  const exchangeAbortControllerRef = useRef(null);
+  const sessionVersionRef = useRef(sessionVersion ?? 0);
+  sessionVersionRef.current = sessionVersion ?? 0;
   const [errorMessage, setErrorMessage] = useState('');
+  const [pendingSession, setPendingSession] = useState(null);
   const [exchangeToken] = useMutation(MICROSOFT_LOGIN, {
     fetchPolicy: 'no-cache',
   });
+
+  useEffect(() => () => {
+    exchangeAbortControllerRef.current?.abort();
+  }, []);
 
   useEffect(() => {
     if (inProgress !== InteractionStatus.None) return undefined;
@@ -61,7 +83,13 @@ export const MicrosoftRedirectCallback = () => {
     }
 
     if (flow.completed) {
-      navigate(flow.returnTo, { replace: true });
+      if (attemptedFlowIdRef.current === flow.id) return undefined;
+      attemptedFlowIdRef.current = flow.id;
+      setPendingSession({
+        flow,
+        resumeCompletedFlow: true,
+        userId: null,
+      });
       return undefined;
     }
 
@@ -80,6 +108,7 @@ export const MicrosoftRedirectCallback = () => {
     attemptedFlowIdRef.current = flow.id;
 
     void completeMicrosoftRedirectFlowOnce(flow.id, async () => {
+      const expectedSessionVersion = sessionVersionRef.current + 1;
       instance.setActiveAccount?.(account);
       const tokenResult = await instance.acquireTokenSilent({
         ...microsoftLoginRequest,
@@ -91,22 +120,57 @@ export const MicrosoftRedirectCallback = () => {
         throw new Error('Microsoft no entregó un token para la API de OneITB.');
       }
 
-      const { data } = await exchangeToken({
-        variables: { accessToken },
-      });
+      const exchangeController = new AbortController();
+      exchangeAbortControllerRef.current = exchangeController;
+      const exchangeTimeoutId = window.setTimeout(
+        () => exchangeController.abort(),
+        TOKEN_EXCHANGE_TIMEOUT_MS,
+      );
+
+      let data;
+      try {
+        ({ data } = await exchangeToken({
+          variables: { accessToken },
+          context: {
+            fetchOptions: { signal: exchangeController.signal },
+          },
+        }));
+      } catch (error) {
+        if (exchangeController.signal.aborted) {
+          throw new Error(
+            'OneITB no respondió a tiempo. Verificá la conexión e intentá nuevamente.',
+          );
+        }
+        throw error;
+      } finally {
+        window.clearTimeout(exchangeTimeoutId);
+        if (exchangeAbortControllerRef.current === exchangeController) {
+          exchangeAbortControllerRef.current = null;
+        }
+      }
       const payload = data?.microsoftLogin;
       if (!payload?.isAuthenticated || !payload.token || !payload.id) {
         throw new Error('OneITB no pudo iniciar la sesión institucional.');
       }
 
-      await login(payload.token, {
-        id: payload.id,
-        username: payload.username,
-        email: payload.email || account.username || '',
-        role: payload.role,
-      });
-      markMicrosoftRedirectFlowCompleted(flow);
-      navigate(flow.returnTo, { replace: true });
+      await login(
+        payload.token,
+        {
+          id: payload.id,
+          username: payload.username,
+          email: payload.email || account.username || '',
+          role: payload.role,
+        },
+        { identityProvider: AUTH_IDENTITY_PROVIDERS.MICROSOFT },
+      );
+      return {
+        flow,
+        expectedSessionVersion,
+        resumeCompletedFlow: false,
+        userId: payload.id,
+      };
+    }).then((sessionToCommit) => {
+      if (mounted) setPendingSession(sessionToCommit);
     }).catch(async (error) => {
       clearMicrosoftRedirectFlow(flow.id);
       await clearMicrosoftIdentitySession();
@@ -117,6 +181,44 @@ export const MicrosoftRedirectCallback = () => {
       mounted = false;
     };
   }, [accounts, exchangeToken, inProgress, instance, login, navigate]);
+
+  useEffect(() => {
+    if (!pendingSession) return undefined;
+
+    const hasCanonicalSession = Boolean(isAuthenticated && token && auth?.id);
+    const hasExpectedIdentity = pendingSession.resumeCompletedFlow
+      ? hasCanonicalSession
+      : hasCanonicalSession
+        && String(auth.id) === String(pendingSession.userId)
+        && sessionVersion >= pendingSession.expectedSessionVersion;
+
+    if (hasExpectedIdentity) {
+      if (!pendingSession.flow.completed) {
+        markMicrosoftRedirectFlowCompleted(pendingSession.flow);
+      }
+      navigate(pendingSession.flow.returnTo, { replace: true });
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      clearMicrosoftRedirectFlow(pendingSession.flow.id);
+      setErrorMessage(
+        'La identidad fue validada, pero OneITB no pudo confirmar la sesión. Volvé a iniciar sesión.',
+      );
+      setPendingSession(null);
+      void Promise.resolve(logout()).catch(() => clearMicrosoftIdentitySession());
+    }, SESSION_COMMIT_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    auth?.id,
+    isAuthenticated,
+    logout,
+    navigate,
+    pendingSession,
+    sessionVersion,
+    token,
+  ]);
 
   const returnToLogin = async () => {
     clearMicrosoftRedirectFlow();
@@ -153,7 +255,7 @@ export const MicrosoftRedirectCallback = () => {
         ) : (
           <div role="status" aria-live="polite" aria-busy="true">
             <h1 className="mt-5 text-xl font-bold tracking-tight">
-              {interactionLabel(inProgress)}
+              {interactionLabel(inProgress, Boolean(pendingSession))}
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
               No cierres esta ventana. OneITB está verificando tu identidad institucional.
