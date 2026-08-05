@@ -32,8 +32,11 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   733 ms. El artefacto emite cuatro WOFF2 locales con hash y no contiene rutas 6.1.2 ni
   hosts visuales externos. `npm audit --omit=dev` conserva únicamente los dos advisories
   moderados de React Router 6 registrados como `RR-09`; Font Awesome no agrega hallazgos.
-* **Pendiente honesto**: la pasada Firefox offline/DevTools no se ejecutó porque no había
-  frontend activo; la spec permanece `[I]` hasta confirmar la consola real.
+* **Aceptación Firefox (05/08/2026)**: sobre `2f20bce`, Firefox nativo generó el render
+  1440 x 1000, descargó `fa-solid-900.woff2` desde `127.0.0.1:5173` y no reportó
+  `download failed`, `glyf bbox` ni errores Font Awesome. La inspección de navegador
+  confirmó 12 iconos con la familia oficial y consola vacía de warnings/errores. El
+  proceso Vite, las pestañas y el perfil temporal se cerraron; la spec pasa a `[V]`.
 
 ## [2026-08-04] - Spec 210: Brand Lockup and Theme Contract
 

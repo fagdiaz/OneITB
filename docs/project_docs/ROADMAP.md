@@ -7,8 +7,8 @@
 | Indicador | Estado | Evidencia o alcance |
 |---|---|---|
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
-| Verificación runtime `[V]` | **45 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
-| Implementación comprobada `[I]` | **72 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
+| Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
+| Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
 | Backend automatizado más reciente | **216/216** | Suite completa del worktree de Spec 205; todavía no equivale a evidencia sobre SHA candidato |
 | Frontend automatizado más reciente | **224/224** | Suite completa del worktree de Spec 211; falta repetirla tras congelar el SHA |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; preparación documental y logística pendiente |
@@ -499,16 +499,18 @@ luego completar la aceptación manual coordinada de `204` a `207` y continuar co
 
 ### 5.17 Integridad local de iconos - Spec 211
 
-- [x] [I] **Spec 211 - Local Icon Font Integrity**: reemplazó la copia manual de Font
+- [x] [V] **Spec 211 - Local Icon Font Integrity**: reemplazó la copia manual de Font
   Awesome 6.1.2 por `@fortawesome/fontawesome-free` 6.7.2 exacto, con tarball e
   integridad SHA-512 en lockfile. CSS, metadata y WOFF2 proceden ahora de una única
   distribución oficial; el guard automatizado comprueba versión, licencia, archivos e
   iconos activos. Se retiró la carpeta vendorizada completa y el build no contiene sus
   rutas ni referencias a CDNs. Evidencia: 6/6 focalizadas, frontend 224/224 y Vite 559
   módulos en 733 ms; `npm audit --omit=dev` solo conserva `RR-09`, sin hallazgos de la
-  nueva dependencia. Falta recarga Firefox con caché/red externa bloqueadas para
-  confirmar ausencia de `download failed`/`glyf bbox` y promover a `[V]`. No altera
-  117/117.
+  nueva dependencia. La aceptación del 05/08/2026 sobre `2f20bce` produjo un render
+  Firefox nativo 1440 x 1000, registró el WOFF2 oficial desde el origen local y no emitió
+  `download failed`, `glyf bbox` ni errores Font Awesome; una inspección independiente
+  confirmó 12 iconos renderizados y consola sin warnings/errores. Procesos, pestañas,
+  perfil y capturas temporales fueron cerrados o eliminados. No altera 117/117.
 
 **Corte parcial de aceptación del 04/08/2026:** el navegador confirmó el invariante de
 una carrera ya persistida y la hidratación inicial estable del editor. También ejecutó la

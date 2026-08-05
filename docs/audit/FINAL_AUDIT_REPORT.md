@@ -142,7 +142,7 @@ Son condiciones pendientes para aceptación manual, piloto institucional o produ
 | `RR-17` | El CV usaba dos representaciones, altura A4 fija, overflow oculto y paginación DOM simulada | Bajo de interoperabilidad documental | `[I]` | Spec 208 unificó vista/edición en un documento semántico lineal, impresión aislada y analizador Poppler sin retención de PII. Ejecutar diálogo nativo y analizar un PDF real de dos páginas | Spec 208 / `CF-04` | Sí hasta aceptación del artefacto | Sí hasta aceptación del artefacto |
 | `RR-18` | Un proceso backend antiguo podía servir un schema sin `confirmStudentCareer` | Bajo operativo local | `[I]` | Spec 209 identificó el PID obsoleto, restauró el schema vigente y agregó introspección/runbook; repetir confirmación Estudiante sobre el corte congelado | Spec 209 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
 | `RR-19` | El lockup duplicaba la `O` y onboarding podía heredar modo oscuro persistido | Bajo visual | `[I]` | Spec 210 fijó isotipo `O` + `neITB` y override claro transitorio sin modificar la preferencia; ejecutar matriz 320-1440 px | Spec 210 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
-| `RR-20` | Font Awesome 6.1.2 vendorizado provocaba ajustes `glyf bbox` en Firefox | Bajo de aceptación offline | `[I]` | Spec 211 migró a paquete oficial 6.7.2 exacto con integridad SHA-512 y retiró la copia; repetir Firefox con caché/red externa bloqueadas | Spec 211 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
+| `RR-20` | Font Awesome 6.1.2 vendorizado provocaba ajustes `glyf bbox` en Firefox | Cerrado | `[V]` | Spec 211 migró a paquete oficial 6.7.2 exacto con integridad SHA-512; Firefox nativo sobre `2f20bce` cargó el WOFF2 local y no emitió `download failed`, `glyf bbox` ni errores Font Awesome | Spec 211 / evidencia 05/08/2026 | No | No |
 
 ### 3.1 Acciones obligatorias antes de la defensa
 
@@ -677,7 +677,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 | **Spec 208** | No modifica el baseline backend | 217/217, más 23/23 focalizadas | Build Vite de 559 módulos en 2,17 s; browser Estudiante con paridad de rutas, DOM semántico, consola limpia y matriz 320-1440 px PASS | Implementación ATS `[I]`; perfil de dos páginas, diálogo nativo y Poppler completo bloqueados, sin afirmación universal ni `[V]` |
 | **Spec 209** | 216/216 | 220/220 | Builds limpios e introspección HTTP 200 con `confirmStudentCareer(careerId)` | Confirmación Estudiante posterior pendiente |
 | **Spec 210** | No modifica el baseline backend | 223/223, más 20/20 focalizadas | Vite 559 módulos en 1,31 s; tema persistido/efectivo y lockup cubiertos | Matriz visual 320-1440 px pendiente |
-| **Spec 211** | 216/216 | 224/224, más 6/6 focalizadas | Backend Release 0/0, EF sin drift, Vite 559 módulos en 733 ms, paquete oficial con lockfile SHA-512 | Firefox offline/DevTools pendiente |
+| **Spec 211** | 216/216 | 224/224, más 6/6 focalizadas | Backend Release 0/0, EF sin drift, Vite 559 módulos en 733 ms, paquete oficial con lockfile SHA-512; Firefox nativo 1440 x 1000, WOFF2 local y cero diagnósticos propios de fuente | `[V]`; procesos y artefactos temporales limpiados |
 
 La referencia operativa para el siguiente gate es **216 tests backend y 224 frontend**.
 Ambas suites se ejecutaron sobre el mismo worktree de Spec 211, junto con builds y EF sin
