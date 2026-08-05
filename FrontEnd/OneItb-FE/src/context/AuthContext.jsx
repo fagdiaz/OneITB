@@ -6,6 +6,7 @@ import React, {
 } from 'react';
 import { GraphQLProvider } from '../data/graphql/GraphqlProvider';
 import { clearMicrosoftIdentitySession } from '../auth/microsoftEntra';
+import { isMicrosoftRedirectFlowPending } from '../auth/microsoftRedirectFlow';
 
 export const AuthContext = createContext();
 
@@ -55,6 +56,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const terminateLocalSession = useCallback(async (reason = 'manual') => {
+    const preserveMicrosoftTransition = reason === 'expired'
+      && isMicrosoftRedirectFlowPending();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     GraphQLProvider.resetToken();
@@ -66,9 +69,11 @@ export const AuthProvider = ({ children }) => {
     setSessionVersion((current) => current + 1);
 
     await GraphQLProvider.invalidateSessionTransport();
-    await clearMicrosoftIdentitySession();
+    if (!preserveMicrosoftTransition) {
+      await clearMicrosoftIdentitySession();
+    }
 
-    if (reason === 'expired') {
+    if (reason === 'expired' && !preserveMicrosoftTransition) {
       sessionStorage.setItem('oneitb-session-expired', '1');
       if (window.location.pathname !== '/login') {
         window.location.assign('/login');

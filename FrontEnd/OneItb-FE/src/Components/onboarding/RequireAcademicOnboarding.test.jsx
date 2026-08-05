@@ -7,6 +7,10 @@ import {
 } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequireAcademicOnboarding } from './RequireAcademicOnboarding';
+import {
+  beginMicrosoftRedirectFlow,
+  clearMicrosoftRedirectFlow,
+} from '../../auth/microsoftRedirectFlow';
 
 const testState = vi.hoisted(() => ({
   auth: {
@@ -55,12 +59,17 @@ const renderGuard = () => render(
         element={<div>Configuración académica</div>}
       />
       <Route path="/login" element={<div>Inicio de sesión</div>} />
+      <Route
+        path="/auth/microsoft/callback"
+        element={<div>Retorno institucional</div>}
+      />
     </Routes>
   </MemoryRouter>,
 );
 
 describe('RequireAcademicOnboarding', () => {
   beforeEach(() => {
+    clearMicrosoftRedirectFlow();
     testState.auth = {
       auth: { id: 'user-1', role: 'Estudiante' },
       isAuthenticated: true,
@@ -131,5 +140,22 @@ describe('RequireAcademicOnboarding', () => {
     testState.profileResult = { data: undefined, loading: false, error: undefined };
     renderGuard();
     expect(screen.getByText('Inicio de sesión')).toBeInTheDocument();
+  });
+
+  it('preserves an in-flight Microsoft redirect instead of returning to Login', () => {
+    beginMicrosoftRedirectFlow('/academic?tab=resources');
+    testState.auth = {
+      auth: {},
+      isAuthenticated: false,
+      isLoading: false,
+      token: null,
+      sessionVersion: 0,
+    };
+    testState.profileResult = { data: undefined, loading: false, error: undefined };
+
+    renderGuard();
+
+    expect(screen.getByText('Retorno institucional')).toBeInTheDocument();
+    expect(screen.queryByText('Inicio de sesión')).not.toBeInTheDocument();
   });
 });

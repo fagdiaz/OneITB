@@ -1,6 +1,6 @@
 # Roadmap único de OneITB23
 
-**Ultima revision**: 2026-08-04
+**Ultima revision**: 2026-08-05
 
 ## 1. Estado ejecutivo y criterio de medición
 
@@ -9,8 +9,8 @@
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
-| Backend automatizado más reciente | **216/216** | Suite completa del worktree de Spec 205; todavía no equivale a evidencia sobre SHA candidato |
-| Frontend automatizado más reciente | **224/224** | Suite completa del worktree de Spec 211; falta repetirla tras congelar el SHA |
+| Backend automatizado más reciente | **234/234** | Spec 218 repitió la suite junto al frontend sobre el mismo worktree; todavía no equivale a evidencia sobre SHA candidato |
+| Frontend automatizado más reciente | **251/251** | Spec 218 repitió la suite junto al backend sobre el mismo worktree; falta congelar y repetir/vincular el SHA |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; preparación documental y logística pendiente |
 
 El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de
@@ -181,7 +181,8 @@ requiere evidencia runtime proporcional al riesgo y al contrato afectado.
 - [x] [I] Sistema visual Clean Tech / Tech Noir con tema persistente, branding OneITB definitivo, textura global tenue, landing premium, Header institucional auto-hide accesible, Footer unificado y superficies principales dual-theme.
 - [x] [I] Dockerizacion productiva multi-stage para API .NET y frontend Nginx con reverse proxy SPA/WebSocket.
 - [x] [I] Orquestacion productiva `docker-compose.prod.yml` con SQL Server, Redis, API y frontend sin secretos versionados; conexión SQL completa inyectada sin trust bypass predeterminado.
-- [x] [I] Almacenamiento cloud opcional con Cloudinary y fallback local para `/api/upload`.
+- [x] [I] Almacenamiento por provider explícito: disco local limitado a Development y
+  Cloudinary fail-closed para Production en `/api/upload`.
 - [x] [I] Hardening HTTP productivo con rate limiting por IP, probes `/health/live` y `/health/ready`, correlation ID y security headers.
 - [x] [I] Hardening GraphQL anti-DoS con profundidad maxima y paging global configurable.
 - [x] [I] Seeding demo/productivo configurable, idempotente y sin reset de passwords existentes.
@@ -226,7 +227,9 @@ evolución posterior a la defensa y no forman parte del alcance académico conta
 ### 4.4 P3 - Escalabilidad y operación: base implementada
 
 1. `[x] [V]` Pub/sub distribuido Redis, activado por `ConnectionStrings:Redis` y fallback InMemory local; entrega exacta e aislamiento de topic verificados entre dos proveedores independientes contra Redis Docker.
-2. `[x] [I]` Almacenamiento compartido opcional con Cloudinary, activado por `CloudinarySettings:Url` y fallback local.
+2. `[x] [I]` Almacenamiento compartido con selección explícita por
+   `FileStorage:Provider`: `Local` solo en Development y `Cloudinary` fail-closed en
+   Production, con timeout, cancelación y correlación sanitizada.
 3. `[x] [I]` Hardening operativo: rate limiting, security headers, healthcheck y auditoria npm sin hallazgos altos/criticos; dos avisos moderados upstream de React Router quedan documentados y el destino interno de notificaciones se sanitiza.
 4. `[x] [I]` Hardening GraphQL anti-DoS: profundidad maxima configurable y limites globales de paginacion.
 5. `[x] [I]` SSO institucional Microsoft Entra ID organizacional multi-tenant; configuracion fail-closed, vinculacion segura por `tid`, auditoria y limpieza de sesion implementadas. El consentimiento y smoke real permanecen en `PR-04`.
@@ -512,6 +515,85 @@ luego completar la aceptación manual coordinada de `204` a `207` y continuar co
   confirmó 12 iconos renderizados y consola sin warnings/errores. Procesos, pestañas,
   perfil y capturas temporales fueron cerrados o eliminados. No altera 117/117.
 
+### 5.18 Contrato de assets de marca por tema - Spec 212
+
+- [x] [I] **Spec 212 - Theme Logo Asset Contract**: reemplazó el lockup construido en
+  DOM por los assets completos aprobados según el tema efectivo: `logo-oneitb.png` en
+  claro y `logo-oneitb-dark-mode.png` en oscuro. El Header queda deliberadamente fuera
+  de esa sustitución y muestra únicamente `only-logo.png` en ambos temas, sin wordmark,
+  filtros ni glow. `BrandLockup` conserva un único nombre accesible y controla el lienzo
+  cuadrado mediante un viewport proporcional sin deformar la imagen. Evidencia: 9/9
+  pruebas focalizadas, suite frontend 225/225, build Vite de 560 módulos en 793 ms y
+  smoke visual del Home claro. Resta la matriz manual dark/light en 320, 768 y 1440 px
+  para promoverla a `[V]`. No altera el denominador 117/117.
+
+### 5.19 Cola correctiva de QA del 05/08 - Specs 213 a 217
+
+Los siguientes hallazgos proceden de una sesión manual con Microsoft 365, onboarding,
+perfil, upload y feed. Son gates correctivos fuera del denominador funcional 117/117 y
+no modifican el 100% de alcance. El error GraphQL que negó `confirmStudentCareer` mientras
+el repositorio sí contiene esa operación demuestra una **desalineación de runtime**; por
+eso no se debe atribuir cada síntoma al código fuente hasta completar Spec 213.
+
+| Spec | Alcance | Estado | Estimación | Dependencia | Nivel recomendado | Criterio de salida |
+|---|---|---|---:|---|---|---|
+| **213 - Runtime Contract & Entra Transition** | Preflight de schema/corte, eliminación del flash de Login y máquina de estados idempotente del callback | `[x] [I]` | 2-3 h | Backend disponible; cuenta Entra para aceptación final | **Alto** | Implementación y contrato runtime PASS; falta repetir éxito/cancelación en navegador real para `[V]` |
+| **214 - Authoritative Student Enrollment** | Carrera única para Estudiante, confirmación, coherencia feed/perfil y puerto institucional de inscripción | `[x] [I]` | 3-5 h | Spec 213 | **Alto** | Implementación y regresiones automáticas aprobadas; resta recorrido manual onboarding -> feed -> perfil para promover a `[V]` |
+| **215 - Profile Storage & Hydration Resilience** | Hydration atómica del editor, provider Local/Cloudinary explícito y ciclo avatar upload-save-refresh | `[x] [I]` | 45-60 min de browser local; +1-3 h Cloudinary | Credenciales solo para smoke cloud | **Alto** | Provider, timeout, cancelación, error sanitizado e hidratación cubiertos; falta browser upload-save-refresh y proveedor real para `[V]` |
+| **216 - Feed Pagination Observability** | Cursor, merge, estados fin/error y estabilidad de filtros | `[x] [I]` | 30-45 min de browser | Runtime y dataset controlado >15 | **Medio** | Automatización PASS; falta confirmar append, fin, error/retry y reset por carrera en navegador para `[V]` |
+| **217 - Institutional Landing & Theme Polish** | Transición 1300 ms y contenido del Home alineado con fuentes oficiales del Beltrán | `[x] [I]` | 2-3 h | Specs P0/P1 cerradas | **Medio** | Tests/build PASS; Home claro sin overflow en 320/768/1440 y consola limpia. Contraste dark y transición perceptual quedan incluidos en la regresión final |
+
+**Orden obligatorio**: 213 -> 214 -> 215 -> 216 -> 217. Las Specs 214 y 215 pueden
+implementarse en paralelo solo después de demostrar paridad de runtime. La Spec 217 es
+cosmética/documental y no debe desplazar los bloqueos funcionales de la demo.
+
+**Corte de implementación Spec 213 (05/08/2026):** el backend expone un identificador
+no sensible `X-OneITB-Build` y el preflight finito valida build y operaciones
+`inquiriesPage`, `microsoftLogin` y `confirmStudentCareer` sin iniciar servidores. El
+frontend agregó una barrera única para el retorno institucional, fases explícitas
+MSAL/intercambio/commit/error y preservación del redirect frente a expiración de un JWT
+anterior. Pasaron backend 216/216, frontend 232/232, ambos builds sin warnings y el
+preflight sobre un proceso Release temporal con cleanup confirmado. La promoción a `[V]`
+queda sujeta al recorrido Microsoft real de éxito, cancelación y error sin flash de Login.
+
+**Corte de implementación Spec 214 (05/08/2026):** el reemplazo posterior al alta se
+centralizó en `IUserCareerAssignmentService`, con validación de carrera activa y regla
+de exactamente una para `Estudiante`. Onboarding y editor exigen confirmación, verifican
+el `me` persistido e invalidan de forma acotada feed, materias, recursos y progreso. El
+puerto de matrícula quedó en modo honesto `SelfDeclared`, con fuente y timestamp, y se
+mantiene separado del mock SIU de calificaciones. Pasaron backend 218/218, frontend
+237/237, ambos builds Release y el control EF sin drift. El recorrido manual completo
+onboarding -> feed -> perfil permanece como gate para promover `[I]` a `[V]`.
+
+**Corte de implementación Spec 215 (05/08/2026):** `FileStorage:Provider` reemplazó
+la detección implícita por URL. Development declara `Local`; Production declara
+`Cloudinary`, valida credenciales y timeout al iniciar y no degrada a disco. El adapter
+preserva cancelación del request, traduce timeout/transporte a una falla controlada y el
+REST 503 devuelve modo, correlación y acción recuperable sin detalles internos. El editor
+espera perfil y catálogo completos, conserva el avatar previo y no reintenta en forma
+automática. Pasaron backend 230/230, frontend 240/240, builds limpios y Compose
+productivo válido y EF sin model drift. El ciclo visual local y Cloudinary real permanecen como
+gates separados antes de `[V]`.
+
+**Corte de implementación Spec 216 (05/08/2026):** los bordes backend 0/1/15/16
+confirmaron que el cursor existente no anunciaba páginas inexistentes. El Feed dejó de
+duplicar `fetchMore` y consume `useInquiryPage`, que normaliza filtros, bloquea doble
+click, deduplica IDs, descarta resultados obsoletos para la UI y conserva publicaciones
+ante error. Feed, perfil y administración distinguen carga inicial, reintento y final.
+Apollo mantiene páginas aisladas por carrera. Pasaron backend 234/234, frontend 249/249
+y ambos builds sin warnings. Los puertos locales estaban cerrados; el smoke con dataset
+mayor a 15 permanece como gate antes de `[V]`.
+
+**Corte de implementación Spec 217 (05/08/2026):** la transición React/CSS pasó de
+800 a 1300 ms con cleanup sincronizado y duración cero para reduced motion e impresión.
+Home y footer distinguen OneITB del portal oficial, presentan el ISFT N.º 197 y enlazan
+Portal Beltrán, SIU Guaraní y Microsoft 365 como destinos externos seguros, sin copiar
+assets ni afirmar integraciones productivas. La aceptación browser encontró y corrigió
+un recorte del Hero móvil; 320/768/1440 quedaron sin overflow ni headings truncados y la
+consola terminó limpia. Pasaron 251/251 pruebas frontend, 17/17 focalizadas y Vite en
+627 ms. Se conserva `[I]` hasta la pasada perceptual dark/light y reduced-motion del
+candidato final.
+
 **Corte parcial de aceptación del 04/08/2026:** el navegador confirmó el invariante de
 una carrera ya persistida y la hidratación inicial estable del editor. También ejecutó la
 matriz Anonymous/Student/Employer/Admin a 320, 375, 768, 1024, 1280 y 1440 px, sin
@@ -554,10 +636,21 @@ contradecir la memoria impresa.
 |---|---|---|---:|---|---|
 | `CF-01` | Consolidar y publicar el corte de Specs 198-201; revisar e integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota y SHA candidato identificados, sin perder código ni evidencia de las cuatro specs |
 | `CF-02` | Completar la auditoría de archivos auxiliares de raíz y secretos ignorados; el prompt histórico `prompt_modulo1.txt` fue retirado el 2026-08-03 | `[ ] [P]` | 15-30 min | Decisión explícita de conservar, mover, ignorar o eliminar cada artefacto restante | `git status` limpio; ningún secreto, fixture personal o archivo de trabajo entra al corte |
-| `CF-03` | Ejecutar gates de predefensa, infraestructura local y base demo sobre el SHA candidato | `[ ] [P]` | 75-105 min | Docker operativo | Backend 198/198 o mayor, frontend 144/144 o mayor, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS o con desviación documentada |
+| `CF-03` | Ejecutar gates de predefensa, infraestructura local y base demo sobre el SHA candidato | `[ ] [P]` | 75-105 min | Docker operativo | Backend 234/234 o mayor, frontend 251/251 o mayor, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS o con desviación documentada |
 | `CF-04` | Regresion manual guiada por roles: Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador | `[ ] [P]` | 3-4 h | `CF-03` | Checklist firmado, consola limpia y capturas de los flujos principales |
 | `CF-05` | Validar chat/notificaciones con dos navegadores o perfiles aislados | `[ ] [P]` | 60-90 min | API y frontend temporales, dos identidades | Handshake WebSocket, aislamiento de topic, badges y lectura comprobados |
 | `CF-06` | Consolidar evidencia, congelar el corte y etiquetar el commit presentado | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, métricas, resultados, limitaciones y versión documental coinciden en repositorio, auditoría y presentación |
+
+**Spec 218 - Candidate Freeze & Pre-Defense Gate (`[ ] [P]`, activa):** formalizó
+el contrato de evidencia y ejecutó el primer preflight conjunto del worktree. Pasaron
+backend **234/234**, frontend **251/251**, ambos builds, EF sin drift, Compose y
+`git diff --check`. Redis/Mailpit reales locales, aislamiento automatizado, integridad de
+base, seis logins y smokes de ocho dominios pasaron con cleanup y SQL sin cambios. Las 88
+rutas quedaron clasificadas: la infografía se movió al paquete académico y el logo
+anterior se conservó local e ignorado. `npm audit` conserva solo dos advisories moderados
+de React Router 6.30.4 bajo `RR-09`; el fix exige migración rompiente a v7. `CF-03` no
+cambia de estado hasta vincular el gate a un SHA limpio y completar browser/realtime. No
+se creó commit, tag ni reset de base.
 
 **Subtotal estimado:** **6 h 45 min a 9 h 30 min**. La ruta critica es
 `CF-01 -> CF-03 -> CF-04/CF-05 -> CF-06`.
@@ -567,13 +660,19 @@ contradecir la memoria impresa.
 | ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
 |---|---|---|---:|---|---|
 | `DF-01` | Completar nombre, docentes, fecha y datos institucionales de portada | `[ ] [P]` | 20-30 min | Datos oficiales | Portada sin marcadores `[Completar]` |
-| `DF-02` | Sincronizar memoria y guía con Specs 194-201, baseline conjunto 198/144 y riesgos vigentes | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown alineado con roadmap y auditoría al 2026-08-03; aceptación Entra real, archivos privados y proveedores externos permanecen explícitos |
-| `DF-03` | Renderizar y revisar los 10 diagramas Mermaid exportables | `[ ] [P]` | 2-3 h | `DF-02` | SVG/PNG legibles, numerados y sin errores de sintaxis |
+| `DF-02` | Sincronizar memoria y guía con el corte documental vigente, baselines por capa 234/251 y riesgos actuales | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown alineado con roadmap y auditoría al 2026-08-05; aceptación Entra hasta onboarding/muro, archivos privados y proveedores externos permanecen explícitos |
+| `DF-03` | Seleccionar, renderizar e insertar los 10 diagramas Mermaid de la memoria | `[ ] [P]` | 2-3 h | `DF-02` | SVG/PNG legibles, numerados, insertados en el Word y aprobados visualmente en tamaño A4 |
 | `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | 4 fuentes editables y 4 PNG/SVG consistentes con el modelo |
 | `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[ ] [P]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable, estilos APA, tablas/figuras dentro de margenes |
 | `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[ ] [P]` | 2-3 h | `DF-05` | PDF revisado pagina por pagina, enlaces y accesibilidad basica |
 | `DF-07` | Diseñar presentación de defensa en PPTX/PDF con narrativa problema-solución-arquitectura-demo-evidencia | `[ ] [P]` | 2 h 30 min-4 h | `DF-03`, `DF-04` y evidencia de `CF-03` | Presentación legible, visual, con demo guiada, métricas verificables y límites honestos; sin copiar páginas completas de la memoria |
 | `DF-08` | Preparar guion, contingencias y ejecutar al menos dos ensayos cronometrados | `[ ] [P]` | 3-4 h | `CF-06`, `DF-06` y `DF-07` | Exposición base de 22-25 min dentro del rango oficial de 20-30 min, transiciones ensayadas y respuestas preparadas sobre seguridad, arquitectura y límites |
+
+**Corte documental del 05/08/2026:** el alumno informó que ya renderizó los 13 bloques
+Mermaid del paquete técnico `docs/academic/04-design-diagrams.md`. Ese paquete sirve
+como fuente técnica y material de anexo, pero no reemplaza uno a uno las 10 figuras
+Mermaid requeridas por la memoria. `DF-03` se cerrará cuando las figuras definitivas
+hayan sido seleccionadas, insertadas en el Word y revisadas por legibilidad en página A4.
 
 **Subtotal pendiente estimado:** **16 h 50 min a 24 h 30 min**, porque `DF-02` ya
 quedó implementado documentalmente. La entrega académica completa, incluyendo el cierre

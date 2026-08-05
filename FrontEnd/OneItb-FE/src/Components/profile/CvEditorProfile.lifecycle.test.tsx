@@ -12,6 +12,11 @@ const mocks = vi.hoisted(() => ({
   uploadDescriptor: vi.fn(),
   profileResult: null,
   careersResult: null,
+  cache: {
+    evict: vi.fn(),
+    gc: vi.fn(),
+    writeQuery: vi.fn(),
+  },
 }));
 
 const currentProfile = (overrides = {}) => ({
@@ -66,10 +71,17 @@ vi.mock('@apollo/client', async (importOriginal) => ({
       ? [mocks.updateProfile, { loading: false }]
       : [mocks.togglePrivacy, { loading: false }]
   ),
+  useApolloClient: () => ({ cache: mocks.cache }),
 }));
 
 vi.mock('../../utils/uploadFile', () => ({
   apiBaseUrl: 'http://localhost:44397',
+  UploadRequestError: class UploadRequestError extends Error {
+    constructor(message, details = {}) {
+      super(message);
+      Object.assign(this, details);
+    }
+  },
   uploadAttachmentDescriptor: (...args) => mocks.uploadDescriptor(...args),
 }));
 
@@ -115,6 +127,9 @@ describe('CvEditorProfile lifecycle', () => {
       fileUrl: '/uploads/candidate.jpg',
       storageMode: 'Local',
     });
+    mocks.cache.evict.mockReset();
+    mocks.cache.gc.mockReset();
+    mocks.cache.writeQuery.mockReset();
     mocks.profileResult = {
       data: undefined,
       loading: true,
@@ -123,7 +138,10 @@ describe('CvEditorProfile lifecycle', () => {
     };
     mocks.careersResult = {
       data: {
-        careers: [{ id: 1, name: 'Analisis de Sistemas', code: 'TSAS', isActive: true }],
+        careers: [
+          { id: 1, name: 'Analisis de Sistemas', code: 'TSAS', isActive: true },
+          { id: 2, name: 'Administracion Contable', code: 'TAC', isActive: true },
+        ],
       },
       loading: false,
       error: undefined,
@@ -137,6 +155,48 @@ describe('CvEditorProfile lifecycle', () => {
 
     expect(screen.getByLabelText('Cargando perfil institucional')).toBeInTheDocument();
     expect(screen.queryByDisplayValue('Diaz')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Guardar perfil y CV' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the full skeleton while the careers snapshot is still loading', async () => {
+    mocks.profileResult = {
+      data: { me: currentProfile() },
+      loading: false,
+      error: undefined,
+      refetch: mocks.refetchProfile,
+    };
+    mocks.careersResult = {
+      data: undefined,
+      loading: true,
+      error: undefined,
+      refetch: mocks.refetchCareers,
+    };
+
+    render(<CvEditorProfile />);
+
+    expect(screen.getByLabelText('Cargando perfil institucional')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Perfil completo')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Guardar perfil y CV' })).not.toBeInTheDocument();
+  });
+
+  it('shows a recoverable boundary when careers finish without a catalog snapshot', async () => {
+    mocks.profileResult = {
+      data: { me: currentProfile() },
+      loading: false,
+      error: undefined,
+      refetch: mocks.refetchProfile,
+    };
+    mocks.careersResult = {
+      data: undefined,
+      loading: false,
+      error: undefined,
+      refetch: mocks.refetchCareers,
+    };
+
+    render(<CvEditorProfile />);
+
+    expect(await screen.findByText('No pudimos cargar una edicion segura')).toBeInTheDocument();
+    expect(screen.getByText(/perfil y sus carreras/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Guardar perfil y CV' })).not.toBeInTheDocument();
   });
 
@@ -192,6 +252,45 @@ describe('CvEditorProfile lifecycle', () => {
     expect(mocks.updateProfile.mock.calls[0][0].variables.input.avatarUrl).toBe(
       '/uploads/persisted.jpg',
     );
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(
+      '/profile',
+      { replace: true },
+    ));
+    expect(mocks.cache.evict).toHaveBeenCalledWith({
+      id: 'ROOT_QUERY',
+      fieldName: 'inquiriesPage',
+      broadcast: false,
+    });
+  });
+
+  it('requires explicit confirmation before replacing a Student career', async () => {
+    mocks.profileResult = {
+      data: { me: currentProfile() },
+      loading: false,
+      error: undefined,
+      refetch: mocks.refetchProfile,
+    };
+    mocks.refetchProfile.mockResolvedValue({
+      data: {
+        me: currentProfile({
+          userCareers: [{ career: { id: 2, name: 'Administracion Contable', code: 'TAC' } }],
+        }),
+      },
+    });
+    render(<CvEditorProfile />);
+
+    await screen.findByDisplayValue('Perfil completo');
+    fireEvent.click(screen.getByRole('radio', { name: /Administracion Contable/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil y CV' }));
+
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      '¿Estás seguro de que esta es la carrera que estás cursando?',
+    );
+    expect(mocks.updateProfile).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, actualizar carrera' }));
+    await waitFor(() => expect(mocks.updateProfile).toHaveBeenCalledTimes(1));
+    expect(mocks.updateProfile.mock.calls[0][0].variables.input.careerIds).toEqual([2]);
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(
       '/profile',
       { replace: true },

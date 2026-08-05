@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { TOGGLE_PROFILE_PRIVACY, UPDATE_PROFILE } from '../../data/graphql/mutations/updateProfile';
 import { GET_USER_PROFILE } from '../../data/graphql/queries/getUserProfile';
 import { GET_CAREERS } from '../../data/graphql/queries/careers';
-import { apiBaseUrl, uploadAttachmentDescriptor } from '../../utils/uploadFile';
+import {
+  apiBaseUrl,
+  UploadRequestError,
+  uploadAttachmentDescriptor,
+} from '../../utils/uploadFile';
 import { CVData } from '../../types/resume';
 import { Button } from '../ui/Button';
 import { ExperienceForm } from '../editor/ExperienceForm';
@@ -17,6 +21,7 @@ import { useCvAtsPrint } from '../../hooks/useCvAtsPrint';
 import { AvatarEditorModal } from './AvatarEditorModal';
 import { ProfileEditorSkeleton } from './ProfileEditorSkeleton';
 import {
+  hasCareerSelectionChanged,
   selectCareerForRole,
   validateCareerSelectionForRole,
 } from './profileCareerSelection';
@@ -30,6 +35,7 @@ import {
   ProfileEditorPhase,
   ProfileFormState,
 } from './profileEditorState';
+import { synchronizeAcademicEnrollmentCache } from '../onboarding/academicEnrollmentCache';
 
 const emitProfilePrivacyToast = (isPublic: boolean) => {
   window.dispatchEvent(
@@ -123,6 +129,7 @@ const buildCvInput = (sections: CvSections) => ({
 export const CvEditorProfile = () => {
   const { auth, token, sessionVersion } = useAuth();
   const navigate = useNavigate();
+  const apolloClient = useApolloClient();
   const [cvSections, setCvSections] = useState<CvSections>(emptyCvSections);
   const [activeTheme, setActiveTheme] = useState<CvAccentTheme>('graphite');
   const [profileForm, setProfileForm] = useState<ProfileFormState>(emptyProfileForm);
@@ -136,11 +143,13 @@ export const CvEditorProfile = () => {
   const [persistedAvatarUrl, setPersistedAvatarUrl] = useState('');
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null);
   const [avatarStorageMode, setAvatarStorageMode] = useState<string | null>(null);
+  const [uploadCorrelationId, setUploadCorrelationId] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarImageFailed, setAvatarImageFailed] = useState(false);
   const [avatarEditorSource, setAvatarEditorSource] = useState<string | null>(null);
   const [avatarEditorFileName, setAvatarEditorFileName] = useState('');
   const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
+  const [showCareerConfirmation, setShowCareerConfirmation] = useState(false);
   const resumeRef = useRef<HTMLElement>(null);
   const dirtyRef = useRef(false);
   const fileReaderRef = useRef<FileReader | null>(null);
@@ -182,6 +191,7 @@ export const CvEditorProfile = () => {
 
   const sessionKey = buildProfileSessionKey(auth?.id, sessionVersion);
   const sessionProfile = getMatchingProfile(auth?.id, gqlData?.me);
+  const careersSnapshotReady = Array.isArray(careersData?.careers);
   const editorIsReady = Boolean(
     sessionKey
     && hydratedSessionKey === sessionKey
@@ -214,9 +224,11 @@ export const CvEditorProfile = () => {
     setUploadStatus('idle');
     setPendingAvatarUrl(null);
     setAvatarStorageMode(null);
+    setUploadCorrelationId(null);
     setAvatarEditorOpen(false);
     setAvatarEditorSource(null);
     setAvatarEditorFileName('');
+    setShowCareerConfirmation(false);
   }, [sessionKey]);
 
   useEffect(() => () => {
@@ -232,12 +244,12 @@ export const CvEditorProfile = () => {
 
   useEffect(() => {
     if (!sessionKey || profileLoading || careersLoading) return;
-    if (profileError || careersError || !sessionProfile) {
+    if (profileError || careersError || !sessionProfile || !careersSnapshotReady) {
       setEditorPhase('error');
       setEditorError(
-        sessionProfile
-          ? 'No se pudo cargar la configuracion completa del perfil.'
-          : 'El perfil recibido no corresponde a la sesion actual.',
+        !sessionProfile
+          ? 'El perfil recibido no corresponde a la sesion actual.'
+          : 'No se pudo cargar la configuracion completa del perfil y sus carreras.',
       );
       return;
     }
@@ -255,6 +267,7 @@ export const CvEditorProfile = () => {
   }, [
     careersError,
     careersLoading,
+    careersSnapshotReady,
     hydratedSessionKey,
     profileError,
     profileLoading,
@@ -334,6 +347,7 @@ export const CvEditorProfile = () => {
       setEditorPhase('uploading-avatar');
       setSaveStatus('idle');
       setEditorError('');
+      setUploadCorrelationId(null);
       const descriptor = await uploadAttachmentDescriptor(
         editedFile,
         token,
@@ -345,6 +359,7 @@ export const CvEditorProfile = () => {
 
       setPendingAvatarUrl(descriptor.fileUrl);
       setAvatarStorageMode(descriptor.storageMode || null);
+      setUploadCorrelationId(null);
       setProfileForm((current) => ({ ...current, avatarUrl: descriptor.fileUrl }));
       setAvatarPreview(descriptor.fileUrl);
       setUploadStatus('idle');
@@ -355,11 +370,16 @@ export const CvEditorProfile = () => {
       setAvatarEditorFileName('');
     } catch (error: any) {
       if (error?.name === 'AbortError') return;
+      const controlledError = error instanceof UploadRequestError ? error : null;
       setUploadStatus('error');
       setSaveStatus('error');
       setEditorPhase('error');
+      setAvatarStorageMode(controlledError?.storageMode || null);
+      setUploadCorrelationId(controlledError?.correlationId || null);
       setEditorError(
-        'No se pudo almacenar la nueva imagen. El avatar anterior sigue intacto.',
+        controlledError?.message
+          ? `${controlledError.message} El avatar anterior sigue intacto.`
+          : 'No se pudo almacenar la nueva imagen. El avatar anterior sigue intacto. Reintenta manualmente.',
       );
       setAvatarPreview(pendingAvatarUrl || persistedAvatarUrl || null);
     } finally {
@@ -384,7 +404,7 @@ export const CvEditorProfile = () => {
     setCvSections((current) => ({ ...current, [section]: value }));
   };
 
-  const handleSaveProfile = async () => {
+  const persistProfile = async () => {
     const currentProfile = sessionProfile;
     const userId = currentProfile?.id;
     if (!currentProfile || !userId || !editorIsReady) {
@@ -449,6 +469,12 @@ export const CvEditorProfile = () => {
       if ((confirmedProfile.avatarUrl || '') !== (effectiveAvatarUrl || '')) {
         throw new Error('AVATAR_ASSOCIATION_NOT_CONFIRMED');
       }
+      const confirmedCareerIds = createProfileEditorSnapshot(confirmedProfile).careerIds;
+      if (hasCareerSelectionChanged(confirmedCareerIds, selectedCareerIds)) {
+        throw new Error('CAREER_ASSOCIATION_NOT_CONFIRMED');
+      }
+
+      synchronizeAcademicEnrollmentCache(apolloClient, refreshed.data);
 
       dirtyRef.current = false;
       setPendingAvatarUrl(null);
@@ -465,6 +491,43 @@ export const CvEditorProfile = () => {
           : 'No se pudo guardar el perfil. Tus cambios permanecen en el formulario para reintentar.',
       );
     }
+  };
+
+  const handleSaveProfile = () => {
+    const currentProfile = sessionProfile;
+    if (!currentProfile || !editorIsReady) {
+      setSaveStatus('error');
+      setEditorPhase('error');
+      setEditorError('El perfil completo no esta disponible para guardar.');
+      return;
+    }
+
+    const selectionError = validateCareerSelectionForRole(
+      currentProfile.role,
+      selectedCareerIds,
+    );
+    if (selectionError) {
+      setCareerSelectionError(selectionError);
+      setSaveStatus('error');
+      setEditorPhase('error');
+      return;
+    }
+
+    const originalCareerIds = createProfileEditorSnapshot(currentProfile).careerIds;
+    if (
+      currentProfile.role === 'Estudiante'
+      && hasCareerSelectionChanged(originalCareerIds, selectedCareerIds)
+    ) {
+      setShowCareerConfirmation(true);
+      return;
+    }
+
+    void persistProfile();
+  };
+
+  const confirmCareerAndSave = () => {
+    setShowCareerConfirmation(false);
+    void persistProfile();
   };
 
   const handleCancel = () => {
@@ -624,6 +687,8 @@ export const CvEditorProfile = () => {
                   {uploadStatus === 'error' ? (
                     <p className="mt-1 text-[11px] font-semibold text-red-500">
                       No se pudo subir la imagen. El avatar guardado no fue reemplazado.
+                      {avatarStorageMode ? ` Modo: ${avatarStorageMode}.` : ''}
+                      {uploadCorrelationId ? ` Referencia: ${uploadCorrelationId}.` : ''}
                     </p>
                   ) : pendingAvatarUrl ? (
                     <p className="mt-1 text-[11px] font-semibold text-amber-700 dark:text-amber-200">
@@ -830,6 +895,48 @@ export const CvEditorProfile = () => {
           <CVATSPrintTemplate ref={resumeRef} data={previewData} activeTheme={activeTheme} />
         </section>
       </main>
+
+      {showCareerConfirmation && (
+        <div
+          className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/65 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="profile-career-confirmation-title"
+        >
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-200">
+              <i className="fa-solid fa-graduation-cap" aria-hidden="true" />
+            </div>
+            <h2
+              id="profile-career-confirmation-title"
+              className="mt-4 text-xl font-black tracking-tight text-slate-950 dark:text-slate-50"
+            >
+              ¿Estás seguro de que esta es la carrera que estás cursando?
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Vas a reemplazar tu identidad académica actual por{' '}
+              <strong>{selectedCareerNames[0] || 'la carrera seleccionada'}</strong>.
+              El muro, las materias y los recursos se actualizarán con ese alcance.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCareerConfirmation(false)}
+                className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/10"
+              >
+                Volver y revisar
+              </button>
+              <button
+                type="button"
+                onClick={confirmCareerAndSave}
+                className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-slate-50 transition hover:bg-blue-500"
+              >
+                Sí, actualizar carrera
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AvatarEditorModal
         isOpen={avatarEditorOpen}

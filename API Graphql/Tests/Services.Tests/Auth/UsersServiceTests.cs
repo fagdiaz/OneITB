@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OneITB.Core.Services.Interfaces;
 using Services.Auth;
+using Services.Academic;
 using Services.Repositories;
 using Services.Tests.TestSupport;
 using Services.Users;
@@ -94,6 +95,38 @@ public sealed class UsersServiceTests
         Assert.Equal("ACADEMIC_STUDENT_SINGLE_CAREER_REQUIRED", exception.Code);
         Assert.Equal(
             new[] { ServiceTestData.CareerId },
+            await context.UserCareers
+                .Where(link => link.UserId == ServiceTestData.StudentUserId)
+                .Select(link => link.CareerId)
+                .ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task UpdateProfileAsync_ReplacesStudentCareerThroughSharedAssignmentService()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        using var unitOfWork = new UnitOfWork(context);
+        var service = CreateService(unitOfWork, context);
+
+        UpdateProfilePayload payload = await service.UpdateProfileAsync(new UpdateProfileInput(
+            Id: ServiceTestData.StudentUserId,
+            Biography: null,
+            LinkedIn: null,
+            Facebook: null,
+            Instagram: null,
+            Phone: null,
+            AvatarUrl: null,
+            CareerIds: new[] { ServiceTestData.OtherCareerId },
+            CvExperiences: null,
+            CvEducations: null,
+            CvProjects: null,
+            CvSkills: null,
+            CvLanguages: null));
+
+        Assert.True(payload.Success);
+        Assert.Equal(
+            new[] { ServiceTestData.OtherCareerId },
             await context.UserCareers
                 .Where(link => link.UserId == ServiceTestData.StudentUserId)
                 .Select(link => link.CareerId)
@@ -279,6 +312,7 @@ public sealed class UsersServiceTests
             unitOfWork,
             context,
             new BcryptPasswordHasher(new PasswordHashingOptions(10)),
-            new PublicRegistrationPolicy("itbeltran.com.ar"));
+            new PublicRegistrationPolicy("itbeltran.com.ar"),
+            new UserCareerAssignmentService(context));
     }
 }

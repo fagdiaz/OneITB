@@ -41,7 +41,7 @@ describe('PublicationManagement pagination', () => {
     render(<PublicationManagement />);
 
     expect(screen.getByText('15 activas')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Cargar mas publicaciones' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cargar más publicaciones' }));
     expect(loadMore).toHaveBeenCalledTimes(1);
   });
 });

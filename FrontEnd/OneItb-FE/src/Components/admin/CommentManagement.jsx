@@ -14,6 +14,7 @@ export const CommentManagement = () => {
     loading,
     loadingMore,
     error,
+    loadMoreError,
     refetch,
     loadMore,
   } = useInquiryPage({ pageSize: 10 });
@@ -45,6 +46,9 @@ export const CommentManagement = () => {
       </div>
       {loading && <p className="text-sm text-slate-500">Cargando comentarios...</p>}
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error.message}</p>}
+      {loadMoreError && posts.length > 0 && (
+        <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">No se pudo cargar la página siguiente. Reintentá sin perder los resultados visibles.</p>
+      )}
       <div className="space-y-3">
         {comments.map((comment) => (
           <article
@@ -86,7 +90,7 @@ export const CommentManagement = () => {
           disabled={loadingMore}
           className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
         >
-          {loadingMore ? 'Cargando...' : 'Cargar mas publicaciones'}
+          {loadingMore ? 'Cargando...' : loadMoreError ? 'Reintentar' : 'Cargar más publicaciones'}
         </button>
       )}
       {selectedComment && (

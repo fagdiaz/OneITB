@@ -5,6 +5,8 @@ import { BrandLockup } from '../branding/BrandLockup';
 import { RevealOnScroll } from '../common/RevealOnScroll';
 import { usePointerSpotlight } from '../../hooks/usePointerSpotlight';
 import { EMPLOYER_REQUEST_NAVIGATION } from '../jobs/employerNavigation';
+import { ExternalInstitutionalLink } from '../institutional/ExternalInstitutionalLink';
+import { INSTITUTIONAL_SERVICES } from '../institutional/institutionalLinks';
 
 const PRODUCT_AREAS = [
   {
@@ -58,8 +60,8 @@ export const Landing = () => {
       />
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[42rem] bg-[radial-gradient(circle_at_75%_20%,rgba(56,189,248,0.15),transparent_34%),radial-gradient(circle_at_15%_35%,rgba(129,140,248,0.12),transparent_30%)] dark:bg-[radial-gradient(circle_at_75%_20%,rgba(37,99,235,0.16),transparent_34%),radial-gradient(circle_at_15%_35%,rgba(91,33,182,0.13),transparent_30%)]" />
 
-      <section className="relative z-10 mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.08fr_0.92fr] lg:px-10 lg:py-20">
-        <div className="max-w-3xl">
+      <section className="relative z-10 mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl grid-cols-[minmax(0,1fr)] items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:px-10 lg:py-20">
+        <div className="min-w-0 max-w-3xl">
           <BrandLockup
             variant="full"
             label="OneITB, red académica del Instituto Tecnológico Beltrán"
@@ -67,14 +69,14 @@ export const Landing = () => {
           />
           <p className="mt-10 inline-flex items-center gap-2 rounded-full border border-cyan-700/15 bg-cyan-50/70 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-cyan-800 shadow-sm backdrop-blur-md dark:border-cyan-300/15 dark:bg-cyan-300/5 dark:text-cyan-200">
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.7)]" />
-            Red académica institucional
+            Proyecto académico institucional
           </p>
-          <h1 className="mt-6 text-4xl font-extrabold leading-[1.04] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl dark:text-slate-100">
+          <h1 className="mt-6 break-words text-4xl font-extrabold leading-[1.04] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl dark:text-slate-100">
             Tu recorrido académico,
             <span className="block bg-gradient-to-r from-cyan-700 via-blue-700 to-indigo-700 bg-clip-text text-transparent dark:from-cyan-300 dark:via-blue-300 dark:to-indigo-300"> conectado con tu futuro.</span>
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 dark:text-slate-300">
-            Un espacio para aprender en comunidad, compartir conocimiento, mostrar tu trayectoria y descubrir nuevas oportunidades dentro del ecosistema Beltrán.
+            OneITB es un proyecto académico complementario al portal oficial: un espacio para aprender en comunidad, compartir conocimiento, mostrar tu trayectoria y descubrir oportunidades dentro del ecosistema Beltrán.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -154,7 +156,32 @@ export const Landing = () => {
         </div>
       </RevealOnScroll>
 
-      <RevealOnScroll as="section" className="relative z-10 border-y border-slate-300/60 bg-stone-100/65 py-20 dark:border-white/10 dark:bg-slate-950/35">
+      <RevealOnScroll as="section" className="relative z-10 border-y border-slate-300/60 bg-stone-100/65 py-20 dark:border-white/10 dark:bg-slate-950/35" aria-labelledby="institution-title">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">Contexto institucional</p>
+              <h2 id="institution-title" className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-slate-100">Tecnología educativa con identidad Beltrán</h2>
+            </div>
+            <div className="space-y-3 text-sm leading-7 text-slate-600 sm:text-base dark:text-slate-300">
+              <p>OneITB se desarrolla para la comunidad del <strong className="font-bold text-slate-800 dark:text-slate-100">Instituto Superior de Formación Técnica N.º 197</strong>, dentro de una institución orientada a la educación tecnológica, el trabajo y la vinculación con la comunidad.</p>
+              <p>La propuesta acompaña las sedes Avellaneda y Ezeiza sin sustituir los canales oficiales ni afirmar integraciones que todavía dependen de acuerdos institucionales.</p>
+            </div>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {INSTITUTIONAL_SERVICES.map((service) => (
+              <ExternalInstitutionalLink key={service.id} service={service} />
+            ))}
+          </div>
+
+          <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            Los enlaces anteriores abandonan OneITB y conducen a servicios externos. Fuente institucional consultada el 5 de agosto de 2026.
+          </p>
+        </div>
+      </RevealOnScroll>
+
+      <RevealOnScroll as="section" className="relative z-10 py-20">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-10">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">Construida para toda la comunidad</p>
@@ -200,7 +227,7 @@ export const Landing = () => {
       <footer className="relative z-10 border-t border-slate-300/60 bg-slate-100/70 px-5 py-9 backdrop-blur-lg dark:border-white/10 dark:bg-slate-950/45">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 sm:flex-row">
           <BrandLockup label="OneITB" loading="lazy" />
-          <p className="text-center text-xs leading-5 text-slate-500 sm:text-right dark:text-slate-400">Instituto Tecnológico Beltrán<br />Red académica institucional · 2026</p>
+          <p className="text-center text-xs leading-5 text-slate-500 sm:text-right dark:text-slate-400">Proyecto académico para la comunidad del Instituto Tecnológico Beltrán<br />OneITB no reemplaza el portal institucional · 2026</p>
         </div>
       </footer>
     </main>

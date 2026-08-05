@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   beginMicrosoftRedirectFlow,
+  clearMicrosoftRedirectFlow,
   completeMicrosoftRedirectFlowOnce,
+  isMicrosoftRedirectFlowPending,
   markMicrosoftRedirectFlowCompleted,
   readMicrosoftRedirectFlow,
   resetMicrosoftRedirectCoordinatorForTests,
   sanitizeMicrosoftReturnTo,
+  subscribeToMicrosoftRedirectFlow,
 } from './microsoftRedirectFlow';
 
 describe('microsoftRedirectFlow', () => {
@@ -56,6 +59,27 @@ describe('microsoftRedirectFlow', () => {
       returnTo: '/academic',
       completed: true,
     });
+  });
+
+  it('exposes only non-completed flows as pending', () => {
+    const flow = beginMicrosoftRedirectFlow('/academic');
+    expect(isMicrosoftRedirectFlowPending()).toBe(true);
+
+    markMicrosoftRedirectFlowCompleted(flow);
+    expect(isMicrosoftRedirectFlowPending()).toBe(false);
+  });
+
+  it('notifies same-tab consumers when the redirect flow changes', () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeToMicrosoftRedirectFlow(listener);
+
+    const flow = beginMicrosoftRedirectFlow('/profile');
+    clearMicrosoftRedirectFlow(flow.id);
+
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
+    beginMicrosoftRedirectFlow('/feed');
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 
   it('shares one completion promise for concurrent Strict Mode executions', async () => {

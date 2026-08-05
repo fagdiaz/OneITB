@@ -4,12 +4,19 @@ import {
 } from './microsoftEntraConfig';
 
 const FLOW_STORAGE_KEY = 'oneitb-microsoft-redirect-flow';
+const FLOW_CHANGE_EVENT = 'oneitb:microsoft-redirect-flow-change';
 const FLOW_TTL_MS = 15 * 60 * 1000;
 const completionRegistry = new Map();
 
 const currentStorage = (storage) => (
   storage ?? (typeof window === 'undefined' ? null : window.sessionStorage)
 );
+
+const notifyFlowChange = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(FLOW_CHANGE_EVENT));
+  }
+};
 
 const destinationFromValue = (value) => {
   if (typeof value === 'string') return value.trim();
@@ -60,6 +67,7 @@ export const beginMicrosoftRedirectFlow = (
     completed: false,
   };
   currentStorage(storage)?.setItem(FLOW_STORAGE_KEY, JSON.stringify(flow));
+  notifyFlowChange();
   return flow;
 };
 
@@ -99,6 +107,7 @@ export const markMicrosoftRedirectFlowCompleted = (flow, storage) => {
     returnTo: sanitizeMicrosoftReturnTo(flow.returnTo),
     completed: true,
   }));
+  notifyFlowChange();
 };
 
 export const clearMicrosoftRedirectFlow = (flowId, storage) => {
@@ -107,7 +116,22 @@ export const clearMicrosoftRedirectFlow = (flowId, storage) => {
   const current = readMicrosoftRedirectFlow(target);
   if (!flowId || current?.id === flowId) {
     target.removeItem(FLOW_STORAGE_KEY);
+    notifyFlowChange();
   }
+};
+
+export const isMicrosoftRedirectFlowPending = (storage, now = Date.now()) => {
+  const flow = readMicrosoftRedirectFlow(storage, now);
+  return Boolean(flow && !flow.completed);
+};
+
+export const subscribeToMicrosoftRedirectFlow = (listener) => {
+  if (typeof window === 'undefined' || typeof listener !== 'function') {
+    return () => {};
+  }
+
+  window.addEventListener(FLOW_CHANGE_EVENT, listener);
+  return () => window.removeEventListener(FLOW_CHANGE_EVENT, listener);
 };
 
 export const completeMicrosoftRedirectFlowOnce = (flowId, operation) => {

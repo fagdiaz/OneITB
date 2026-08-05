@@ -20,6 +20,190 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
 
 ---
 
+## [2026-08-05] - Spec 218: Candidate Freeze & Pre-Defense Gate
+
+Se inició el cierre del candidato con un contrato que separa evidencia automatizada,
+aceptación manual y proveedores externos. La activación no realizó commits, tags, resets
+de base ni cambios funcionales.
+
+* **Inventario**: las 88 rutas Git tienen disposición explícita. La infografía promocional
+  se movió de `src/assets` a `docs/entrega_final/assets` para no inflar el bundle; el logo
+  anterior, no referenciado, se preservó local bajo una regla de ignore. El scan por
+  patrones de alta confianza no detectó claves privadas ni tokens y la configuración
+  rastreada no contiene usuario o password SQL embebidos.
+* **Preflight conjunto**: pasaron backend 234/234, frontend 251/251, build Release con
+  0 warnings/0 errores, Vite 565 módulos en 591 ms, EF sin drift, Compose y
+  `git diff --check`.
+* **Infraestructura y base demo**: Redis/Mailpit healthy, pruebas reales 2/2, aislamiento
+  Estudiante-Moderador 14/14, integridad SQL 0, seis logins y smokes de feed, académico,
+  mensajería, notificaciones, empleos, administración, moderación y upload PASS. El SQL
+  existente no cambió y contenedores, red, backend temporal y fixtures fueron limpiados.
+* **Dependencias**: `npm audit --omit=dev` conserva dos advisories moderados de React
+  Router 6.30.4. SSR no forma parte de la SPA y los destinos influenciados externamente
+  rechazan barras invertidas; la única corrección automática exige v7 y permanece en
+  `RR-09` para una evolución con suite completa fuera del Code Freeze.
+* **Estado**: `CF-01` a `CF-06` continúan abiertos. El resultado corresponde a
+  `UNFROZEN_WORKTREE`, no a un SHA candidato ni a aceptación productiva.
+
+## [2026-08-05] - Spec 217: Institutional Landing & Theme Polish
+
+Se alineó la entrada pública con el contexto verificable del Instituto Tecnológico
+Beltrán sin convertir OneITB en una copia del portal oficial ni afirmar integraciones
+externas inexistentes.
+
+* **Tema accesible**: CSS y `ThemeContext` comparten 1300 ms; reduced motion e impresión
+  fuerzan 0 ms y el temporizador conserva cleanup al desmontar.
+* **Narrativa institucional**: Home identifica el ISFT N.º 197, las sedes Avellaneda y
+  Ezeiza y el carácter complementario del proyecto. Portal Beltrán, SIU Guaraní y
+  Microsoft 365 se muestran como enlaces externos con aviso y atributos seguros.
+* **QA responsive**: el browser descubrió un recorte del Hero a 320 px que no generaba
+  scroll detectable. Los tracks `minmax(0, ...)` corrigieron el defecto; 320/768/1440
+  quedaron sin overflow ni headings truncados y la consola terminó limpia.
+* **Validación**: 17/17 focalizadas, 251/251 frontend y build Vite de 565 módulos en
+  627 ms. La pasada perceptual dark/light y reduced-motion queda dentro del gate final.
+* **Archivos clave**:
+  - `FrontEnd/OneItb-FE/src/Components/user/Landing.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/institutional/*`
+  - `FrontEnd/OneItb-FE/src/Components/layout/Footer.jsx`
+  - `FrontEnd/OneItb-FE/src/context/ThemeContext.jsx`
+  - `FrontEnd/OneItb-FE/src/index.css`
+
+## [2026-08-05] - Spec 216: Feed Pagination Observability
+
+Se consolidó la carga incremental del muro sobre `useInquiryPage` para que cada acción
+termine en una página anexada, un fin explícito o un error recuperable sin perder los
+resultados visibles. El backend no requirió cambios productivos: sus bordes de cursor
+fueron confirmados mediante pruebas controladas.
+
+* **Estado React/Apollo**: normalización de filtros, guard sincrónico contra doble click,
+  deduplicación por ID, descarte visual de respuestas obsoletas y aislamiento de caché
+  por carrera.
+* **UX**: Feed, perfil y administración diferencian carga inicial, página siguiente,
+  reintento y final; un fallo no reemplaza la lista por una pantalla vacía.
+* **Validación**: backend 234/234, frontend 249/249, focalizadas 14/14 y 16/16, y builds
+  Release/Vite sin warnings. El smoke browser con dataset mayor a 15 queda bloqueado
+  porque no había runtime escuchando en 5173/44397.
+* **Archivos clave**:
+  - `FrontEnd/OneItb-FE/src/hooks/useInquiryPage.js`
+  - `FrontEnd/OneItb-FE/src/Components/publication/FeedPaginationControls.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`
+  - `API Graphql/Tests/Services.Tests/Social/SocialServiceTests.cs`
+
+## [2026-08-05] - Spec 215: Profile Storage & Hydration Resilience
+
+* **Storage explícito**: `FileStorage:Provider` selecciona `Local` exclusivamente en
+  Development o `Cloudinary` en Production. Provider ausente/desconocido, disco local
+  productivo, URL cloud incompleta y timeout fuera de rango fallan al iniciar sin
+  revelar secretos ni degradar silenciosamente a otro medio.
+* **Resiliencia**: Cloudinary usa timeout enlazado y distingue cancelación del cliente;
+  el storage local elimina archivos parciales. `/api/upload` devuelve un 503 sanitizado
+  con código, modo y correlación, y React conserva el avatar previo y exige reintento
+  manual.
+* **Hidratación**: el editor permanece en skeleton hasta recibir el `me` coincidente y
+  el catálogo de carreras completo; una respuesta incompleta entra en un estado
+  recuperable sin habilitar guardado parcial.
+* **Validación**: backend 230/230, frontend 240/240, builds Release/Vite sin errores,
+  Compose productivo válido y EF sin model drift. `npm audit` mantiene dos advisories moderados de React Router con
+  corrección rompiente v7 ya aceptados como `RR-09`. Browser local y Cloudinary real
+  permanecen como gates de aceptación.
+* **Archivos clave**:
+  - `API Graphql/OneITB/Services/Storage/*`
+  - `API Graphql/OneITB/Controllers/UploadController.cs`
+  - `FrontEnd/OneItb-FE/src/utils/uploadFile.js`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+
+## [2026-08-05] - Spec 214: Authoritative Student Enrollment
+
+* **Regla de dominio**: `IUserCareerAssignmentService` centraliza la validación del
+  catálogo activo y el reemplazo de asociaciones posteriores al alta. Estudiante exige
+  exactamente una carrera; onboarding y edición conservan sus transacciones y los roles
+  institucionales compatibles mantienen selección múltiple.
+* **Estado Apollo**: onboarding y perfil verifican el `me` persistido, eliminan variantes
+  de `myCareers`, feed, materias, recursos y progreso, y reescriben únicamente el perfil
+  confirmado. El editor solicita confirmación explícita antes de cambiar la carrera.
+* **Frontera institucional**: `SelfDeclaredInstitutionalEnrollmentProvider` informa
+  estado, fuente y timestamp sin fabricar carrera/materias ni presentarse como conexión
+  ITB/SIU. El mock SIU existente continúa limitado a calificaciones.
+* **Validación**: 218/218 pruebas backend, 237/237 frontend, builds Release sin warnings
+  y EF Core sin model drift. El recorrido manual onboarding -> feed -> perfil queda como
+  aceptación para promover el gate de `[I]` a `[V]`.
+* **Archivos clave**:
+  - `API Graphql/Services/Academic/UserCareerAssignmentService.cs`
+  - `API Graphql/Services/Academic/SelfDeclaredInstitutionalEnrollmentProvider.cs`
+  - `FrontEnd/OneItb-FE/src/Components/onboarding/academicEnrollmentCache.js`
+  - `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx`
+
+## [2026-08-05] - Spec 213: Runtime Contract & Entra Transition
+
+* **Problema**: una SPA vigente podía operar contra un proceso backend anterior y el
+  retorno Microsoft podía mostrar brevemente Login o perder MSAL cuando expiraba una
+  sesión OneITB persistida.
+* **Runtime contract**: la API agrega `X-OneITB-Build` sanitizado y el preflight finito
+  comprueba build más `inquiriesPage`, `microsoftLogin` y `confirmStudentCareer`. No
+  inicia servidores ni imprime configuración sensible.
+* **Transición institucional**: se incorporó un coordinador observable por pestaña,
+  `MicrosoftRedirectBoundary`, fases explícitas de callback y guards que suspenden
+  redirecciones incompatibles. Una expiración previa purga OneITB/Apollo sin borrar la
+  cuenta MSAL en transición; logout y accesos no Microsoft conservan la limpieza total.
+* **Validación**: 46/46 pruebas focalizadas, frontend 232/232, backend 216/216, build Vite
+  y .NET Release con cero warnings. Un proceso Release temporal confirmó el build header
+  y las tres operaciones GraphQL, y fue detenido al terminar. El smoke Microsoft real
+  post-cambio queda como aceptación manual para promover `[I]` a `[V]`.
+* **Operación**: el Runbook diferencia fallos OneITB de CSP/BSSO/cookies/`OneCollector`
+  emitidos por Microsoft; no se relajaron CORS ni cabeceras de seguridad.
+
+## [2026-08-05] - Spec 212: Theme Logo Asset Contract
+
+* **Objetivo**: restaurar los assets completos aprobados por tema y mantener el Header
+  exclusivamente con el isotipo, sustituyendo el lockup construido en DOM por una regla
+  de marca única y comprobable.
+* **Implementación**: `BrandLogo` conserva `only-logo.png` para la variante `symbol` y
+  selecciona un solo asset completo mediante `effectiveTheme`: `logo-oneitb.png` en
+  claro y `logo-oneitb-dark-mode.png` en oscuro. `BrandLockup` funciona como viewport
+  accesible y proporcional para el lienzo cuadrado, sin filtros, glow ni texto `neITB`
+  reconstruido. `Header` consume directamente la variante symbol en ambos temas.
+* **Consumidores**: Landing Hero, bloque de identidad, onboarding y footers público y
+  privado permanecen centralizados en `BrandLockup`; el card compacto del Home y el
+  Header usan el isotipo aprobado.
+* **Validación**: 9/9 pruebas focalizadas, suite frontend 225/225 y build Vite de 560
+  módulos en 793 ms. La inspección del Home claro confirmó logo completo original,
+  Header solo isotipo y ausencia de overflow. La selección oscura exacta está cubierta
+  por prueba automatizada; la matriz visual dark/light 320/768/1440 px permanece abierta
+  antes de promover la spec a `[V]`.
+* **Archivos clave**:
+  - `FrontEnd/OneItb-FE/src/Components/branding/BrandLogo.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/branding/BrandLockup.jsx`
+  - `FrontEnd/OneItb-FE/src/Components/layout/private/Header.jsx`
+  - pruebas de branding, Header, Landing y onboarding
+  - Roadmap, arquitectura, auditoría, runbook y memoria técnica
+
+## [2026-08-05] - Normalización documental previa al Word final
+
+* **Objetivo**: consolidar una fuente documental coherente antes de maquetar la memoria
+  institucional, sin alterar contratos ejecutables ni presentar como aprobada una
+  revisión visual que todavía depende del Word/PDF final.
+* **Normalización**: Roadmap, auditoría, memoria, guía de maquetación, documentos
+  académicos, arquitectura, alcance y README quedaron alineados en 117/117, 46 ítems
+  `[V]`, 71 `[I]` y baselines automatizados 216/216 backend y 224/224 frontend. La
+  aceptación real de Microsoft Entra se describe hasta onboarding y muro; cancelación,
+  error, logout y aislamiento de una segunda cuenta continúan como gate explícito.
+* **Contratos corregidos**: la documentación ya no presenta Follow unilateral como
+  acceso a perfiles privados, distingue el contenido normalizado de su materialización
+  en DOCX/PDF y conserva sin sobrepromesas los gates de uploads privados, proveedores
+  externos y observabilidad productiva.
+* **Diagramas y entrega**: la memoria declara 10 figuras Mermaid y 3 gráficos de gestión;
+  el paquete académico contiene 13 vistas Mermaid técnicas complementarias. El alumno
+  informó haber renderizado estas 13 vistas, pero `DF-03` permanece pendiente hasta
+  seleccionar e insertar las figuras de la memoria y aprobar su legibilidad en A4.
+* **Controles ejecutados**: inventario documental canónico sin roadmaps/auditorías
+  paralelos, enlaces Markdown locales sin destinos faltantes, fences balanceados,
+  ausencia de placeholders en memoria y documentos académicos, 34 migraciones EF y
+  versiones del stack contrastadas con los proyectos y manifiestos del repositorio.
+  `git diff --check` no reportó errores de whitespace.
+* **Límite de evidencia**: no se inspeccionó el Word que el alumno está maquetando ni
+  las imágenes exportadas fuera del repositorio. La revisión visual/APA página por
+  página y la concordancia final Markdown-DOCX-PDF siguen abiertas en `DF-03` a `DF-06`.
+
 ## [2026-08-04] - Spec 211: Local Icon Font Integrity
 
 * **Objetivo**: eliminar los warnings propios de tablas `glyf` observados por Firefox

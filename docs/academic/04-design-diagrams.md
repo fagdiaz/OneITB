@@ -3,8 +3,8 @@
 | Dato de control | Valor |
 |---|---|
 | **Sistema** | OneITB23 |
-| **Versión documental** | 2.0 |
-| **Fecha de revisión** | 3 de agosto de 2026 |
+| **Versión documental** | 2.1 |
+| **Fecha de revisión** | 5 de agosto de 2026 |
 | **Clasificación** | Vistas arquitectónicas derivadas |
 | **Notación** | Mermaid; DER con cardinalidad Crow's Foot |
 | **Fuente normativa** | [`architecture-and-design.md`](../project_docs/architecture-and-design.md) y modelo EF Core |
@@ -37,6 +37,9 @@ lectura impresa; los DER se dividen por subdominio para evitar una única lámin
 Para la entrega se recomienda exportar las figuras 1, 2, 6, 9, 10, 11 y 12 como SVG. Los
 tres DER deben recrearse o ajustarse en diagrams.net si la exportación Mermaid no permite
 controlar el enrutamiento Crow's Foot y el tamaño tipográfico requerido por la impresión.
+Estas 13 vistas forman un paquete técnico complementario y no coinciden uno a uno con las
+10 figuras principales enumeradas en `GUIA_MAQUETACION_FINAL.md`; las vistas adicionales
+se incorporan al Word únicamente como anexos citados y después de revisar su legibilidad.
 
 ## 4.2 Figura 1 - Contexto del sistema
 

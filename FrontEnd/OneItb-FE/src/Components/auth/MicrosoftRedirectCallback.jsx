@@ -19,20 +19,39 @@ import {
 
 const SESSION_COMMIT_TIMEOUT_MS = 10000;
 const TOKEN_EXCHANGE_TIMEOUT_MS = 20000;
+const CALLBACK_PHASES = Object.freeze({
+  MSAL: 'msal',
+  EXCHANGE: 'exchange',
+  SESSION_COMMIT: 'session-commit',
+  ERROR: 'error',
+});
+const SAFE_AUTH_MESSAGE_PREFIXES = Object.freeze([
+  'Microsoft no entregó un token',
+  'OneITB no pudo iniciar la sesión',
+  'OneITB no respondió a tiempo',
+]);
 
 const authenticationErrorMessage = (error) => {
   const graphMessage = error?.graphQLErrors
     ?.map((item) => item.message)
     .filter(Boolean)
     .join(' ');
-  return graphMessage
-    || error?.message
-    || 'No se pudo completar el acceso institucional.';
+  if (graphMessage) return graphMessage;
+
+  const localMessage = typeof error?.message === 'string' ? error.message : '';
+  if (SAFE_AUTH_MESSAGE_PREFIXES.some((prefix) => localMessage.startsWith(prefix))) {
+    return localMessage;
+  }
+
+  return 'No se pudo completar el acceso institucional. Volvé a intentarlo.';
 };
 
-const interactionLabel = (inProgress, isSessionCommitPending) => {
-  if (isSessionCommitPending) {
+const interactionLabel = (phase, inProgress) => {
+  if (phase === CALLBACK_PHASES.SESSION_COMMIT) {
     return 'Preparando tu sesión institucional...';
+  }
+  if (phase === CALLBACK_PHASES.EXCHANGE) {
+    return 'Validando tu identidad en OneITB...';
   }
   if (inProgress === InteractionStatus.HandleRedirect) {
     return 'Procesando la respuesta de Microsoft...';
@@ -54,12 +73,15 @@ export const MicrosoftRedirectCallback = () => {
     token,
   } = useAuth();
   const navigate = useNavigate();
+  const instanceRef = useRef(instance);
+  instanceRef.current = instance;
   const attemptedFlowIdRef = useRef('');
   const exchangeAbortControllerRef = useRef(null);
   const sessionVersionRef = useRef(sessionVersion ?? 0);
   sessionVersionRef.current = sessionVersion ?? 0;
   const [errorMessage, setErrorMessage] = useState('');
   const [pendingSession, setPendingSession] = useState(null);
+  const [phase, setPhase] = useState(CALLBACK_PHASES.MSAL);
   const [exchangeToken] = useMutation(MICROSOFT_LOGIN, {
     fetchPolicy: 'no-cache',
   });
@@ -79,6 +101,7 @@ export const MicrosoftRedirectCallback = () => {
       setErrorMessage(
         'La solicitud de acceso expiró o no pertenece a esta pestaña. Volvé a iniciar sesión.',
       );
+      setPhase(CALLBACK_PHASES.ERROR);
       return undefined;
     }
 
@@ -90,10 +113,12 @@ export const MicrosoftRedirectCallback = () => {
         resumeCompletedFlow: true,
         userId: null,
       });
+      setPhase(CALLBACK_PHASES.SESSION_COMMIT);
       return undefined;
     }
 
-    const activeAccount = instance.getActiveAccount?.();
+    const msalInstance = instanceRef.current;
+    const activeAccount = msalInstance.getActiveAccount?.();
     const account = activeAccount || (accounts.length === 1 ? accounts[0] : null);
     if (!account) {
       setErrorMessage(
@@ -101,16 +126,19 @@ export const MicrosoftRedirectCallback = () => {
           ? 'Microsoft devolvió varias cuentas sin identificar cuál inició el acceso. Volvé a iniciar sesión.'
           : 'Microsoft no devolvió una cuenta válida. Volvé a iniciar sesión.',
       );
+      setPhase(CALLBACK_PHASES.ERROR);
       return undefined;
     }
 
     if (attemptedFlowIdRef.current === flow.id) return undefined;
     attemptedFlowIdRef.current = flow.id;
+    setErrorMessage('');
+    setPhase(CALLBACK_PHASES.EXCHANGE);
 
     void completeMicrosoftRedirectFlowOnce(flow.id, async () => {
       const expectedSessionVersion = sessionVersionRef.current + 1;
-      instance.setActiveAccount?.(account);
-      const tokenResult = await instance.acquireTokenSilent({
+      msalInstance.setActiveAccount?.(account);
+      const tokenResult = await msalInstance.acquireTokenSilent({
         ...microsoftLoginRequest,
         prompt: undefined,
         account,
@@ -170,17 +198,23 @@ export const MicrosoftRedirectCallback = () => {
         userId: payload.id,
       };
     }).then((sessionToCommit) => {
-      if (mounted) setPendingSession(sessionToCommit);
+      if (mounted) {
+        setPendingSession(sessionToCommit);
+        setPhase(CALLBACK_PHASES.SESSION_COMMIT);
+      }
     }).catch(async (error) => {
       clearMicrosoftRedirectFlow(flow.id);
       await clearMicrosoftIdentitySession();
-      if (mounted) setErrorMessage(authenticationErrorMessage(error));
+      if (mounted) {
+        setErrorMessage(authenticationErrorMessage(error));
+        setPhase(CALLBACK_PHASES.ERROR);
+      }
     });
 
     return () => {
       mounted = false;
     };
-  }, [accounts, exchangeToken, inProgress, instance, login, navigate]);
+  }, [accounts, exchangeToken, inProgress, login]);
 
   useEffect(() => {
     if (!pendingSession) return undefined;
@@ -205,6 +239,7 @@ export const MicrosoftRedirectCallback = () => {
       setErrorMessage(
         'La identidad fue validada, pero OneITB no pudo confirmar la sesión. Volvé a iniciar sesión.',
       );
+      setPhase(CALLBACK_PHASES.ERROR);
       setPendingSession(null);
       void Promise.resolve(logout()).catch(() => clearMicrosoftIdentitySession());
     }, SESSION_COMMIT_TIMEOUT_MS);
@@ -227,7 +262,10 @@ export const MicrosoftRedirectCallback = () => {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <main
+      data-phase={phase}
+      className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+    >
       <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-slate-100 p-8 text-center shadow-xl dark:border-white/10 dark:bg-slate-900">
         <div
           className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-xl text-white shadow-lg shadow-blue-500/20"
@@ -255,7 +293,7 @@ export const MicrosoftRedirectCallback = () => {
         ) : (
           <div role="status" aria-live="polite" aria-busy="true">
             <h1 className="mt-5 text-xl font-bold tracking-tight">
-              {interactionLabel(inProgress, Boolean(pendingSession))}
+              {interactionLabel(phase, inProgress)}
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
               No cierres esta ventana. OneITB está verificando tu identidad institucional.

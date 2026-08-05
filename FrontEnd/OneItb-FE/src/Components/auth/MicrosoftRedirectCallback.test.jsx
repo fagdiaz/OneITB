@@ -141,6 +141,7 @@ describe('MicrosoftRedirectCallback', () => {
     expect(screen.getByRole('status')).toHaveTextContent(
       'Procesando la respuesta de Microsoft...',
     );
+    expect(screen.getByRole('main')).toHaveAttribute('data-phase', 'msal');
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(mocks.acquireTokenSilent).not.toHaveBeenCalled();
   });
@@ -151,6 +152,10 @@ describe('MicrosoftRedirectCallback', () => {
     const view = render(<MicrosoftRedirectCallback />);
 
     await waitFor(() => expect(mocks.login).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole('main')).toHaveAttribute(
+      'data-phase',
+      'session-commit',
+    ));
     expect(mocks.navigate).not.toHaveBeenCalled();
     expect(mocks.acquireTokenSilent).toHaveBeenCalledWith(expect.objectContaining({
       account,
@@ -302,8 +307,9 @@ describe('MicrosoftRedirectCallback', () => {
     render(<MicrosoftRedirectCallback />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Token acquisition failed',
+      'No se pudo completar el acceso institucional',
     );
+    expect(screen.getByRole('main')).toHaveAttribute('data-phase', 'error');
     expect(mocks.clearSession).toHaveBeenCalledTimes(1);
     expect(mocks.login).not.toHaveBeenCalled();
     expect(mocks.navigate).not.toHaveBeenCalled();

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using OneItb.GraphQL.Infrastructure;
 
 namespace OneItb.Controllers
 {
@@ -106,20 +107,23 @@ namespace OneItb.Controllers
             {
                 throw;
             }
+            catch (FileStorageUnavailableException exception)
+            {
+                _logger.LogWarning(
+                    exception,
+                    "Upload storage unavailable. Mode {StorageMode}; correlation {CorrelationId}",
+                    _storageRuntimeInfo.Mode,
+                    GetCorrelationId());
+                return StorageUnavailable();
+            }
             catch (Exception exception)
             {
                 _logger.LogError(
                     exception,
                     "Upload storage failed. Mode {StorageMode}; correlation {CorrelationId}",
                     _storageRuntimeInfo.Mode,
-                    HttpContext.TraceIdentifier);
-                return StatusCode(
-                    StatusCodes.Status503ServiceUnavailable,
-                    new
-                    {
-                        message = "El almacenamiento de archivos no esta disponible. Intenta nuevamente.",
-                        code = "UPLOAD_STORAGE_UNAVAILABLE"
-                    });
+                    GetCorrelationId());
+                return StorageUnavailable();
             }
 
             return Ok(new
@@ -135,6 +139,30 @@ namespace OneItb.Controllers
         private static HashSet<string> Types(params string[] values)
         {
             return new HashSet<string>(values, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private ObjectResult StorageUnavailable()
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new
+                {
+                    message = "El almacenamiento de archivos no esta disponible. Reintenta manualmente en unos minutos.",
+                    code = "UPLOAD_STORAGE_UNAVAILABLE",
+                    correlationId = GetCorrelationId(),
+                    storageMode = _storageRuntimeInfo.Mode,
+                    retryable = true
+                });
+        }
+
+        private string GetCorrelationId()
+        {
+            return HttpContext.Items.TryGetValue(
+                    CorrelationIdMiddleware.HeaderName,
+                    out object? value) &&
+                !string.IsNullOrWhiteSpace(value?.ToString())
+                    ? value!.ToString()!
+                    : HttpContext.TraceIdentifier;
         }
     }
 }

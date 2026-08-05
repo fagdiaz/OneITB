@@ -208,5 +208,8 @@ core-web/
 BACKUP_*.patch
 *_codex_*
 
+# Superseded local branding drafts retained only for visual comparison
+/FrontEnd/OneItb-FE/src/assets/logo-oneitb-dark-mode-old.png
+
 # Local SQL Server backups created by the guarded demo rebaseline
 backups/

@@ -30,3 +30,13 @@ export const validateCareerSelectionForRole = (
   }
   return '';
 };
+
+export const hasCareerSelectionChanged = (
+  previousValues: number[],
+  nextValues: number[],
+): boolean => {
+  const previous = normalizedCareerIds(previousValues).sort((left, right) => left - right);
+  const next = normalizedCareerIds(nextValues).sort((left, right) => left - right);
+  return previous.length !== next.length
+    || previous.some((careerId, index) => careerId !== next[index]);
+};

@@ -26,6 +26,18 @@ export const apiBaseUrl = graphqlUrl.replace(/\/graphql\/?$/, '');
 
 export const getFileIdentity = (file) => `${file.name}:${file.size}:${file.lastModified}`;
 
+export class UploadRequestError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = 'UploadRequestError';
+    this.code = details.code || 'UPLOAD_FAILED';
+    this.correlationId = details.correlationId || null;
+    this.storageMode = details.storageMode || null;
+    this.retryable = Boolean(details.retryable);
+    this.status = details.status || null;
+  }
+}
+
 export const validateAttachmentFiles = (files) => {
   const normalized = Array.from(files ?? []);
   if (normalized.length > MAX_UPLOAD_FILES) {
@@ -68,10 +80,30 @@ export const uploadAttachmentDescriptor = async (file, token, options = {}) => {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.message || 'Error al subir el archivo.');
+    const correlationId = payload.correlationId
+      || response.headers?.get?.('x-correlation-id')
+      || null;
+    throw new UploadRequestError(
+      payload.message || 'No se pudo subir el archivo. Reintenta manualmente.',
+      {
+        code: payload.code,
+        correlationId,
+        storageMode: payload.storageMode,
+        retryable: payload.retryable,
+        status: response.status,
+      },
+    );
   }
   if (!payload.fileUrl) {
-    throw new Error('El servidor no devolvio la URL del archivo.');
+    throw new UploadRequestError(
+      'El servidor no confirmo la URL del archivo. El avatar anterior sigue intacto.',
+      {
+        code: 'UPLOAD_URL_MISSING',
+        correlationId: response.headers?.get?.('x-correlation-id') || null,
+        storageMode: payload.storageMode,
+        status: response.status,
+      },
+    );
   }
 
   return {

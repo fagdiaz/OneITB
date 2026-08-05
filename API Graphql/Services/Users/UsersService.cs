@@ -39,17 +39,20 @@ namespace Services.Users
         private readonly OneItbContext _context;
         private readonly IPasswordHasher _passwordHasher;
         private readonly PublicRegistrationPolicy _registrationPolicy;
+        private readonly IUserCareerAssignmentService _careerAssignments;
 
         public UsersService(
             IUnitOfWork uow,
             OneItbContext context,
             IPasswordHasher passwordHasher,
-            PublicRegistrationPolicy registrationPolicy)
+            PublicRegistrationPolicy registrationPolicy,
+            IUserCareerAssignmentService careerAssignments)
         {
             _uow = uow;
             _context = context;
             _passwordHasher = passwordHasher;
             _registrationPolicy = registrationPolicy;
+            _careerAssignments = careerAssignments;
         }
 
         public async Task<UserPayload> RegisterAsync(
@@ -147,7 +150,13 @@ namespace Services.Users
             user.Phone = NormalizeOptional(input.Phone, 50, "telefono");
             user.AvatarUrl = NormalizeAvatarUrl(input.AvatarUrl);
 
-            await ReplaceCareerLinksAsync(user, input.CareerIds, cancellationToken);
+            if (input.CareerIds is not null)
+            {
+                await _careerAssignments.ReplaceAsync(
+                    user,
+                    input.CareerIds,
+                    cancellationToken);
+            }
             ReplaceExperiences(user, input.CvExperiences);
             ReplaceEducations(user, input.CvEducations);
             ReplaceProjects(user, input.CvProjects);
@@ -328,36 +337,6 @@ namespace Services.Users
             }
 
             return activeCareerIds;
-        }
-
-        private async Task ReplaceCareerLinksAsync(
-            User user,
-            IReadOnlyList<int>? careerIds,
-            CancellationToken cancellationToken)
-        {
-            if (careerIds == null) return;
-
-            int[] normalizedIds = StudentCareerSelectionPolicy.NormalizeAndValidate(
-                user.Role,
-                careerIds);
-
-            List<int> activeCareerIds = await _context.Careers
-                .AsNoTracking()
-                .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
-                .Select(career => career.Id)
-                .ToListAsync(cancellationToken);
-
-            if (activeCareerIds.Count != normalizedIds.Length)
-            {
-                throw new InvalidOperationException("Una o mas carreras seleccionadas no existen.");
-            }
-
-            _context.UserCareers.RemoveRange(user.UserCareers);
-            _context.UserCareers.AddRange(activeCareerIds.Select(careerId => new UserCareer
-            {
-                UserId = user.Id,
-                CareerId = careerId
-            }));
         }
 
         private void ReplaceExperiences(User user, IReadOnlyList<CvExperienceInput>? inputs)

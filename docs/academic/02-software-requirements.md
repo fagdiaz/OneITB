@@ -4,7 +4,7 @@
 |---|---|
 | **Sistema** | OneITB23 |
 | **Versión documental** | 2.0 |
-| **Fecha de revisión** | 3 de agosto de 2026 |
+| **Fecha de revisión** | 5 de agosto de 2026 |
 | **Clasificación** | Especificación académica derivada |
 | **Fuente normativa** | [`scope-and-requirements.md`](../project_docs/scope-and-requirements.md) |
 | **Cobertura** | 48 RF, 12 BR y 12 RNF |
@@ -97,7 +97,7 @@ detallan en la [sección 2.9](#29-brechas-y-gates-de-conformidad).
 
 | ID | Requerimiento | Criterio de aceptación resumido |
 |---|---|---|
-| `RF-008` | Crear, buscar, filtrar, editar y desactivar publicaciones. | Autor autenticado, materia autorizada, hasta 10.000 caracteres, soft delete y feed paginado máximo 25. |
+| `RF-008` | Crear, buscar, filtrar, editar y desactivar publicaciones. | Autor autenticado, materia autorizada, hasta 10.000 caracteres, soft delete y feed paginado máximo 25, sin duplicados entre páginas y con estados de carga, reintento y fin. |
 | `RF-009` | Comentar y responder con un máximo de dos niveles. | Hasta 1.000 caracteres; una respuesta al nivel 2 se persiste bajo la raíz con destinatario/mención, nunca como tercer nivel. |
 | `RF-010` | Reaccionar, reportar, seguir, dejar de seguir, silenciar y bloquear. | Operaciones idempotentes, relaciones explícitas, sanciones respetadas y ausencia de auto-notificaciones. |
 | `RF-011` | Adjuntar archivos mediante carga REST desacoplada. | JWT, máximo 10 adjuntos y 15 MB agregados por contenido; conserva nombre, tipo, tamaño, orden y permite reemplazo al editar. |
@@ -160,7 +160,7 @@ detallan en la [sección 2.9](#29-brechas-y-gates-de-conformidad).
 | `BR-002` | Ningún flujo público crea Administrador, Moderador o Empleador; Empleador requiere aprobación Admin o seed controlado. |
 | `BR-003` | El backend normaliza email a minúsculas y nombres/apellidos a Title Case. |
 | `BR-004` | La visibilidad social/académica se determina por intersección de carreras, salvo alcance global explícito. |
-| `BR-005` | Un perfil privado conserva identidad básica visible y enmascara información sensible server-side; el Follow unilateral actual constituye una brecha pendiente. |
+| `BR-005` | Un perfil privado conserva identidad básica visible y enmascara información sensible server-side; Follow unilateral no amplía permisos ni revela CV, contacto, carreras o métricas. |
 | `BR-006` | Publicaciones y comentarios no se borran físicamente; autor desactiva y Moderador/Admin oculta/restaura. |
 | `BR-007` | Un `SocialAttachment` pertenece a una Inquiry XOR a un Comment, jamás a ambos ni a ninguno. |
 | `BR-008` | Las relaciones EF Core usan FK explícita y `DeleteBehavior.Restrict`, salvo excepción documentada y probada. |
@@ -178,7 +178,7 @@ detallan en la [sección 2.9](#29-brechas-y-gates-de-conformidad).
 | `RNF-003` | Rendimiento | Sin I/O síncrono en rutas async; `AsNoTracking`, proyecciones/DataLoaders, `AsSplitQuery`, paginación y límites GraphQL. |
 | `RNF-004` | Escalabilidad | API stateless respecto de JWT, Redis condicional, storage intercambiable y servicios separables por contenedor. |
 | `RNF-005` | Usabilidad | UI responsive Clean Tech/Tech Noir con loading, error, empty, skeletons, feedback inmediato, foco y teclado. |
-| `RNF-006` | Accesibilidad | Contraste, labels, foco visible, reduced-motion, alternativas textuales e impresión independiente del tema; auditoría WCAG formal pendiente. |
+| `RNF-006` | Accesibilidad | Contraste, labels, foco visible, transición temática de 1300 ms anulada por reduced-motion e impresión, alternativas textuales y plantillas impresas independientes del tema; auditoría WCAG formal pendiente. |
 | `RNF-007` | Trazabilidad | Correlation ID, logs estructurados, Audit Trail, ModerationAudit, specs y evidencia sin PII innecesaria. |
 | `RNF-008` | Operabilidad | Healthcheck, rate limiting, security headers, Docker, configuración por entorno, scripts finitos, fail-closed y backup/restore. |
 | `RNF-009` | Reproducibilidad | Base demo identificada, backup verificado, migraciones canónicas, doble seed idempotente, seis roles e integridad relacional. |
@@ -196,8 +196,8 @@ externo, SLA productivo ni prueba formal de carga.
 | SQL Server | EF Core 8, migraciones, SQL Auth y Docker | Verificado localmente |
 | Redis | Pub/Sub HotChocolate y limiters distribuidos | Verificado local; proveedor administrado pendiente |
 | SMTP | `IEmailSender`, SMTP Production y pickup Development | Mailpit/pickup verificado; proveedor público pendiente |
-| Cloudinary | `IFileStorageService` con fallback local | Adaptador implementado; cuenta real pendiente |
-| Microsoft Entra | Dos App Registrations, scope API y PKCE | Código implementado; consentimiento/cuenta real pendientes |
+| Cloudinary | `IFileStorageService`, provider explícito y timeout acotado | Adaptador fail-closed implementado; cuenta real pendiente |
+| Microsoft Entra | Dos App Registrations, scope API y PKCE | Acceso institucional real verificado hasta onboarding/muro; restan cancelación/error, logout y segunda cuenta |
 | SIU Guaraní | `ISiuIntegrationService` | Solo implementación mock; integración real fuera de alcance |
 | YouTube/PDF.js | Embeds acotados y worker PDF local | Implementado; condicionado por navegador y tercero |
 
@@ -235,7 +235,7 @@ externo, SLA productivo ni prueba formal de carga.
 | `GAP-FILE-01` | Alta | `/uploads` entrega archivos estáticos sin autorización por recurso. | Utilizar endpoint autorizado, storage privado o URL firmada según ownership/scoping. |
 | `GAP-INFRA-01` | Aceptación externa | Compose exige una cadena externa segura; falta verificar certificado y `TrustServerCertificate=False` contra el destino productivo real. | Ejecutar smoke TLS con secretos del entorno y conservar evidencia sanitizada. |
 | `GAP-OPS-01` | Media | No existe observabilidad central aceptada. | Definir logs, métricas, trazas, alertas, retención y respuesta a incidentes. |
-| `GAP-EXT-01` | Externo | Microsoft Entra requiere registros, scope, consentimiento y cuenta organizacional. | Ejecutar aceptación real con configuración institucional. |
+| `GAP-EXT-01` | Externo parcial | Microsoft Entra completó login real, callback, onboarding y acceso al muro con cuenta institucional. | Ejecutar cancelación/error, logout y aislamiento con una segunda cuenta organizacional. |
 | `GAP-EXT-02` | Externo | SMTP, Redis administrado y Cloudinary requieren proveedor y secretos. | Configurar y ejecutar smoke en ambiente destino. |
 | `GAP-QA-01` | Cierre | Falta regresión final de seis roles, realtime y B2B sobre un único SHA. | Ejecutar checklist, registrar evidencia y congelar el candidato. |
 

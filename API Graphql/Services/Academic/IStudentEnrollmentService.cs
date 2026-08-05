@@ -15,6 +15,14 @@ public interface IStudentEnrollmentService
         CancellationToken cancellationToken = default);
 }
 
+public interface IUserCareerAssignmentService
+{
+    Task<IReadOnlyList<Career>> ReplaceAsync(
+        User user,
+        IReadOnlyCollection<int> careerIds,
+        CancellationToken cancellationToken = default);
+}
+
 public interface IInstitutionalEnrollmentProvider
 {
     Task<InstitutionalEnrollmentResult> GetEnrollmentAsync(

@@ -20,7 +20,7 @@ public sealed class StudentEnrollmentServiceTests
         });
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        var service = new StudentEnrollmentService(context);
+        var service = CreateService(context);
 
         Career result = await service.ConfirmStudentCareerAsync(
             ServiceTestData.StudentUserId,
@@ -39,7 +39,7 @@ public sealed class StudentEnrollmentServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new StudentEnrollmentService(context);
+        var service = CreateService(context);
 
         await service.ConfirmStudentCareerAsync(
             ServiceTestData.StudentUserId,
@@ -64,7 +64,7 @@ public sealed class StudentEnrollmentServiceTests
         inactiveCareer.IsActive = false;
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        var service = new StudentEnrollmentService(context);
+        var service = CreateService(context);
 
         StudentEnrollmentException exception = await Assert.ThrowsAsync<StudentEnrollmentException>(() =>
             service.ConfirmStudentCareerAsync(
@@ -85,7 +85,7 @@ public sealed class StudentEnrollmentServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new StudentEnrollmentService(context);
+        var service = CreateService(context);
 
         StudentEnrollmentException exception = await Assert.ThrowsAsync<StudentEnrollmentException>(() =>
             service.ConfirmStudentCareerAsync(
@@ -100,7 +100,7 @@ public sealed class StudentEnrollmentServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new StudentEnrollmentService(context);
+        var service = CreateService(context);
 
         StudentEnrollmentException exception = await Assert.ThrowsAsync<StudentEnrollmentException>(() =>
             service.ReplaceSelfServiceCareersAsync(
@@ -121,7 +121,7 @@ public sealed class StudentEnrollmentServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
-        var service = new StudentEnrollmentService(context);
+        var service = CreateService(context);
 
         IReadOnlyList<Career> careers = await service.ReplaceSelfServiceCareersAsync(
             ServiceTestData.TeacherUserId,
@@ -135,5 +135,33 @@ public sealed class StudentEnrollmentServiceTests
                 .OrderBy(link => link.CareerId)
                 .Select(link => link.CareerId)
                 .ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task ReplaceSelfServiceCareersAsync_RejectsEmptyCareerForStudent()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+        var service = CreateService(context);
+
+        StudentEnrollmentException exception = await Assert.ThrowsAsync<StudentEnrollmentException>(() =>
+            service.ReplaceSelfServiceCareersAsync(
+                ServiceTestData.StudentUserId,
+                Array.Empty<int>()));
+
+        Assert.Equal("ACADEMIC_STUDENT_SINGLE_CAREER_REQUIRED", exception.Code);
+        Assert.Equal(
+            new[] { ServiceTestData.CareerId },
+            await context.UserCareers
+                .Where(link => link.UserId == ServiceTestData.StudentUserId)
+                .Select(link => link.CareerId)
+                .ToArrayAsync());
+    }
+
+    private static StudentEnrollmentService CreateService(OneItb.Data.OneItbContext context)
+    {
+        return new StudentEnrollmentService(
+            context,
+            new UserCareerAssignmentService(context));
     }
 }

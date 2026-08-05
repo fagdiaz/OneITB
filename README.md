@@ -9,17 +9,18 @@ Superior en Análisis de Sistemas del Instituto Tecnológico Beltrán.
 
 ## Estado del proyecto
 
-| Indicador | Estado documentado al 03/08/2026 |
+| Indicador | Estado documentado al 05/08/2026 |
 |---|---|
-| Alcance contabilizado | **100 % (117/117)**: 45 ítems verificados `[V]` y 72 implementados `[I]` |
-| Backend automatizado | **198/198** pruebas aprobadas en el worktree de Spec 201 |
-| Frontend automatizado | **144/144** pruebas aprobadas en el mismo worktree |
+| Alcance contabilizado | **100 % (117/117)**: 46 ítems verificados `[V]` y 71 implementados `[I]` |
+| Backend automatizado | **234/234** pruebas aprobadas en el worktree de Spec 216 |
+| Frontend automatizado | **251/251** pruebas aprobadas en el worktree de Spec 217 |
 | Entrega | **Release Candidate académico**, core Feature Complete y Code Freeze operativo local |
 | Base de datos | 34 migraciones; base demo canónica con doble seed idempotente y seis roles |
 
-La Spec 201 ejecutó ambas suites sobre el mismo worktree, pero ese resultado todavía no
-identifica un SHA candidato inmutable. Antes de congelar el corte de la defensa deben
-repetirse los gates sobre ese SHA y completar la regresión manual definida en el
+El baseline backend 234/234 procede de la Spec 216 y el frontend 251/251 de la Spec 217;
+todavía no constituyen una ejecución conjunta sobre un SHA candidato. Antes de cerrar el
+corte de la defensa deben repetirse ambos
+gates sobre ese SHA definitivo y completar la regresión manual definida en el
 [Roadmap](docs/project_docs/ROADMAP.md) y el
 [Runbook](docs/audit/RUNBOOK_DEV.md).
 
@@ -31,7 +32,7 @@ externos.
 
 - Autenticación local con JWT, BCrypt, lockout y autorización por rol.
 - Microsoft Entra ID organizacional mediante redirect, Authorization Code + PKCE y
-  canje por una sesión local; la aceptación contra el tenant real continúa pendiente.
+  canje por una sesión local; una cuenta institucional real alcanzó onboarding y muro.
 - Perfiles académicos y CV relacional con privacidad, avatar, carreras e impresión.
 - Feed contextual por carrera con publicaciones multimedia, comentarios, menciones,
   reacciones, seguimiento, reportes y moderación reversible.
@@ -185,12 +186,12 @@ imprenta.
 La demostración local controlada no queda bloqueada por estos puntos, pero no deben
 ocultarse al evaluar un piloto o producción:
 
-- Registro público y alcance Profesor-Materia pendientes de endurecimiento.
-- Seguimiento unilateral incompatible con una política estricta de perfil privado.
 - Archivos locales servidos sin autorización por objeto.
 - Certificado SQL productivo y observabilidad central todavía no aceptados.
-- Microsoft Entra, SMTP, Redis y Cloudinary reales pendientes de credenciales y smoke
-  tests en el ambiente de destino.
+- Microsoft Entra conserva pruebas de cancelación/error, logout y segunda cuenta;
+  SMTP, Redis y Cloudinary reales requieren smoke tests en el ambiente de destino.
+- El almacenamiento es explícito por ambiente: `Local` solo en Development y
+  `Cloudinary` fail-closed en Production; no existe fallback silencioso.
 - Integración SIU implementada mediante un adaptador simulado, no oficial.
 
 El detalle, severidad y tratamiento esperado se mantienen en el Roadmap y en el reporte

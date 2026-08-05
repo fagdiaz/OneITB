@@ -70,7 +70,7 @@ html.theme-transitioning body,
 html.theme-transitioning body::before,
 html.theme-transitioning #root,
 html.theme-transitioning #root * {
-  transition-duration: 800ms !important;
+  transition-duration: 1300ms !important;
   transition-property: background-color, border-color, color, box-shadow, filter, opacity !important;
   transition-timing-function: ease-in-out !important;
 }
@@ -87,6 +87,14 @@ html.theme-transitioning #root * {
 
 /* ATS-friendly, content-driven print flow. */
 @media print {
+  html.theme-transitioning,
+  html.theme-transitioning body,
+  html.theme-transitioning body::before,
+  html.theme-transitioning #root,
+  html.theme-transitioning #root * {
+    transition-duration: 0ms !important;
+  }
+
   @page {
     size: A4 portrait;
     margin: 12mm 14mm;

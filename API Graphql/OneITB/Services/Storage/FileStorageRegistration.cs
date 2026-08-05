@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace OneItb.GraphQL.Services.Storage
 {
@@ -13,31 +14,63 @@ namespace OneItb.GraphQL.Services.Storage
     {
         public static FileStorageRuntimeInfo AddOneItbFileStorage(
             this IServiceCollection services,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IHostEnvironment environment)
         {
+            ArgumentNullException.ThrowIfNull(environment);
+
+            FileStorageOptions options = configuration
+                .GetSection(FileStorageOptions.SectionName)
+                .Get<FileStorageOptions>() ?? new FileStorageOptions();
+            string provider = options.Provider?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(provider))
+            {
+                throw new InvalidOperationException(
+                    "FileStorage:Provider debe configurarse explicitamente como Local o Cloudinary.");
+            }
+
             services.Configure<CloudinarySettings>(
                 configuration.GetSection("CloudinarySettings"));
+            services.Configure<FileStorageOptions>(
+                configuration.GetSection(FileStorageOptions.SectionName));
 
-            string? cloudinaryUrl = configuration["CloudinarySettings:Url"];
             FileStorageRuntimeInfo runtimeInfo;
-            if (string.IsNullOrWhiteSpace(cloudinaryUrl))
+            if (string.Equals(provider, FileStorageRuntimeInfo.LocalMode, StringComparison.OrdinalIgnoreCase))
             {
+                if (!environment.IsDevelopment())
+                {
+                    throw new InvalidOperationException(
+                        "FileStorage:Provider=Local solo esta permitido en Development.");
+                }
+
                 runtimeInfo = new FileStorageRuntimeInfo(FileStorageRuntimeInfo.LocalMode);
                 services.AddScoped<IFileStorageService, LocalFileStorageService>();
             }
-            else
+            else if (string.Equals(provider, FileStorageRuntimeInfo.CloudinaryMode, StringComparison.OrdinalIgnoreCase))
             {
+                ValidateTimeout(options.CloudinaryTimeoutSeconds);
+                string? cloudinaryUrl = configuration["CloudinarySettings:Url"];
                 ValidateCloudinaryUrl(cloudinaryUrl);
                 runtimeInfo = new FileStorageRuntimeInfo(
                     FileStorageRuntimeInfo.CloudinaryMode);
-                services.AddHttpClient<IFileStorageService, CloudinaryStorageService>();
+                services.AddHttpClient<IFileStorageService, CloudinaryStorageService>(client =>
+                {
+                    // The adapter owns its linked timeout so caller cancellation remains distinguishable.
+                    client.Timeout = Timeout.InfiniteTimeSpan;
+                });
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "FileStorage:Provider solo admite Local o Cloudinary.");
             }
 
             services.AddSingleton(runtimeInfo);
             return runtimeInfo;
         }
 
-        private static void ValidateCloudinaryUrl(string value)
+        private static void ValidateCloudinaryUrl(string? value)
         {
             if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? parsed) ||
                 !string.Equals(parsed.Scheme, "cloudinary", StringComparison.OrdinalIgnoreCase) ||
@@ -52,6 +85,18 @@ namespace OneItb.GraphQL.Services.Storage
                 string.IsNullOrWhiteSpace(Uri.UnescapeDataString(credentials[1])))
             {
                 throw InvalidCloudinaryConfiguration();
+            }
+        }
+
+        private static void ValidateTimeout(int timeoutSeconds)
+        {
+            if (timeoutSeconds < FileStorageOptions.MinimumCloudinaryTimeoutSeconds ||
+                timeoutSeconds > FileStorageOptions.MaximumCloudinaryTimeoutSeconds)
+            {
+                throw new InvalidOperationException(
+                    $"FileStorage:CloudinaryTimeoutSeconds debe estar entre " +
+                    $"{FileStorageOptions.MinimumCloudinaryTimeoutSeconds} y " +
+                    $"{FileStorageOptions.MaximumCloudinaryTimeoutSeconds}.");
             }
         }
 

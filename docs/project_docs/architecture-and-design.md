@@ -86,6 +86,8 @@ flowchart LR
 - **Empresa solicitante:** actor anónimo que presenta una solicitud sin obtener privilegios.
 - **Entra ID:** proveedor institucional cuyo token se canjea por el JWT local.
 - **SMTP, Redis y Cloudinary:** dependencias configurables con aceptación real pendiente.
+  Microsoft Entra ya fue aceptado con una cuenta institucional hasta onboarding/muro;
+  conserva gates de cancelación/error, logout y aislamiento con segunda cuenta.
 - **SIU:** integración desacoplada; la implementación actual es simulada.
 
 ---
@@ -232,7 +234,13 @@ antes de exposición pública deben calibrarse con telemetría y pruebas de carg
 5. El frontend trata esa URL como candidata. GraphQL la asocia al perfil o entidad y un
    refetch acotado confirma la persistencia antes de reemplazar el valor canónico.
 6. Fallos del proveedor se registran con modo y correlación, nunca con secretos o cuerpos
-   externos, y se mapean a HTTP 503 con `UPLOAD_STORAGE_UNAVAILABLE`.
+   externos, y se mapean a HTTP 503 con `UPLOAD_STORAGE_UNAVAILABLE`, modo,
+   `correlationId` y capacidad de reintento manual.
+
+La estrategia se selecciona exclusivamente mediante `FileStorage:Provider`. Development
+declara `Local`; Production declara `Cloudinary`, exige URL válida y timeout acotado y
+falla al iniciar si la configuración es incompleta. No se infiere el provider por presencia
+de secretos ni se degrada silenciosamente de cloud a disco.
 
 `CvEditorProfile` no inicializa campos desde el resumen de autenticación. Espera un `me`
 completo cuyo identificador coincida con la sesión, muestra un skeleton integral y aplica
@@ -428,7 +436,11 @@ sequenceDiagram
     DB-->>FE: publicación persistida
 ```
 
-`inquiriesPage` usa cursor opaco, orden estable, máximo 25 y scoping por carrera. El media
+`inquiriesPage` usa cursor opaco, orden estable, máximo 25 y scoping por carrera. React
+centraliza su consumo en `useInquiryPage`: normaliza filtros, bloquea solicitudes
+concurrentes, deduplica por ID, ignora resultados obsoletos tras un cambio de alcance y
+conserva la página visible ante un error recuperable. Los `keyArgs` separan búsqueda,
+carrera, materia, publicación y autor. El media
 grid limita altura, adapta portada/orientación, admite documentos, imágenes y hasta dos
 YouTube. PDF.js se carga diferido y rasteriza la primera página con cleanup.
 
@@ -461,18 +473,28 @@ Redis distribuye Pub/Sub; memoria sirve únicamente para una instancia local.
 La identidad académica manual de un `Estudiante` exige exactamente una carrera activa.
 `IStudentEnrollmentService` obtiene el actor desde el JWT, valida rol y estado de la
 carrera y reemplaza los vínculos dentro de una transacción serializable en SQL Server.
+`IUserCareerAssignmentService` es el único componente que valida el catálogo activo y
+prepara reemplazos posteriores al alta inicial; onboarding y edición de perfil lo usan
+sin perder la atomicidad de sus respectivos casos de uso. El registro crea el primer
+vínculo dentro del mismo agregado `User` y aplica la misma política de selección.
 El frontend utiliza `confirmStudentCareer(careerId)` y no habilita el área privada hasta
 que un refetch de `me` devuelve la misma identidad con ese único vínculo. El resolver
-legacy de listas y `updateProfile` aplican la misma política para impedir bypasses; los
-roles institucionales que pueden representar varias carreras conservan la relación N:M.
+legacy de listas y `updateProfile` aplican la misma política para impedir bypasses. Tras
+una confirmación, Apollo elimina las variantes dependientes de identidad (`myCareers`,
+feed, materias, recursos y progreso) y conserva solamente el `me` confirmado por el
+servidor; los roles institucionales que pueden representar varias carreras mantienen la
+relación N:M.
 
 `IInstitutionalEnrollmentProvider` es el puerto futuro para consultar matrícula y
 materias en una fuente autorizada del ITB o SIU. Su contrato normaliza códigos conocidos
-y distingue `Confirmed`, `ManualConfirmationRequired` y `Unavailable`. En el corte
-actual se registra `ManualInstitutionalEnrollmentProvider`: no realiza HTTP ni fabrica
-inscripciones. Esta frontera es deliberadamente distinta de `ISiuIntegrationService`,
-que sólo demuestra sincronización mock de calificaciones. Un adaptador real requerirá
-contrato, autenticación, mapeo, aceptación institucional y pruebas con el proveedor.
+y distingue `Confirmed`, `SelfDeclarationRequired` y `Unavailable`, junto con fuente y
+timestamp UTC. En el corte actual se registra
+`SelfDeclaredInstitutionalEnrollmentProvider`: no realiza HTTP, no devuelve carrera ni
+materias inventadas y nunca se considera autoritativo. Esta frontera es deliberadamente
+distinta de `ISiuIntegrationService`, que sólo demuestra sincronización mock de
+calificaciones. Un adaptador institucional real deberá devolver una única carrera,
+materias vigentes y fuente `Institutional`, y requiere contrato, autenticación, mapeo,
+aceptación del Instituto y pruebas con el proveedor.
 
 ### 8.5 Bolsa de Trabajo
 
@@ -533,12 +555,15 @@ aprobado/activo. Open Graph completo queda condicionado a SSR o HTML de servidor
 5. `NotificationProvider` escucha solo con sesión válida.
 6. Estudiante con cero o más de una carrera queda bloqueado en onboarding hasta
    confirmar exactamente una y validarla mediante refetch de `me`.
+7. La Landing pública consume un catálogo local inmutable de enlaces institucionales;
+   los renderiza como destinos externos seguros y no los presenta como integraciones API.
 
 ### 9.2 Apollo y sesión
 
 - `HttpLink` atiende Query/Mutation y `GraphQLWsLink` Subscription mediante `split`.
 - Bearer token por HTTP y connection params por WS.
-- Type policies controlan identidad y merges paginados.
+- Type policies controlan identidad y separan páginas por filtros; el hook canónico
+  controla el merge incremental, la concurrencia y el estado terminal.
 - Logout/expiración limpia cache, storage y WS e invalida respuestas por epoch.
 - Callback Entra canjea una vez por flow ID aun con Strict Mode.
 - Redirects y deep-links se sanitizan a rutas internas.
@@ -560,9 +585,18 @@ aprobado/activo. Open Graph completo queda condicionado a SSR o HTML de servidor
   restante; no existe un breakpoint rígido que oculte todo el menú.
 - El overflow cierra por Escape, clic exterior, navegación, cambio de ruta o sesión y
   restaura foco cuando corresponde. Los listeners, observer y frames tienen cleanup.
-- `BrandLockup` combina el isotipo transparente, que representa la `O`, con el wordmark
-  DOM exacto `neITB` en una unidad no separable. La legibilidad dark usa color del tema,
-  no bloom raster.
+- `BrandLogo` mantiene el Header invariable con `only-logo.png` en claro y oscuro. Las
+  superficies completas consumen un único `BrandLockup`, que selecciona
+  `logo-oneitb.png` para el tema claro y `logo-oneitb-dark-mode.png` para el oscuro según
+  `effectiveTheme`; no reconstruye el wordmark en DOM ni aplica filtros o bloom.
+- `BrandLockup` expone un solo nombre accesible y recorta de forma centrada el lienzo
+  cuadrado de los PNG dentro de un viewport proporcional, sin estirar el asset.
+- La transición global claro/oscuro conserva un único contrato de 1300 ms en CSS y
+  `ThemeContext`; reduced motion e impresión fuerzan 0 ms y el temporizador se limpia al
+  desmontar. El Home usa tracks `minmax(0, ...)` para impedir recortes en 320 px.
+- La narrativa pública identifica OneITB como proyecto complementario del ISFT N.º 197.
+  Portal Beltrán, SIU Guaraní y Microsoft 365 abren con aviso, nueva pestaña y
+  `noopener noreferrer`; ninguna de esas salidas implica integración productiva.
 
 ### 9.5 Recursos visuales locales
 
@@ -599,7 +633,7 @@ aprobado/activo. Open Graph completo queda condicionado a SSR o HTML de servidor
 |---|---|---|---|
 | SQL | SQL Server Docker + SQL Auth | SQL administrado con TLS validado | Secretos fuera de Git |
 | Pub/Sub | In-memory o Redis local | Redis administrado | Memoria no escala horizontalmente |
-| Storage | `wwwroot/uploads` | Cloudinary | Disco local no es distribuido |
+| Storage | `FileStorage:Provider=Local` y `wwwroot/uploads` | `FileStorage:Provider=Cloudinary` | Selección explícita; disco local no se admite en Production |
 | Email | Pickup `.eml` o Mailpit | SMTP real | Producción no degrada a pickup |
 | SIU | Mock | Adaptador real futuro | No afirmar integración real |
 | Entra | Deshabilitado sin config | Dos App Registrations | Config parcial habilitada falla al iniciar |
@@ -619,7 +653,7 @@ flowchart TB
     API --> SQL["SQL Server 2022"]
     API --> Redis["Redis"]
     API --> SMTP["SMTP"]
-    API --> Cloud["Cloudinary opcional"]
+    API --> Cloud["Cloudinary seleccionado en Production"]
     API --> Entra["Microsoft Entra ID"]
 ```
 
@@ -710,7 +744,8 @@ producción pública hasta que exista evidencia del ambiente de destino.
 
 ### 15.3 Gates externos
 
-- Microsoft Entra con App Registrations, consentimiento y cuenta Microsoft 365.
+- Microsoft Entra: cancelación/error, logout y aislamiento con una segunda cuenta
+  Microsoft 365; login, callback y onboarding/muro ya poseen aceptación institucional real.
 - SMTP, Redis administrado y Cloudinary con proveedores reales.
 - Benchmark BCrypt y realtime con dos sesiones sobre el SHA candidato.
 - Antivirus/CDR antes de exposición amplia.

@@ -2,34 +2,51 @@ namespace Services.Academic;
 
 public enum InstitutionalEnrollmentStatus
 {
-    ManualConfirmationRequired,
+    SelfDeclarationRequired,
     Unavailable,
     Confirmed
 }
 
-public sealed record InstitutionalIdentity(Guid UserId, string InstitutionalEmail);
+public enum InstitutionalEnrollmentSource
+{
+    SelfDeclared,
+    Institutional
+}
+
+public sealed record InstitutionalIdentity(
+    Guid UserId,
+    string InstitutionalEmail,
+    string? TenantId = null,
+    string? ExternalSubject = null);
 
 public sealed record InstitutionalEnrollmentResult(
     InstitutionalEnrollmentStatus Status,
-    IReadOnlyList<string> CareerCodes,
+    string? CareerCode,
     IReadOnlyList<string> SubjectCodes,
+    InstitutionalEnrollmentSource Source,
+    DateTimeOffset ObservedAtUtc,
     string Message)
 {
-    public bool IsAuthoritative => Status == InstitutionalEnrollmentStatus.Confirmed;
+    public bool IsAuthoritative =>
+        Status == InstitutionalEnrollmentStatus.Confirmed
+        && Source == InstitutionalEnrollmentSource.Institutional
+        && !string.IsNullOrWhiteSpace(CareerCode);
 }
 
 public sealed class InstitutionalEnrollmentOptions
 {
-    public const string ManualMode = "Manual";
+    public const string SelfDeclaredMode = "SelfDeclared";
+    public const string LegacyManualMode = "Manual";
     public const string UnavailableMode = "Unavailable";
 
     public string Mode { get; }
 
     public InstitutionalEnrollmentOptions(string? mode)
     {
-        Mode = string.Equals(mode?.Trim(), UnavailableMode, StringComparison.OrdinalIgnoreCase)
+        string normalizedMode = mode?.Trim() ?? string.Empty;
+        Mode = string.Equals(normalizedMode, UnavailableMode, StringComparison.OrdinalIgnoreCase)
             ? UnavailableMode
-            : ManualMode;
+            : SelfDeclaredMode;
     }
 }
 

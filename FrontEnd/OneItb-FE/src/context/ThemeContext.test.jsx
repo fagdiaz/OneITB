@@ -44,16 +44,26 @@ describe('ThemeProvider transitions', () => {
     document.documentElement.className = '';
   });
 
-  it('keeps the transition marker for 800 ms and then removes it', () => {
+  it('keeps the transition marker for 1300 ms and then removes it', () => {
     render(<ThemeProvider><ThemeControl /></ThemeProvider>);
 
     fireEvent.click(screen.getByRole('button', { name: 'light' }));
     expect(document.documentElement).toHaveClass('theme-transitioning');
     expect(screen.getByRole('button', { name: 'dark' })).toBeInTheDocument();
 
-    act(() => vi.advanceTimersByTime(799));
+    act(() => vi.advanceTimersByTime(1299));
     expect(document.documentElement).toHaveClass('theme-transitioning');
     act(() => vi.advanceTimersByTime(1));
+    expect(document.documentElement).not.toHaveClass('theme-transitioning');
+  });
+
+  it('does not animate theme changes when reduced motion is requested', () => {
+    window.matchMedia = vi.fn(() => ({ matches: true }));
+    render(<ThemeProvider><ThemeControl /></ThemeProvider>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'light' }));
+
+    expect(screen.getByRole('button', { name: 'dark' })).toBeInTheDocument();
     expect(document.documentElement).not.toHaveClass('theme-transitioning');
   });
 

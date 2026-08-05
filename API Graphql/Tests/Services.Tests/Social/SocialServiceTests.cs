@@ -188,6 +188,47 @@ public sealed class SocialServiceTests
         Assert.Empty(second.Items.Select(item => item.Id).Intersect(final.Items.Select(item => item.Id)));
     }
 
+    [Theory]
+    [InlineData(0, 0, false)]
+    [InlineData(1, 1, false)]
+    [InlineData(15, 15, false)]
+    [InlineData(16, 15, true)]
+    public async Task GetInquiriesPageAsync_ReportsExactBoundaryState(
+        int matchingCount,
+        int expectedItems,
+        bool expectedHasNextPage)
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+        DateTime publishDate = DateTime.UtcNow.AddMinutes(-5);
+        IEnumerable<Inquiry> inquiries = Enumerable.Range(0, matchingCount).Select(index =>
+        {
+            Inquiry inquiry = CreateInquiry(
+                Guid.Parse($"40000000-0000-0000-0000-{index:D12}"),
+                ServiceTestData.AdminUserId,
+                publishDate.AddSeconds(-index));
+            inquiry.Title = $"Boundary marker {index}";
+            return inquiry;
+        });
+        context.Inquiries.AddRange(inquiries);
+        await context.SaveChangesAsync();
+        SocialService service = CreateService(context);
+
+        InquiryPage page = await service.GetInquiriesPageAsync(
+            ServiceTestData.StudentUserId,
+            "Boundary marker",
+            null,
+            null,
+            null,
+            15,
+            null);
+
+        Assert.Equal(matchingCount, page.TotalCount);
+        Assert.Equal(expectedItems, page.Items.Count);
+        Assert.Equal(expectedHasNextPage, page.HasNextPage);
+        Assert.Equal(expectedHasNextPage, !string.IsNullOrEmpty(page.NextCursor));
+    }
+
     [Fact]
     public async Task GetInquiriesPageAsync_ClampsOversizedPageToTwentyFive()
     {

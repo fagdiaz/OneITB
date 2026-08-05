@@ -7,7 +7,7 @@
 | **Institución de referencia** | Instituto Tecnológico Beltrán |
 | **Espacio curricular** | Práctica Profesionalizante III |
 | **Tipo de solución** | Red social académica y Bolsa de Trabajo institucional |
-| **Estado documental** | Resumen académico derivado, revisado el 3 de agosto de 2026 |
+| **Estado documental** | Resumen académico derivado, revisado el 5 de agosto de 2026 |
 | **Estado técnico de referencia** | Release Candidate académico; core Feature Complete y Code Freeze operativo local |
 
 Este documento ofrece una introducción ejecutiva al proyecto. No reemplaza el contrato
@@ -147,7 +147,7 @@ del seed controlado o de la aprobación administrativa de una solicitud empresar
 | **API de negocio** | ASP.NET Core sobre .NET 8 y HotChocolate GraphQL 14 |
 | **Persistencia** | Entity Framework Core 8 y SQL Server 2022; migraciones versionadas y relaciones con `DeleteBehavior.Restrict` |
 | **Tiempo real** | GraphQL Subscriptions por WebSocket; memoria en desarrollo y Redis opcional para distribución |
-| **Archivos** | `POST /api/upload` desacoplado; disco local por defecto y adaptador Cloudinary opcional |
+| **Archivos** | `POST /api/upload` desacoplado; provider `Local` explícito en Development y Cloudinary fail-closed en Production |
 | **Correo** | Adaptador SMTP; pickup `.eml`/Mailpit para aceptación local sin secretos versionados |
 | **Despliegue** | Docker multi-stage, Docker Compose, Nginx y configuración por variables de entorno |
 | **Observabilidad** | Logs estructurados y auditoría persistente; centralización productiva aún pendiente |
@@ -181,8 +181,8 @@ El Roadmap registra **117 de 117 ítems contabilizados**, distribuidos de esta f
 
 | Estado | Cantidad | Interpretación |
 |---|---:|---|
-| Verificado `[V]` | 45 | Cuenta con evidencia runtime, de base o infraestructura proporcional al alcance |
-| Implementado `[I]` | 72 | Cuenta con código, tests, builds, migración o prueba aislada; puede requerir aceptación manual o externa |
+| Verificado `[V]` | 46 | Cuenta con evidencia runtime, de base o infraestructura proporcional al alcance |
+| Implementado `[I]` | 71 | Cuenta con código, tests, builds, migración o prueba aislada; puede requerir aceptación manual o externa |
 | **Total** | **117** | **100 % del alcance contabilizado** |
 
 Por lo tanto, “100 %” significa **alcance funcional contabilizado implementado o
@@ -193,9 +193,9 @@ La formulación recomendada para la defensa es:
 > aceptación productiva de proveedores externos, observabilidad y controles operativos
 > permanece como evolución posterior.
 
-La Spec 201 ejecutó sobre el mismo worktree 198 pruebas backend y 144 pruebas frontend,
-además de builds limpios y control de drift EF. Esta evidencia integrada todavía debe
-repetirse sobre el SHA candidato inmutable antes de congelarlo para la presentación.
+Los baselines más recientes alcanzaron 234/234 pruebas backend en Spec 216 y 251/251
+frontend en Spec 217. El gate conjunto debe repetirse sobre el SHA candidato definitivo
+antes de congelarlo para la presentación.
 
 ## 1.9 Límites, brechas y evolución
 
@@ -221,7 +221,8 @@ repetirse sobre el SHA candidato inmutable antes de congelarlo para la presentac
 
 ### Dependencias externas pendientes
 
-- Microsoft Entra con App Registrations, consentimiento y cuenta institucional real.
+- Microsoft Entra completó el acceso real hasta onboarding/muro; restan cancelación,
+  error, logout y aislamiento con una segunda cuenta institucional.
 - SMTP, Redis administrado y Cloudinary en proveedores productivos.
 - Antivirus/CDR para adjuntos y benchmark BCrypt en hardware objetivo.
 

@@ -256,16 +256,27 @@ No usar `docker compose down -v`: elimina el volumen de datos.
 1. Revisar el log de inicio del backend. Debe informar un único modo seleccionado
    (`Local` o `Cloudinary`) sin imprimir URL de proveedor, clave, secreto ni connection
    string.
-2. En Development sin `CloudinarySettings:Url`, comprobar que el modo sea `Local`. Una
-   configuración Cloudinary incompleta debe impedir el inicio con un mensaje sanitizado;
-   nunca debe caer silenciosamente a disco después de intentar seleccionar cloud.
+2. Confirmar que Development carga `FileStorage:Provider=Local` desde
+   `appsettings.Development.json`. El modo ya no se infiere por ausencia de URL. Para un
+   smoke cloud local, usar secretos no versionados:
+
+   ```powershell
+   dotnet user-secrets set "FileStorage:Provider" "Cloudinary" --project "API Graphql/OneITB/GraphQL.csproj"
+   dotnet user-secrets set "CloudinarySettings:Url" "cloudinary://API_KEY:API_SECRET@CLOUD_NAME" --project "API Graphql/OneITB/GraphQL.csproj"
+   ```
+
+   No registrar ni copiar el valor real en evidencia. Un provider ausente/desconocido,
+   `Local` fuera de Development o Cloudinary incompleto deben impedir el inicio con un
+   mensaje sanitizado; nunca existe fallback automático después de seleccionar cloud.
 3. Autenticarse, abrir `/profile/edit` con throttling de red y confirmar que el formulario
    completo permanece en skeleton hasta recibir el `me` de la identidad activa. No deben
    aparecer valores parciales provenientes del token o de una sesión anterior.
 4. Modificar un campo y provocar un refetch: el borrador no debe cambiar. Cancelar debe
    volver al perfil sin persistirlo.
 5. Editar un avatar y comprobar en Network que `POST /api/upload` incluye JWT y responde
-   `fileUrl` más `storageMode`. Antes de Guardar, la URL es solo candidata.
+   `fileUrl` más `storageMode`. Ante `503`, debe devolver
+   `UPLOAD_STORAGE_UNAVAILABLE`, `correlationId`, modo y `retryable=true`, sin detalles
+   del proveedor. Antes de Guardar, la URL es solo candidata y no hay reintento automático.
 6. Guardar y recargar `/profile`, `/profile/edit` y el header. Los tres deben mostrar la
    misma URL confirmada. Repetir con fallo de upload y fallo de `updateProfile`: el avatar
    anterior y el resto del borrador deben preservarse.
@@ -763,6 +774,15 @@ Los avisos CSP `unsafe-inline`, `BSSO not supported`, cookies particionadas, Qui
 `Me.htm` y CORS de `OneCollector` proceden del dominio Microsoft. No se corrigen ampliando
 CORS/CSP de OneITB y no prueban por sí solos un fallo del canje.
 
+Clasificar la consola por origen antes de intervenir:
+
+| Origen | Ejemplos | Acción |
+|---|---|---|
+| OneITB (`localhost`, operación GraphQL, callback propio) | `MicrosoftLogin` rechazado, timeout, ruta a Login, schema incompatible | Corregir o registrar con correlation ID, sin copiar tokens |
+| Microsoft (`login.microsoftonline.com`, `login.live.com`) | CSP `unsafe-inline`, `BSSO not supported`, cookies particionadas, `Me.htm` Quirks | Tratar como diagnóstico externo salvo que Microsoft devuelva un código AADSTS accionable |
+| Telemetría Microsoft (`browser.events.data.microsoft.com`) | CORS de `OneCollector` | No ampliar CORS/CSP de OneITB; no afecta el token ni el callback |
+| Tooling Development | banners React/Apollo DevTools | No es defecto productivo; confirmar que no aparece en el build de producción |
+
 ### 13.6 SQL Docker
 
 ```powershell
@@ -816,9 +836,9 @@ candidato. No requiere cambiar CSP, CORS ni instalar extensiones.
    no debe existir scroll horizontal, solapamiento ni pérdida de badge/estado activo.
 3. Abrir el overflow con teclado, recorrer destinos, cerrar con Escape y comprobar foco.
    Repetir con zoom del navegador y `prefers-reduced-motion`.
-4. Revisar Header, Hero, sección de identidad y Footer en Clean Tech/Tech Noir: el
-   isotipo `O` y `neITB` deben permanecer alineados, legibles y sin bloom. En modo claro
-   el asset no debe recibir filtros visuales.
+4. Revisar Header, Hero, sección de identidad y Footer en Clean Tech/Tech Noir. El
+   Header debe mostrar solo `only-logo`; las demás superficies deben usar
+   `logo-oneitb` en claro y `logo-oneitb-dark-mode` en oscuro, sin filtros ni bloom.
 5. Con una preferencia oscura guardada, abrir y recargar `/onboarding/academic`: la ruta
    debe verse clara sin modificar `oneitb-theme`; al salir debe restaurarse el tema
    oscuro. Registrar ambos estados sin copiar tokens ni datos de sesión.
@@ -842,6 +862,17 @@ Si el cliente informa que `confirmStudentCareer` no existe y que `careerId` no f
 no se debe cambiar la mutación ni usar `linkUserToCareers` como fallback. Ese par de
 errores demuestra que el proceso que atiende `/graphql` sirve un schema anterior al
 código del repositorio.
+
+0. Ejecutar primero el preflight de Spec 213, que no inicia procesos ni expone secretos:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+& "specs/213-runtime-contract-entra-transition/runtime-contract.ps1"
+```
+
+El resultado PASS debe incluir `X-OneITB-Build`, `inquiriesPage`, `microsoftLogin` y
+`confirmStudentCareer`. Un listener no atribuible por permisos se informa como warning;
+la respuesta HTTP, el build header y la introspección son los checks autoritativos.
 
 1. Ejecutar la prueba finita del contrato:
 

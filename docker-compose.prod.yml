@@ -65,6 +65,8 @@ services:
       EntraId__AllowedDomain: "${ONEITB_ENTRA_ALLOWED_DOMAIN:-itbeltran.com.ar}"
       Cors__AllowedOrigins__0: "${ONEITB_CORS_ORIGIN:-http://localhost}"
       CloudinarySettings__Url: "${ONEITB_CLOUDINARY_URL:-}"
+      FileStorage__Provider: "${ONEITB_FILE_STORAGE_PROVIDER:-Cloudinary}"
+      FileStorage__CloudinaryTimeoutSeconds: "${ONEITB_CLOUDINARY_TIMEOUT_SECONDS:-20}"
       SmtpSettings__Host: "${ONEITB_SMTP_HOST:?Set ONEITB_SMTP_HOST}"
       SmtpSettings__Port: "${ONEITB_SMTP_PORT:-587}"
       SmtpSettings__User: "${ONEITB_SMTP_USER:?Set ONEITB_SMTP_USER}"

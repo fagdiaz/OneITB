@@ -48,6 +48,7 @@ public sealed class MagicLinkContractTests
                         "oneitb23-schema-only-signing-key-with-at-least-32-bytes",
                     ["Jwt:Issuer"] = "OneITB23.SchemaTests",
                     ["Jwt:Audience"] = "OneITB23.SchemaTests.Web",
+                    ["FileStorage:Provider"] = "Local",
                     ["Seed:EnableDemoData"] = "false"
                 })
                 .Build();

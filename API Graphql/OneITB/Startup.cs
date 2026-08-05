@@ -1,9 +1,11 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.DataProtection;
@@ -371,9 +373,10 @@ namespace OneItb.GraphQL
             services.AddScoped<ISocialGraphService, SocialGraphService>();
             services.AddScoped<IAcademicService, AcademicService>();
             services.AddScoped<IStudentEnrollmentService, StudentEnrollmentService>();
+            services.AddScoped<IUserCareerAssignmentService, UserCareerAssignmentService>();
             services.AddSingleton(new InstitutionalEnrollmentOptions(
                 Configuration["InstitutionalEnrollment:Mode"]));
-            services.AddScoped<IInstitutionalEnrollmentProvider, ManualInstitutionalEnrollmentProvider>();
+            services.AddScoped<IInstitutionalEnrollmentProvider, SelfDeclaredInstitutionalEnrollmentProvider>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ISiuIntegrationService, MockSiuIntegrationService>();
             services.AddScoped<IJobService, JobService>();
@@ -444,10 +447,17 @@ namespace OneItb.GraphQL
             ILogger<Startup> logger,
             FileStorageRuntimeInfo fileStorageRuntimeInfo)
         {
+            string buildIdentity = ResolveBuildIdentity(Configuration);
+            logger.LogInformation("Runtime build identity: {BuildIdentity}", buildIdentity);
             logger.LogInformation(
                 "File storage provider selected: {StorageMode}",
                 fileStorageRuntimeInfo.Mode);
             app.UseForwardedHeaders();
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers["X-OneITB-Build"] = buildIdentity;
+                await next();
+            });
 
             if (env.IsDevelopment())
             {
@@ -506,6 +516,21 @@ namespace OneItb.GraphQL
             });
         }
 
+        private static string ResolveBuildIdentity(IConfiguration configuration)
+        {
+            string? configuredRevision = configuration["Build:Revision"];
+            string assemblyRevision = typeof(Startup).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion
+                ?? typeof(Startup).Assembly.GetName().Version?.ToString()
+                ?? "unknown";
+            string candidate = string.IsNullOrWhiteSpace(configuredRevision)
+                ? assemblyRevision
+                : configuredRevision.Trim();
+            string sanitized = Regex.Replace(candidate, @"[^A-Za-z0-9._+-]", "_");
+            return sanitized.Length <= 120 ? sanitized : sanitized.Substring(0, 120);
+        }
+
         private void ConfigureSubscriptionProvider(IRequestExecutorBuilder graphQlBuilder, IServiceCollection services)
         {
             string? redisConnectionString = Configuration.GetConnectionString("Redis")
@@ -525,7 +550,7 @@ namespace OneItb.GraphQL
         private void ConfigureFileStorage(IServiceCollection services)
         {
             services.AddSingleton<IFileContentInspector, FileContentInspector>();
-            services.AddOneItbFileStorage(Configuration);
+            services.AddOneItbFileStorage(Configuration, Environment);
         }
 
         private void ConfigureEmailSender(IServiceCollection services)

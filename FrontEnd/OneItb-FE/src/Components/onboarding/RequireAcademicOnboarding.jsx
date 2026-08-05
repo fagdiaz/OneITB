@@ -12,6 +12,8 @@ import {
   ACADEMIC_ONBOARDING_PATH,
   requiresAcademicOnboarding,
 } from './academicOnboardingState';
+import { isMicrosoftRedirectFlowPending } from '../../auth/microsoftRedirectFlow';
+import { MICROSOFT_CALLBACK_PATH } from '../../auth/microsoftEntraConfig';
 
 export const RequireAcademicOnboarding = () => {
   const {
@@ -40,6 +42,9 @@ export const RequireAcademicOnboarding = () => {
   }
 
   if (!hasSession) {
+    if (isMicrosoftRedirectFlowPending()) {
+      return <Navigate to={MICROSOFT_CALLBACK_PATH} replace />;
+    }
     return (
       <Navigate
         to="/login"

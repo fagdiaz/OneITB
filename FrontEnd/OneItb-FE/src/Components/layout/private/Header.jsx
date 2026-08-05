@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BrandLockup } from '../../branding/BrandLockup';
+import { BrandLogo } from '../../branding/BrandLogo';
 import { usePointerSpotlight } from '../../../hooks/usePointerSpotlight';
 import useAuth from '../../../hooks/useAuth';
 import { GlobalSearch } from './GlobalSearch';
@@ -101,10 +101,10 @@ export const Header = () => {
           aria-label="Ir al inicio de OneITB"
           className="relative z-10 inline-flex h-11 shrink-0 items-center rounded-xl px-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
         >
-          <BrandLockup
-            variant="compact"
-            tone="inverse"
+          <BrandLogo
+            variant="symbol"
             decorative
+            className="h-9 w-9 object-contain sm:h-10 sm:w-10"
             fetchpriority="high"
           />
         </Link>

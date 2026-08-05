@@ -12,15 +12,18 @@ namespace OneItb.GraphQL.Services.Storage
     {
         private readonly HttpClient _httpClient;
         private readonly CloudinarySettings _settings;
+        private readonly FileStorageOptions _fileStorageOptions;
         private readonly ILogger<CloudinaryStorageService> _logger;
 
         public CloudinaryStorageService(
             HttpClient httpClient,
             IOptions<CloudinarySettings> settings,
+            IOptions<FileStorageOptions> fileStorageOptions,
             ILogger<CloudinaryStorageService> logger)
         {
             _httpClient = httpClient;
             _settings = settings.Value;
+            _fileStorageOptions = fileStorageOptions.Value;
             _logger = logger;
         }
 
@@ -48,32 +51,79 @@ namespace OneItb.GraphQL.Services.Storage
             form.Add(new StringContent(signature), "signature");
 
             string endpoint = $"https://api.cloudinary.com/v1_1/{credentials.CloudName}/auto/upload";
-            using HttpResponseMessage response = await _httpClient.PostAsync(endpoint, form, cancellationToken);
-            string payload = await response.Content.ReadAsStringAsync(cancellationToken);
+            using CancellationTokenSource timeoutSource = CancellationTokenSource
+                .CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(TimeSpan.FromSeconds(
+                _fileStorageOptions.CloudinaryTimeoutSeconds));
 
-            if (!response.IsSuccessStatusCode)
+            HttpResponseMessage response;
+            try
+            {
+                response = await _httpClient.PostAsync(endpoint, form, timeoutSource.Token);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (OperationCanceledException exception)
             {
                 _logger.LogWarning(
-                    "Cloudinary upload failed with status {StatusCode}",
-                    (int)response.StatusCode);
-                throw new InvalidOperationException("No se pudo almacenar el archivo en Cloudinary.");
+                    "Cloudinary upload timed out after {TimeoutSeconds} seconds",
+                    _fileStorageOptions.CloudinaryTimeoutSeconds);
+                throw new FileStorageUnavailableException(
+                    "Cloudinary did not respond within the configured timeout.",
+                    exception);
             }
-
-            using JsonDocument document = JsonDocument.Parse(payload);
-            if (!document.RootElement.TryGetProperty("secure_url", out JsonElement secureUrlElement))
+            catch (HttpRequestException exception)
             {
-                throw new InvalidOperationException("Cloudinary no devolvio una URL segura.");
+                _logger.LogWarning(
+                    exception,
+                    "Cloudinary upload transport failed");
+                throw new FileStorageUnavailableException(
+                    "Cloudinary transport is unavailable.",
+                    exception);
             }
 
-            string? secureUrl = secureUrlElement.GetString();
-            if (string.IsNullOrWhiteSpace(secureUrl) ||
-                !Uri.TryCreate(secureUrl, UriKind.Absolute, out Uri? parsed) ||
-                parsed.Scheme != Uri.UriSchemeHttps)
+            using (response)
             {
-                throw new InvalidOperationException("Cloudinary devolvio una URL invalida.");
-            }
+                string payload = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            return secureUrl;
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning(
+                        "Cloudinary upload failed with status {StatusCode}",
+                        (int)response.StatusCode);
+                    throw new FileStorageUnavailableException(
+                        "Cloudinary rejected the upload request.");
+                }
+
+                try
+                {
+                    using JsonDocument document = JsonDocument.Parse(payload);
+                    if (!document.RootElement.TryGetProperty("secure_url", out JsonElement secureUrlElement))
+                    {
+                        throw new FileStorageUnavailableException(
+                            "Cloudinary returned an incomplete response.");
+                    }
+
+                    string? secureUrl = secureUrlElement.GetString();
+                    if (string.IsNullOrWhiteSpace(secureUrl) ||
+                        !Uri.TryCreate(secureUrl, UriKind.Absolute, out Uri? parsed) ||
+                        parsed.Scheme != Uri.UriSchemeHttps)
+                    {
+                        throw new FileStorageUnavailableException(
+                            "Cloudinary returned an invalid secure URL.");
+                    }
+
+                    return secureUrl;
+                }
+                catch (JsonException exception)
+                {
+                    throw new FileStorageUnavailableException(
+                        "Cloudinary returned an invalid response.",
+                        exception);
+                }
+            }
         }
 
         private static CloudinaryCredentials ParseCredentials(string? url)

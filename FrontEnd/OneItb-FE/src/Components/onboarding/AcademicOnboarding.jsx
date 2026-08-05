@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { CONFIRM_STUDENT_CAREER } from '../../data/graphql/mutations/careers';
@@ -17,6 +17,7 @@ import {
   requiresAcademicOnboarding,
   sanitizeOnboardingDestination,
 } from './academicOnboardingState';
+import { synchronizeAcademicEnrollmentCache } from './academicEnrollmentCache';
 
 const RecoveryActions = ({
   isRetrying,
@@ -53,6 +54,7 @@ export const AcademicOnboarding = () => {
   } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const apolloClient = useApolloClient();
   const destination = sanitizeOnboardingDestination(location.state?.from);
   const hasSession = Boolean(isAuthenticated && token && auth?.id);
   const [selectedCareerId, setSelectedCareerId] = useState(null);
@@ -214,6 +216,8 @@ export const AcademicOnboarding = () => {
           'La carrera se guardó, pero el perfil todavía no confirmó la asociación exacta.',
         );
       }
+
+      synchronizeAcademicEnrollmentCache(apolloClient, refreshed.data);
 
       navigate(destination, { replace: true });
     } catch (error) {

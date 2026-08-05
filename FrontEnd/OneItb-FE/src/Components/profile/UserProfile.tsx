@@ -99,6 +99,9 @@ export const UserProfile = () => {
     loading: userPostsLoading,
     loadingMore: loadingMorePosts,
     hasNextPage: hasMorePosts,
+    error: userPostsError,
+    loadMoreError: loadMorePostsError,
+    refetch: refetchUserPosts,
     loadMore: loadMorePosts,
   } = useInquiryPage({
     authorId: targetUserId,
@@ -753,7 +756,12 @@ export const UserProfile = () => {
                 )}
               </div>
 
-              {userPostsLoading && visiblePosts.length === 0 ? (
+              {userPostsError && visiblePosts.length === 0 ? (
+                <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-300/20 dark:bg-red-500/10 dark:text-red-200">
+                  <p>No se pudieron cargar las publicaciones del perfil.</p>
+                  <button type="button" onClick={() => refetchUserPosts()} className="mt-2 font-semibold underline">Reintentar</button>
+                </div>
+              ) : userPostsLoading && visiblePosts.length === 0 ? (
                 <p className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">Cargando publicaciones...</p>
               ) : visiblePosts.length === 0 ? (
                 <p className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">Todavia no hay publicaciones para mostrar.</p>
@@ -774,14 +782,24 @@ export const UserProfile = () => {
                 </div>
               )}
               {showAllPosts && hasMorePosts && (
-                <button
-                  type="button"
-                  onClick={loadMorePosts}
-                  disabled={loadingMorePosts}
-                  className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
-                >
-                  {loadingMorePosts ? 'Cargando...' : 'Cargar mas publicaciones'}
-                </button>
+                <div className="mt-4 space-y-2">
+                  {loadMorePostsError && (
+                    <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-300/20 dark:bg-red-500/10 dark:text-red-200">
+                      No se pudo cargar la página siguiente. Las publicaciones visibles se conservaron.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={loadMorePosts}
+                    disabled={loadingMorePosts}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
+                  >
+                    {loadingMorePosts ? 'Cargando...' : loadMorePostsError ? 'Reintentar' : 'Cargar más publicaciones'}
+                  </button>
+                </div>
+              )}
+              {showAllPosts && userPosts.length > 0 && !hasMorePosts && (
+                <p className="mt-4 text-center text-sm font-semibold text-slate-500 dark:text-slate-400">No hay más publicaciones.</p>
               )}
             </section>
           </main>

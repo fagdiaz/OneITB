@@ -40,6 +40,8 @@ vi.mock('../data/graphql/GraphqlProvider', () => ({
 
 vi.mock('../auth/microsoftEntra', () => microsoftSessionMock);
 
+import { beginMicrosoftRedirectFlow } from '../auth/microsoftRedirectFlow';
+
 import {
   AUTH_IDENTITY_PROVIDERS,
   AuthContext,
@@ -150,6 +152,24 @@ describe('AuthContext session isolation', () => {
     expect(screen.getByTestId('authenticated')).toHaveTextContent('true');
     expect(screen.getByTestId('user-id')).toHaveTextContent('user-microsoft');
     expect(localStorage.getItem('token')).toBe('token-microsoft');
+  });
+
+  it('does not destroy an in-flight Microsoft redirect when a stale JWT expires', async () => {
+    localStorage.setItem('token', 'stale-token');
+    localStorage.setItem('user', JSON.stringify({ id: 'previous-user', role: 'Estudiante' }));
+    beginMicrosoftRedirectFlow('/feed');
+
+    render(<AuthProvider><SessionProbe /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId('user-id')).toHaveTextContent('previous-user'));
+
+    await act(async () => {
+      await graphQlProviderMock.api.requestSessionTermination('expired');
+    });
+
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(microsoftSessionMock.clearMicrosoftIdentitySession).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('oneitb-session-expired')).toBeNull();
   });
 
   it('rejects an unknown identity provider before mutating session state', async () => {

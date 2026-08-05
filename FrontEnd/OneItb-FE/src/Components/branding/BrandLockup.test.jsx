@@ -1,22 +1,24 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { ThemeProvider } from '../../context/ThemeContext';
 import { BrandLockup } from './BrandLockup';
 
+const renderLockup = (element) => render(<ThemeProvider>{element}</ThemeProvider>);
+
 describe('BrandLockup', () => {
-  it('composes the approved symbol and DOM wordmark as one accessible identity', () => {
-    const { container } = render(<BrandLockup label="Identidad OneITB" />);
+  it('renders the approved full asset as one accessible identity', () => {
+    const { container } = renderLockup(<BrandLockup label="Identidad OneITB" />);
 
     const lockup = screen.getByRole('img', { name: 'Identidad OneITB' });
-    expect(lockup).toHaveTextContent('neITB');
-    expect(lockup).not.toHaveTextContent('oneITB');
-    expect(lockup).toHaveClass('inline-flex', 'whitespace-nowrap');
-    expect(container.querySelector('img')).toHaveAttribute('src', expect.stringContaining('only-logo.png'));
+    expect(lockup).toHaveClass('inline-flex', 'overflow-hidden');
+    expect(lockup).toHaveTextContent('');
+    expect(container.querySelector('img')).toHaveAttribute('src', expect.stringContaining('logo-oneitb.png'));
     expect(container.querySelector('img')).toHaveAttribute('alt', '');
   });
 
   it('keeps decorative duplicates out of the accessibility tree', () => {
-    const { container } = render(<BrandLockup decorative variant="full" tone="inverse" />);
+    const { container } = renderLockup(<BrandLockup decorative variant="full" />);
 
     const lockup = container.firstElementChild;
     expect(lockup).toHaveAttribute('aria-hidden', 'true');
@@ -24,12 +26,12 @@ describe('BrandLockup', () => {
     expect(lockup.className).not.toContain('drop-shadow');
   });
 
-  it('does not alter the symbol asset in the default light contract', () => {
-    const { container } = render(<BrandLockup />);
-    const symbol = container.querySelector('img');
+  it('does not alter the full asset in the default light contract', () => {
+    const { container } = renderLockup(<BrandLockup />);
+    const logo = container.querySelector('img');
 
-    expect(symbol.className).not.toContain('filter');
-    expect(symbol.className).not.toContain('brightness');
-    expect(symbol.className).not.toContain('drop-shadow');
+    expect(logo.className).not.toContain('filter');
+    expect(logo.className).not.toContain('brightness');
+    expect(logo.className).not.toContain('drop-shadow');
   });
 });

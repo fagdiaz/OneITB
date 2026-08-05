@@ -9,10 +9,14 @@ namespace Services.Academic;
 public sealed class StudentEnrollmentService : IStudentEnrollmentService
 {
     private readonly OneItbContext _context;
+    private readonly IUserCareerAssignmentService _careerAssignments;
 
-    public StudentEnrollmentService(OneItbContext context)
+    public StudentEnrollmentService(
+        OneItbContext context,
+        IUserCareerAssignmentService careerAssignments)
     {
         _context = context;
+        _careerAssignments = careerAssignments;
     }
 
     public async Task<Career> ConfirmStudentCareerAsync(
@@ -53,7 +57,7 @@ public sealed class StudentEnrollmentService : IStudentEnrollmentService
         try
         {
             User? user = await _context.Users
-                .AsNoTracking()
+                .Include(item => item.UserCareers)
                 .SingleOrDefaultAsync(
                     item => item.Id == userId && item.IsActive,
                     cancellationToken);
@@ -74,48 +78,10 @@ public sealed class StudentEnrollmentService : IStudentEnrollmentService
                     "La confirmacion academica esta disponible solo para estudiantes.");
             }
 
-            int[] normalizedIds = StudentCareerSelectionPolicy.NormalizeAndValidate(
-                user.Role,
-                requestedCareerIds);
-
-            List<Career> careers = await _context.Careers
-                .AsNoTracking()
-                .Where(career => normalizedIds.Contains(career.Id) && career.IsActive)
-                .OrderBy(career => career.Name)
-                .ThenBy(career => career.Id)
-                .ToListAsync(cancellationToken);
-            if (careers.Count != normalizedIds.Length)
-            {
-                throw new StudentEnrollmentException(
-                    "ACADEMIC_CAREER_INVALID",
-                    "La carrera seleccionada no existe o no se encuentra activa.");
-            }
-
-            List<UserCareer> existingLinks = await _context.UserCareers
-                .Where(link => link.UserId == userId)
-                .ToListAsync(cancellationToken);
-            int[] existingIds = existingLinks
-                .Select(link => link.CareerId)
-                .Distinct()
-                .OrderBy(id => id)
-                .ToArray();
-
-            if (existingIds.SequenceEqual(normalizedIds))
-            {
-                if (transaction is not null)
-                    await transaction.CommitAsync(cancellationToken);
-                return careers;
-            }
-
-            _context.UserCareers.RemoveRange(existingLinks.Where(link =>
-                !normalizedIds.Contains(link.CareerId)));
-            _context.UserCareers.AddRange(normalizedIds
-                .Where(careerId => !existingIds.Contains(careerId))
-                .Select(careerId => new UserCareer
-            {
-                UserId = userId,
-                CareerId = careerId
-            }));
+            IReadOnlyList<Career> careers = await _careerAssignments.ReplaceAsync(
+                user,
+                requestedCareerIds.ToArray(),
+                cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
             if (transaction is not null)

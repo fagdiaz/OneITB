@@ -11,6 +11,7 @@ import { copyPostShareUrl } from './sharePostLink';
 import { ExpandableText } from './ExpandableText';
 import { ModerationReasonModal } from './ModerationReasonModal';
 import { FollowButton } from '../social/FollowButton';
+import { FeedPaginationControls } from './FeedPaginationControls';
 import {
   apiBaseUrl,
   getFileIdentity,
@@ -21,10 +22,9 @@ import {
 import { parseYouTubeContent } from '../../utils/mediaParser';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
-import { GET_INQUIRIES_PAGE } from '../../data/graphql/queries/inquiries';
 import { SEARCH_PUBLIC_PROFILES } from '../../data/graphql/queries/searchPublicProfiles';
 import { GET_MY_FOLLOWED_USER_IDS } from '../../data/graphql/social';
-import { mergeInquiryPages } from '../../hooks/useInquiryPage';
+import { useInquiryPage } from '../../hooks/useInquiryPage';
 import {
   ADD_COMMENT,
   CREATE_INQUIRY,
@@ -242,16 +242,6 @@ export const Feed = () => {
     : Number.isInteger(legacySubjectId)
       ? [legacySubjectId]
       : [];
-  const inquiryVariables = {
-    searchTerm: normalizedSearchTerm || null,
-    careerId: null,
-    careerIds: effectiveCareerIds.length > 0 ? effectiveCareerIds : null,
-    subjectIds: effectiveSubjectIds.length > 0 ? effectiveSubjectIds : null,
-    inquiryId: targetInquiryId || null,
-    first: 15,
-    after: null,
-  };
-
   const { data: careersData } = useQuery(GET_CAREERS);
   const { data: myCareersData } = useQuery(GET_MY_CAREERS);
   const { data: subjectsData, loading: subjectsLoading } = useQuery(GET_SUBJECTS, {
@@ -268,14 +258,23 @@ export const Feed = () => {
   });
 
   const {
-    data: inquiriesData,
+    items: posts,
+    totalCount: feedTotalCount,
+    hasNextPage: feedHasNextPage,
     loading: inquiriesLoading,
+    loadingMore,
     error: inquiriesError,
+    loadMoreError,
+    loadMoreStatus,
+    lastAppendedCount,
     refetch,
-    fetchMore,
-  } = useQuery(GET_INQUIRIES_PAGE, {
-    variables: inquiryVariables,
-    fetchPolicy: 'cache-and-network',
+    loadMore,
+  } = useInquiryPage({
+    pageSize: 15,
+    searchTerm: normalizedSearchTerm || null,
+    careerIds: effectiveCareerIds.length > 0 ? effectiveCareerIds : null,
+    subjectIds: effectiveSubjectIds.length > 0 ? effectiveSubjectIds : null,
+    inquiryId: targetInquiryId || null,
   });
 
   const [createInquiry, { loading: isPublishing }] = useMutation(CREATE_INQUIRY);
@@ -295,8 +294,6 @@ export const Feed = () => {
   const myCareers = myCareersData?.myCareers ?? [];
   const publicationSubjects = subjectsData?.subjects ?? [];
   const searchProfiles = searchProfilesData?.searchPublicProfiles ?? [];
-  const feedPage = inquiriesData?.inquiriesPage;
-  const posts = feedPage?.items ?? [];
   const followedUserIds = useMemo(
     () => new Set(followedData?.myFollowedUserIds ?? []),
     [followedData],
@@ -469,19 +466,7 @@ export const Feed = () => {
   };
 
   const handleLoadMore = async () => {
-    if (!feedPage?.hasNextPage || !feedPage.nextCursor) return;
-
-    try {
-      await fetchMore({
-        variables: {
-          ...inquiryVariables,
-          after: feedPage.nextCursor,
-        },
-        updateQuery: mergeInquiryPages,
-      });
-    } catch (error) {
-      showFeedback('error', error.message);
-    }
+    await loadMore();
   };
 
   const handleComment = async (inquiryId, parentCommentId, commentContent, selectedCommentFiles = [], replyTargetCommentId = null) => {
@@ -666,7 +651,7 @@ export const Feed = () => {
           <div className="h-7 w-1 rounded-full bg-blue-600" />
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">Muro academico</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{posts.length} de {feedPage?.totalCount ?? posts.length} publicaciones activas</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{posts.length} de {feedTotalCount} publicaciones activas</p>
           </div>
         </div>
         <button
@@ -884,7 +869,7 @@ export const Feed = () => {
               </h2>
             </div>
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              {feedPage?.totalCount ?? posts.length} resultado{(feedPage?.totalCount ?? posts.length) === 1 ? '' : 's'}
+              {feedTotalCount} resultado{feedTotalCount === 1 ? '' : 's'}
             </span>
           </div>
         </section>
@@ -893,10 +878,13 @@ export const Feed = () => {
       {inquiriesLoading && posts.length === 0 && (
         <p className="py-6 text-center text-sm text-slate-500">Cargando publicaciones...</p>
       )}
-      {inquiriesError && (
-        <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          No se pudo cargar el muro: {inquiriesError.message}
-        </p>
+      {inquiriesError && posts.length === 0 && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+          <p>No se pudo cargar el muro.</p>
+          <button type="button" onClick={() => refetch()} className="mt-2 font-semibold underline">
+            Reintentar
+          </button>
+        </div>
       )}
 
       {!inquiriesLoading && !inquiriesError && posts.length === 0 && (
@@ -1117,22 +1105,17 @@ export const Feed = () => {
         );
       })}
 
-      {feedPage?.hasNextPage && (
-        <button
-          type="button"
-          onClick={handleLoadMore}
-          disabled={inquiriesLoading}
-          className="self-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-300/20 dark:bg-slate-900/80 dark:text-blue-300 dark:hover:bg-blue-500/10"
-        >
-          {inquiriesLoading ? 'Cargando...' : isSearchResultsView ? 'Buscar mas' : 'Cargar mas publicaciones'}
-        </button>
-      )}
-
-      {isSearchResultsView && posts.length > 0 && !feedPage?.hasNextPage && (
-        <p className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-400">
-          No hay mas resultados.
-        </p>
-      )}
+      <FeedPaginationControls
+        hasItems={posts.length > 0}
+        hasNextPage={feedHasNextPage}
+        initialLoading={inquiriesLoading && posts.length === 0}
+        isSearchResultsView={isSearchResultsView}
+        loadingMore={loadingMore}
+        loadMoreError={loadMoreError}
+        loadMoreStatus={loadMoreStatus}
+        lastAppendedCount={lastAppendedCount}
+        onLoadMore={handleLoadMore}
+      />
 
       <ReactionUsersModal
         inquiryId={reactionUsersInquiryId}

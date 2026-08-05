@@ -8,6 +8,7 @@ import {
   resolveWsUri,
   shouldTerminateSessionForOperation,
 } from './GraphqlProvider';
+import { GET_INQUIRIES_PAGE } from './queries/inquiries';
 
 const ENTITY_TYPES = [
   'User',
@@ -95,6 +96,71 @@ describe('GraphQLProvider local transport', () => {
     expect(resolveWsUri('/graphql')).toBe(
       `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/graphql`,
     );
+  });
+});
+
+describe('GraphQLProvider feed cache isolation', () => {
+  it('keeps inquiry pages isolated by career filters', () => {
+    const client = new GraphQLProvider().apolloInstance;
+    const variablesFor = (careerIds) => ({
+      searchTerm: null,
+      careerId: null,
+      careerIds,
+      subjectIds: null,
+      inquiryId: null,
+      authorId: null,
+      first: 15,
+      after: null,
+    });
+    const inquiry = (id, title) => ({
+      __typename: 'Inquiry',
+      id,
+      title,
+      content: 'Contenido',
+      fileUrl: null,
+      attachments: [],
+      publishDate: '2026-08-05T00:00:00Z',
+      isActive: true,
+      isHiddenByModerator: false,
+      preferAttachmentCover: false,
+      reportCount: 0,
+      user: {
+        __typename: 'User',
+        id: `user-${id}`,
+        firstName: 'Usuario',
+        lastName: id,
+        avatarUrl: null,
+        role: 'Estudiante',
+        totalPosts: 1,
+        totalComments: 0,
+        totalLikesReceived: 0,
+        totalReportsReceived: 0,
+      },
+      subject: { __typename: 'Subject', id: Number(id), name: title, code: `S${id}` },
+      reactions: [],
+      comments: [],
+    });
+    const writePage = (careerIds, item) => client.writeQuery({
+      query: GET_INQUIRIES_PAGE,
+      variables: variablesFor(careerIds),
+      data: {
+        inquiriesPage: {
+          __typename: 'InquiryPage',
+          hasNextPage: false,
+          nextCursor: '',
+          totalCount: 1,
+          items: [item],
+        },
+      },
+    });
+
+    writePage([1], inquiry('1', 'Carrera uno'));
+    writePage([2], inquiry('2', 'Carrera dos'));
+
+    const firstCareer = client.readQuery({ query: GET_INQUIRIES_PAGE, variables: variablesFor([1]) });
+    const secondCareer = client.readQuery({ query: GET_INQUIRIES_PAGE, variables: variablesFor([2]) });
+    expect(firstCareer.inquiriesPage.items.map((item) => item.id)).toEqual(['1']);
+    expect(secondCareer.inquiriesPage.items.map((item) => item.id)).toEqual(['2']);
   });
 });
 

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using OneItb.Controllers;
 using OneItb.GraphQL.Services.Storage;
+using OneItb.GraphQL.Infrastructure;
 using Xunit;
 
 namespace Services.Tests.Uploads;
@@ -68,9 +69,11 @@ public sealed class UploadControllerTests
             .Setup(service => service.SaveAsync(file, ".pdf", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new IOException("provider unavailable"));
         UploadController controller = CreateController(storage.Object, inspector.Object);
+        var httpContext = new DefaultHttpContext { TraceIdentifier = "transport-correlation" };
+        httpContext.Items[CorrelationIdMiddleware.HeaderName] = "test-correlation";
         controller.ControllerContext = new ControllerContext
         {
-            HttpContext = new DefaultHttpContext { TraceIdentifier = "test-correlation" }
+            HttpContext = httpContext
         };
 
         IActionResult result = await controller.Upload(file, CancellationToken.None);
@@ -80,6 +83,43 @@ public sealed class UploadControllerTests
         Assert.Equal(
             "UPLOAD_STORAGE_UNAVAILABLE",
             unavailable.Value?.GetType().GetProperty("code")?.GetValue(unavailable.Value));
+        Assert.Equal(
+            "test-correlation",
+            unavailable.Value?.GetType().GetProperty("correlationId")?.GetValue(unavailable.Value));
+        Assert.Equal(
+            FileStorageRuntimeInfo.LocalMode,
+            unavailable.Value?.GetType().GetProperty("storageMode")?.GetValue(unavailable.Value));
+        Assert.Equal(
+            true,
+            unavailable.Value?.GetType().GetProperty("retryable")?.GetValue(unavailable.Value));
+    }
+
+    [Fact]
+    public async Task Upload_ReturnsSameSanitizedContract_ForExpectedProviderFailure()
+    {
+        var storage = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var inspector = new Mock<IFileContentInspector>(MockBehavior.Strict);
+        IFormFile file = CreateFile("%PDF-1.4\n%%EOF"u8.ToArray(), "material.pdf", "application/pdf");
+        inspector
+            .Setup(service => service.InspectAsync(file, ".pdf", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(FileInspectionResult.Valid(DetectedFileFormat.Pdf));
+        storage
+            .Setup(service => service.SaveAsync(file, ".pdf", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FileStorageUnavailableException("remote detail"));
+        UploadController controller = CreateController(storage.Object, inspector.Object);
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { TraceIdentifier = "provider-correlation" }
+        };
+
+        ObjectResult result = Assert.IsType<ObjectResult>(
+            await controller.Upload(file, CancellationToken.None));
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
+        Assert.Equal(
+            "UPLOAD_STORAGE_UNAVAILABLE",
+            result.Value?.GetType().GetProperty("code")?.GetValue(result.Value));
+        Assert.DoesNotContain("remote detail", result.Value?.ToString());
     }
 
     private static UploadController CreateController(

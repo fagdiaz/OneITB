@@ -115,8 +115,10 @@ describe('local visual assets', () => {
     );
 
     expect(indexCss).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+    expect(indexCss).toMatch(/transition-duration:\s*1300ms\s*!important/);
     expect(indexCss).toMatch(/transition-duration:\s*0ms\s*!important/);
     expect(indexCss).toMatch(/@media\s+print/);
+    expect(indexCss).toMatch(/@media\s+print[\s\S]*html\.theme-transitioning[\s\S]*transition-duration:\s*0ms\s*!important/);
     expect(indexCss).toMatch(/size:\s*A4/);
     expect(indexCss).toContain('font-family: Arial, "Segoe UI", sans-serif !important');
     expect(profileSource).toContain('<CVATSPrintTemplate');

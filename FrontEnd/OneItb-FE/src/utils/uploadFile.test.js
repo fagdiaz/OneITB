@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { uploadAttachmentDescriptor } from './uploadFile';
+import { UploadRequestError, uploadAttachmentDescriptor } from './uploadFile';
 
 const createImage = () => new File(['avatar'], 'avatar.jpg', {
   type: 'image/jpeg',
@@ -52,5 +52,33 @@ describe('uploadAttachmentDescriptor', () => {
         headers: { Authorization: 'Bearer jwt-token' },
       }),
     );
+  });
+
+  it('maps a storage outage to a recoverable sanitized error', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      headers: { get: vi.fn().mockReturnValue(null) },
+      json: async () => ({
+        message: 'El almacenamiento de archivos no esta disponible.',
+        code: 'UPLOAD_STORAGE_UNAVAILABLE',
+        correlationId: 'corr-215',
+        storageMode: 'Cloudinary',
+        retryable: true,
+      }),
+    }));
+
+    const failure = await uploadAttachmentDescriptor(createImage(), 'jwt-token')
+      .catch((error) => error);
+
+    expect(failure).toBeInstanceOf(UploadRequestError);
+    expect(failure).toMatchObject({
+      code: 'UPLOAD_STORAGE_UNAVAILABLE',
+      correlationId: 'corr-215',
+      storageMode: 'Cloudinary',
+      retryable: true,
+      status: 503,
+    });
+    expect(failure.message).not.toContain('cloudinary://');
   });
 });

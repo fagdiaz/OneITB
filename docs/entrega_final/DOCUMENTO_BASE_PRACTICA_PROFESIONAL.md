@@ -7,8 +7,8 @@
 **Alumno:** Francisco Díaz<br>
 **Mesa evaluadora:** Saldivar Sebastian Alfredo (presidente) y Benitez Silvio Daniel (vocal)<br>
 **Ciclo lectivo:** 2026<br>
-**Versión del documento:** 2.0 - normalización integral previa a maquetación<br>
-**Fecha de corte técnico-documental:** 3 de agosto de 2026
+**Versión del documento:** 2.1 - normalización final previa a maquetación<br>
+**Fecha de corte técnico-documental:** 5 de agosto de 2026<br>
 **Fecha prevista de defensa:** 7 de agosto de 2026, 09:00<br>
 
 > **Alcance de esta memoria.** Este documento describe el estado comprobable del repositorio OneITB23 al momento de su redacción. Distingue entre funcionalidades implementadas, validaciones automatizadas y verificaciones externas todavía pendientes. Los nombres y versiones se corresponden con el código fuente: .NET 8 (Microsoft, 2023a), Entity Framework Core 8.0.6 (Microsoft, 2023b), Hot Chocolate 14.2.0 (ChilliCream, s. f.), GraphQL (GraphQL Foundation, 2021), React 18 (React Team, 2022), Apollo Client 3.7 (Apollo GraphQL, s. f.), Vite 8 (Vite Team, 2026), Tailwind CSS 4 (Wathan, 2025) y SQL Server 2022 (Microsoft, 2025).
@@ -17,15 +17,16 @@
 
 OneITB23 es una plataforma web institucional que integra comunicación académica, identidad profesional, recursos por materia, mensajería privada, seguimiento del progreso, moderación y empleabilidad. El sistema centraliza actividades que, de otro modo, quedarían fragmentadas entre redes sociales generalistas, correo, mensajería informal y repositorios de archivos sin contexto académico.
 
-La solución adopta una arquitectura desacoplada: una aplicación de página única o SPA (Mozilla, 2025) consume una API GraphQL desarrollada en .NET 8; Entity Framework Core administra la persistencia en SQL Server; las operaciones en tiempo real utilizan el protocolo WebSocket (Fette & Melnikov, 2011); y la carga binaria se resuelve mediante un endpoint basado en el estilo arquitectónico REST (Fielding, 2000). El despliegue productivo se modela con contenedores Docker (Docker, Inc., s. f.) para NGINX (NGINX, Inc., s. f.), la API, SQL Server y Redis (Redis Ltd., s. f.), con adaptadores opcionales para el protocolo SMTP (Klensin, 2008) y almacenamiento Cloudinary (Cloudinary, 2026). Cuando esas variables externas no existen, el entorno local mantiene mecanismos alternativos seguros y reproducibles.
+La solución adopta una arquitectura desacoplada: una aplicación de página única o SPA (Mozilla, 2025) consume una API GraphQL desarrollada en .NET 8; Entity Framework Core administra la persistencia en SQL Server; las operaciones en tiempo real utilizan el protocolo WebSocket (Fette & Melnikov, 2011); y la carga binaria se resuelve mediante un endpoint basado en el estilo arquitectónico REST (Fielding, 2000). El despliegue productivo se modela con contenedores Docker (Docker, Inc., s. f.) para NGINX (NGINX, Inc., s. f.), la API, SQL Server y Redis (Redis Ltd., s. f.), con adaptadores por ambiente para SMTP (Klensin, 2008) y almacenamiento Cloudinary (Cloudinary, 2026). Development mantiene pickup de correo y storage local explícitos; Production exige las configuraciones externas y falla cerrado si están incompletas.
 
 El núcleo funcional se encuentra implementado y el roadmap registra un 100 % global
-(117 de 117 ítems): 45 se encuentran verificados `[V]` y 72 implementados `[I]`. Esta
+(117 de 117 ítems): 46 se encuentran verificados `[V]` y 71 implementados `[I]`. Esta
 medición expresa cobertura del alcance contabilizado, no aceptación productiva total.
-La Spec 201 ejecutó conjuntamente sobre el mismo worktree 198 pruebas backend y 144
-pruebas frontend, además de los builds y el control de drift EF. Este resultado no se
-presenta como evidencia de un SHA inmutable: el candidato final requiere repetir el gate
-conjunto antes de congelarse. La base de demostración fue respaldada y reconstruida
+Los últimos baselines por capa alcanzaron 234 pruebas backend en la Spec 216 y 251
+pruebas frontend en la Spec 217; todavía no constituyen una ejecución conjunta sobre un
+SHA candidato congelado. El candidato definitivo requiere repetir ambas suites y builds
+sobre el mismo SHA antes de congelarse. La base de demostración fue
+respaldada y reconstruida
 desde las migraciones canónicas; las migraciones posteriores incorporaron identidad
 Microsoft Entra y onboarding B2B sin alterar el grafo demo. Dos ejecuciones del seeder
 produjeron un inventario idéntico, la auditoría relacional obtuvo cero violaciones y seis
@@ -33,8 +34,9 @@ identidades canónicas autenticaron con el rol esperado. La aceptación local ta
 verificó aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y
 entrega SMTP capturada mediante Mailpit/pickup local. El acceso institucional Microsoft
 365 se implementó con MSAL Authorization Code + PKCE, redirección completa, callback
-aislado y validación backend del access token (Microsoft, s. f.); consentimiento y smoke
-contra el tenant real permanecen como gate externo. El alta empresarial se verificó
+aislado y validación backend del access token (Microsoft, s. f.). Una cuenta institucional
+real completó login, callback, onboarding y acceso al muro; restan cancelación/error,
+logout y aislamiento con una segunda cuenta. El alta empresarial se verificó
 desde la solicitud GraphQL hasta aprobación, Outbox y correo `.eml`; su recorrido visual
 público/Admin queda pendiente. También restan la regresión manual del rol Moderador, la
 prueba WebSocket con dos sesiones aisladas y la producción material de la entrega.
@@ -89,7 +91,10 @@ El objetivo global es construir una red social académica y una Bolsa de Trabajo
 - No incluye pasarelas de pago, comercio electrónico ni gestión contable.
 - No incluye videollamadas nativas ni reemplaza plataformas de aula virtual sincrónica.
 - La integración SIU Guaraní se implementa mediante un adaptador mock; la conexión con una API institucional real requiere convenio, credenciales y contrato de datos.
-- La integración Microsoft Entra está implementada, pero no se considera verificada contra producción sin App Registrations, scope delegado, redirect URIs, consentimiento y una cuenta del tenant institucional.
+- Microsoft Entra completó con una cuenta institucional real el login, callback,
+  onboarding y acceso al muro. La aceptación integral conserva casos de cancelación,
+  error, logout y aislamiento con una segunda cuenta; no equivale a certificación del
+  ambiente productivo institucional.
 - SMTP, Cloudinary y Redis distribuido poseen implementación condicional, pero requieren secretos y pruebas en el entorno de destino.
 - La ruta pública de credenciales digitales no sustituye certificados oficiales firmados por la institución.
 - La plataforma no realiza selección automática de candidatos: ofrece una Bolsa de Trabajo y un Gestor de Ofertas y Postulaciones.
@@ -146,7 +151,7 @@ Una vez autenticado, el usuario accede a un muro cuyo contenido se limita por la
 
 El perfil funciona como identidad académica y currículum. Su propietario administra biografía, contacto, avatar, carreras, experiencia, educación, proyectos, habilidades e idiomas. También puede definir el perfil como público o privado. El backend aplica el enmascaramiento de datos sensibles, por lo que la privacidad no depende únicamente de ocultar componentes en React.
 
-El módulo académico organiza materias, correlatividades, recursos, calificaciones y progreso. Profesores y administradores realizan operaciones autorizadas; estudiantes consultan información dentro de su alcance académico. La selección manual de carrera está encapsulada en un servicio transaccional y la relación N:M permanece disponible para otros roles e importaciones históricas. El adaptador SIU simulado de calificaciones demuestra una capa anticorrupción, patrón orientado a proteger el dominio interno frente al contrato de un sistema externo (Evans, 2003). En paralelo, un puerto independiente de matrícula (`IInstitutionalEnrollmentProvider`) define cómo una futura API autorizada del ITB o SIU podría devolver carreras y materias normalizadas. El proveedor activo en esta entrega declara explícitamente confirmación manual o indisponibilidad: no ejecuta una integración externa ni fabrica datos académicos.
+El módulo académico organiza materias, correlatividades, recursos, calificaciones y progreso. Profesores y administradores realizan operaciones autorizadas; estudiantes consultan información dentro de su alcance académico. La selección autodeclarada de carrera exige una única opción, confirmación explícita y reemplazo transaccional; una capa compartida valida el catálogo activo para onboarding y perfil, mientras la relación N:M permanece disponible para otros roles e importaciones históricas. Después del cambio, el cliente invalida feed, materias, recursos y progreso dependientes, y conserva el perfil confirmado por el servidor. El adaptador SIU simulado de calificaciones demuestra una capa anticorrupción, patrón orientado a proteger el dominio interno frente al contrato de un sistema externo (Evans, 2003). En paralelo, un puerto independiente de matrícula (`IInstitutionalEnrollmentProvider`) define cómo una futura API autorizada del ITB o SIU podría devolver una carrera, materias, fuente y timestamp normalizados. El proveedor activo `SelfDeclared` no ejecuta una integración externa, no fabrica datos académicos y no se presenta como verificación institucional.
 
 La mensajería privada conserva historial en SQL Server y utiliza suscripciones GraphQL por WebSocket para entregar nuevos mensajes. Las notificaciones persistentes, sus preferencias y los recordatorios de mensajes no leídos complementan la comunicación en tiempo real.
 
@@ -264,7 +269,7 @@ las viñetas son descriptivos y no crean una numeración alternativa.
 | RNF-003 | Rendimiento | Ausencia de I/O síncrono en rutas asíncronas; `AsNoTracking`, proyecciones o DataLoaders para agrupación y caché por solicitud (GraphQL Foundation, s. f.), `AsSplitQuery`, paginación y límites GraphQL. |
 | RNF-004 | Escalabilidad | API stateless respecto de JWT, Redis condicional, almacenamiento intercambiable y servicios separables por contenedor. |
 | RNF-005 | Usabilidad | Interfaz responsive Clean Tech/Tech Noir con estados de carga, error y vacío, skeletons, feedback inmediato, foco y teclado. |
-| RNF-006 | Accesibilidad | Contraste, etiquetas, foco visible, reducción de movimiento, alternativas textuales e impresión independiente del tema; la auditoría WCAG formal permanece pendiente. |
+| RNF-006 | Accesibilidad | Contraste, etiquetas, foco visible, transición temática de 1300 ms anulada por reducción de movimiento e impresión, alternativas textuales e impresión independiente del tema; la auditoría WCAG formal permanece pendiente. |
 | RNF-007 | Trazabilidad | Correlation ID, logs estructurados, Audit Trail, `ModerationAudit`, specs y evidencia sin datos personales innecesarios. |
 | RNF-008 | Operabilidad | Health checks, rate limiting, security headers, Docker, configuración por entorno, scripts finitos, comportamiento fail-closed y backup/restore. |
 | RNF-009 | Reproducibilidad | Base demo identificada, backup verificado, migraciones canónicas, doble seed idempotente, seis roles e integridad relacional. |
@@ -818,9 +823,9 @@ Finalmente, `AUDIT_LOG` y `MODERATION_AUDIT` se pintan en rojo muy claro. `AUDIT
 
 ### Interfaces de Usuario
 
-**Landing pública y autenticación.** La ruta `/` presenta la identidad visual, propósito, módulos y llamados a iniciar sesión o registrarse. También ofrece el acceso **Soy empresa / Publicar oferta**, que dirige a `/empleos/solicitud` sin conceder una cuenta directamente. El encabezado adapta navegación a escritorio y móvil. Login y registro incluyen visibilidad de contraseña, validación institucional, feedback de error y tema claro predeterminado para usuarios anónimos.
+**Landing pública y autenticación.** La ruta `/` presenta la identidad visual, propósito, módulos y llamados a iniciar sesión o registrarse. Identifica a OneITB como proyecto académico complementario para la comunidad del Instituto Superior de Formación Técnica N.º 197 y diferencia expresamente la plataforma del portal oficial (Instituto Tecnológico Beltrán, s. f.). Los accesos al Portal Beltrán, SIU Guaraní y Microsoft 365 se muestran como enlaces externos seguros, no como integraciones productivas. También ofrece el acceso **Soy empresa / Publicar oferta**, que dirige a `/empleos/solicitud` sin conceder una cuenta directamente. El encabezado adapta navegación a escritorio y móvil. Login y registro incluyen visibilidad de contraseña, validación institucional, feedback de error y tema claro predeterminado para usuarios anónimos.
 
-**Muro principal.** La ruta `/feed` organiza el compositor, búsqueda, filtros y publicaciones. Cada tarjeta muestra autor, rol, materia, texto expandible, mosaico multimedia, reacciones, comentarios y acciones contextuales. El Media Grid limita la altura, combina portada, imágenes, PDF y YouTube, y deriva el excedente a un visor. Su algoritmo calcula dinámicamente el layout y adapta las fracciones disponibles según la orientación y proporción de la portada: una pieza apaisada puede ocupar el ancho superior completo, mientras los medios secundarios se redistribuyen en una grilla compacta. Para documentos PDF utiliza un motor ligero y diferido basado en PDF.js (Mozilla, s. f.), que previsualiza la primera página con una presentación similar a las aplicaciones de mensajería y conserva las acciones de apertura y descarga. Los reproductores de YouTube quedan encapsulados en contenedores con `aspect-ratio` y dimensiones estrictas para impedir que los `iframe` desborden su tarjeta o alteren el DOM circundante. Los comentarios distinguen nivel principal y respuesta mediante sangría y conexión visual.
+**Muro principal.** La ruta `/feed` organiza el compositor, búsqueda, filtros y publicaciones. La carga incremental utiliza un único hook de paginación: conserva carrera, materia, búsqueda y autor, deduplica por identificador, impide solicitudes concurrentes y diferencia carga inicial, error recuperable, reintento y fin. Cada tarjeta muestra autor, rol, materia, texto expandible, mosaico multimedia, reacciones, comentarios y acciones contextuales. El Media Grid limita la altura, combina portada, imágenes, PDF y YouTube, y deriva el excedente a un visor. Su algoritmo calcula dinámicamente el layout y adapta las fracciones disponibles según la orientación y proporción de la portada: una pieza apaisada puede ocupar el ancho superior completo, mientras los medios secundarios se redistribuyen en una grilla compacta. Para documentos PDF utiliza un motor ligero y diferido basado en PDF.js (Mozilla, s. f.), que previsualiza la primera página con una presentación similar a las aplicaciones de mensajería y conserva las acciones de apertura y descarga. Los reproductores de YouTube quedan encapsulados en contenedores con `aspect-ratio` y dimensiones estrictas para impedir que los `iframe` desborden su tarjeta o alteren el DOM circundante. Los comentarios distinguen nivel principal y respuesta mediante sangría y conexión visual.
 
 **Perfil y CV.** `/profile` ofrece una lectura tipo currículum con hero, contacto, carreras, métricas, trayectoria y actividad. `/profile/edit` permanece en un skeleton integral hasta recibir el perfil completo que coincide con la sesión, aplica ese snapshot una sola vez y evita que un refetch tardío sobrescriba un borrador. La carga de avatar separa almacenamiento binario y asociación GraphQL: la imagen anterior sigue siendo canónica hasta que el guardado y un nuevo `me` confirman la URL. Ambas rutas comparten una única plantilla semántica de una columna para previsualización e impresión. El nodo exportado conserva texto seleccionable y enlaces visibles, permite paginación A4 guiada por contenido y omite avatar, tablas, canvas y adornos que puedan alterar el orden de lectura automatizada. El producto lo denomina **PDF optimizado para ATS** porque su verificación mide extracción, Unicode, orden, páginas, fuentes y enlaces; no se afirma compatibilidad universal con todos los sistemas de seguimiento de candidatos.
 
@@ -832,7 +837,7 @@ Finalmente, `AUDIT_LOG` y `MODERATION_AUDIT` se pintan en rojo muy claro. `AUDIT
 
 **Administración y moderación.** `/admin` reúne usuarios, carreras, materias, publicaciones, comentarios y reportes. Las tablas y acciones respetan jerarquía de roles. Moderar significa ocultar o restaurar con motivo, no editar contenido ajeno. Las acciones críticas presentan confirmación y feedback.
 
-**Sistema visual.** **Clean Tech** y **Tech Noir** son las nomenclaturas internas utilizadas, respectivamente, para el Modo Claro y el Modo Oscuro. Ambos emplean fondos pizarra, neutros matizados y superficies suaves, evitando el blanco y el negro puros como colores principales. Esta decisión arquitectónica responde a criterios modernos de diseño de interfaces: reduce el contraste extremo y la fatiga visual durante sesiones prolongadas sin sacrificar legibilidad. El encabezado mantiene navegación activa por ruta, overflow accesible calculado sobre el ancho real y un lockup indivisible formado por el isotipo, que representa la letra `O`, y el texto DOM `neITB`, sin bloom artificial. La tipografía principal se obtiene del sistema operativo y Font Awesome 6.7.2 se fija como dependencia oficial exacta y se empaqueta localmente mediante Vite; por ello la identidad y los controles esenciales no dependen de Google Fonts ni de CDNs durante una demostración sin Internet. El error boundary global evita una pantalla en blanco y ofrece recuperación institucional.
+**Sistema visual.** **Clean Tech** y **Tech Noir** son las nomenclaturas internas utilizadas, respectivamente, para el Modo Claro y el Modo Oscuro. Ambos emplean fondos pizarra, neutros matizados y superficies suaves, evitando el blanco y el negro puros como colores principales. Esta decisión arquitectónica responde a criterios modernos de diseño de interfaces: reduce el contraste extremo y la fatiga visual durante sesiones prolongadas sin sacrificar legibilidad. La transición entre temas dura 1300 ms para hacer perceptible el cambio de paleta y se anula por completo ante `prefers-reduced-motion` o impresión. El encabezado mantiene navegación activa por ruta, overflow accesible calculado sobre el ancho real y exclusivamente el isotipo `only-logo` en ambos temas. Las superficies institucionales completas seleccionan `logo-oneitb` en modo claro y la variante `logo-oneitb-dark-mode` en oscuro, sin reconstruir el wordmark mediante texto DOM ni aplicar filtros o bloom. La tipografía principal se obtiene del sistema operativo y Font Awesome 6.7.2 se fija como dependencia oficial exacta y se empaqueta localmente mediante Vite; por ello la identidad y los controles esenciales no dependen de Google Fonts ni de CDNs durante una demostración sin Internet. El error boundary global evita una pantalla en blanco y ofrece recuperación institucional.
 
 ---
 
@@ -881,7 +886,7 @@ flowchart TB
     subgraph DATA["Persistencia e integración"]
         SQL[("SQL Server 2022")]
         REDIS[("Redis Pub/Sub opcional")]
-        FILES["Disco local / Cloudinary opcional"]
+        FILES["Local Development / Cloudinary Production"]
         SMTP["SMTP / Pickup local"]
         SIU["Adaptador SIU mock"]
     end
@@ -913,7 +918,7 @@ El diagrama se divide en cuatro franjas horizontales. La primera, azul claro, re
 
 La segunda franja contiene Nginx en producción o Vite en desarrollo. Nginx debe mostrarse como proxy de entrada que enruta `/graphql`, `/api/upload` y `/uploads`, además de resolver el fallback de la SPA. La tercera franja, celeste, contiene la API .NET 8. HotChocolate recibe GraphQL; UploadController recibe multipart; los servicios aplican reglas; DataLoaders y proyecciones evitan N+1; los Background Services ejecutan limpieza y recordatorios; Entity Framework persiste; y el interceptor de auditoría registra cambios críticos.
 
-La cuarta franja, verde, representa dependencias: SQL Server como fuente persistente; Redis como bus distribuido opcional; disco local o Cloudinary como estrategias intercambiables; SMTP productivo o pickup `.eml` de desarrollo como envío de correo; y el adaptador SIU mock como frontera externa. Redis y Cloudinary deben dibujarse con borde discontinuo por ser condicionales; SMTP es obligatorio en producción. Todas las flechas hacia datos parten del backend, nunca del navegador.
+La cuarta franja, verde, representa dependencias: SQL Server como fuente persistente; Redis como bus distribuido opcional; almacenamiento local explícito en Development o Cloudinary fail-closed en Production; SMTP productivo o pickup `.eml` de desarrollo como envío de correo; y el adaptador SIU mock como frontera externa. Redis y Cloudinary deben dibujarse con borde discontinuo por depender del ambiente; SMTP y el provider cloud son obligatorios en el perfil productivo. Todas las flechas hacia datos parten del backend, nunca del navegador.
 
 ### Diagrama de Despliegue
 
@@ -934,7 +939,7 @@ flowchart LR
         API --> UPVOL[("Volumen uploads local")]
     end
 
-    API -.->|"si está configurado"| CLOUD["Cloudinary"]
+    API -.->|"provider productivo explícito"| CLOUD["Cloudinary"]
     API -.->|"si está configurado"| MAIL["Proveedor SMTP"]
     CI["GitHub Actions<br/>Quality Gates"] -->|"build y tests"| HOST
     OPS["Administrador técnico"] -->|"variables y secretos"| HOST
@@ -952,7 +957,7 @@ flowchart LR
 
 Se dibuja un rectángulo grande titulado “Host Docker / servidor”. Dentro se ubican cuatro contenedores: Nginx, API .NET, SQL Server y Redis. Nginx y API deben ser azules; SQL Server y Redis, verdes. Fuera del host, a la izquierda, aparece el navegador conectado únicamente a Nginx por HTTPS. Nginx reenvía GraphQL, WebSocket y REST a la API por la red interna. La API se conecta con SQL Server mediante SQL Auth y con Redis mediante Pub/Sub.
 
-Debajo de SQL Server se representa un cilindro “Volumen SQL”; debajo de la API, un cilindro “Volumen uploads local”. A la derecha se muestran Cloudinary y Proveedor SMTP en gris y con flechas discontinuas desde la API, porque son servicios opcionales. En la parte superior o inferior se agregan GitHub Actions, que ejecuta calidad antes del despliegue, y Administrador técnico, que aporta variables y secretos. No debe dibujarse ninguna contraseña dentro del diagrama.
+Debajo de SQL Server se representa un cilindro “Volumen SQL”; debajo de la API, un cilindro “Volumen uploads local de Development”. A la derecha se muestran Cloudinary y Proveedor SMTP en gris y con flechas discontinuas desde la API: dependen del ambiente y son obligatorios en el perfil productivo, aunque no forman parte del host Docker. En la parte superior o inferior se agregan GitHub Actions, que ejecuta calidad antes del despliegue, y Administrador técnico, que aporta variables y secretos. No debe dibujarse ninguna contraseña dentro del diagrama.
 
 **Configuración por entorno**
 
@@ -962,7 +967,7 @@ Debajo de SQL Server se representa un cilindro “Volumen SQL”; debajo de la A
 | API | Perfil HTTPS local en `localhost:44397` | Contenedor ASP.NET Core detrás de Nginx |
 | Base de datos | SQL Server 2022 en Docker | SQL Server 2022 con volumen persistente |
 | Pub/Sub | Memoria | Redis si existe connection string; memoria como fallback |
-| Archivos | `wwwroot/uploads` | Cloudinary si está configurado; disco local como fallback |
+| Archivos | `FileStorage:Provider=Local`, `wwwroot/uploads` | `FileStorage:Provider=Cloudinary`; falla cerrado si falta configuración |
 | Correo | Pickup `.eml` local ignorado | SMTP obligatorio con host, puerto y credenciales |
 | Secretos | `dotnet user-secrets` | Variables/secret manager del entorno |
 
@@ -1077,23 +1082,23 @@ La estrategia combina análisis estático, pruebas automatizadas, compilación, 
 
 **Evidencia automatizada de cierre disponible**
 
-Los baselines siguientes corresponden a una ejecución conjunta del worktree de Spec 205.
-Todavía no reemplazan el gate integral sobre el SHA candidato: el árbol debe congelarse,
-quedar limpio y repetir los controles sin cambios posteriores.
+Los baselines siguientes corresponden al worktree integrado consolidado en `2f20bce`.
+Todavía no reemplazan el gate integral sobre el SHA candidato definitivo: el árbol debe
+congelarse, quedar limpio y repetir los controles sin cambios posteriores.
 
 | Control | Resultado documentado más reciente |
 |---|---|
-| Pruebas backend | 216/216 aprobadas; incluye regresión de storage, uploads, registro, academia y privacidad |
-| Pruebas frontend | 217/217 aprobadas; incluye hidratación/avatar, navegación adaptativa, branding, recursos visuales locales y CV semántico optimizado para ATS |
-| Build backend Release | 0 errores y 0 advertencias |
-| Build frontend Vite | 554 módulos; 1,23 s; 0 errores en Spec 205 |
+| Pruebas backend | 234/234 aprobadas; incluye bordes 0/1/15/16 del feed, provider explícito, storage, uploads, registro, academia, privacidad y carrera estudiantil única |
+| Pruebas frontend | 251/251 aprobadas; incluye paginación observable, Strict Mode, aislamiento por carrera, hidratación/avatar, navegación adaptativa, branding institucional, tema accesible, CV semántico y transición Microsoft |
+| Build backend Release | 0 errores y 0 advertencias en Spec 215 |
+| Build frontend Vite | 562 módulos; 603 ms; 0 errores en Spec 215 |
 | Modelo EF Core | Sin cambios pendientes respecto de migraciones |
 | Sesión y roles | Reemplazo Estudiante -> Moderador sin fuga de identidad, caché ni transporte |
 | Redis local | Entrega exacta entre dos proveedores Hot Chocolate y aislamiento de topic |
 | SMTP local | Tres mensajes capturados e inspeccionados mediante Mailpit |
 | Base demo e integridad | Backup verificado; 34 migraciones; seed doble estable; cero violaciones |
 | Runtime GraphQL | Seis roles; feed, académico, chat, notificaciones, empleos, administración, moderación y upload aprobados |
-| Microsoft Entra | 47 mutaciones en schema; redirect/callback idempotente, `microsoftLogin` publicado y rechazo controlado; tenant real pendiente |
+| Microsoft Entra | 47 mutaciones en schema; login institucional real aceptado hasta onboarding/muro; restan cancelación/error, logout y segunda cuenta |
 
 **Comandos canónicos de verificación**
 
@@ -1137,8 +1142,10 @@ local controlada, pero sí una afirmación de producción pública:
 - La regresión visual final debe repetirse en el navegador y la resolución que se utilizarán durante la defensa. Estudiante, Profesor, Egresado, Administrador y Empleador fueron recorridos en la aceptación operacional; resta documentar el recorrido visual de Moderador.
 - Redis fue verificado localmente entre proveedores independientes. Falta el handshake WebSocket completo a través de la red con dos navegadores aislados.
 - SMTP local fue verificado con Mailpit. SMTP público, Redis administrado y Cloudinary deben probarse con secretos reales antes de declarar validación productiva.
-- La sincronización SIU de calificaciones es simulada y la validación de matrícula ITB/SIU permanece como puerto futuro en modo manual; ninguna debe presentarse como conexión oficial.
-- Microsoft Entra está implementado; su aceptación en el tenant real permanece pendiente hasta disponer de App Registrations, consentimiento y una cuenta institucional de prueba.
+- La sincronización SIU de calificaciones es simulada y la validación de matrícula ITB/SIU permanece como puerto futuro; el modo vigente es `SelfDeclared`, no devuelve inscripciones ficticias y ninguna de las dos fronteras debe presentarse como conexión oficial.
+- Microsoft Entra completó login real, callback, onboarding y acceso al muro con una
+  cuenta institucional. Restan cancelación/error, logout y aislamiento con una segunda
+  cuenta antes de cerrar su aceptación integral.
 - Open Graph para crawlers externos puede requerir renderizado del lado servidor para una previsualización universal.
 - El costo BCrypt debe medirse nuevamente sobre el hardware objetivo antes de un despliegue público.
 
@@ -1213,7 +1220,7 @@ separado porque sus flujos se encuentran integrados en la memoria técnica gener
 
 ### 6.2 Navegación general
 
-El encabezado permite acceder al muro, módulo académico, mensajes, empleos, notificaciones y menú de usuario. Un cálculo basado en el ancho real mantiene visibles todos los destinos que entran y mueve únicamente el excedente a un menú compacto, sin depender de un breakpoint fijo. El lockup atómico de isotipo `O` y texto `neITB` regresa al inicio. Desde el menú de usuario se accede al perfil, edición, cambio de tema y cierre de sesión.
+El encabezado permite acceder al muro, módulo académico, mensajes, empleos, notificaciones y menú de usuario. Un cálculo basado en el ancho real mantiene visibles todos los destinos que entran y mueve únicamente el excedente a un menú compacto, sin depender de un breakpoint fijo. El isotipo `only-logo`, sin wordmark adicional y estable en ambos temas, regresa al inicio. Desde el menú de usuario se accede al perfil, edición, cambio de tema y cierre de sesión.
 
 ### 6.3 Perfil y currículum
 
@@ -1402,7 +1409,7 @@ La presentación debe diferenciar con precisión:
 - **Condicional:** requiere variables, secretos o proveedor externo.
 - **Pendiente de validación manual:** requiere recorrido visual final en navegador.
 
-Al corte del 3 de agosto de 2026, SMTP con Mailpit y Redis local poseen evidencia de
+Al corte del 5 de agosto de 2026, SMTP con Mailpit y Redis local poseen evidencia de
 integración; no equivalen a validación de proveedor público. La aceptación Microsoft
 Entra en el tenant institucional, Cloudinary productivo, Redis administrado, SMTP
 público y el handshake WebSocket con dos navegadores
@@ -1469,6 +1476,8 @@ GraphQL Foundation. (s. f.). *DataLoader* [Código fuente]. GitHub. Recuperado e
 GraphQL Foundation. (2021). *GraphQL specification: October 2021 edition*. https://spec.graphql.org/October2021/
 
 Hardt, D. (Ed.). (2012). *The OAuth 2.0 authorization framework* (RFC 6749). Internet Engineering Task Force. https://doi.org/10.17487/RFC6749
+
+Instituto Tecnológico Beltrán. (s. f.). *Instituto Tecnológico Beltrán*. Recuperado el 5 de agosto de 2026, de https://www.ibeltran.com.ar/
 
 Jones, M., Bradley, J., & Sakimura, N. (2015). *JSON Web Token (JWT)* (RFC 7519). Internet Engineering Task Force. https://doi.org/10.17487/RFC7519
 

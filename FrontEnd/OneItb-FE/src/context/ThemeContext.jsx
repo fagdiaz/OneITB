@@ -34,7 +34,7 @@ const applyTheme = (theme) => {
   document.documentElement.style.colorScheme = theme;
 };
 
-const TRANSITION_DURATION_MS = 800;
+const TRANSITION_DURATION_MS = 1300;
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(getInitialTheme);

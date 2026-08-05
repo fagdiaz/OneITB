@@ -43,6 +43,11 @@ const state = vi.hoisted(() => ({
   },
   mutate: vi.fn(),
   mutationLoading: false,
+  cache: {
+    evict: vi.fn(),
+    gc: vi.fn(),
+    writeQuery: vi.fn(),
+  },
 }));
 
 vi.mock('../../hooks/useAuth', () => ({
@@ -63,6 +68,7 @@ vi.mock('@apollo/client', async (importOriginal) => {
       state.mutate,
       { loading: state.mutationLoading },
     ],
+    useApolloClient: () => ({ cache: state.cache }),
   };
 });
 
@@ -121,6 +127,9 @@ describe('AcademicOnboarding', () => {
     };
     state.mutate = vi.fn();
     state.mutationLoading = false;
+    state.cache.evict.mockReset();
+    state.cache.gc.mockReset();
+    state.cache.writeQuery.mockReset();
   });
 
   it('requires a selection before allowing save', () => {
@@ -199,6 +208,18 @@ describe('AcademicOnboarding', () => {
       });
       expect(state.profile.refetch).toHaveBeenCalledTimes(1);
     });
+    expect(state.cache.evict.mock.calls.map(([argument]) => argument.fieldName))
+      .toEqual(expect.arrayContaining([
+        'me',
+        'myCareers',
+        'subjects',
+        'inquiriesPage',
+        'academicResources',
+        'myAcademicProgress',
+      ]));
+    expect(state.cache.writeQuery).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ me: expect.objectContaining({ id: 'user-1' }) }),
+    }));
     expect(await screen.findByText('Destino académico')).toBeInTheDocument();
   });
 
@@ -297,7 +318,8 @@ describe('AcademicOnboarding', () => {
 
     expect(document.documentElement).not.toHaveClass('dark');
     expect(localStorage.getItem('oneitb-theme')).toBe('dark');
-    expect(screen.getByRole('img', { name: 'OneITB' })).toHaveTextContent('neITB');
+    expect(screen.getByRole('img', { name: 'OneITB' }).querySelector('img'))
+      .toHaveAttribute('src', expect.stringContaining('logo-oneitb.png'));
   });
 
   it('does not persist when confirmation is canceled', () => {

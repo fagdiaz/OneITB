@@ -23,12 +23,14 @@ import { EmployerRequestForm } from '../Components/jobs/EmployerRequestForm'
 import { RequireAcademicOnboarding } from '../Components/onboarding/RequireAcademicOnboarding'
 import { AcademicOnboarding } from '../Components/onboarding/AcademicOnboarding'
 import { MicrosoftRedirectCallback } from '../Components/auth/MicrosoftRedirectCallback'
+import { MicrosoftRedirectBoundary } from '../Components/auth/MicrosoftRedirectBoundary'
 
 export const Routing = () => {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <AuthProvider>
       <NotificationProvider>
+      <MicrosoftRedirectBoundary>
       <Routes>
         <Route path='auth/microsoft/callback' element={<MicrosoftRedirectCallback />} />
 
@@ -62,6 +64,7 @@ export const Routing = () => {
         <Route path='*' element={<NotFound />} />
 
       </Routes>
+      </MicrosoftRedirectBoundary>
       </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>

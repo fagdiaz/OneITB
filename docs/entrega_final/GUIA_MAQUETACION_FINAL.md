@@ -3,21 +3,22 @@
 **Proyecto:** OneITB23<br>
 **Documento fuente:** `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`<br>
 **Resultado esperado:** archivo `.docx` editable y archivo `.pdf` listo para presentar<br>
-**Versión de la guía:** 3.1 - procedimiento final alineado a la Spec 201 del 3 de agosto de 2026<br>
-**Inventario gráfico vigente:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos<br>
+**Versión de la guía:** 3.2 - procedimiento final alineado al corte documental del 5 de agosto de 2026<br>
+**Inventario de la memoria:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos<br>
+**Paquete técnico complementario:** 13 vistas Mermaid en `docs/academic/04-design-diagrams.md`<br>
 **Criterio editorial:** APA 7, sujeto a los requisitos particulares del Instituto Tecnológico Beltrán
 
 > El documento Markdown es la fuente canónica. No debe reemplazarse ni editarse destructivamente durante la maquetación. Se recomienda trabajar sobre una copia y conservar los diagramas originales en formato Mermaid.
 
-> **Estado de entrada (3 de agosto de 2026).** La memoria fuente está alineada con el
-> Release Candidate académico: 117/117 ítems contabilizados (45 verificados y 72
-> implementados), ejecución conjunta de 198 pruebas backend y 144 frontend sobre el
-> worktree de Spec 201, builds limpios, 34 migraciones, base demo canónica, Microsoft
-> Entra implementado, Redis local y SMTP Mailpit verificados. Esa corrida no equivale al
-> gate integral del SHA candidato, que continúa pendiente. Todavía no existen en esta carpeta los
-> diagramas exportados, `DOCUMENTO_MAQUETACION.md`, el DOCX ni el PDF. Esta guía convierte
-> esos faltantes en una secuencia verificable y no debe utilizarse para declarar como
-> productivos los proveedores externos pendientes.
+> **Estado de entrada (5 de agosto de 2026).** La memoria fuente está alineada con el
+> Release Candidate académico: 117/117 ítems contabilizados (46 verificados y 71
+> implementados), últimos baselines de 216 pruebas backend y 225 frontend por capa
+> registrados en worktrees sucesivos, builds limpios, 34 migraciones, base demo canónica, acceso Microsoft Entra
+> real hasta onboarding/muro, Redis local y SMTP Mailpit verificados. Ese corte no
+> reemplaza el gate integral del SHA candidato definitivo. El alumno informó haber
+> renderizado los 13 Mermaid del paquete técnico; su selección, inserción y revisión
+> visual dentro del Word continúan siendo un gate editorial. Esta guía no debe utilizarse
+> para declarar como productivos los proveedores externos pendientes.
 
 ---
 
@@ -88,6 +89,19 @@ Además, la sección 5 especifica tres gráficos de gestión que deben recrearse
 13. `13-red-pert-ruta-critica.png`
 
 Conservar una copia `.svg` de cada figura y el archivo `.drawio` de los gráficos recreados manualmente. El PNG se utiliza para maximizar la compatibilidad con editores y exportadores de Word; el SVG o `.drawio` permanece como fuente maestra editable.
+
+> **No mezclar inventarios.** Los 13 Mermaid de `docs/academic/04-design-diagrams.md`
+> constituyen un paquete técnico complementario: contexto, componentes, tres DER, cuatro
+> secuencias/flujo y cuatro vistas de realtime/despliegue/operación. No sustituyen uno a
+> uno las diez figuras enumeradas arriba. Para el cuerpo del Word se utiliza la lista
+> `01` a `10` de esta guía; las vistas técnicas adicionales pueden incorporarse en anexos
+> solo si conservan legibilidad y son citadas desde el texto.
+
+El asset `docs/entrega_final/assets/oneitb-infografia.png` es una **pieza promocional
+complementaria** ya preparada para la presentación o un anexo visual. No reemplaza la
+Figura 1 técnica `01-infografia-interaccion-alumno.png`, no altera la numeración `01` a
+`13` y debe insertarse solo si mantiene legibilidad y no duplica contenido. Se conserva
+fuera de `src/assets` para evitar incorporarlo innecesariamente al bundle de la SPA.
 
 ### 1.3 Actualizaciones técnicas incorporadas
 
@@ -313,13 +327,13 @@ pandoc `
   --toc `
   --toc-depth=3 `
   --resource-path=".\docs\entrega_final" `
-  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx"
+  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.1.docx"
 ```
 
 El equivalente mínimo es:
 
 ```powershell
-pandoc ".\docs\entrega_final\DOCUMENTO_MAQUETACION.md" -o ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx"
+pandoc ".\docs\entrega_final\DOCUMENTO_MAQUETACION.md" -o ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.1.docx"
 ```
 
 #### Conversión profesional con documento de referencia
@@ -349,7 +363,7 @@ pandoc `
   --toc-depth=3 `
   --resource-path=".\docs\entrega_final" `
   --reference-doc=".\docs\entrega_final\salida\REFERENCIA_APA.docx" `
-  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx"
+  --output=".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.1.docx"
 ```
 
 6. Abrir el resultado y actualizar la tabla de contenido completa para recalcular títulos y páginas.
@@ -535,18 +549,18 @@ No intentar revisar todo simultáneamente. Ejecutar cuatro recorridos independie
 Usar nombres de entrega estables, por ejemplo:
 
 ```text
-OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx
-OneITB23_Memoria_Tecnica_PP3_2026_v2.0.pdf
+OneITB23_Memoria_Tecnica_PP3_2026_v2.1.docx
+OneITB23_Memoria_Tecnica_PP3_2026_v2.1.pdf
 ```
 
 Evitar nombres como `final_final`, `nuevo`, `corregido2` o equivalentes. Después de aprobar el PDF, generar una huella de integridad:
 
 ```powershell
 Get-FileHash `
-  ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.pdf" `
+  ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.1.pdf" `
   -Algorithm SHA256 |
   Format-List |
-  Out-File ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.0.sha256.txt"
+  Out-File ".\docs\entrega_final\salida\OneITB23_Memoria_Tecnica_PP3_2026_v2.1.sha256.txt"
 ```
 
 La huella no necesita adjuntarse salvo solicitud institucional; se conserva como evidencia de que el archivo revisado coincide con el archivo entregado.
@@ -601,9 +615,9 @@ docs/entrega_final/
 |   `-- 13-red-pert-ruta-critica.png
 `-- salida/
     |-- REFERENCIA_APA.docx
-    |-- OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx
-    |-- OneITB23_Memoria_Tecnica_PP3_2026_v2.0.pdf
-    `-- OneITB23_Memoria_Tecnica_PP3_2026_v2.0.sha256.txt
+    |-- OneITB23_Memoria_Tecnica_PP3_2026_v2.1.docx
+    |-- OneITB23_Memoria_Tecnica_PP3_2026_v2.1.pdf
+    `-- OneITB23_Memoria_Tecnica_PP3_2026_v2.1.sha256.txt
 ```
 
 El `.docx` debe considerarse el archivo de edición final; el PDF es la versión de entrega. El Markdown permanece como respaldo técnico reproducible.
@@ -644,8 +658,8 @@ el aula, conectar el equipo y comprobar proyección y audio antes del inicio.
 El paquete académico se considera completo cuando contiene:
 
 1. una copia impresa, preferentemente a color, anillada o encuadernada, de la memoria aprobada;
-2. `OneITB23_Memoria_Tecnica_PP3_2026_v2.0.docx`, editable y sin comentarios;
-3. `OneITB23_Memoria_Tecnica_PP3_2026_v2.0.pdf`, idéntico al DOCX aprobado;
+2. `OneITB23_Memoria_Tecnica_PP3_2026_v2.1.docx`, editable y sin comentarios;
+3. `OneITB23_Memoria_Tecnica_PP3_2026_v2.1.pdf`, idéntico al DOCX aprobado;
 4. presentación `OneITB23_Defensa_2026.pptx` y su exportación PDF;
 5. las 13 figuras en formato de entrega y sus fuentes editables;
 6. el Markdown canónico utilizado para producir el documento;
@@ -663,12 +677,13 @@ Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
 | Afirmación documental | Fuente de comprobación |
 |---|---|
 | 100 % global y 117/117 ítems | `docs/project_docs/ROADMAP.md` |
-| 198 pruebas backend y 144 frontend ejecutadas juntas en worktree; repetición pendiente sobre SHA | Spec 201, `DEVELOPMENT_LOG.md` y `DOCUMENTATION_STATUS.md` |
+| 216 pruebas backend y 225 frontend como últimos baselines por capa; repetición conjunta pendiente sobre SHA definitivo | Specs 205/212, `DEVELOPMENT_LOG.md` y `DOCUMENTATION_STATUS.md` |
 | EF Core sin drift | salida del gate de predefensa |
 | Backup, 34 migraciones, seed doble y seis roles | evidencia de Spec 196, Runbook y auditoría final |
 | 47 mutaciones GraphQL en el schema vigente | arquitectura, auditoría final y schema generado |
 | Redis local y SMTP Mailpit verificados | evidencia de Spec 195 |
-| Microsoft Entra implementado; tenant real pendiente | Roadmap y auditoría final |
+| Microsoft Entra aceptado hasta onboarding/muro; cierre integral pendiente | Roadmap y auditoría final |
+| Carrera estudiantil única y alcance coherente | Spec 214, arquitectura y memoria; explicar `SelfDeclared` y separar el mock SIU de calificaciones |
 | Feature Complete core | Roadmap, sin reinterpretar P5/P6 como deuda académica |
 | Release Candidate académico | sección 7.8 de la memoria |
 
@@ -731,9 +746,9 @@ OneITB23_Defensa/
 `-- LEEME_DEFENSA.txt
 ```
 
-No depender de la aceptación Microsoft Entra, SMTP público, Cloudinary ni Redis administrado durante la
-defensa. La demo controlada debe utilizar los fallbacks y contenedores locales ya
-verificados. El pendrive no se entrega y no debe contener `.env`, secretos, contraseñas,
+No depender de la disponibilidad externa de Microsoft Entra, SMTP público, Cloudinary ni
+Redis administrado durante la defensa. La demo controlada debe utilizar cuentas locales,
+fallbacks y contenedores ya verificados. El pendrive no se entrega y no debe contener `.env`, secretos, contraseñas,
 tokens, cadenas de conexión ni datos personales innecesarios.
 
 El día anterior y nuevamente en el equipo que se llevará a la mesa, ejecutar
