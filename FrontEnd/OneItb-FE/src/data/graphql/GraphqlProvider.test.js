@@ -4,6 +4,7 @@ import {
   GraphQLProvider,
   hasCanonicalPersistedSession,
   isAuthorizationFailure,
+  normalizeGraphQLErrors,
   resolveHttpUri,
   resolveWsUri,
   shouldTerminateSessionForOperation,
@@ -178,6 +179,13 @@ describe('GraphQLProvider authorization classification', () => {
     expect(
       shouldTerminateSessionForOperation('GetUserProfile', authErrors),
     ).toBe(true);
+  });
+
+  it('normalizes non-array GraphQL error payloads before authorization checks', () => {
+    expect(normalizeGraphQLErrors({ errors: authErrors })).toEqual(authErrors);
+    expect(normalizeGraphQLErrors(authErrors[0])).toEqual(authErrors);
+    expect(normalizeGraphQLErrors(undefined)).toEqual([]);
+    expect(isAuthorizationFailure({ errors: authErrors })).toBe(true);
   });
 
   it('requires both a token and a valid user identity before expiring a session', () => {

@@ -10,7 +10,7 @@
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
 | Backend automatizado más reciente | **234/234** | Spec 218 repitió la suite junto al frontend sobre el mismo worktree; todavía no equivale a evidencia sobre SHA candidato |
-| Frontend automatizado más reciente | **251/251** | Spec 218 repitió la suite junto al backend sobre el mismo worktree; falta congelar y repetir/vincular el SHA |
+| Frontend automatizado más reciente | **252/252** | Spec 218 agregó la regresión del errorLink Apollo y repitió la suite completa; el gate integral sigue pendiente de cierre sobre el SHA definitivo |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; preparación documental y logística pendiente |
 
 El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de
@@ -643,14 +643,17 @@ contradecir la memoria impresa.
 
 **Spec 218 - Candidate Freeze & Pre-Defense Gate (`[ ] [P]`, activa):** formalizó
 el contrato de evidencia y ejecutó el primer preflight conjunto del worktree. Pasaron
-backend **234/234**, frontend **251/251**, ambos builds, EF sin drift, Compose y
+backend **234/234**, frontend **252/252**, ambos builds, EF sin drift, Compose y
 `git diff --check`. Redis/Mailpit reales locales, aislamiento automatizado, integridad de
 base, seis logins y smokes de ocho dominios pasaron con cleanup y SQL sin cambios. Las 88
 rutas quedaron clasificadas: la infografía se movió al paquete académico y el logo
 anterior se conservó local e ignorado. `npm audit` conserva solo dos advisories moderados
 de React Router 6.30.4 bajo `RR-09`; el fix exige migración rompiente a v7. `CF-03` no
-cambia de estado hasta vincular el gate a un SHA limpio y completar browser/realtime. No
-se creó commit, tag ni reset de base.
+cambia de estado hasta vincular el gate integral al SHA definitivo y completar realtime.
+El corte `9d14ff4aee756f8b7c2b19a887863add6e35bbac` se publicó en `origin`; una matriz
+representativa de Visitante y seis roles pasó y permitió corregir un payload GraphQL
+no-array en el errorLink de Apollo. Logout/relogin Empleador -> Estudiante quedó sin
+identidad residual ni errores de consola. No se creó tag ni se reinició la base.
 
 **Subtotal estimado:** **6 h 45 min a 9 h 30 min**. La ruta critica es
 `CF-01 -> CF-03 -> CF-04/CF-05 -> CF-06`.

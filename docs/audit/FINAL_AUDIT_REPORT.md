@@ -459,14 +459,18 @@ infografía promocional se movió al paquete académico y el logo anterior se pr
 e ignorado, fuera del candidato. El scan de alta confianza no halló claves privadas ni
 tokens y la configuración rastreada no contiene credenciales SQL embebidas.
 
-Sobre `UNFROZEN_WORKTREE` pasaron juntos backend 234/234, frontend 251/251, ambos builds,
+Sobre el preflight pasaron juntos backend 234/234, frontend 251/251, ambos builds,
 EF sin drift, Compose y whitespace. Redis/Mailpit, aislamiento automatizado, integridad
 SQL, seis logins y smokes de ocho dominios pasaron con cleanup; el SQL existente no fue
 modificado. `npm audit` confirmó únicamente los dos advisories moderados de React Router
 6.30.4 ya controlados por `RR-09`: SSR no aplica y los destinos internos rechazan el
-vector de backslash; el fix exige v7. Browser por seis roles y dos sesiones continúan
-abiertos. No se creó commit/tag. El NO-GO temporal de `CF-01` a `CF-06` se mantiene hasta
-obtener evidencia sobre un SHA limpio.
+vector de backslash; el fix exige v7. El corte
+`9d14ff4aee756f8b7c2b19a887863add6e35bbac` se publicó y la matriz representativa de
+Visitante y seis roles pasó. Esa ejecución detectó un payload GraphQL no-array en Apollo;
+el errorLink se normalizó, logout/relogin Empleador -> Estudiante quedó limpio, la
+regresión focalizada pasó 8/8, la suite frontend subió a 252/252 y Vite compiló 565
+módulos en 716 ms. La matriz visual exhaustiva y dos perfiles realtime continúan abiertos;
+no se creó tag ni se declara todavía `CF-06`.
 
 ---
 
@@ -776,9 +780,9 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 | **Spec 215** | 230/230 | 240/240, más 44/44 uploads y 12/12 perfil/upload | Builds sin warnings, Compose productivo válido y EF sin drift; provider explícito, timeout, cancelación, 503 sanitizado e hidratación atómica | `[I]`; browser local y Cloudinary real pendientes |
 | **Spec 216** | 234/234, más 14/14 focalizadas | 249/249, más 16/16 focalizadas | Builds sin warnings; bordes 0/1/15/16, Strict Mode, concurrencia, deduplicación, error y aislamiento por carrera | `[I]`; browser con dataset >15 pendiente |
 | **Spec 217** | No modifica backend | 251/251, más 17/17 focalizadas | Vite 565 módulos; Home claro 320/768/1440 sin overflow o headings truncados; enlaces externos seguros y consola limpia | `[I]`; contraste dark y reduced-motion perceptual pendientes en el SHA candidato |
-| **Spec 218 preflight** | 234/234 | 251/251 | Builds, EF, Compose, Redis/Mailpit, base demo, seis logins, ocho dominios, audit clasificado y cleanup PASS | No es SHA candidato; browser por roles, dos sesiones y congelamiento pendientes |
+| **Spec 218 preflight** | 234/234 | 252/252 | Builds, EF, Compose, Redis/Mailpit, base demo, seis logins, ocho dominios, matriz browser representativa, aislamiento de relogin y cleanup PASS | Corte publicado; visual exhaustivo, dos sesiones realtime y congelamiento final pendientes |
 
-La referencia operativa para el siguiente gate es **234 tests backend y 251 frontend**.
+La referencia operativa para el siguiente gate es **234 tests backend y 252 frontend**.
 Spec 218 ya los ejecutó juntos, pero sobre un worktree mutable. El árbol todavía debe
 convertirse en un commit candidato y repetir o vincular ambos gates a ese mismo SHA antes
 de declarar `CF-06`.

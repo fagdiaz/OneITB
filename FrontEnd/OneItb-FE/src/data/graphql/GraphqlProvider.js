@@ -130,8 +130,16 @@ const PUBLIC_IDENTITY_OPERATIONS = new Set([
   'SubmitEmployerRequest',
 ]);
 
+export const normalizeGraphQLErrors = (graphQLErrors) => {
+  if (Array.isArray(graphQLErrors)) return graphQLErrors;
+  if (Array.isArray(graphQLErrors?.errors)) return graphQLErrors.errors;
+  if (graphQLErrors && typeof graphQLErrors === 'object') return [graphQLErrors];
+  return [];
+};
+
 export const isAuthorizationFailure = (graphQLErrors, networkError) => {
-  const graphQLAuthFailure = graphQLErrors?.some((error) => {
+  const normalizedErrors = normalizeGraphQLErrors(graphQLErrors);
+  const graphQLAuthFailure = normalizedErrors.some((error) => {
     const code = error?.extensions?.code;
     const message = error?.message || '';
     return code === 'AUTH_NOT_AUTHORIZED'
@@ -172,7 +180,8 @@ const handleSessionExpired = () => {
 };
 
 const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
-  if (!graphQLErrors?.length && !networkError) return;
+  const normalizedErrors = normalizeGraphQLErrors(graphQLErrors);
+  if (!normalizedErrors.length && !networkError) return;
 
   const definition = getMainDefinition(operation.query);
   const isSubscription = definition.kind === 'OperationDefinition'
@@ -184,18 +193,18 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 
   if (shouldTerminateSessionForOperation(
     operation.operationName,
-    graphQLErrors,
+    normalizedErrors,
     networkError,
   )) {
     handleSessionExpired();
     return;
   }
 
-  if (isAuthorizationFailure(graphQLErrors, networkError)) return;
+  if (isAuthorizationFailure(normalizedErrors, networkError)) return;
 
   console.error('GraphQL operation failed', JSON.stringify({
     operation: operation.operationName,
-    graphQLErrors: graphQLErrors?.map(({ message, path }) => ({ message, path })),
+    graphQLErrors: normalizedErrors.map(({ message, path }) => ({ message, path })),
     networkError: networkError?.message,
   }));
 });

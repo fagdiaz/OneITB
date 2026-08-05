@@ -23,8 +23,8 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
 ## [2026-08-05] - Spec 218: Candidate Freeze & Pre-Defense Gate
 
 Se inició el cierre del candidato con un contrato que separa evidencia automatizada,
-aceptación manual y proveedores externos. La activación no realizó commits, tags, resets
-de base ni cambios funcionales.
+aceptación manual y proveedores externos. El corte técnico se publicó primero como
+`9d14ff4aee756f8b7c2b19a887863add6e35bbac`; no se crearon tags ni se reinició la base.
 
 * **Inventario**: las 88 rutas Git tienen disposición explícita. La infografía promocional
   se movió de `src/assets` a `docs/entrega_final/assets` para no inflar el bundle; el logo
@@ -42,8 +42,16 @@ de base ni cambios funcionales.
   Router 6.30.4. SSR no forma parte de la SPA y los destinos influenciados externamente
   rechazan barras invertidas; la única corrección automática exige v7 y permanece en
   `RR-09` para una evolución con suite completa fuera del Code Freeze.
-* **Estado**: `CF-01` a `CF-06` continúan abiertos. El resultado corresponde a
-  `UNFROZEN_WORKTREE`, no a un SHA candidato ni a aceptación productiva.
+* **Browser y sesión**: la matriz representativa de Visitante y los seis roles confirmó
+  rutas permitidas, denegación de Admin para roles no autorizados, controles de
+  moderación y gestor de postulaciones sin errores de consola. Durante el cambio de
+  Empleador a Estudiante se detectó que Apollo podía recibir un payload GraphQL no-array;
+  se normalizó defensivamente, se agregó regresión y se revalidó logout/relogin sin
+  identidad residual. Pasaron 8/8 pruebas focalizadas, **252/252** frontend y Vite 565
+  módulos en 716 ms.
+* **Estado**: `CF-04` conserva los estados visuales exhaustivos y `CF-05` continúa
+  bloqueado hasta disponer de dos perfiles aislados. No se declara `CF-06` ni aceptación
+  productiva mientras esos gates permanezcan abiertos.
 
 ## [2026-08-05] - Spec 217: Institutional Landing & Theme Polish
 
