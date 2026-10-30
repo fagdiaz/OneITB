@@ -97,19 +97,19 @@ export const Register = () => {
     }
   }
 
-  const inputClass = 'w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition'
-  const labelClass = 'text-sm font-medium text-slate-700'
+  const inputClass = 'w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500'
+  const labelClass = 'text-sm font-medium text-slate-700 dark:text-slate-300'
 
   return (
     <div className="min-h-full flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-xl">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 dark:bg-slate-900/80 dark:border-white/10 dark:shadow-[0_20px_50px_rgba(2,6,23,0.35)]">
           <div className="mb-6 text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
               <i className="fa-solid fa-user-plus text-white text-lg" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Crear Cuenta</h1>
-            <p className="text-sm text-slate-500 mt-1">Registrate en la comunidad ITB</p>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Crear Cuenta</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Registrate en la comunidad ITB</p>
           </div>
 
           {(saved === 'error' || saved === 'validation_error') && (
@@ -164,7 +164,7 @@ export const Register = () => {
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => setShowPassword((current) => !current)}
-                    className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                    className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700 dark:hover:text-slate-200"
                     aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
                     <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} />
@@ -187,7 +187,7 @@ export const Register = () => {
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => setShowConfirmPassword((current) => !current)}
-                    className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                    className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700 dark:hover:text-slate-200"
                     aria-label={showConfirmPassword ? 'Ocultar confirmacion' : 'Mostrar confirmacion'}
                   >
                     <i className={`fa-solid ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} />
@@ -199,15 +199,15 @@ export const Register = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:bg-slate-950/50 dark:border-white/10 dark:text-slate-200">
               <div className="flex items-center justify-between gap-3">
-                <label className="text-sm font-semibold text-slate-700">Carrera actual</label>
-                <span className="text-xs font-medium text-slate-500">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Carrera actual</label>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   Seleccion unica
                 </span>
               </div>
 
-              {careersLoading && <p className="mt-2 text-sm text-slate-500">Cargando carreras...</p>}
+              {careersLoading && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Cargando carreras...</p>}
               {careersError && <p className="mt-2 text-sm font-semibold text-red-600">No se pudieron cargar las carreras.</p>}
 
               <div className="mt-3 grid max-h-44 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
@@ -216,8 +216,8 @@ export const Register = () => {
                     key={career.id}
                     className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                       selectedCareerIds.includes(career.id)
-                        ? 'border-blue-200 bg-blue-50 text-blue-800'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-slate-900'
+                        ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-600/20 dark:text-blue-300'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-slate-900 dark:border-white/10 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:border-blue-400/40 dark:hover:text-white'
                     }`}
                   >
                     <input

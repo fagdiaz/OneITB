@@ -403,7 +403,7 @@ export const UserProfile = () => {
 
             <div className="grid gap-3 sm:grid-cols-2 print:grid-cols-2 print:gap-2">
               <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950/50 print:shadow-none print:bg-transparent print:border-slate-300">
-                <p className="text-2xl font-black text-slate-950 print:text-black">{communityContributions || '—'}</p>
+                <p className="text-2xl font-black text-slate-950 dark:text-white print:text-black">{communityContributions || '—'}</p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 print:text-slate-700">
                   {pluralize(communityContributions, 'Aporte en la Comunidad', 'Aportes en la Comunidad')}
                 </p>
@@ -412,7 +412,7 @@ export const UserProfile = () => {
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950/50 print:shadow-none print:bg-transparent print:border-slate-300">
-                <p className="text-2xl font-black text-slate-950 print:text-black">{approvedSubjectsCount ?? '—'}</p>
+                <p className="text-2xl font-black text-slate-950 dark:text-white print:text-black">{approvedSubjectsCount ?? '—'}</p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 print:text-slate-700">
                   {pluralize(approvedSubjectsCount, 'Materia Aprobada', 'Materias Aprobadas')}
                 </p>
@@ -519,7 +519,7 @@ export const UserProfile = () => {
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-slate-950/50">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ultima actividad</p>
-                  <p className="text-sm font-bold text-slate-800">{formatDate(latestActivity)}</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{formatDate(latestActivity)}</p>
                 </div>
               </div>
 
@@ -543,11 +543,11 @@ export const UserProfile = () => {
                   <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">Sintesis institucional</h3>
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-xl bg-white p-3 ring-1 ring-slate-100 dark:bg-slate-900/80 dark:ring-white/10">
-                      <p className="font-black text-slate-950">{careers.length || '-'}</p>
+                      <p className="font-black text-slate-950 dark:text-white">{careers.length || '-'}</p>
                       <p className="text-xs text-slate-500">Carreras activas</p>
                     </div>
                     <div className="rounded-xl bg-white p-3 ring-1 ring-slate-100 dark:bg-slate-900/80 dark:ring-white/10">
-                      <p className="font-black text-slate-950">{activitySubjects.length || '-'}</p>
+                      <p className="font-black text-slate-950 dark:text-white">{activitySubjects.length || '-'}</p>
                       <p className="text-xs text-slate-500">Areas de actividad</p>
                     </div>
                   </div>
