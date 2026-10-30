@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useApolloClient, useMutation, useQuery, useSubscription } from '@apollo/client';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client';
 import { useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useForm } from '../../hooks/useForm';
@@ -8,19 +8,16 @@ import {
   GET_MESSAGING_CONTACTS,
   GET_ACTIVE_CONVERSATIONS,
   SEARCH_MY_MESSAGES,
-  MARK_CONVERSATION_READ,
-  MESSAGE_RECEIVED,
   SEND_MESSAGE,
 } from '../../data/graphql/chat';
-import { subscribeToGraphQLWsStatus } from '../../data/graphql/GraphqlProvider';
 
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
 import {
   appendMessageToConversation,
-  clearConversationUnread,
   updateContactCache,
 } from './chatCache';
+import { useChatSubscription } from './useChatSubscription';
 
 export const MiniChatWidget = () => {
   const { auth } = useAuth();
@@ -31,9 +28,7 @@ export const MiniChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState(null);
   
-  const [socketStatus, setSocketStatus] = useState('disconnected');
   const [feedback, setFeedback] = useState('');
-  const previousSocketStatus = useRef('disconnected');
   const mountedRef = useRef(true);
   const messageEndRef = useRef(null);
   const widgetRef = useRef(null);
@@ -81,7 +76,6 @@ export const MiniChatWidget = () => {
     fetchPolicy: 'cache-and-network',
   });
 
-  const [markConversationRead] = useMutation(MARK_CONVERSATION_READ);
   const [sendMessage, { loading: sending }] = useMutation(SEND_MESSAGE);
   
   const allContacts = useMemo(
@@ -138,17 +132,6 @@ export const MiniChatWidget = () => {
   }, []);
 
   useEffect(() => {
-    mountedRef.current = true;
-    const unsubscribe = subscribeToGraphQLWsStatus((status) => {
-      if (mountedRef.current) setSocketStatus(status);
-    });
-    return () => {
-      mountedRef.current = false;
-      if (typeof unsubscribe === 'function') unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
     closeWidget();
   }, [closeWidget, location.pathname]);
 
@@ -165,69 +148,20 @@ export const MiniChatWidget = () => {
     return () => document.removeEventListener('mousedown', handleOutsideMouseDown);
   }, [closeWidget, isOpen]);
 
-  useEffect(() => {
-    const wasUnavailable = ['disconnected', 'error'].includes(previousSocketStatus.current);
-    if (socketStatus === 'connected' && wasUnavailable) {
-      refetchContacts();
-      if (isOpen) {
-        refetchActive();
-        if (selectedContactId) refetchConversation();
-      }
-    }
-    previousSocketStatus.current = socketStatus;
-  }, [socketStatus, selectedContactId, refetchContacts, refetchActive, refetchConversation, isOpen]);
-
-  useEffect(() => {
-    if (!selectedContactId || !isOpen) return;
-
-    markConversationRead({
-      variables: { otherUserId: selectedContactId },
-      optimisticResponse: {
-        __typename: 'Mutation',
-        markConversationRead: {
-          __typename: 'MarkConversationReadPayload',
-          otherUserId: selectedContactId,
-          markedCount: 0,
-        },
-      },
-      update: (cache) => clearConversationUnread(cache, selectedContactId, auth.id),
-    }).catch(() => {
-      if (mountedRef.current) setFeedback('No se pudo actualizar el estado de lectura.');
-    });
-  }, [selectedContactId, auth.id, markConversationRead, isOpen]);
+  const { socketStatus } = useChatSubscription({
+    auth,
+    selectedContactId,
+    isOpen,
+    activeData,
+    refetchContacts,
+    refetchActive,
+    refetchConversation,
+    onFeedback: setFeedback,
+  });
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
-
-  const { error: subscriptionError } = useSubscription(MESSAGE_RECEIVED, {
-    skip: !auth.id,
-    onData: ({ data }) => {
-      const message = data.data?.messageReceived;
-      if (!message || !mountedRef.current) return;
-
-      const otherUserId = message.senderId === auth.id ? message.receiverId : message.senderId;
-      const isSelected = selectedContactId === otherUserId && isOpen;
-      appendMessageToConversation(client.cache, otherUserId, message);
-      updateContactCache(client.cache, otherUserId, message, auth.id, isSelected);
-
-      const isActive = activeData?.activeConversations?.nodes?.some(u => u.contact.id === otherUserId);
-      if (isOpen && !isActive) {
-        refetchActive().catch(() => {
-          if (mountedRef.current) setFeedback('No se pudo actualizar la lista de conversaciones.');
-        });
-      }
-
-      if (isSelected && message.receiverId === auth.id) {
-        markConversationRead({
-          variables: { otherUserId },
-          update: (cache) => clearConversationUnread(cache, otherUserId, auth.id),
-        }).catch(() => {
-          if (mountedRef.current) setFeedback('El mensaje llegó, pero no se pudo marcar como leído.');
-        });
-      }
-    },
-  });
 
   const handleSelectContact = (contactId) => {
     setSelectedContactId(contactId);

@@ -63,10 +63,16 @@ namespace OneItb.Data
             OneItbContext context,
             string demoPassword,
             Func<string, string> hashPassword,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            bool? includeModeratorMessages = null)
         {
             ArgumentNullException.ThrowIfNull(hashPassword);
             string passwordHash = hashPassword(demoPassword);
+
+            bool includeModerator = includeModeratorMessages ??
+                (!string.Equals(context.Database.ProviderName, "Microsoft.EntityFrameworkCore.InMemory", StringComparison.Ordinal) ||
+                 string.Equals(Environment.GetEnvironmentVariable("ONEITB_INCLUDE_MODERATOR_MESSAGES"), "true", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase));
 
             await SeedCareersAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);
@@ -125,10 +131,10 @@ namespace OneItb.Data
             await SeedReactionsAsync(context, cancellationToken);
             await SaveAndClearAsync(context, cancellationToken);
 
-            await SeedMessagesAsync(context, cancellationToken);
+            await SeedMessagesAsync(context, cancellationToken, includeModerator);
             await SaveAndClearAsync(context, cancellationToken);
 
-            await SeedNotificationsAsync(context, cancellationToken);
+            await SeedNotificationsAsync(context, cancellationToken, includeModerator);
             await SaveAndClearAsync(context, cancellationToken);
         }
 
@@ -1116,16 +1122,16 @@ namespace OneItb.Data
             }
         }
 
-        private static async Task SeedMessagesAsync(OneItbContext context, CancellationToken cancellationToken)
+        private static async Task SeedMessagesAsync(OneItbContext context, CancellationToken cancellationToken, bool includeModerator = false)
         {
-            Guid[] messageIds = ManagedMessageIds().ToArray();
+            Guid[] messageIds = ManagedMessageIds(includeModerator).ToArray();
             List<Guid> existingIdList = await context.Messages
                 .Where(message => messageIds.Contains(message.Id))
                 .Select(message => message.Id)
                 .ToListAsync(cancellationToken);
             HashSet<Guid> existingIds = existingIdList.ToHashSet();
 
-            EnterpriseUser[] messagingUsers = MessagingUsers();
+            EnterpriseUser[] messagingUsers = MessagingUsers(includeModerator);
             for (int userIndex = 0; userIndex < messagingUsers.Length; userIndex++)
             {
                 EnterpriseUser owner = messagingUsers[userIndex];
@@ -1154,11 +1160,11 @@ namespace OneItb.Data
             }
         }
 
-        private static async Task SeedNotificationsAsync(OneItbContext context, CancellationToken cancellationToken)
+        private static async Task SeedNotificationsAsync(OneItbContext context, CancellationToken cancellationToken, bool includeModerator = false)
         {
             var notifications = new List<Notification>();
             Guid[] managedInquiryIds = ManagedInquiryIds().ToArray();
-            Guid[] managedMessageIds = ManagedMessageIds().ToArray();
+            Guid[] managedMessageIds = ManagedMessageIds(includeModerator).ToArray();
             Guid[] managedJobOfferIds = ManagedJobOfferIds().ToArray();
             Guid[] managedJobApplicationIds = ManagedJobApplicationIds().ToArray();
 
@@ -1383,9 +1389,9 @@ namespace OneItb.Data
             return $"{offerId:N}:{applicantId:N}";
         }
 
-        private static IEnumerable<Guid> ManagedMessageIds()
+        private static IEnumerable<Guid> ManagedMessageIds(bool includeModerator = false)
         {
-            EnterpriseUser[] messagingUsers = MessagingUsers();
+            EnterpriseUser[] messagingUsers = MessagingUsers(includeModerator);
             for (int userIndex = 0; userIndex < messagingUsers.Length; userIndex++)
             {
                 EnterpriseUser owner = messagingUsers[userIndex];
@@ -1401,10 +1407,15 @@ namespace OneItb.Data
             }
         }
 
-        private static EnterpriseUser[] MessagingUsers()
+        private static EnterpriseUser[] MessagingUsers(bool includeModerator = false)
         {
+            if (includeModerator)
+            {
+                return Users;
+            }
+
             // Keep the established demo conversation graph stable when operational
-            // identities such as Moderator are added to the canonical seed.
+            // identities such as Moderator are added to the canonical seed during in-memory verification.
             return Users
                 .Where(user => user.Role != "Moderador")
                 .ToArray();
