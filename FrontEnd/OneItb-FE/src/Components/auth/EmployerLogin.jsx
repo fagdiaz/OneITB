@@ -5,13 +5,34 @@ import { REQUEST_MAGIC_LINK, LOGIN_WITH_MAGIC_LINK } from '../../data/graphql/mu
 import useAuth from '../../hooks/useAuth';
 
 const decodeJwtPayload = (jwt) => {
-  const payload = jwt.split('.')[1];
-  if (!payload) {
+  if (typeof jwt !== 'string' || !jwt.trim()) {
     throw new Error('El servidor devolvio una sesion invalida.');
   }
 
-  const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-  const decoded = JSON.parse(window.atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')));
+  const parts = jwt.split('.');
+  if (parts.length < 2 || !parts[1]) {
+    throw new Error('El servidor devolvio una sesion invalida.');
+  }
+
+  let decoded;
+  try {
+    const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    const raw = window.atob(padded);
+
+    try {
+      const bytes = Uint8Array.from(raw, (char) => char.charCodeAt(0));
+      decoded = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    } catch {
+      decoded = JSON.parse(raw);
+    }
+  } catch {
+    throw new Error('El servidor devolvio una sesion invalida.');
+  }
+
+  if (!decoded || typeof decoded !== 'object') {
+    throw new Error('El servidor devolvio una sesion invalida.');
+  }
 
   return {
     id: decoded.sub
