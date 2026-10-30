@@ -19,6 +19,28 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-10-30] - Auditoría Visual UI/UX e Integración Multi-Agente: Dark Mode, Accesibilidad WCAG y Hardening
+
+Se coordinó la segunda fase de resolución distribuida (PC + Notebook Dell) tras la ejecución de la auditoría visual forense (`docs/audit/full_audit/VISUAL_AUDIT_REPORT.md` - 27.6 KB). Se subsanaron 5 hallazgos críticos de Dark Mode (VIS-HIGH), 5 observaciones de contraste WCAG y estados (VIS-MED), y advertencias de validación de formulario (WARN-V2):
+
+* **Módulo Autenticación, Perfil y CV (`feature/ui-auth-profile-hardening` - Agente Notebook):**
+  - `Login.jsx` y `Register.jsx` (VIS-HIGH-01, VIS-HIGH-02): Soporte exhaustivo de Dark Mode en tarjetas, etiquetas, campos de texto y selector de carreras, eliminando el encandilamiento en accesos nocturnos.
+  - `UserProfile.tsx` (VIS-HIGH-03): Reparación de textos invisibles (`text-slate-950` sobre fondo oscuro); métricas comunitarias, materias aprobadas y actividad ahora renderizan con contraste pleno (`dark:text-white`, `dark:text-slate-200`).
+  - `CvEditorProfile.tsx` (WARN-V2-01): Incorporación de atributos `maxLength` coincidentes con el backend (biografía: 500, teléfono: 50, redes sociales: 200).
+  - `NotFound.jsx` (VIS-HIGH-04): Pantalla de error 404 completamente integrada a la paleta Dark Mode con anillo de foco accesible.
+
+* **Módulo Académico, Moderación, Feed Social y UI (`feature/ui-academic-admin-hardening` - Agente PC):**
+  - `AcademicDashboard.jsx` (WARN-V2-02, VIS-MED-08): Protección de estado en botón "X" de subida de recursos (`disabled` durante la transferencia para evitar abortos inesperados) y soporte Dark Mode en el badge de materias aprobadas.
+  - `AdminDashboard.jsx` (VIS-MED-05): Resalte de pestaña activa optimizado con alto contraste en tema oscuro (`dark:bg-blue-600 dark:text-white dark:shadow-md`).
+  - `UserManagement.jsx` y `ModerationManagement.jsx` (VIS-MED-04): Clases oscuras semánticas (`dark:bg-*-500/15 dark:text-*-300`) en badges de estado de usuarios y reportes.
+  - `Feed.jsx` y `CommentThread.jsx` (VIS-MED-03, VIS-MED-06, VIS-MED-07): Elevación de contraste WCAG 2.1 AA en badges de los 6 roles institucionales (> 4.5:1), soporte Dark Mode en formulario de edición rápida y nuevo empty state enriquecido con tarjeta ilustrada y llamado a la acción.
+  - `MultiSelectDropdown.jsx` (VIS-HIGH-05): Soporte de tema oscuro en disparador, popover flotante y checkboxes interactivos.
+
+* **Integración y Consolidación:**
+  - Merge sin conflictos de ambas ramas en `codex/199-ux-b2b-academic-onboarding`.
+  - Verificación de integridad sintáctica y geométrica en las 12 vistas intervenidas.
+
+---
 ## [2026-10-30] - Ejecución Multi-Agente Distribuida: Hardening de Modales, Chat y Moderación
 
 Se coordinó un equipo multi-agente distribuido (PC de escritorio + Notebook Dell) trabajando
