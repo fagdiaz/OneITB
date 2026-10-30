@@ -260,6 +260,19 @@ export const AcademicDashboard = () => {
     resetResourceForm();
   };
 
+  useEffect(() => {
+    if (!isResourceModalOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !isUploading && !addingResource) {
+        closeResourceModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isResourceModalOpen, isUploading, addingResource]);
+
   const submitResource = async (event) => {
     event.preventDefault();
     if (!selectedSubjectNumericId) {
@@ -855,7 +868,15 @@ export const AcademicDashboard = () => {
       )}
 
       {isResourceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
+        <div
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isUploading && !addingResource) {
+              closeResourceModal();
+            }
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
+        >
           <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-white p-6 shadow-2xl dark:bg-slate-950">
             <div className="flex items-start justify-between gap-4">
               <div>

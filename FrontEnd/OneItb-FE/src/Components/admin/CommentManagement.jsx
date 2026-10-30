@@ -2,8 +2,13 @@ import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { TOGGLE_COMMENT_STATUS } from '../../data/graphql/mutations/inquiries';
 import { useInquiryPage } from '../../hooks/useInquiryPage';
-
-const shortId = (id) => `#${String(id ?? '').slice(-6).toUpperCase()}`;
+import {
+  shortId,
+  ModerationArticleCard,
+  ModerationDetailModal,
+  ModerationFeedback,
+  ModerationLoadMoreButton,
+} from './PublicationManagement';
 
 export const CommentManagement = () => {
   const [selectedComment, setSelectedComment] = useState(null);
@@ -19,6 +24,7 @@ export const CommentManagement = () => {
     loadMore,
   } = useInquiryPage({ pageSize: 10 });
   const [toggleCommentStatus, { loading: updating }] = useMutation(TOGGLE_COMMENT_STATUS);
+
   const comments = posts.flatMap((post) =>
     (post.comments ?? []).map((comment) => ({
       ...comment,
@@ -44,75 +50,54 @@ export const CommentManagement = () => {
           {comments.length} comentarios en {posts.length}/{totalPostCount} publicaciones
         </span>
       </div>
-      {loading && <p className="text-sm text-slate-500">Cargando comentarios...</p>}
-      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error.message}</p>}
-      {loadMoreError && posts.length > 0 && (
-        <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">No se pudo cargar la página siguiente. Reintentá sin perder los resultados visibles.</p>
-      )}
+
+      <ModerationFeedback
+        loading={loading}
+        loadingText="Cargando comentarios..."
+        error={error}
+        loadMoreError={loadMoreError}
+        hasItems={posts.length > 0}
+      />
+
       <div className="space-y-3">
         {comments.map((comment) => (
-          <article
+          <ModerationArticleCard
             key={comment.id}
+            id={comment.id}
+            reportCount={comment.reportCount}
             onClick={() => setSelectedComment(comment)}
-            className="cursor-pointer rounded-xl border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-blue-50/40 dark:border-white/10 dark:bg-slate-950/50 dark:hover:border-blue-300/20 dark:hover:bg-blue-500/10"
+            updating={updating}
+            onDeactivate={() => toggleStatus(comment.id)}
+            meta={`${comment.user?.firstName || ''} ${comment.user?.lastName || ''} · ${new Date(comment.createdAt).toLocaleDateString('es-AR')}`}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{comment.postTitle}</p>
-                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{comment.content}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">{shortId(comment.id)}</span>
-                  <span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">{comment.reportCount ?? 0} reportes</span>
-                </div>
-                <p className="mt-2 text-xs text-slate-400">
-                  {comment.user?.firstName} {comment.user?.lastName} · {new Date(comment.createdAt).toLocaleDateString('es-AR')}
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={updating}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleStatus(comment.id);
-                }}
-                className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
-              >
-                Desactivar
-              </button>
-            </div>
-          </article>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{comment.postTitle}</p>
+            <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{comment.content}</p>
+          </ModerationArticleCard>
         ))}
       </div>
-      {hasNextPage && (
-        <button
-          type="button"
-          onClick={loadMore}
-          disabled={loadingMore}
-          className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
-        >
-          {loadingMore ? 'Cargando...' : loadMoreError ? 'Reintentar' : 'Cargar más publicaciones'}
-        </button>
-      )}
-      {selectedComment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:border dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{selectedComment.postTitle}</p>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Comentario {shortId(selectedComment.id)}</h3>
-                <p className="mt-1 text-xs text-slate-400">{new Date(selectedComment.createdAt).toLocaleString('es-AR')}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedComment(null)}
-                className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-200"
-              >
-                Cerrar
-              </button>
-            </div>
+
+      <ModerationLoadMoreButton
+        hasNextPage={hasNextPage}
+        loadMore={loadMore}
+        loadingMore={loadingMore}
+        loadMoreError={loadMoreError}
+        label="Cargar más publicaciones"
+      />
+
+      <ModerationDetailModal
+        isOpen={Boolean(selectedComment)}
+        onClose={() => setSelectedComment(null)}
+        headerTag={selectedComment?.postTitle}
+        title={`Comentario ${shortId(selectedComment?.id)}`}
+        subtitle={selectedComment?.createdAt ? new Date(selectedComment.createdAt).toLocaleString('es-AR') : ''}
+      >
+        {selectedComment && (
+          <>
             <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-950/50">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Comentario</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">{selectedComment.content}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                {selectedComment.content}
+              </p>
             </div>
             <div className="mt-4 rounded-xl border border-slate-100 bg-white p-4 dark:border-white/10 dark:bg-slate-950/60">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Publicacion relacionada</p>
@@ -125,9 +110,9 @@ export const CommentManagement = () => {
               <span><strong>Reportes:</strong> {selectedComment.reportCount ?? 0}</span>
               <span><strong>Publicacion:</strong> {shortId(selectedComment.postId)}</span>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </ModerationDetailModal>
     </section>
   );
 };

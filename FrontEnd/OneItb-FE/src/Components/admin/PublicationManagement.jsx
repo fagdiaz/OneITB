@@ -1,9 +1,131 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { TOGGLE_INQUIRY_STATUS } from '../../data/graphql/mutations/inquiries';
 import { useInquiryPage } from '../../hooks/useInquiryPage';
 
-const shortId = (id) => `#${String(id ?? '').slice(-6).toUpperCase()}`;
+export const shortId = (id) => `#${String(id ?? '').slice(-6).toUpperCase()}`;
+
+export const ModerationFeedback = ({ loading, loadingText, error, loadMoreError, hasItems }) => (
+  <>
+    {loading && <p className="text-sm text-slate-500">{loadingText}</p>}
+    {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error.message}</p>}
+    {loadMoreError && hasItems && (
+      <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        No se pudo cargar la página siguiente. Reintentá sin perder los resultados visibles.
+      </p>
+    )}
+  </>
+);
+
+export const ModerationItemBadges = ({ id, reportCount = 0 }) => (
+  <div className="mt-2 flex flex-wrap gap-2">
+    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+      {shortId(id)}
+    </span>
+    <span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+      {reportCount} reportes
+    </span>
+  </div>
+);
+
+export const ModerationLoadMoreButton = ({
+  hasNextPage,
+  loadMore,
+  loadingMore,
+  loadMoreError,
+  label = 'Cargar más publicaciones',
+}) => {
+  if (!hasNextPage) return null;
+  return (
+    <button
+      type="button"
+      onClick={loadMore}
+      disabled={loadingMore}
+      className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
+    >
+      {loadingMore ? 'Cargando...' : loadMoreError ? 'Reintentar' : label}
+    </button>
+  );
+};
+
+export const ModerationDetailModal = ({ isOpen, onClose, title, subtitle, headerTag, children }) => {
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+    >
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:border dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            {headerTag && (
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">
+                {headerTag}
+              </p>
+            )}
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
+            {subtitle && <p className="mt-1 text-xs text-slate-400">{subtitle}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20"
+          >
+            Cerrar
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+export const ModerationArticleCard = ({
+  id,
+  reportCount,
+  onClick,
+  updating,
+  onDeactivate,
+  children,
+  meta,
+}) => (
+  <article
+    onClick={onClick}
+    className="cursor-pointer rounded-xl border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-blue-50/40 dark:border-white/10 dark:bg-slate-950/50 dark:hover:border-blue-300/20 dark:hover:bg-blue-500/10"
+  >
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        {children}
+        <ModerationItemBadges id={id} reportCount={reportCount} />
+        {meta && <p className="mt-2 text-xs text-slate-400">{meta}</p>}
+      </div>
+      <button
+        type="button"
+        disabled={updating}
+        onClick={(event) => {
+          event.stopPropagation();
+          onDeactivate();
+        }}
+        className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+      >
+        Desactivar
+      </button>
+    </div>
+  </article>
+);
 
 export const PublicationManagement = () => {
   const [selectedPost, setSelectedPost] = useState(null);
@@ -34,74 +156,53 @@ export const PublicationManagement = () => {
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{totalCount} activas</span>
       </div>
-      {loading && <p className="text-sm text-slate-500">Cargando publicaciones...</p>}
-      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error.message}</p>}
-      {loadMoreError && posts.length > 0 && (
-        <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">No se pudo cargar la página siguiente. Reintentá sin perder los resultados visibles.</p>
-      )}
+
+      <ModerationFeedback
+        loading={loading}
+        loadingText="Cargando publicaciones..."
+        error={error}
+        loadMoreError={loadMoreError}
+        hasItems={posts.length > 0}
+      />
+
       <div className="space-y-3">
         {posts.map((post) => (
-          <article
+          <ModerationArticleCard
             key={post.id}
+            id={post.id}
+            reportCount={post.reportCount}
             onClick={() => setSelectedPost(post)}
-            className="cursor-pointer rounded-xl border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-blue-50/40 dark:border-white/10 dark:bg-slate-950/50 dark:hover:border-blue-300/20 dark:hover:bg-blue-500/10"
+            updating={updating}
+            onDeactivate={() => toggleStatus(post.id)}
+            meta={`${post.user?.firstName || ''} ${post.user?.lastName || ''} · ${new Date(post.publishDate).toLocaleDateString('es-AR')}`}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{post.subject?.name}</p>
-                <h3 className="font-semibold text-slate-900 dark:text-white">{post.title}</h3>
-                <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{post.content}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">{shortId(post.id)}</span>
-                  <span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">{post.reportCount ?? 0} reportes</span>
-                </div>
-                <p className="mt-2 text-xs text-slate-400">
-                  {post.user?.firstName} {post.user?.lastName} · {new Date(post.publishDate).toLocaleDateString('es-AR')}
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={updating}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleStatus(post.id);
-                }}
-                className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
-              >
-                Desactivar
-              </button>
-            </div>
-          </article>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">{post.subject?.name}</p>
+            <h3 className="font-semibold text-slate-900 dark:text-white">{post.title}</h3>
+            <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{post.content}</p>
+          </ModerationArticleCard>
         ))}
       </div>
-      {hasNextPage && (
-        <button
-          type="button"
-          onClick={loadMore}
-          disabled={loadingMore}
-          className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
-        >
-          {loadingMore ? 'Cargando...' : loadMoreError ? 'Reintentar' : 'Cargar más publicaciones'}
-        </button>
-      )}
-      {selectedPost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:border dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{selectedPost.subject?.name}</p>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedPost.title}</h3>
-                <p className="mt-1 text-xs text-slate-400">{shortId(selectedPost.id)} · {new Date(selectedPost.publishDate).toLocaleString('es-AR')}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedPost(null)}
-                className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-200"
-              >
-                Cerrar
-              </button>
-            </div>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">{selectedPost.content}</p>
+
+      <ModerationLoadMoreButton
+        hasNextPage={hasNextPage}
+        loadMore={loadMore}
+        loadingMore={loadingMore}
+        loadMoreError={loadMoreError}
+        label="Cargar más publicaciones"
+      />
+
+      <ModerationDetailModal
+        isOpen={Boolean(selectedPost)}
+        onClose={() => setSelectedPost(null)}
+        headerTag={selectedPost?.subject?.name}
+        title={selectedPost?.title}
+        subtitle={`${shortId(selectedPost?.id)} · ${selectedPost?.publishDate ? new Date(selectedPost.publishDate).toLocaleString('es-AR') : ''}`}
+      >
+        {selectedPost && (
+          <>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              {selectedPost.content}
+            </p>
             <div className="mt-5 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-950/50 dark:text-slate-300 sm:grid-cols-2">
               <span><strong>Autor:</strong> {selectedPost.user?.firstName} {selectedPost.user?.lastName}</span>
               <span><strong>Rol:</strong> {selectedPost.user?.role}</span>
@@ -122,9 +223,9 @@ export const PublicationManagement = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </ModerationDetailModal>
     </section>
   );
 };
