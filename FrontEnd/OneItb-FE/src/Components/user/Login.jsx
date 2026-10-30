@@ -154,15 +154,15 @@ export const Login = () => {
       <div className="w-full max-w-sm">
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 dark:bg-slate-900/80 dark:border-white/10 dark:shadow-[0_20px_50px_rgba(2,6,23,0.35)]">
 
           {/* Header */}
           <div className="mb-8 text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
               <i className="fa-solid fa-right-to-bracket text-white text-lg" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Iniciar Sesión</h1>
-            <p className="text-sm text-slate-500 mt-1">Accedé a tu cuenta de OneITB</p>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Iniciar Sesión</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Accedé a tu cuenta de OneITB</p>
           </div>
 
           {/* Alerts */}
@@ -189,7 +189,7 @@ export const Login = () => {
           <form onSubmit={loginUser} className="flex flex-col gap-5">
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-sm font-medium text-slate-700">
+              <label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Email institucional
               </label>
               <input
@@ -198,12 +198,12 @@ export const Login = () => {
                 name="email"
                 onChange={changed}
                 placeholder="usuario@itbeltran.com.ar"
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-sm font-medium text-slate-700">
+              <label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Contraseña
               </label>
               <div className="relative">
@@ -213,13 +213,13 @@ export const Login = () => {
                   name="password"
                   onChange={changed}
                   placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-11 text-sm text-slate-800 placeholder-slate-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-11 text-sm text-slate-800 placeholder-slate-400 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
                 <button
                   type="button"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => setShowPassword((current) => !current)}
-                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700 dark:hover:text-slate-200"
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} />

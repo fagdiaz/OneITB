@@ -818,6 +818,7 @@ export const CvEditorProfile = () => {
                   name="biography"
                   value={profileForm.biography}
                   onChange={handleProfileChange}
+                  maxLength={500}
                   rows={4}
                   className="w-full resize-y rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   placeholder="Describe tu perfil academico, experiencia y objetivos."
@@ -830,6 +831,7 @@ export const CvEditorProfile = () => {
                     name="phone"
                     value={profileForm.phone}
                     onChange={handleProfileChange}
+                    maxLength={50}
                     className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="+54 9 11 1234-5678"
                   />
@@ -840,6 +842,7 @@ export const CvEditorProfile = () => {
                     name="linkedIn"
                     value={profileForm.linkedIn}
                     onChange={handleProfileChange}
+                    maxLength={200}
                     className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="https://linkedin.com/in/usuario"
                   />
@@ -850,6 +853,7 @@ export const CvEditorProfile = () => {
                     name="instagram"
                     value={profileForm.instagram}
                     onChange={handleProfileChange}
+                    maxLength={200}
                     className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="https://instagram.com/usuario"
                   />
@@ -860,6 +864,7 @@ export const CvEditorProfile = () => {
                     name="facebook"
                     value={profileForm.facebook}
                     onChange={handleProfileChange}
+                    maxLength={200}
                     className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="https://facebook.com/usuario"
                   />
