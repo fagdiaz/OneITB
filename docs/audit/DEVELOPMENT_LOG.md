@@ -19,6 +19,29 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-10-30] - Ejecución Multi-Agente Distribuida: Hardening de Modales, Chat y Moderación
+
+Se coordinó un equipo multi-agente distribuido (PC de escritorio + Notebook Dell) trabajando
+en ramas Git aisladas para resolver los hallazgos de optimización y ergonomía de la auditoría:
+
+* **Módulo Chat & Mensajería (`feature/mod-chat-refactor` - Agente PC):**
+  - Extracción del hook reutilizable `useChatSubscription.js` con tests dedicados (`useChatSubscription.test.jsx`).
+  - Reducción de ~180 líneas de lógica de suscripción WebSockets duplicada entre `PrivateChat.jsx` y `MiniChatWidget.jsx`.
+  - Precarga determinista de hilos de chat para `moderador1@itbeltran.com.ar` en `EnterpriseDemoSeeder.cs`.
+
+* **Módulo Empleo, Auth & Modales (`feature/mod-jobs-hardening` - Agente Notebook):**
+  - `JobBoard.jsx`: Modal de publicación de vacante elevado a estándar con cierre por tecla `Escape`, descarte por clic exterior en backdrop y botón `X` accesible, con suite completa de tests en `JobBoard.test.jsx`.
+  - `EmployerLogin.jsx`: Refactor defensivo de `decodeJwtPayload` con decodificación UTF-8 segura (`TextDecoder`).
+
+* **Módulo Admin & Académico (`feature/mod-admin-academic` - Agente PC):**
+  - `AcademicDashboard.jsx`: Modal de carga de recursos académicos protegido con cierre por `Escape` y backdrop click.
+  - `PublicationManagement.jsx` y `CommentManagement.jsx`: Extracción de subcomponentes de moderación compartidos (`ModerationArticleCard`, `ModerationDetailModal`, `ModerationFeedback`, `ModerationLoadMoreButton`), eliminando más de 120 líneas redundantes.
+
+* **Integración y Gobernanza:**
+  - Fast-forward merge limpio sin conflictos a la rama principal `codex/199-ux-b2b-academic-onboarding`.
+  - Eliminación automática de ramas temporales de transferencia remota.
+
+---
 ## [2026-10-30] - Auditoría Integral 360° y Hardening de Micro-Interacciones UI
 
 Se implementó y ejecutó de forma completamente autónoma la suite de auditoría integral
