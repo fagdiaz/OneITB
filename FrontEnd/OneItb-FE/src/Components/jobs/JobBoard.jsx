@@ -210,6 +210,21 @@ export const JobBoard = () => {
     setFeedback(null);
   };
 
+  useEffect(() => {
+    if (!isModalOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen, saving]);
+
   const handleApply = async (jobOfferId) => {
     setFeedback(null);
     setApplyingOfferId(jobOfferId);
@@ -410,7 +425,17 @@ export const JobBoard = () => {
       </section>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 px-4 py-6 backdrop-blur-sm">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-offer-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 px-4 py-6 backdrop-blur-sm"
+        >
           <form
             onSubmit={handleSubmit}
             className="w-full max-w-2xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-950/20 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
@@ -420,7 +445,7 @@ export const JobBoard = () => {
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
                   Nueva oportunidad
                 </p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
+                <h2 id="modal-offer-title" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
                   Publicar oferta laboral
                 </h2>
               </div>
@@ -428,7 +453,7 @@ export const JobBoard = () => {
                 type="button"
                 onClick={closeModal}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
-                aria-label="Cerrar"
+                aria-label="Cerrar modal"
               >
                 <i className="fa-solid fa-xmark" />
               </button>
