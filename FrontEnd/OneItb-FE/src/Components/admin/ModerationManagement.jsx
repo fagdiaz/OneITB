@@ -96,9 +96,9 @@ export const ModerationManagement = () => {
                   </td>
                   <td className="px-5 py-4">
                     <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                      report.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                      report.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700' :
-                      'bg-red-100 text-red-700'
+                      report.status === 'Pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 dark:border dark:border-amber-500/30' :
+                      report.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border dark:border-emerald-500/30' :
+                      'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300 dark:border dark:border-red-500/30'
                     }`}>
                       {report.status}
                     </span>

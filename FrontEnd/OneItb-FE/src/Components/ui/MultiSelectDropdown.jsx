@@ -46,23 +46,23 @@ export const MultiSelectDropdown = ({ options, selectedValues, onChange, placeho
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+        className="w-full flex items-center justify-between bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm dark:bg-slate-900 dark:border-white/10 dark:text-slate-100"
       >
         <span className="truncate mr-2">{displayText}</span>
         <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto dark:bg-slate-900 dark:border-white/10 dark:text-slate-100">
           {options.length > 0 && (
-            <label className="flex items-center px-4 py-2 border-b border-slate-100 hover:bg-slate-50 cursor-pointer sticky top-0 bg-white z-10">
+            <label className="flex items-center px-4 py-2 border-b border-slate-100 hover:bg-slate-50 cursor-pointer sticky top-0 bg-white z-10 dark:bg-slate-900 dark:border-white/10 dark:hover:bg-white/10">
               <input
                 type="checkbox"
                 checked={isAllSelected}
                 onChange={handleToggleAll}
                 className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-sm font-semibold text-slate-800">Seleccionar Todos</span>
+              <span className="ml-2 text-sm font-semibold text-slate-800 dark:text-slate-100">Seleccionar Todos</span>
             </label>
           )}
 
@@ -71,14 +71,14 @@ export const MultiSelectDropdown = ({ options, selectedValues, onChange, placeho
               <div className="px-4 py-2 text-sm text-slate-500 italic">No hay opciones disponibles</div>
             ) : (
               options.map(option => (
-                <label key={option.id} className="flex items-center px-4 py-2 hover:bg-slate-50 cursor-pointer transition-colors">
+                <label key={option.id} className="flex items-center px-4 py-2 hover:bg-slate-50 cursor-pointer transition-colors dark:hover:bg-white/10">
                   <input
                     type="checkbox"
                     checked={selectedValues.includes(option.id)}
                     onChange={() => handleToggleOption(option.id)}
                     className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm text-slate-700 truncate">{option.name}</span>
+                  <span className="ml-2 text-sm text-slate-700 truncate dark:text-slate-200">{option.name}</span>
                 </label>
               ))
             )}

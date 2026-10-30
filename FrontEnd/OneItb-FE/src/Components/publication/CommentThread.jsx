@@ -29,11 +29,11 @@ const buildCommentTree = (comments = []) => {
 };
 
 const roleStyles = {
-  Administrador: { name: 'text-indigo-700 dark:text-indigo-300', badge: 'bg-indigo-50 text-indigo-500 dark:bg-indigo-500/10 dark:text-indigo-200', label: 'admin' },
-  Moderador: { name: 'text-amber-700 dark:text-amber-300', badge: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-200', label: 'moderador' },
+  Administrador: { name: 'text-indigo-700 dark:text-indigo-200', badge: 'bg-indigo-50 text-indigo-700 border border-indigo-200/60 dark:border-transparent dark:bg-indigo-400/15 dark:text-indigo-200', label: 'admin' },
+  Moderador: { name: 'text-amber-800 dark:text-amber-200', badge: 'bg-amber-50 text-amber-800 border border-amber-200/60 dark:border-transparent dark:bg-amber-400/15 dark:text-amber-200', label: 'moderador' },
   Profesor: { name: 'text-emerald-700 dark:text-emerald-300', badge: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-200', label: 'profesor' },
-  Estudiante: { name: 'text-blue-700 dark:text-blue-300', badge: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-200', label: 'estudiante' },
-  Egresado: { name: 'text-cyan-700 dark:text-cyan-300', badge: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-200', label: 'egresado' },
+  Estudiante: { name: 'text-blue-700 dark:text-sky-200', badge: 'bg-blue-50 text-blue-700 border border-blue-200/60 dark:border-transparent dark:bg-sky-400/15 dark:text-sky-200', label: 'estudiante' },
+  Egresado: { name: 'text-cyan-800 dark:text-cyan-200', badge: 'bg-cyan-50 text-cyan-800 border border-cyan-200/60 dark:border-transparent dark:bg-cyan-400/15 dark:text-cyan-200', label: 'egresado' },
   Empleador: { name: 'text-fuchsia-700 dark:text-fuchsia-300', badge: 'bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:text-fuchsia-200', label: 'empleador' },
 };
 

@@ -103,7 +103,7 @@ export const UserManagement = () => {
                     </td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                        user.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border dark:border-emerald-500/30' : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300 dark:border dark:border-red-500/30'
                       }`}>
                         {user.isActive ? 'Activo' : 'Suspendido'}
                       </span>

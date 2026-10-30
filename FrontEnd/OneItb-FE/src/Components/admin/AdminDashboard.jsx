@@ -49,7 +49,7 @@ export const AdminDashboard = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
               activeTab === tab.id
-                ? 'bg-slate-900 text-white'
+                ? 'bg-slate-900 text-white shadow-sm dark:bg-blue-600 dark:text-white dark:shadow-md dark:shadow-blue-600/30'
                 : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100'
             }`}
           >

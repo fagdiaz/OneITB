@@ -695,7 +695,7 @@ export const AcademicDashboard = () => {
                         {item.subject?.career?.name} - {item.subject?.code}
                       </p>
                     </div>
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                    <span className="rounded-full border border-transparent bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-400/15 dark:text-emerald-200">
                       {statusLabels[item.status] ?? item.status}
                     </span>
                   </div>
@@ -889,7 +889,9 @@ export const AcademicDashboard = () => {
               <button
                 type="button"
                 onClick={closeResourceModal}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
+                disabled={isUploading || addingResource}
+                data-testid="add-resource-modal-close"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
                 aria-label="Cerrar modal de recurso"
               >
                 <i className="fa-solid fa-xmark" />
