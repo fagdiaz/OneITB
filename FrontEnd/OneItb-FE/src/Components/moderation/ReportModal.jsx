@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { REPORT_INQUIRY } from '../../data/graphql/mutations/moderation';
 
 export const ReportModal = ({ isOpen, onClose, inquiryId, onReported }) => {
   const [reason, setReason] = useState('');
   const [reportInquiry, { loading, error }] = useMutation(REPORT_INQUIRY);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !loading) onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, loading, onClose]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -24,7 +33,14 @@ export const ReportModal = ({ isOpen, onClose, inquiryId, onReported }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !loading) onClose();
+      }}
+    >
       <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:shadow-[0_24px_80px_rgba(2,6,23,0.55)] dark:[&_h2]:text-white dark:[&_p]:text-slate-400">
         <div className="flex items-start justify-between gap-4">
           <div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
@@ -30,6 +30,17 @@ export const SubjectManagement = () => {
   const [addSubject, { loading: adding }] = useMutation(ADD_SUBJECT);
   const [updateSubject, { loading: updating }] = useMutation(UPDATE_SUBJECT);
   const [toggleStatus, { loading: toggling }] = useMutation(TOGGLE_SUBJECT_STATUS);
+
+  const isBusy = adding || updating || toggling;
+
+  useEffect(() => {
+    if (!isModalOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !isBusy) closeForm();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, isBusy]);
 
   const subjects = data?.subjects ?? [];
   const careers = (careersData?.careers ?? []).filter((career) => career.isActive);
@@ -138,11 +149,27 @@ export const SubjectManagement = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isBusy) closeForm();
+          }}
+        >
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:border dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:[&_input]:border-white/10 dark:[&_input]:bg-slate-950/70 dark:[&_input]:text-slate-100 dark:[&_select]:border-white/10 dark:[&_select]:bg-slate-950/70 dark:[&_select]:text-slate-100 dark:[&_label]:text-slate-300">
-            <h3 className="mb-4 text-lg font-bold text-slate-800 dark:text-white">
-              {editingSubject ? 'Editar Materia' : 'Nueva Materia'}
-            </h3>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+                {editingSubject ? 'Editar Materia' : 'Nueva Materia'}
+              </h3>
+              <button
+                type="button"
+                onClick={closeForm}
+                disabled={isBusy}
+                aria-label="Cerrar modal"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200"
+              >
+                <i className="fa-solid fa-xmark text-lg" />
+              </button>
+            </div>
             <form onSubmit={submitSubject} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-1 text-xs font-semibold text-slate-600">

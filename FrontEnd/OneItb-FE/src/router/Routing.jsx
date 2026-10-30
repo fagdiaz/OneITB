@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom'
+import { Routes, Route, BrowserRouter, Navigate, useParams } from 'react-router-dom'
 import { PublicLayout } from '../Components/layout/public/PublicLayout'
 import { Landing } from '../Components/user/Landing'
 import { Login } from '../Components/user/Login'
@@ -25,6 +25,16 @@ import { AcademicOnboarding } from '../Components/onboarding/AcademicOnboarding'
 import { MicrosoftRedirectCallback } from '../Components/auth/MicrosoftRedirectCallback'
 import { MicrosoftRedirectBoundary } from '../Components/auth/MicrosoftRedirectBoundary'
 
+const PostRedirect = () => {
+  const { id } = useParams()
+  return <Navigate to={id ? `/feed?inquiryId=${encodeURIComponent(id)}` : '/feed'} replace />
+}
+
+const ProfileRedirect = () => {
+  const { id } = useParams()
+  return <Navigate to={id ? `/profile/${encodeURIComponent(id)}` : '/profile'} replace />
+}
+
 export const Routing = () => {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -38,23 +48,33 @@ export const Routing = () => {
           <Route index element={<Landing />} />
           <Route path='login' element={<Login />} />
           <Route path='register' element={<Register />} />
+          <Route path='registro' element={<Navigate to="/register" replace />} />
           <Route path='employer-login' element={<EmployerLogin />} />
           <Route path='empleos/solicitud' element={<EmployerRequestForm />} />
           <Route path='certificate/:id' element={<PublicCertificate />} />
         </Route>
 
         <Route path='onboarding/academic' element={<AcademicOnboarding />} />
+        <Route path='onboarding' element={<Navigate to="/onboarding/academic" replace />} />
 
         <Route element={<RequireAcademicOnboarding />}>
           <Route path='/' element={<PrivateLayout />}>
             <Route path='feed' element={<Feed />} />
+            <Route path='post/:id' element={<PostRedirect />} />
             <Route path='profile' element={<UserProfile />} />
             <Route path='profile/:id' element={<UserProfile />} />
+            <Route path='perfil' element={<Navigate to="/profile" replace />} />
+            <Route path='perfil/:id' element={<ProfileRedirect />} />
             <Route path='profile/edit' element={<CvEditorProfile />} />
+            <Route path='perfil/editar' element={<Navigate to="/profile/edit" replace />} />
             <Route path='chat' element={<PrivateChat />} />
+            <Route path='mensajes' element={<Navigate to="/chat" replace />} />
             <Route path='academic' element={<AcademicDashboard />} />
+            <Route path='academico' element={<Navigate to="/academic" replace />} />
+            <Route path='materias' element={<Navigate to="/academic" replace />} />
             <Route path='empleos' element={<JobBoard />} />
             <Route path='empleos/mis-ofertas' element={<EmployerJobOffers />} />
+            <Route path='empresa/ofertas' element={<Navigate to="/empleos/mis-ofertas" replace />} />
             <Route path='admin' element={<AdminDashboard />} />
             <Route path='admin/users' element={<Navigate to="/admin" replace />} />
             <Route path='logout' element={<Logout></Logout>} />

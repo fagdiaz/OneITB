@@ -19,6 +19,284 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-10-30] - Auditoría Integral 360° y Hardening de Micro-Interacciones UI
+
+Se implementó y ejecutó de forma completamente autónoma la suite de auditoría integral
+multinivel mediante las skills `speckit-code-audit`, `speckit-db-audit` y `speckit-doc-audit`.
+Se procesaron 10 de 10 módulos en `docs/audit/full_audit/` evaluando las 28 vistas principales,
+37 entidades de Entity Framework Core, 91 acciones interactivas y 12 modales/dropdowns.
+
+* **Hallazgos y Evidencias:**
+  - 0 defectos críticos bloqueantes o errores 500.
+  - Blindaje relacional en `OneItbContext.cs`: 49 de 50 relaciones configuradas con `DeleteBehavior.Restrict`.
+  - Cobertura total de los 6 roles en `EnterpriseDemoSeeder.cs` (15 identidades con BCrypt determinista).
+  - Documentación de arquitectura contrastada con Ground Truth (20 diagramas Mermaid operativos).
+
+* **Hardening Inmediato Aplicado:**
+  - `Routing.jsx`: Incorporadas 8 rutas de cortesía (`/registro`, `/perfil`, `/academico`, `/mensajes`, `/post/:id`, etc.) para evitar respuestas 404 al navegar URLs históricas o documentadas.
+  - Micro-interacciones: `EditUserModal.jsx`, `SubjectManagement.jsx` y `ReportModal.jsx` elevados a estándar accesible con soporte de descarte por tecla `Escape`, clic exterior en backdrop y botón de cierre en cabecera.
+
+---
+## [2026-08-08] - Spec 218: reconciliación posterior a la defensa no realizada
+
+Se clasificó de forma no destructiva el worktree documental y los artefactos Word/Agy, y
+se reconciliaron las fuentes vivas con el resultado real: la defensa prevista para el
+07/08/2026 no ocurrió porque no se completaron a tiempo la documentación final, el
+refinamiento/cierre y la auditoría manual. Se preservó el preflight 234/252 como evidencia
+histórica, sin convertirlo en gate integral ni declarar versión presentada, tag o
+`CF-06`. No se modificó código funcional, pruebas, migraciones, paquetes, configuración
+de aplicación/runtime o infraestructura; solo se agregó una regla específica de higiene
+en `.gitignore`. No se ejecutó QA manual ni se realizó commit.
+
+* **Clasificación actual**:
+  - Rama `codex/199-ux-b2b-academic-onboarding`, HEAD
+    `7a6036cbe6830dcb41590b46f88944fab3e76e60`.
+  - Inventario inicial de 37 rutas Git visibles: 10 documentos rastreados modificados y
+    27 fuentes/artefactos documentales no rastreados. Después de reconciliar el Runbook y
+    aplicar la exclusión específica de `prompt_agy.txt`, el árbol conserva 38 rutas
+    visibles (12 modificadas + 26 no rastreadas), siempre con cero cambios funcionales.
+  - El v2.2 P04A es OOXML estructuralmente válido y el artefacto Word más desarrollado
+    (76 páginas registradas, 43 tablas y 26 CU), pero sigue parcial/mezclado y sin QA
+    visual. La ejecución de Agy no produjo v2.3, preview, auditoría, backup pre-Agy ni
+    `_FAILED`; se conserva clasificada como fallida antes de materializar entregables.
+  - Se reconstruyó por separado un
+    `OneITB23_Memoria_Tecnica_PP3_2026_v2.3_CODEX_BORRADOR_TEXTO.docx` determinístico,
+    usando el v2.2 solo como carcasa institucional y el Markdown canónico más los 26 CU
+    como contenido. El borrador permanece ignorado y no se promueve a entrega final.
+* **Estado exacto de QA**:
+  - T022 permanece `NOT RUN`: ocho filas realtime pendientes, sin dos perfiles aislados.
+  - T023 permanece abierto/aggregate `NOT RUN`: solo existen observaciones parciales de
+    loading poblado y consola; empty/error, teclado, responsive, temas, impresión y
+    recorridos cross-cutting no fueron ejecutados.
+  - `CF-03`, `CF-04`, `CF-05`, `CF-06`, T025, T026 y T030 continúan abiertos.
+* **Archivos principales modificados**:
+  - `AGENTS.md`, `README.md` y evidencia local de `specs/218-candidate-freeze-predefense-gate/`.
+  - `.gitignore`, con la regla exacta `/prompt_agy.txt`; el prompt fue preservado.
+  - `docs/project_docs/ROADMAP.md`.
+  - `docs/audit/FINAL_AUDIT_REPORT.md`, `RUNBOOK_DEV.md` y
+    `DOCUMENTATION_STATUS.md`.
+  - `docs/academic/01-project-overview.md`.
+  - `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`,
+    `DOCUMENTO_MAQUETACION.md` y `GUIA_MAQUETACION_FINAL.md`.
+* **Validación ejecutada**:
+  - 26 Markdown revisados, 28 enlaces locales válidos y cero destinos faltantes.
+  - Fences balanceados; 23 fuentes `.mmd` con cabecera estática reconocida; 13 Mermaid en
+    el paquete técnico, 10 en la memoria y cero embebidos en el derivado de maquetación.
+  - Métrica vigente 234/252, términos de fecha/defensa y T022/T023 contrastados.
+  - DOCX v2.3: OOXML PASS, una sección A4, 782 párrafos, 38 tablas con geometría exacta,
+    CU-01 a CU-26 únicos, TOC/PAGE, 13 figuras numeradas más el requisito de Diagrama de
+    Clases, accesibilidad 0/0/0 y rebuild determinístico con SHA-256
+    `b3ffe5036639fb71df16d4da8500bfa9a80baabe16668b4a739a59ac2a3143f2`.
+  - `git diff --check` PASS; Development Log con 173 entradas, primera fecha 2026-08-08 y
+    orden cronológico descendente sin errores.
+  - Bloqueado: `render_docx.py` no pudo producir PDF/PNG porque LibreOffice/`soffice` no
+    está disponible. No ejecutado: compilación Mermaid, runtime, browser o suites de
+    producto. El DOCX es un borrador estructural, no DF-05/T023/CF-06.
+
+## [2026-08-06] - Normalización documental final previa a maquetación
+
+Normalización transversal final antes de producir diagramas definitivos, DOCX y PDF.
+No se modificó código funcional, pruebas, entidades, migraciones, configuración, scripts,
+infraestructura, dependencias ni assets. No se realizó commit.
+
+* **Inconsistencias corregidas**:
+  - `docs/audit/FINAL_AUDIT_REPORT.md` (sección 1.2): distribución vigente `72 [I] / 45 [V]`
+    corregida a `71 [I] / 46 [V]`. Era la única referencia con los valores anteriores a la
+    regresión del errorLink Apollo incorporada en Spec 218.
+  - `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` (bloque "Estado de entrada"):
+    baselines `216 backend / 225 frontend (por capa, worktrees sucesivos)` reemplazados
+    por `234 backend / 252 frontend (ejecutados conjuntamente en el preflight de Spec 218)`;
+    afirmación de que el alumno informó haber renderizado los 13 Mermaid sustituida por
+    descripción exacta: auditados estáticamente, render compilado y QA visual A4 pendientes;
+    fecha de estado actualizada de `5 de agosto` a `6 de agosto de 2026`.
+  - `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` (sección 1.5, fecha de imprenta):
+    `"La fecha objetivo para enviar el material a imprenta es el 4 de agosto de 2026"`
+    marcada como objetivo original vencido; impresión declarada urgente/inmediata con
+    referencia explícita a la defensa del 7 de agosto de 2026 a las 09:00.
+  - `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` (tabla 5.3 de coherencia):
+    `"216 pruebas backend y 225 frontend como últimos baselines por capa"` actualizado a
+    `"234 pruebas backend y 252 frontend ejecutados conjuntamente en el preflight de Spec 218"`;
+    fuente de comprobación actualizada de `Specs 205/212` a `Spec 218`.
+  - `docs/audit/DOCUMENTATION_STATUS.md`: fecha de revisión actualizada a `2026-08-06`;
+    `GUIA_MAQUETACION_FINAL.md` incorporada en la lista de fuentes normalizadas.
+* **Históricos preservados**:
+  - Baselines `251/251` en entradas de Spec 217 en Development Log y Roadmap: son
+    evidencia histórica del corte de Spec 217 anterior al 252 de Spec 218; se conservan.
+  - Valores `216/225` en Spec 205/212 del catálogo de evidencia: histórico de esos
+    cortes; se conservan.
+  - Entrada en FINAL_AUDIT_REPORT sobre `CF-03`/`CF-06`: umbral de release; se conserva.
+* **Métricas vigentes finales**:
+  - Alcance: 117/117 ítems — 46 `[V]` y 71 `[I]`
+  - Backend: 234/234; frontend: 252/252 (preflight conjunto Spec 218, sin SHA candidato)
+  - Producto: Release Candidate académico, core Feature Complete, Code Freeze local
+  - SHA candidato: no existe todavía; `CF-03`–`CF-06` abiertos
+* **Estado de los diagramas**:
+  - 13 bloques Mermaid en `04-design-diagrams.md` auditados estáticamente
+  - Render compilado, exportación y QA visual A4 pendientes (gates `DF-03`/`QA-DIAG-01`)
+  - No existe `mmdc` ni renderizador Mermaid local
+* **Estado de Microsoft Entra**:
+  - Aceptado con cuenta institucional real hasta onboarding/muro
+  - Pendientes: cancelación/error, logout y aislamiento con segunda cuenta organizacional
+* **Estado de `core-web/`**:
+  - Corte documentado: Spec 217, 2026-08-05
+  - Pendiente de regeneración tras la normalización documental de Specs 218+ y esta pasada
+  - No existe comando documentado y determinista que pueda ejecutarse sin instalar
+    dependencias o secretos; regeneración diferida a intervención manual
+* **Validaciones ejecutadas**:
+  - `git diff --check`: sin errores de whitespace (solo warnings CRLF esperados)
+  - `git status --short`: 9 archivos modificados de sesiones anteriores + `prompt_agy.txt` sin seguimiento
+  - `git diff --stat`: confirmó archivos afectados
+  - Búsqueda exhaustiva de métricas obsoletas (`45 [V]`, `72 [I]`, `216/225`, `234/251`, `251/251`,
+    render Mermaid declarado, fecha futura de imprenta) en todos los documentos requeridos
+* **Documentos inspeccionados sin cambios necesarios**:
+  - `README.md`, `docs/academic/01-project-overview.md`, `docs/academic/02-software-requirements.md`,
+    `docs/academic/03-use-cases.md`, `docs/academic/04-design-diagrams.md`,
+    `docs/project_docs/scope-and-requirements.md`, `docs/project_docs/architecture-and-design.md`,
+    `docs/project_docs/ROADMAP.md`, `docs/audit/RUNBOOK_DEV.md`,
+    `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`
+* **Ausencia de cambios funcionales**: no se modificaron código, tests, entidades, migraciones,
+  configuración, scripts, infraestructura, dependencias ni assets. No se realizó commit.
+
+## [2026-08-06] - Arbitraje final de los 13 diagramas de diseño
+
+Revisión de arbitraje sobre la auditoría ejecutada por Gemini 3.6 Flash High en
+`docs/academic/04-design-diagrams.md`. No se modificó código funcional, pruebas, entidades,
+migraciones, configuración, scripts ni dependencias. No se realizó commit.
+
+* **Fuentes de contraste**: entidades C#, `OneItbContext.cs` (configuración EF), modelo snapshot
+  (`OneItbContextModelSnapshot.cs`), `docker-compose.yml`, `docker-compose.acceptance.yml`,
+  `docker-compose.prod.yml`, Dockerfiles, `nginx.conf` y servicios de autenticación.
+* **Hallazgos de Gemini confirmados**:
+  - `User.Id` es PK y FK a `Account.Id` (sin `AccountId` independiente): correcto.
+  - `MagicLink.Token` persiste digest SHA-256 (sin propiedad `TokenHash`; sin `UsedAt`; campo real `IsUsed`): correcto.
+  - `MagicLink` no tiene índice único sobre `Token`: correcto.
+  - Propiedades CV (Company, Role, Institution, Degree, Name, Level): todas verificadas con tipos y nullability correctos.
+  - `(UserId, SortOrder)` es índice compuesto no único: correcto.
+  - `ModerationAudit` tiene `Summary`, `CreatedAt`, `ActorUserId` (no nullable), cuatro FKs target (nullable): correcto.
+  - `AcademicProgress.Score` es `decimal?` nullable; UK en `UserId+SubjectId`: correcto.
+  - `AcademicResource.Category` es enum `AcademicResourceCategory`; `ResourceType` es string: correcto.
+  - `EmployerRequest` filtros `[Status] IN ('Pending','Approved')`: correcto.
+  - `Reaction`, `CommentReaction`, `UserInteraction`, `NotificationPreference` UKs: todos verificados.
+  - `EmployerOnboardingOutbox` UK sobre `EmployerRequestId` (1:1): correcto.
+  - `AuditLog.ActorUserId` nullable: correcto.
+  - Recomendaciones A4 para las 13 figuras: aceptadas como valor editorial.
+  - Figura 12 réplica B anotada como futuro: correcto.
+* **Hallazgos de Gemini corregidos o descartados**:
+  - **Career.Code UK**: Gemini afirmó `Career.Code UK` pero no existe índice único sobre `Career.Code` en
+    la configuración EF ni en el snapshot. Solo `Career.Name` tiene UK. Se eliminó UK de `Career.Code` en
+    el DER y se corrigió la prosa.
+  - **Account.IsActive**: la versión original mostraba `Account.IsActive`. Gemini la eliminó de Account
+    correctamente (Account no posee esa propiedad; la activación reside en `User.IsActive`). Confirmado.
+  - **Notification.GroupKey nullable**: Gemini no marcó GroupKey como nullable en el DER. Corregido:
+    `GroupKey` es `string?` y el UK compuesto tiene filtro `[GroupKey] IS NOT NULL`.
+  - **CommunityReport filtro**: la prosa no especificaba el filtro `[Status] = 'Pending'`. Corregido.
+  - **AcademicProgress UK sobre Score**: la anotación UK estaba sobre `Score`, sugiriendo unicidad de Score.
+    El UK pertenece al par `UserId+SubjectId`. Movido a la prosa.
+  - **EmployerRequest filtro**: Gemini anotó `"UK filtrado Pending/Approved"` sin el SQL real. La prosa
+    ahora incluye `[Status] IN ('Pending','Approved')`.
+  - **Sintaxis Mermaid**: Gemini declaró "13 bloques Mermaid verificados y con sintaxis válida" sin
+    ejecutar un renderizador. No existe `mmdc` ni dependencia local de render. Corregido en esta misma
+    entrada y en `DOCUMENTATION_STATUS.md`.
+* **Errores nuevos detectados**:
+  - **Figura 11 puertos**: los puertos Docker mostraban solo valores internos (`:6379`, `:1025`, `:8025`).
+    Corregido con formato `host → contenedor` para Redis (16379→6379), SMTP (11025→1025) y Mailpit UI
+    (18025→8025) según `docker-compose.acceptance.yml`.
+  - **Figura 12 TLS**: la prosa omitía que el Nginx embebido no termina TLS (solo escucha puerto 80).
+    Corregido para explicitar la terminación TLS externa.
+  - **Figura 12 API expose**: se añadió que `oneitb-api` usa `expose: 8080` sin port mapping al host.
+  - **Figura 3 orientación**: la recomendación A4 decía "Portrait/Landscape" sin elegir. Para 12
+    entidades se eligió Landscape como primaria.
+  - **Figura 5 orientación**: ídem; elegida Landscape.
+* **Validación Mermaid**:
+  - No existe renderizador Mermaid local (`mmdc`, `npx`, script o dependencia).
+  - Se verificó estructura textual: 13 fences `mermaid` presentes, balanceados, tipos de diagrama
+    correctos (erDiagram, sequenceDiagram, flowchart).
+  - Sintaxis no compilada por falta de renderizador local; render y QA visual A4 pendientes.
+* **Cobertura de 30 DbSet**:
+  - Los 3 DER (Figuras 3, 4, 5) cubren 30 entidades persistidas. User y Subject se repiten como
+    referencia entre vistas. Confirmado por inspección de `OneItbContext.cs` (30 DbSet).
+* **Restricciones para traslado a Draw.io**:
+  - Índices compuestos únicos con filtros SQL requieren anotación explícita en Draw.io.
+  - XOR de `SocialAttachment` (InquiryId/CommentId) requiere nota visual o constraint.
+  - Soft delete + ocultamiento moderado en Inquiry/Comment.
+  - Check constraints de Account y Subject requieren notas separadas.
+* **Validaciones ejecutadas**:
+  - `git diff --check`: PASS (solo warnings CRLF).
+  - `git status --short`: solo los 3 archivos permitidos y otros documentos preexistentes.
+  - Contraste con entidades, snapshot, OnModelCreating, servicios de autenticación, Compose y Dockerfiles.
+* **No ejecutado**: compilación, tests, servidores, browser QA, render Mermaid, commit.
+
+## [2026-08-05] - Cierre de la auditoría técnica de los 13 diagramas de diseño
+
+Continuación y finalización de la auditoría técnica de los 13 diagramas Mermaid en
+`docs/academic/04-design-diagrams.md`, iniciada en una ejecución previa interrumpida.
+No se modificó código funcional, pruebas, entidades, migraciones, configuración, scripts
+ni dependencias. No se realizó commit.
+
+* **Fuentes de contraste**: `OneItbContext.cs` (30 `DbSet`), entidades C#, migraciones EF Core,
+  `OneItbContextModelSnapshot.cs`, `docker-compose.prod.yml`, `docker-compose.acceptance.yml` y `reset-demo-database.ps1`.
+* **Correcciones aplicadas**:
+  - **Figura 3 (DER Identidad/Perfil/Catálogo)**: se precisó que `User.Id` es PK y FK a `Account.Id` (se eliminó la columna `AccountId` redundante). Se agregaron propiedades descriptivas `Biography` y `Phone` a `USER`. En las 5 entidades CV se incorporaron propiedades descriptivas (`Company`, `Role`, `Institution`, `Degree`, `Name`, `Level`) y se corrigió la anotación de `(UserId, SortOrder)` como índice compuesto no único.
+  - **Figura 4 (DER Social/Mensajería/Moderación)**: se incorporaron los campos `Summary` y `CreatedAt` a `MODERATION_AUDIT`. Se precisaron los filtros de índices únicos compuestos (`GroupKey` no nulo en notificaciones y `Status='Pending'` en reportes comunitarios).
+  - **Figura 5 (DER Académico/Empleabilidad/Auditoría)**: se confirmó que `AcademicProgress.Score` es nullable y único por `UserId+SubjectId`. Se explicitaron las unicidades compuestas de `JobApplication` (`JobOfferId+ApplicantId`), `EmployerRequest` (`Email` y `TaxId` en solicitudes vigentes) y `EmployerOnboardingOutbox` (`EmployerRequestId` 1:1).
+  - **Figura 12 (Plantilla productiva)**: se actualizó la etiqueta del nodo `API2` a `API OneITB réplica B (escalado horizontal futuro)` para armonizarla con el `docker-compose.prod.yml` actual (instancia única `oneitb-api`).
+  - **Recomendaciones A4**: se agregaron notas editoriales estandarizadas a las 13 figuras (orientación, destino cuerpo/anexo, herramienta sugerida, tamaño tipográfico y nivel de riesgo de saturación).
+* **Validaciones**:
+  - Exactamente 13 bloques Mermaid presentes; fences balanceados; revisión estática de estructura.
+  - Cobertura completa de los 30 conjuntos persistidos en `OneItbContext` confirmada en los 3 DER.
+  - `git diff --check`, `git status --short` y `git diff --stat` ejecutados sin errores.
+  - Render Mermaid no ejecutado por falta de renderizador local.
+* **Límites**:
+  - No se realizó QA visual del DOCX/PDF exportado (tarea documental/editorial posterior `DF-*`).
+  - No se realizaron cambios funcionales ni ejecuciones de servidores/tests.
+  - No se realizó commit ni alteración del historial Git.
+
+## [2026-08-05] - Normalización documental posterior a Spec 218 (segunda pasada)
+
+Corrección de tres inconsistencias detectadas en la revisión de la primera pasada.
+No se modificó código funcional, pruebas, migraciones, configuración ni assets.
+No se realizó commit.
+
+* **SHA incorrecto en DOCUMENTO_BASE**: la línea 1085 asociaba `252/252` con el SHA
+  `2f20bce`, que corresponde a un corte anterior a la regresión del errorLink Apollo.
+  Se reemplazó por la descripción correcta: ejecución conjunta sobre el worktree de
+  Spec 218 (backend 234/234, frontend 252/252), sin SHA candidato definitivo aún.
+* **DF-02 en ROADMAP**: el enunciado decía `baselines por capa 234/251`; actualizado
+  a `234/252 en preflight conjunto Spec 218` con aclaración de gate integral pendiente.
+  Estado conservado como `[x] [I]`; no se cerró CF-03, CF-05 ni CF-06.
+* **Magic Link — índice único verificado**: inspección de `OneItbContext.cs` línea 957,
+  migración `AddEmployerAndModeration` y `OneItbContextModelSnapshot.cs` confirmó que
+  **no existe `HasIndex("Token").IsUnique()`** sobre la tabla `MagicLinks`. Solo existe
+  `IX_MagicLinks_AccountId`. La anotación `UK` (eliminada en la primera pasada) era
+  incorrecta; la anotación de digest SHA-256 sin `UK` es la formulación válida.
+  Evidencia del servicio: `EmployerAuthService.cs` líneas 306-310,
+  `SHA256.HashData()` + `Convert.ToHexString(...).ToLowerInvariant()`.
+* **No ejecutado**: runtime, browser QA, compilación ni SHA candidato.
+
+## [2026-08-05] - Normalización documental posterior a Spec 218 (primera pasada)
+
+Corrección focalizada y conservadora de la documentación vigente para alinearla al
+estado real del preflight conjunto de Spec 218. No se modificó código funcional, pruebas,
+migraciones, configuración, assets ni infraestructura. No se realizó commit.
+
+* **Métricas**: `251/251` actualizado a `252/252` (frontend tras la regresión del
+  errorLink Apollo en Spec 218) en `README.md`, `FINAL_AUDIT_REPORT.md` (RR-10 y narrativa
+  Spec 218), `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` y `DOCUMENTATION_STATUS.md`.
+  La afirmación de que backend y frontend no habían sido ejecutados juntos fue corregida:
+  la Spec 218 los ejecutó en el mismo worktree, aunque no sobre un SHA candidato congelado.
+* **Privacidad**: `RF-006B` en `scope-and-requirements.md` corregido: "seguidor persistido"
+  fue eliminado como actor con acceso a datos sensibles de perfiles privados, en línea con
+  la política vigente de Spec 201 y el contrato `BR-005`/`GAP-PRIV-01`.
+* **Magic Link**: `04-design-diagrams.md` Figura 3 corregida: `TokenHash` y `UsedAt` no
+  existen en el modelo real; los campos reales son `Token` (con anotación de digest) e
+  `IsUsed`. El DER de `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` recibió la misma anotación.
+* **Diagramas**: Figura 4 de `04-design-diagrams.md` completada con las cuatro relaciones
+  de destino de `MODERATION_AUDIT` (`TargetUser`, `TargetInquiry`, `TargetComment`,
+  `TargetReport`) confirmadas por el modelo EF `ModerationAudit.cs`.
+* **Histórico preservado**: métricas de Specs 211-217 conservadas como pertenecientes a sus
+  cortes; solo se corrigió el estado vigente del preflight de Spec 218.
+* **No ejecutado**: runtime, browser QA, impresión, DOCX, PDF ni SHA candidato.
+  `git diff --check` pasó sin errores antes y después de los cambios.
 
 ## [2026-08-05] - Spec 218: Candidate Freeze & Pre-Defense Gate
 

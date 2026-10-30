@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { SILENCE_USER, UPDATE_USER_ROLE, UPDATE_USER_STATUS } from '../../data/graphql/mutations/admin';
 
@@ -19,6 +19,16 @@ export const EditUserModal = ({ user, onClose, onFeedback, onRefetch }) => {
   const [selectedRole, setSelectedRole] = useState(user.role);
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [promotionError, setPromotionError] = useState('');
+
+  const isBusy = updatingRole || updatingStatus || silencingUser;
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !isBusy) onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isBusy, onClose]);
 
   const handleRoleChange = async () => {
     if (selectedRole === user.role) return;
@@ -80,7 +90,12 @@ export const EditUserModal = ({ user, onClose, onFeedback, onRefetch }) => {
   const protectedAdmin = isAdmin(user);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isBusy) onClose();
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"

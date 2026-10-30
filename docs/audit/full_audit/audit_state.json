@@ -1,0 +1,166 @@
+{
+  "project": "OneITB23",
+  "audit_version": "1.2.0",
+  "created_at": "2026-10-29T22:00:00-03:00",
+  "last_updated": "2026-10-29T23:30:00-03:00",
+  "status": "COMPLETED",
+  "current_module_index": 9,
+  "current_module_id": "MOD-07",
+  "total_modules": 10,
+  "completed_modules": 10,
+  "execution_mode": "autonomous_goal",
+  "modules_queue": [
+    {
+      "id": "MOD-01",
+      "name": "Autenticación, Identidad, Roles (RBAC) y Onboarding",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_01_AUTH_RBAC.md",
+      "target_routes": [
+        "/login",
+        "/register",
+        "/onboarding/academic",
+        "/profile",
+        "/auth/microsoft/callback"
+      ],
+      "backend_services": [
+        "AuthService.cs",
+        "UserService.cs",
+        "TokenService.cs"
+      ]
+    },
+    {
+      "id": "MOD-02",
+      "name": "Dominio Académico (Materias, Correlatividades, Syllabus, Mock SIU)",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_02_ACADEMIC.md",
+      "target_routes": [
+        "/academic"
+      ],
+      "backend_services": [
+        "AcademicService.cs",
+        "SubjectService.cs",
+        "CareerService.cs"
+      ]
+    },
+    {
+      "id": "MOD-03",
+      "name": "Dominio Social (Feed, Publicaciones, Comentarios, Reacciones, Multimedia /api/upload)",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_03_SOCIAL_FEED.md",
+      "target_routes": [
+        "/feed"
+      ],
+      "backend_services": [
+        "PostService.cs",
+        "CommentService.cs",
+        "ReactionService.cs",
+        "UploadController.cs"
+      ]
+    },
+    {
+      "id": "MOD-04",
+      "name": "Mensajería en Tiempo Real, Notificaciones y Subscriptions WebSockets",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_04_MESSAGING_REALTIME.md",
+      "target_routes": [
+        "/chat"
+      ],
+      "backend_services": [
+        "ChatService.cs",
+        "NotificationService.cs",
+        "MessageSubscription.cs"
+      ]
+    },
+    {
+      "id": "MOD-05",
+      "name": "Bolsa de Trabajo, Empleabilidad, Postulaciones y CV Builder",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_05_EMPLOYMENT_CV.md",
+      "target_routes": [
+        "/empleos",
+        "/empleos/mis-ofertas",
+        "/profile/edit"
+      ],
+      "backend_services": [
+        "JobOfferService.cs",
+        "JobApplicationService.cs",
+        "CurriculumService.cs"
+      ]
+    },
+    {
+      "id": "MOD-06",
+      "name": "Administración, Moderación, Reportes y Auditoría",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_06_ADMIN_MODERATION.md",
+      "target_routes": [
+        "/admin"
+      ],
+      "backend_services": [
+        "AdminService.cs",
+        "ModerationService.cs",
+        "AuditService.cs"
+      ]
+    },
+    {
+      "id": "MOD-08",
+      "name": "Base de Datos, Seeder de Demostración y Migraciones EF Core",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_08_DATABASE_SEEDER.md",
+      "target_files": [
+        "API Graphql/Data/EnterpriseDemoSeeder.cs",
+        "API Graphql/Data/OneItbContext.cs",
+        "API Graphql/Entities/Models/*.cs",
+        "API Graphql/Data/Migrations/*.cs"
+      ],
+      "audit_skill": "speckit-db-audit"
+    },
+    {
+      "id": "MOD-09",
+      "name": "Alineación de Documentación y Verificación de la Verdad en Código",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_09_DOCUMENTATION_ALIGNMENT.md",
+      "target_directories": [
+        "docs/project_docs/",
+        "docs/academic/",
+        "docs/audit/"
+      ],
+      "excluded_directories": [
+        "specs/"
+      ],
+      "immutable_files": [
+        "docs/audit/DEVELOPMENT_LOG.md"
+      ],
+      "audit_skill": "speckit-doc-audit"
+    },
+    {
+      "id": "MOD-10",
+      "name": "Auditoría Forense de Micro-Interacciones UI (Modales, Cierres, Dropdowns, Feedback)",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MODULE_10_UI_MICRO_INTERACTIONS.md",
+      "target_components": [
+        "FrontEnd/OneItb-FE/src/Components/**/*.jsx"
+      ],
+      "audit_skill": "speckit-code-audit"
+    },
+    {
+      "id": "MOD-07",
+      "name": "Consolidación Final, Matriz de Riesgo y Plan Maestro Global Actualizado",
+      "status": "COMPLETED",
+      "report_file": "docs/audit/full_audit/MASTER_AUDIT_REPORT.md",
+      "target_routes": [
+        "*"
+      ],
+      "backend_services": [
+        "*"
+      ]
+    }
+  ],
+  "metrics_summary": {
+    "total_views_checked": 28,
+    "total_buttons_checked": 91,
+    "critical_issues": 0,
+    "warnings": 24,
+    "code_reduction_opportunities": 20,
+    "estimated_dead_lines": 546
+  }
+}
