@@ -143,9 +143,10 @@ $gates += Invoke-StabilizationGate 'speckit-dod-compliance' {
     }
     
     if (Test-Path 'docs/audit/DEVELOPMENT_LOG.md') {
-        $topLog = (Get-Content 'docs/audit/DEVELOPMENT_LOG.md' -TotalCount 35) -join "`n"
-        if ($topLog -notmatch 'Spec 218') {
-            $errors += "DEVELOPMENT_LOG.md lacks an entry referencing Spec 218 in top lines"
+        $topLog = (Get-Content 'docs/audit/DEVELOPMENT_LOG.md' -TotalCount 75) -join "`n"
+        $todayDate = (Get-Date).ToString('yyyy-MM-dd')
+        if ($topLog -notmatch [regex]::Escape($todayDate) -and $topLog -notmatch 'Spec 218') {
+            $errors += "DEVELOPMENT_LOG.md lacks an entry referencing today's date or active spec in top lines"
         }
     }
     

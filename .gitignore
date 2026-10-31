@@ -199,6 +199,9 @@ core-web/
 
 # Local scratch and AI handoff artifacts
 /docs/audit/temp_audit_review.md
+/docs/entrega_final/DOCUMENTO_MAQUETACION.md
+/prompt_agy.txt
+scripts/scratch/
 *.tmp
 *.bak
 *.orig
