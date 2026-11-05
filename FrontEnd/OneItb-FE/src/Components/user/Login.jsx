@@ -120,7 +120,7 @@ export const Login = () => {
     setLoginError(message);
   };
 
-  const [authenticateUser, { loading, error: mutationError }] = useMutation(AUTHENTICATE_USER, {
+  const [authenticateUser, { loading }] = useMutation(AUTHENTICATE_USER, {
     fetchPolicy: 'network-only',
     onError: (err) => {
       // onError garantiza captura aunque useMutation no re-lance en modo "errorPolicy: none"

@@ -1,0 +1,18 @@
+%%{init: {"theme": "default", "flowchart": {"curve": "linear"}}}%%
+flowchart LR
+    GUARD["Validar contenedor, puerto, DB y secretos"] --> BUILD["Build Release + EF sin drift"]
+    BUILD --> BACKUP["BACKUP COPY_ONLY + CHECKSUM"]
+    BACKUP --> VERIFY["RESTORE VERIFYONLY"]
+    VERIFY --> DROP["Eliminar solo OneItb"]
+    DROP --> MIGRATE["Aplicar migraciones EF Core"]
+    MIGRATE --> SEED1["Seed canónico por fases"]
+    SEED1 --> CLEAR1["SaveChanges + ChangeTracker.Clear"]
+    CLEAR1 --> SNAP1["Inventario 1"]
+    SNAP1 --> SEED2["Segunda ejecución idempotente"]
+    SEED2 --> SNAP2["Inventario 2"]
+    SNAP2 --> SAME{"Inventarios idénticos"}
+    SAME -->|"No"| RESTORE["Abortar y restaurar backup"]
+    SAME -->|"Sí"| INTEGRITY["Integridad relacional = 0"]
+    INTEGRITY --> ROLES["Login de 6 roles"]
+    ROLES --> SMOKE["Smoke GraphQL + upload"]
+    SMOKE --> DONE["Base demo aceptada"]

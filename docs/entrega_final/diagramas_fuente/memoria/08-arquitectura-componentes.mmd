@@ -1,0 +1,60 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart TB
+    subgraph CLIENT["Cliente web"]
+        UI["React 18 + Tailwind CSS v4"]
+        AP["Apollo Client"]
+        AUTH["AuthContext + ThemeContext"]
+        UI --> AP
+        AUTH --> AP
+    end
+
+    subgraph EDGE["Capa de entrada"]
+        NG["Nginx / Vite Dev Server"]
+        HTTP["HTTP Link"]
+        WS["GraphQLWsLink"]
+    end
+
+    subgraph API["API .NET 8"]
+        GQL["HotChocolate GraphQL"]
+        REST["UploadController REST"]
+        SVC["Servicios de dominio"]
+        DL["DataLoaders / Proyecciones"]
+        BG["Background Services"]
+        EF["Entity Framework Core 8"]
+        AUD["Audit Interceptor"]
+        GQL --> SVC
+        GQL --> DL
+        REST --> SVC
+        SVC --> EF
+        DL --> EF
+        BG --> EF
+        AUD --> EF
+    end
+
+    subgraph DATA["Persistencia e integración"]
+        SQL[("SQL Server 2022")]
+        REDIS[("Redis Pub/Sub opcional")]
+        FILES["Local Development / Cloudinary Production"]
+        SMTP["SMTP / Pickup local"]
+        SIU["Adaptador SIU mock"]
+    end
+
+    AP --> HTTP
+    AP --> WS
+    HTTP --> NG
+    WS --> NG
+    NG -->|"/graphql HTTP"| GQL
+    NG -->|"/graphql WebSocket"| GQL
+    NG -->|"/api/upload"| REST
+    EF --> SQL
+    GQL <--> REDIS
+    SVC --> FILES
+    SVC --> SMTP
+    SVC --> SIU
+
+    classDef client fill:#dbeafe,stroke:#2563eb,color:#0f172a;
+    classDef api fill:#e0f2fe,stroke:#0369a1,color:#0f172a;
+    classDef data fill:#dcfce7,stroke:#15803d,color:#0f172a;
+    class UI,AP,AUTH,NG,HTTP,WS client;
+    class GQL,REST,SVC,DL,BG,EF,AUD api;
+    class SQL,REDIS,FILES,SMTP,SIU data;

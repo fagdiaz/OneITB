@@ -1,0 +1,25 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    EST["Estudiante"]:::actor
+
+    subgraph SYS["Sistema OneITB23 — Casos de Uso del Estudiante"]
+        UC1(["Autenticarse y gestionar perfil"]):::usecase
+        UC2(["Participar en el muro y comentar"]):::usecase
+        UC3(["Consultar materias y descargar recursos"]):::usecase
+        UC4(["Consultar progreso y calificaciones"]):::usecase
+        UC5(["Enviar mensajes privados en tiempo real"]):::usecase
+        UC6(["Postularse a ofertas de empleo"]):::usecase
+        UC7(["Configurar privacidad y notificaciones"]):::usecase
+    end
+
+    EST --> UC1
+    EST --> UC2
+    EST --> UC3
+    EST --> UC4
+    EST --> UC5
+    EST --> UC6
+    EST --> UC7
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px;
+    style SYS fill:#f8fafc,stroke:#0f172a,stroke-width:2px

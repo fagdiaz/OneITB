@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Header } from './Header'
 import { SideBar } from './SideBar'
 import { MiniChatWidget } from '../../chat/MiniChatWidget'

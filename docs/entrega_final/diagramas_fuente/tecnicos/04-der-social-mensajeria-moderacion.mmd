@@ -1,0 +1,117 @@
+erDiagram
+    USER {
+        guid Id PK
+        string Role
+    }
+    SUBJECT {
+        int Id PK
+    }
+    INQUIRY {
+        guid Id PK
+        guid UserId FK
+        int SubjectId FK
+        bool IsActive
+        bool IsHiddenByModerator
+        datetime CreatedAt
+    }
+    COMMENT {
+        guid Id PK
+        guid InquiryId FK
+        guid UserId FK
+        guid ParentCommentId FK "nullable"
+        guid ReplyToUserId FK "nullable"
+        bool IsActive
+        bool IsHiddenByModerator
+    }
+    REACTION {
+        guid Id PK
+        guid InquiryId FK
+        guid UserId FK "UK compuesto InquiryId+UserId"
+    }
+    COMMENT_REACTION {
+        guid Id PK
+        guid CommentId FK
+        guid UserId FK "UK compuesto CommentId+UserId"
+    }
+    SOCIAL_ATTACHMENT {
+        guid Id PK
+        guid InquiryId FK "nullable XOR"
+        guid CommentId FK "nullable XOR"
+        string FileUrl
+        string OriginalFileName
+        string ContentType
+        long Size
+        int SortOrder
+    }
+    COMMUNITY_REPORT {
+        guid Id PK
+        guid InquiryId FK
+        guid ReporterId FK
+        string Status
+    }
+    USER_INTERACTION {
+        guid Id PK
+        guid ObserverId FK
+        guid TargetId FK
+        string Type "UK compuesto ObserverId+TargetId+Type"
+    }
+    MESSAGE {
+        guid Id PK
+        guid SenderId FK
+        guid ReceiverId FK
+        bool IsRead
+        datetime SentAt
+    }
+    NOTIFICATION {
+        guid Id PK
+        guid UserId FK
+        guid RelatedInquiryId FK "nullable"
+        string Type
+        bool IsRead
+        string GroupKey "nullable; UK compuesto UserId+GroupKey filtrado GroupKey IS NOT NULL"
+        int AggregateCount
+    }
+    NOTIFICATION_PREFERENCE {
+        guid Id PK
+        guid UserId FK
+        string Type "UK compuesto UserId+Type"
+        bool IsEnabled
+    }
+    MODERATION_AUDIT {
+        guid Id PK
+        guid ActorUserId FK
+        guid TargetUserId FK "nullable"
+        guid TargetInquiryId FK "nullable"
+        guid TargetCommentId FK "nullable"
+        guid TargetReportId FK "nullable"
+        string Action
+        string Summary
+        datetime CreatedAt
+    }
+
+    USER ||--o{ INQUIRY : authors
+    SUBJECT ||--o{ INQUIRY : classifies
+    INQUIRY ||--o{ COMMENT : contains
+    USER ||--o{ COMMENT : writes
+    COMMENT o|--o{ COMMENT : replies
+    USER o|--o{ COMMENT : mentioned
+    INQUIRY ||--o{ REACTION : receives
+    USER ||--o{ REACTION : creates
+    COMMENT ||--o{ COMMENT_REACTION : receives
+    USER ||--o{ COMMENT_REACTION : creates
+    INQUIRY o|--o{ SOCIAL_ATTACHMENT : attaches
+    COMMENT o|--o{ SOCIAL_ATTACHMENT : attaches
+    INQUIRY ||--o{ COMMUNITY_REPORT : reported
+    USER ||--o{ COMMUNITY_REPORT : reports
+    USER ||--o{ USER_INTERACTION : observes
+    USER ||--o{ USER_INTERACTION : targeted
+    USER ||--o{ MESSAGE : sends
+    USER ||--o{ MESSAGE : receives
+    USER ||--o{ NOTIFICATION : receives
+    INQUIRY o|--o{ NOTIFICATION : groups
+    USER ||--o{ NOTIFICATION_PREFERENCE : configures
+    USER ||--o{ MODERATION_AUDIT : acts
+    USER o|--o{ MODERATION_AUDIT : targeted
+    INQUIRY o|--o{ MODERATION_AUDIT : targeted
+    COMMENT o|--o{ MODERATION_AUDIT : targeted
+    COMMUNITY_REPORT o|--o{ MODERATION_AUDIT : targeted

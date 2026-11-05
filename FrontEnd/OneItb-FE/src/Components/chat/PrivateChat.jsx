@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useApolloClient, useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { useForm } from '../../hooks/useForm';
 import {
@@ -50,7 +50,6 @@ const AvatarBadge = ({ person, className = 'h-10 w-10', fallbackClassName = '' }
 
 export const PrivateChat = () => {
   const { auth } = useAuth();
-  const client = useApolloClient();
   const { form, changed, setForm } = useForm({ content: '' });
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [feedback, setFeedback] = useState('');
@@ -143,7 +142,7 @@ export const PrivateChat = () => {
     [conversationData],
   );
 
-  const { socketStatus } = useChatSubscription({
+  const { socketStatus, subscriptionError } = useChatSubscription({
     auth,
     selectedContactId,
     isOpen: true,
@@ -248,7 +247,7 @@ export const PrivateChat = () => {
     });
   };
 
-  const loadMoreContacts = () => {
+  const _loadMoreContacts = () => {
     const pageInfo = contactsData?.messagingContacts?.pageInfo;
     if (!pageInfo?.hasNextPage) return;
 

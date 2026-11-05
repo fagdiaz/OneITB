@@ -1,0 +1,28 @@
+%%{init: {"theme": "default"}}%%
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant FE as Feed React
+    participant REST as UploadController
+    participant FS as FileStorageService
+    participant GQL as GraphQL Mutation
+    participant Social as SocialService
+    participant DB as SQL Server
+
+    U->>FE: Completar publicación y elegir adjuntos/portada
+    FE->>FE: Validar 10 archivos, 15 MB, previews y 2 YouTube
+    loop Por cada archivo
+        FE->>REST: POST /api/upload + JWT
+        REST->>REST: Validar tamaño, extensión, MIME, magic bytes y estructura
+        REST->>FS: SaveAsync(nombre GUID)
+        FS-->>REST: URL + metadata
+        REST-->>FE: UploadResult
+    end
+    FE->>GQL: addInquiry(input, attachments)
+    GQL->>Social: CreateInquiryAsync(actor, input)
+    Social->>Social: Validar sanción, materia, carrera, metadata y XOR
+    Social->>DB: INSERT Inquiry + SocialAttachments
+    DB-->>Social: Commit
+    Social-->>GQL: Publicación creada
+    GQL-->>FE: Payload GraphQL
+    FE->>FE: Actualizar caché y renderizar Media Grid

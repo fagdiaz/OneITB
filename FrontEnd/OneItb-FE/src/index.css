@@ -85,6 +85,82 @@ html.theme-transitioning #root * {
   }
 }
 
+/* Root @page declaration for absolute printer standard size and margin safety */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+/* ===== CV Builder A4 Editorial Print System ===== */
+/* Ensures Arial/Helvetica for all resume print content */
+.resume-print-target,
+.resume-print-target * {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+.resume-professional-title {
+  letter-spacing: 0 !important;
+}
+
+.section-divider {
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin: 0 0 0.5rem;
+  border: 0;
+}
+
+.cv-skill-groups {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.cv-skill-group {
+  display: grid;
+  grid-template-columns: 49mm minmax(0, 1fr);
+  column-gap: 0.6rem;
+  align-items: baseline;
+}
+
+.resume-layout-compact .resume-content-flow {
+  gap: 1mm;
+}
+
+.resume-layout-compact .resume-header {
+  padding-bottom: 0.35rem;
+}
+
+.resume-layout-compact .resume-professional-title {
+  margin-bottom: 0.35rem;
+}
+
+.resume-layout-compact .section-divider {
+  display: none;
+}
+
+.resume-layout-compact .resume-section-heading {
+  margin-bottom: 2px !important;
+  padding-bottom: 1px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.resume-layout-compact .cv-section.pt-1 {
+  padding-top: 0;
+}
+
+.resume-layout-compact p,
+.resume-layout-compact .cv-skill-groups {
+  line-height: 1.35 !important;
+}
+
+.resume-layout-compact .cv-skill-groups {
+  gap: 0.1rem;
+}
+
+.resume-layout-compact .cv-section-content > .cv-entry + .cv-entry {
+  margin-top: 0.25rem !important;
+}
+
 /* ATS-friendly, content-driven print flow. */
 @media print {
   html.theme-transitioning,
@@ -96,8 +172,8 @@ html.theme-transitioning #root * {
   }
 
   @page {
-    size: A4 portrait;
-    margin: 12mm 14mm;
+    size: A4;
+    margin: 12mm;
   }
 
   body {
@@ -135,6 +211,7 @@ html.theme-transitioning #root * {
   .cv-ats-document,
   .cv-ats-document * {
     text-shadow: none !important;
+    font-family: Arial, "Segoe UI", sans-serif !important;
   }
 
   .cv-ats-header,
@@ -163,5 +240,194 @@ html.theme-transitioning #root * {
   .cv-ats-link {
     color: #0f172a !important;
     text-decoration: underline !important;
+  }
+
+  /* ===== Editorial A4 Print Engine (cv-builder reconciliation) ===== */
+  .ats-pdf-mode,
+  .ats-pdf-mode main,
+  .ats-pdf-mode .resume-panel,
+  .ats-pdf-mode .resume-preview-shell,
+  .ats-pdf-mode .resume-preview-scroll,
+  .ats-pdf-mode .resume-preview-boundary,
+  .ats-pdf-mode .resume-preview-scale {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+
+  .resume-print-root {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  /* Print container standard settings */
+  .resume-print-target {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 0 6mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-left: 3px solid #64748b !important;
+    outline: none !important;
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    overflow: visible !important;
+    transform: none !important;
+    transform-origin: unset !important;
+    break-after: auto !important;
+    page-break-after: auto !important;
+    display: block !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    box-sizing: border-box !important;
+  }
+
+  .resume-print-page-clone {
+    display: none !important;
+  }
+
+  .resume-accent-line {
+    display: none !important;
+  }
+
+  /* Theme-specific border accent colors */
+  .resume-theme-graphite {
+    border-left-color: #64748b !important;
+  }
+
+  .resume-theme-deep-teal {
+    border-left-color: #0f766e !important;
+  }
+
+  .resume-theme-navy-ink {
+    border-left-color: #312e81 !important;
+  }
+
+  .resume-theme-muted-olive {
+    border-left-color: #047857 !important;
+  }
+
+  .resume-print-inner,
+  .resume-content-viewport,
+  .resume-content-flow {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    position: static !important;
+  }
+
+  .resume-print-target > div {
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    overflow: visible !important;
+  }
+
+  .resume-print-target img {
+    display: block !important;
+    visibility: visible !important;
+    max-width: 100% !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .resume-print-target .section-divider {
+    display: none !important;
+  }
+
+  .resume-print-target .resume-section-heading {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 8px !important;
+    padding: 0 0 3px !important;
+    border-bottom: 0.75px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    break-after: avoid-page !important;
+    page-break-after: avoid !important;
+  }
+
+  .resume-print-target.resume-layout-compact .resume-section-heading {
+    margin-bottom: 2px !important;
+    padding-bottom: 1px !important;
+  }
+
+  .resume-print-target.resume-layout-compact .cv-section.pt-1 {
+    padding-top: 0 !important;
+  }
+
+  .resume-print-target .cv-section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .resume-print-target .cv-section-content > .cv-entry:first-child {
+    break-before: avoid-page !important;
+    page-break-before: avoid !important;
+  }
+
+  .resume-print-target .cv-entry,
+  .resume-print-target .cv-skill-group {
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+  }
+
+  .resume-print-target p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .resume-print-target .resume-header {
+    border-bottom: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .resume-print-target .border-b {
+    border-bottom-width: 0.75px !important;
+    border-bottom-color: #cbd5e1 !important;
+  }
+
+  /* Indestructible Header Flex Row */
+  .resume-print-target .flex-row {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+  }
+
+  /* Indestructible Skills Grid */
+  .resume-print-target .grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  /* Prevent page breaks inside work experience, education, or projects */
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

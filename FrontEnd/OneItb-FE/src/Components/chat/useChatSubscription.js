@@ -62,14 +62,14 @@ export const useChatSubscription = ({
     const wasUnavailable = ['disconnected', 'error'].includes(previousSocketStatus.current);
     if (socketStatus === 'connected' && wasUnavailable) {
       if (typeof refetchContacts === 'function') {
-        refetchContacts();
+        try { refetchContacts()?.catch?.(() => {}); } catch {}
       }
       if (isOpen) {
         if (typeof refetchActive === 'function') {
-          refetchActive();
+          try { refetchActive()?.catch?.(() => {}); } catch {}
         }
         if (selectedContactId && typeof refetchConversation === 'function') {
-          refetchConversation();
+          try { refetchConversation()?.catch?.(() => {}); } catch {}
         }
       }
     }

@@ -1,5 +1,4 @@
 import React from 'react';
-import { GET_CONVERSATION } from '../../data/graphql/chat';
 import { apiBaseUrl } from '../../utils/uploadFile';
 
 const resolveAssetUrl = (value) => {
@@ -50,7 +49,6 @@ export const ChatSidebar = ({
   handleSelectContact,
   selectedContactId,
   auth,
-  client
 }) => {
 
   const renderContactItem = (contact, isNew = false) => {

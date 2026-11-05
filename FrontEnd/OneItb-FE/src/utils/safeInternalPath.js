@@ -10,6 +10,7 @@ export const getSafeInternalPath = (value, fallback = null) => {
     || candidate.startsWith('//')
     || candidate.includes('\\')
     || ENCODED_BACKSLASH_PATTERN.test(candidate)
+    // eslint-disable-next-line no-control-regex
     || /[\u0000-\u001f\u007f]/.test(candidate)
   ) {
     return fallback;

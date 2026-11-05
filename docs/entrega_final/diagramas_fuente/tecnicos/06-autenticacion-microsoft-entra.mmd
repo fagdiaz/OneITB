@@ -1,0 +1,27 @@
+%%{init: {"theme": "default"}}%%
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant SPA as React + MSAL
+    participant E as Microsoft Entra ID
+    participant GQL as GraphQL API
+    participant V as Token Validator
+    participant DB as SQL Server
+
+    U->>SPA: Seleccionar acceso Microsoft
+    SPA->>E: loginRedirect (PKCE + scope API)
+    E-->>SPA: /auth/microsoft/callback
+    SPA->>SPA: handleRedirect + flow ID idempotente
+    SPA->>E: acquireTokenSilent
+    E-->>SPA: Access token delegado
+    SPA->>GQL: microsoftLogin(accessToken)
+    GQL->>V: ValidateAsync(token)
+    V->>E: Metadata y claves OpenID cacheadas
+    E-->>V: Issuer + JWKS
+    V->>V: Firma, audience, lifetime, tid, oid, scp, dominio
+    V-->>GQL: Identidad validada
+    GQL->>DB: Vincular/provisionar Account + User + AuditLog
+    DB-->>GQL: Usuario local
+    GQL-->>SPA: AuthPayload con JWT OneITB
+    SPA->>SPA: Limpiar sesión previa e hidratar nueva identidad
+    SPA-->>U: Feed u onboarding académico

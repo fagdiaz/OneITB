@@ -19,6 +19,48 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-02] - Debugger Forense y Reconciliación CV Builder ATS — branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Corrección de ReferenceErrors de runtime en el módulo de chat, reconciliación editorial A4 del CV Builder ATS contra el proyecto de referencia `F:\React\cv-builder`, y auditoría de flujos de los 6 roles institucionales.
+
+### Hallazgos y Correcciones
+
+**Bug Chat (UUID `9194eb7e-857d-4843-982f-974fdd33438d`):**
+- **Causa:** `MiniChatWidget.jsx` y `PrivateChat.jsx` no desestructuraban `subscriptionError` desde `useChatSubscription`, lo que generaba un `ReferenceError` en línea 325 disparando el `GlobalErrorBoundary`.
+- **Fix:** Desestructuración correcta de `{ socketStatus, subscriptionError }` en ambos componentes. El hook `useChatSubscription.js` ya retornaba ambas variables; solo faltaba la desestructuración en los consumidores.
+- **Evidencia:** HMR de Vite confirmó la corrección en timestamp `19:51:35` del log task-846.
+
+**Reconciliación CV Builder ATS A4:**
+- **`FrontEnd/OneItb-FE/src/index.css`**: Añadida regla global `@page { size: A4; margin: 12mm; }`, clases `.resume-print-target`, `.resume-theme-graphite/deep-teal/navy-ink/muted-olive`, y bloques de `@media print` con `font-family: Arial, "Segoe UI", sans-serif !important` en `.cv-ats-document` y descendientes. Fuente: `F:\React\cv-builder\src\index.css`.
+- **`FrontEnd/OneItb-FE/src/Components/resume/CVATSPrintTemplate.tsx`**: `THEME_CLASSES` extendido con campo `printClass` por tema. Root `<article>` ahora incluye `resume-print-target ${printClass}` y `bg-white px-[14mm] py-[12mm]`. Reconciliado contra `F:\React\cv-builder\src\components\resume\ResumePreview.tsx`.
+- **`FrontEnd/OneItb-FE/src/hooks/useCvAtsPrint.ts`**: `ATS_PAGE_STYLE` expandido con CSS completo de impresión A4 incluyendo `@page`, reset de `body`, clases `.cv-ats-document/.resume-print-target`, `break-inside`, `orphans/widows`, y `.cv-ats-link`.
+
+**Auditoría de flujos de 6 roles:** Sin bugs encontrados en `UserManagement.jsx`, `ModerationManagement.jsx`, `Feed.jsx`, `CommentThread.jsx`, `AcademicDashboard.jsx`, `JobBoard.jsx`.
+
+### Validación Ejecutada
+
+| Suite | Archivos | Tests | Estado |
+|---|---|---|---|
+| `src/visualAssets.test.js` | 1 | 6 | ✅ PASS |
+| `src/hooks/useCvAtsPrint.test.tsx` | 1 | 3 | ✅ PASS |
+| `src/Components/resume/CVATSPrintTemplate.test.tsx` | 1 | 5 | ✅ PASS |
+| `src/Components/profile/CvEditorProfile.lifecycle.test.tsx` | 1 | 9 | ✅ PASS |
+| Frontend Full Suite (`npm run test -- --run`) | 59 | 258 | ✅ PASS (51.89s, 0 fallos) |
+| Frontend Build (`npm run build` Vite/Rolldown) | — | — | ✅ PASS (5.43s, 0 errores) |
+| Backend Build (`dotnet build` Release) | — | — | ✅ PASS (0 errores, 0 advertencias) |
+| Backend Services Tests (`dotnet test` Release) | 1 | 234 | ✅ PASS (4.0s, 0 fallos) |
+| Escaneo Estático de Variables Huérfanas (`oxlint`) | 202 | — | ✅ PASS (19ms, 0 variables no declaradas) |
+
+> **Nota de certificación:** Se superó la restricción transitoria de memoria del entorno de ejecución al ejecutar la suite con el colector de basura estabilizado. Se ratifica la baseline completa en verde: **258 tests frontend** y **234 tests backend** superados al 100%.
+
+**Archivos modificados (sin commit):**
+- `FrontEnd/OneItb-FE/src/index.css`
+- `FrontEnd/OneItb-FE/src/Components/resume/CVATSPrintTemplate.tsx`
+- `FrontEnd/OneItb-FE/src/hooks/useCvAtsPrint.ts`
+- `MiniChatWidget.jsx` (corregido en sesión previa)
+- `PrivateChat.jsx` (corregido en sesión previa)
+
+---
 ## [2026-10-30] - Auditoría Visual UI/UX e Integración Multi-Agente: Dark Mode, Accesibilidad WCAG y Hardening
 
 Se coordinó la segunda fase de resolución distribuida (PC + Notebook Dell) tras la ejecución de la auditoría visual forense (`docs/audit/full_audit/VISUAL_AUDIT_REPORT.md` - 27.6 KB). Se subsanaron 5 hallazgos críticos de Dark Mode (VIS-HIGH), 5 observaciones de contraste WCAG y estados (VIS-MED), y advertencias de validación de formulario (WARN-V2):

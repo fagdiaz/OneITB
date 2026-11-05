@@ -1,0 +1,22 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    EMP["Empleador"]:::actor
+    EST["Estudiante"]:::actor
+    EGR["Egresado"]:::actor
+
+    subgraph SYS["B) Módulo de Bolsa de Trabajo"]
+        UC6(["Postularse a una oferta"])
+        UC8(["Publicar ofertas"])
+        UC9(["Gestionar postulaciones"])
+    end
+
+    EMP --> UC8
+    EMP --> UC9
+    EST --> UC6
+    EGR --> UC6
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a;
+    class EMP,EST,EGR actor;
+    class UC6,UC8,UC9 usecase;
+    style SYS fill:#f1f5f9,stroke:#0f172a,stroke-width:2px

@@ -154,7 +154,7 @@ mediante `UserCareer`, como política equivalente de mínimo privilegio durante 
 |---|---|---|
 | `RF-005` | Consultar y editar el perfil propio/CV; Administrador puede editar perfiles según el contrato protegido. | El editor espera el `me` completo de la identidad activa, hidrata una vez y no pisa borradores con refetch tardíos. Bio, contacto, avatar, redes, experiencia, educación, proyectos, aptitudes, idiomas y carreras persisten como estructura única; el avatar previo se conserva hasta confirmar la nueva URL y un usuario común no modifica otro perfil. |
 | `RF-006` | Asociar usuarios a carreras activas según su rol. | FKs explícitas y sin duplicados; el `Estudiante` autogestiona exactamente una carrera actual con confirmación explícita, mientras roles institucionales compatibles conservan la relación N:M; tras el reemplazo se invalidan las vistas Apollo dependientes y la selección confirmada se refleja en `me`, feed, materias, recursos y perfil. |
-| `RF-006B` | Permitir perfil público o privado con masking server-side. | En privado solo propietario, Administrador, Moderador o seguidor persistido acceden a bio, contacto, CV, carreras y métricas; terceros reciben identidad básica y colecciones vacías. |
+| `RF-006B` | Permitir perfil público o privado con masking server-side. | En privado solo propietario, Administrador o Moderador acceden a bio, contacto, CV, carreras y métricas; terceros —incluidos seguidores— reciben únicamente identidad básica y colecciones vacías. Follow unilateral no constituye autorización de acceso. |
 | `RF-007` | Administrar carreras y materias con código, año, estado y correlatividades. | Solo Administrador; carrera obligatoria; correlatividades autorreferenciales sin ciclos de cascade delete; selector y listados reflejan estado activo. |
 | `RF-007B` | Imprimir/exportar una representación formal del CV. | `/profile` y `/profile/edit` comparten un único documento semántico de una columna, con texto seleccionable, enlaces visibles y paginación A4 gobernada por contenido. La impresión aísla ese nodo, omite avatar/adornos y fuerza paleta clara. La denominación verificable es **PDF optimizado para ATS**; no se garantiza compatibilidad universal con todos los proveedores. |
 
@@ -318,7 +318,7 @@ y Egresado permanecen en solo lectura dentro de sus carreras. Las pruebas cubren
 vinculado, Profesor fuera de carrera, rol incorrecto y ausencia de escritura.
 
 Una futura asignación Profesor-Materia/Cursada permitiría mayor granularidad, pero es
-evolución posterior y no una brecha de privilegios cross-career del corte presentado.
+evolución posterior y no una brecha de privilegios cross-career del corte técnico evaluado.
 
 ### 9.3 Gates conocidos que no son defectos de código local
 

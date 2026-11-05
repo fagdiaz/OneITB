@@ -1,0 +1,40 @@
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant F as Frontend (React)
+    participant E as Microsoft Entra ID
+    participant C as API (Controlador Auth)
+    participant DB as SQL Server
+
+    rect rgb(15, 23, 42)
+    note right of U: Flujo de Inicio de Sesión (Login)
+    end
+
+    U->>F: seleccionar método de acceso
+    activate F
+    alt Password local
+        F->>C: login(email, password)
+        activate C
+        C->>DB: buscar cuenta y estado de lockout
+        DB-->>C: cuenta y hash BCrypt
+        C->>C: verificar password y emitir JWT local
+        C-->>F: AuthPayload o error genérico
+        deactivate C
+    else Microsoft 365 institucional
+        F->>E: loginRedirect con Authorization Code + PKCE
+        E-->>F: retorno a /auth/microsoft/callback
+        F->>F: bloquear interacción y deduplicar flow ID
+        F->>E: acquireTokenSilent(scope API OneITB)
+        E-->>F: access token delegado
+        F->>C: microsoftLogin(accessToken)
+        activate C
+        C->>E: obtener metadata/keys OpenID cacheadas
+        E-->>C: issuer y claves RS256
+        C->>C: validar firma, audience, lifetime, tid, oid y scp
+        C->>DB: vincular/aprovisionar identidad y auditar
+        DB-->>C: usuario local autorizado
+        C-->>F: AuthPayload con JWT local
+        deactivate C
+    end
+    F->>U: redirigir a /feed o mostrar error controlado
+    deactivate F

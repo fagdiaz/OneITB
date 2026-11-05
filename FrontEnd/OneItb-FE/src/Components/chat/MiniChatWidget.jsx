@@ -39,8 +39,6 @@ export const MiniChatWidget = () => {
   const {
     data: contactsData,
     loading: contactsLoading,
-    error: contactsError,
-    fetchMore: fetchMoreContacts,
     refetch: refetchContacts,
   } = useQuery(GET_MESSAGING_CONTACTS, {
     variables: { first: 50 },
@@ -67,7 +65,6 @@ export const MiniChatWidget = () => {
   const {
     data: conversationData,
     loading: conversationLoading,
-    error: conversationError,
     fetchMore: fetchMoreMessages,
     refetch: refetchConversation,
   } = useQuery(GET_CONVERSATION, {
@@ -148,7 +145,7 @@ export const MiniChatWidget = () => {
     return () => document.removeEventListener('mousedown', handleOutsideMouseDown);
   }, [closeWidget, isOpen]);
 
-  const { socketStatus } = useChatSubscription({
+  const { socketStatus, subscriptionError } = useChatSubscription({
     auth,
     selectedContactId,
     isOpen,

@@ -1,0 +1,38 @@
+%%{init: {"theme": "default", "flowchart": {"curve": "linear"}}}%%
+flowchart LR
+    subgraph SPA["React + Apollo"]
+        BELL["NotificationBell"]
+        TOAST["NotificationProvider"]
+        CHAT["PrivateChat / MiniChat"]
+        HTTP["HttpLink"]
+        WSL["GraphQLWsLink"]
+        CACHE["InMemoryCache + session epoch"]
+        BELL --> HTTP
+        TOAST --> WSL
+        CHAT --> HTTP
+        CHAT --> WSL
+        HTTP --> CACHE
+        WSL --> CACHE
+    end
+
+    subgraph API["HotChocolate"]
+        QUERY["Queries paginadas"]
+        MUT["Mutations"]
+        SUB["Subscriptions"]
+        NS["NotificationService"]
+        TOPIC["Topic por userId"]
+        MUT --> NS
+        NS --> TOPIC
+        TOPIC --> SUB
+    end
+
+    DB[("SQL Server<br/>Notifications + Messages + Preferences")]
+    REDIS[("Redis Pub/Sub<br/>si está configurado")]
+
+    HTTP --> QUERY
+    HTTP --> MUT
+    WSL --> SUB
+    QUERY --> DB
+    MUT --> DB
+    NS --> DB
+    TOPIC <--> REDIS

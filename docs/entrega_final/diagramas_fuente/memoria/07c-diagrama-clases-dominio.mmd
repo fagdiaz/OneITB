@@ -1,0 +1,134 @@
+classDiagram
+    class UserRole {
+        <<enumeration>>
+        Administrador
+        Moderador
+        Profesor
+        Estudiante
+        Egresado
+        Empleador
+    }
+
+    class User {
+        +Guid Id
+        +string FirstName
+        +string LastName
+        +UserRole Role
+        +string Biography
+        +string Phone
+        +string AvatarUrl
+        +bool IsActive
+        +bool IsPublicProfile
+        +DateTime? MutedUntil
+        +GetFullName() string
+        +UpdateProfile(string bio, string phone) void
+        +SetRole(UserRole newRole) void
+    }
+
+    class Account {
+        +Guid Id
+        +string Email
+        +string PasswordHash
+        +string ExternalProvider
+        +string ExternalSubjectId
+        +int FailedLoginAttempts
+        +DateTime? LockoutEnd
+        +VerifyPassword(string password) bool
+        +RecordLoginAttempt(bool success) void
+    }
+
+    class Subject {
+        +Guid Id
+        +string Name
+        +string Code
+        +int Year
+        +int Semester
+        +bool IsActive
+        +GetPrerequisites() List~Subject~
+    }
+
+    class Inquiry {
+        +Guid Id
+        +string Title
+        +string Content
+        +Guid AuthorId
+        +Guid SubjectId
+        +int ViewCount
+        +int UpvotesCount
+        +bool IsPinned
+        +bool IsClosed
+        +bool IsResolved
+        +AddComment(Comment comment) void
+        +AddAttachment(SocialAttachment attachment) void
+        +Pin() void
+        +Close() void
+    }
+
+    class Comment {
+        +Guid Id
+        +Guid InquiryId
+        +Guid AuthorId
+        +Guid? ParentCommentId
+        +string Content
+        +int UpvotesCount
+        +bool IsSolution
+        +MarkAsSolution() void
+        +AddReply(Comment reply) void
+    }
+
+    class SocialAttachment {
+        +Guid Id
+        +string FileUrl
+        +string FileType
+        +string OriginalFileName
+        +long FileSizeBytes
+        +GetExtension() string
+    }
+
+    class AcademicResource {
+        +Guid Id
+        +Guid SubjectId
+        +Guid UploaderId
+        +string Title
+        +string Description
+        +string FileUrl
+        +string Category
+        +int DownloadCount
+        +IncrementDownload() void
+    }
+
+    class JobOffer {
+        +Guid Id
+        +Guid EmployerId
+        +string Title
+        +string Description
+        +string Location
+        +string JobType
+        +string Status
+        +DateTime ExpiresAt
+        +AddApplication(JobApplication app) void
+        +Close() void
+    }
+
+    class JobApplication {
+        +Guid Id
+        +Guid JobOfferId
+        +Guid ApplicantId
+        +string CoverLetter
+        +string Status
+        +SetStatus(string newStatus) void
+    }
+
+    User ..> UserRole : uses
+    User "1" -- "1" Account : has
+    User "1" -- "*" Inquiry : publishes
+    User "1" -- "*" Comment : writes
+    Subject "1" -- "*" Inquiry : categorizes
+    Inquiry "1" *-- "*" Comment : composition
+    Inquiry "1" *-- "*" SocialAttachment : composition
+    Comment "1" *-- "*" Comment : replies
+    Subject "1" -- "*" AcademicResource : offers
+    User "1" -- "*" AcademicResource : uploads
+    User "1" -- "*" JobOffer : posts
+    JobOffer "1" *-- "*" JobApplication : receives
+    User "1" -- "*" JobApplication : applies

@@ -2,16 +2,21 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Última revisión de este índice** | 2026-08-05 |
+| **Última revisión de este índice** | 2026-08-08 |
 | **Estado funcional de referencia** | 117/117 ítems: 46 verificados `[V]` y 71 implementados `[I]`; Specs 202-218 son gates de calidad fuera del denominador |
 | **Clasificación del producto** | Release Candidate académico, core Feature Complete y Code Freeze operativo local |
-| **Próxima mesa** | Viernes 7 de agosto de 2026, 09:00 |
-| **Fuentes normalizadas en esta pasada** | `ROADMAP.md`, `FINAL_AUDIT_REPORT.md`, `scope-and-requirements.md`, `architecture-and-design.md`, `RUNBOOK_DEV.md`, `DEVELOPMENT_LOG.md`, `01-project-overview.md`, `02-software-requirements.md`, `03-use-cases.md`, `04-design-diagrams.md` y este documento |
+| **Situación de mesa** | La defensa planificada para el 7 de agosto de 2026 a las 09:00 no se realizó; no hay nueva fecha documentada |
+| **Fuentes normalizadas en esta pasada** | `AGENTS.md`, `README.md`, Spec 218/evidencia, `ROADMAP.md`, `FINAL_AUDIT_REPORT.md`, `DEVELOPMENT_LOG.md`, este índice, `01-project-overview.md`, `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` y `GUIA_MAQUETACION_FINAL.md` |
 
 Este archivo no reemplaza al roadmap, a la arquitectura, al runbook ni a la auditoría.
 Su función es identificar **qué documento gobierna cada decisión**, cuál es su estado de
 revisión, qué materiales son derivados y qué debe actualizarse cuando cambia el código o
 la evidencia. No se utiliza para inferir que una feature funciona.
+
+La mesa del 07/08/2026 se conserva como antecedente histórico. El proceso posterior al
+preflight de Spec 218 no se completó: quedaron abiertos documentación final, refinamiento/
+cierre, T022, T023 y el gate integral. No hubo entrega, versión presentada, tag final ni
+`CF-06`; tampoco existe una nueva fecha institucional documentada.
 
 ---
 
@@ -66,17 +71,17 @@ histórica. No se modifica el código para hacerlo coincidir con una narrativa o
 
 ## 3. Matriz de documentación canónica
 
-| Documento | Autoridad y propósito | Estado al 2026-08-05 | Próxima acción |
+| Documento | Autoridad y propósito | Estado al 2026-08-08 | Próxima acción |
 |---|---|---|---|
-| `README.md` | Puerta de entrada al repositorio, requisitos mínimos, estructura y enlaces | **Normalizado**: estado 46 V/71 I, últimos baselines 234/251 por capa, capacidades, stack, arranque seguro, fuentes canónicas y límites vigentes | Mantener breve; actualizar métricas solo desde evidencia y no duplicar procedimientos completos del Runbook |
-| `docs/project_docs/ROADMAP.md` | Única fuente de avance, prioridades, estados y planificación del cierre | **Normalizado**: 109 ítems funcionales/operativos + 8 remediaciones; 117/117; separa defensa, producción y evolución | Actualizar solo con evidencia de `CF`, `DF`, `LG` o `PR`; no inflar el denominador con aceptación redundante |
+| `README.md` | Puerta de entrada al repositorio, requisitos mínimos, estructura y enlaces | **Normalizado**: estado 46 V/71 I, últimos baselines 234/252 en preflight conjunto Spec 218, capacidades, stack, arranque seguro, fuentes canónicas y límites vigentes | Mantener breve; actualizar métricas solo desde evidencia y no duplicar procedimientos completos del Runbook |
+| `docs/project_docs/ROADMAP.md` | Única fuente de avance, prioridades, estados y planificación del cierre | **Normalizado**: 109 ítems funcionales/operativos + 8 remediaciones; 117/117; registra la mesa no realizada y separa futuro cierre, producción y evolución | Actualizar solo con evidencia de `CF`, `DF`, `LG` o `PR`; no inflar el denominador con aceptación redundante |
 | `docs/project_docs/scope-and-requirements.md` | Contrato de alcance, actores, requisitos funcionales/no funcionales y exclusiones | **Normalizado y remediado**: Spec 201 cerró registro público privilegiado y alcance Profesor cross-career con contratos/pruebas | Mantener la política y reevaluar una entidad Profesor-Materia solo si se exige granularidad de cursada |
 | `docs/project_docs/architecture-and-design.md` | Arquitectura lógica/física, decisiones, datos, integraciones, seguridad y flujos | **Normalizado**: privacidad Follow, TLS y provider de storage explícito; uploads públicos y observabilidad central conservan gates explícitos | Renderizar diagramas y no promover aceptación productiva sin cerrar `GAP-FILE-01` y controles de destino |
 | `docs/audit/RUNBOOK_DEV.md` | Instalación, secretos, Docker, migraciones, base demo, operación, recuperación y gates | **Normalizado**: procedimientos clasificados por riesgo, setup reproducible, seis roles, Entra redirect, storage Local/Cloudinary explícito, scripts finitos/runtime, rebaseline y límites productivos contrastados | Mantener sincronizado con parámetros de scripts, migraciones, puertos, callbacks y brechas; repetir revisión antes de congelar el SHA |
 | `docs/audit/FINAL_AUDIT_REPORT.md` | Dictamen técnico, controles, riesgos residuales, evidencia y recomendación de liberación | **Normalizado**: 8 secciones, riesgos `RR-01` a `RR-21` y preflight trazable hasta Spec 218 | Actualizar después de `CF-03`/`CF-06` con SHA y resultados del gate integral |
-| `docs/audit/DEVELOPMENT_LOG.md` | Historial técnico cronológico inverso | **Normalizado**: 166 entradas principales ordenadas; entregas parciales de Specs 140 y 152 consolidadas; colisión nominal de Spec 146 eliminada sin perder evidencia | Agregar cada nuevo cierre inmediatamente debajo de la introducción y conservar el estado vigente únicamente en el Roadmap |
+| `docs/audit/DEVELOPMENT_LOG.md` | Historial técnico cronológico inverso | **Normalizado**: 173 entradas fechadas ordenadas; entregas parciales de Specs 140 y 152 consolidadas; colisión nominal de Spec 146 eliminada sin perder evidencia | Agregar cada nuevo cierre inmediatamente debajo de la introducción y conservar el estado vigente únicamente en el Roadmap |
 | `docs/audit/DOCUMENTATION_STATUS.md` | Índice de gobierno, precedencia y estado de revisión | **Normalizado** | Actualizar cada vez que un documento cambie de estado o se agregue/elimine un artefacto canónico |
-| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria técnica integral y fuente de la futura entrega DOCX/PDF | **Contenido normalizado**: APA 7, 48 RF, 12 BR, 12 RNF, 10 Mermaid, 30 entidades, últimos baselines 234/251 por capa y Specs 212-217 alineadas al 05/08 | Seleccionar e insertar figuras, maquetar DOCX, ejecutar revisión visual/APA y exportar el PDF; no declarar listo para imprenta hasta completar `DF-03` a `DF-06` |
+| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria técnica integral y fuente de la futura entrega DOCX/PDF | **Contenido reconciliado al 08/08**: versión fuente 2.3, APA 7, 48 RF, 12 BR, 12 RNF, 10 Mermaid, 30 entidades, baselines 234/252 y mesa del 07/08 registrada como no realizada | Resolver/integrar figuras en el borrador DOCX estructural, actualizar campos Word, ejecutar revisión visual/APA y exportar el PDF; no declarar listo para imprenta hasta completar `DF-03` a `DF-06` |
 
 ### 3.1 Límites de responsabilidad
 
@@ -95,12 +100,12 @@ histórica. No se modifica el código para hacerlo coincidir con una narrativa o
 
 | Documento o artefacto | Propósito | Estado | Dependencia / criterio de cierre |
 |---|---|---|---|
-| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria integral de Práctica Profesionalizante III con APA 7, requisitos, diseño, arquitectura, gestión, pruebas, manual y anexos | **Contenido normalizado; materialización pendiente**: portada precargada, contratos canónicos, baselines 234/251 por capa y Specs 211-217 alineadas; todavía no es el PDF final | Confirmar metadatos, insertar las figuras seleccionadas, generar DOCX y auditar PDF (`DF-01`, `DF-03` a `DF-06`) |
-| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Procedimiento para diagramas, DOCX/PDF, APA 7, impresión, exposición y contingencia | **Normalizada**: 10 Mermaid + 3 gráficos de gestión, gates A-D, APA, preflight de imprenta, paquete digital y defensa de 20-30 minutos | Ejecutar el procedimiento, registrar evidencia de cada gate y ajustar únicamente si la imprenta o la cátedra comunican una condición nueva |
-| `DOCUMENTO_MAQUETACION.md` | Versión intermedia sin bloques Mermaid para conversión | **No creado** | Se genera después de exportar las figuras (`DF-05`) |
-| DOCX APA 7 | Editable institucional con índice, estilos, tablas y figuras | **No creado** | Depende de diagramas y documento de maquetación |
-| PDF definitivo | Copia digital e insumo de impresión | **No creado** | Auditoría en cuatro pasadas, enlaces/figuras legibles y paginación estable (`DF-06`) |
-| Presentación PPTX/PDF | Narrativa de defensa y guía de demostración | **No creada** | Problema, solución, arquitectura, demo, evidencia, límites y cierre en 22-25 minutos (`DF-07`) |
+| `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria integral de Práctica Profesionalizante III con APA 7, requisitos, diseño, arquitectura, gestión, pruebas, manual y anexos | **Contenido normalizado; materialización pendiente**: portada precargada, contratos canónicos, baselines 234/252 en preflight conjunto Spec 218 y Specs 211-218 alineadas; todavía no es el PDF final | Confirmar metadatos, insertar las figuras seleccionadas, generar DOCX y auditar PDF (`DF-01`, `DF-03` a `DF-06`) |
+| `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Procedimiento para diagramas, DOCX/PDF, APA 7, impresión, exposición y contingencia | **Reconciliada**: 10 Mermaid + 3 gráficos de gestión, gates A-D, APA y logística reutilizable; no trata el 07/08 como fecha futura | Ejecutar el procedimiento, registrar evidencia de cada gate y ajustar únicamente si la imprenta o la cátedra comunican una nueva fecha/condición |
+| Copia de maquetación (`DOCUMENTO_MAQUETACION.md`) | Copia de trabajo transitoria generada desde el documento base para reemplazo de figuras e inyección Pandoc | **Artefacto efímero de compilación**: no compite con la fuente maestra; se genera bajo demanda a partir de `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` (`DF-05`) | Mantener excluido de Git; regenerar determinísticamente al compilar el DOCX definitivo |
+| DOCX APA 7 | Editable institucional con índice, estilos, tablas con bordes y figuras | **Generado y normalizado**: `OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` (3.72 MB) compilado determinísticamente con portada oficial 2026, 10 mockups, casos de uso desacoplados por actor, DER doble página y Diagrama de Clases | Entregable editable v2.0 disponible en `docs/entrega_final/salida/` (`DF-05`) |
+| PDF definitivo | Copia digital e insumo de impresión | **Generado mediante Word COM**: `OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf` (45 páginas, 2.76 MB, TOC y campos actualizados, tablas bordeadas, diagramas de alta resolución) | Listo para revisión final e impresión física (`DF-06`) |
+| Presentación PPTX/PDF | Narrativa de defensa y guía de demostración | **No creada como entrega final**; existe un DOCX parcial P03 ignorado | Problema, solución, arquitectura, demo, evidencia, límites y cierre en 22-25 minutos (`DF-07`) |
 | Copia física | Entrega para la mesa | **Pendiente** | Una copia preferentemente a color, anillada o encuadernada (`LG-01`) |
 
 El Manual de Usuario permanece integrado en la sección 6 de la memoria y, según la
@@ -114,10 +119,10 @@ confirmación del presidente de mesa, no se entrega como documento separado.
 
 | Documento | Función | Estado y regla de uso |
 |---|---|---|
-| `docs/academic/01-project-overview.md` | Síntesis ejecutiva de organización, problema, actores, alcance, arquitectura, seguridad, estado y límites | **Derivado normalizado**: distingue 46 `[V]`/71 `[I]`, baselines 234/251 por capa y límites de defensa/producción sin reabrir brechas cerradas | Mantener sincronizado después de cambios en scope, arquitectura, Roadmap, auditoría o memoria |
+| `docs/academic/01-project-overview.md` | Síntesis ejecutiva de organización, problema, actores, alcance, arquitectura, seguridad, estado y límites | **Derivado normalizado**: distingue 46 `[V]`/71 `[I]`, baselines 234/252 en preflight conjunto Spec 218 y límites de defensa/producción sin reabrir brechas cerradas | Mantener sincronizado después de cambios en scope, arquitectura, Roadmap, auditoría o memoria |
 | `docs/academic/02-software-requirements.md` | Especificación académica con actores, permisos, requisitos, reglas, calidad, integraciones y aceptación | **Derivado normalizado**: 48 RF, 12 BR y 12 RNF con correspondencia exacta al contrato canónico; brechas y gates explícitos | Mantener sincronizado después de modificar `scope-and-requirements.md` o aceptar/remediar gaps |
 | `docs/academic/03-use-cases.md` | Catálogo de casos de uso con actores, condiciones, flujos, alternativas y trazabilidad RF-CU | **Derivado normalizado**: 26 CU únicos y cobertura exacta de los 48 RF; brechas insertadas en los flujos afectados | Mantener sincronizado después de cambios de permisos, requisitos o aceptación de gaps |
-| `docs/academic/04-design-diagrams.md` | Paquete de contexto, componentes, DER, secuencias, realtime, despliegue y operación | **Derivado normalizado**: 13 Mermaid; DER dividido con las 30 entidades persistidas. El alumno informó su renderizado; no equivale a aprobación de inserción/legibilidad en Word | Revisar visualmente los SVG/PNG y usar como anexos solo las vistas citadas y legibles (`QA-DIAG-01`) |
+| `docs/academic/04-design-diagrams.md` | Paquete de contexto, componentes, DER, secuencias, realtime, despliegue y operación | **Derivado normalizado y auditado**: 13 Mermaid auditados estáticamente contra entidades EF, modelo snapshot, configuración, Compose y scripts; cobertura de 30 DbSet contrastada; recomendaciones A4 incluidas; render compilado y QA visual A4 pendientes | Revisar visualmente los SVG/PNG y usar como anexos solo las vistas citadas y legibles (`QA-DIAG-01`) |
 
 Estos cuatro documentos son útiles para exposición y consulta rápida, pero duplican
 parcialmente la memoria. Se conservarán solo si, después de su auditoría, aportan una
@@ -127,8 +132,8 @@ vista resumida claramente identificada y de mantenimiento razonable.
 
 | Recurso | Función | Política |
 |---|---|---|
-| `core-web/` | Contexto compacto para Gemini u otra IA externa | **Normalizado**: comparte el corte Spec 217 del 2026-08-05, precedencia, 117/117 (46 V + 71 I), baselines 234/251, decisiones, contratos y brechas vigentes | Apto para subir como contexto derivado; regenerar cuando cambien contratos, métricas, arquitectura o riesgos canónicos |
-| `.specify/`, `.agents/`, `AGENTS.md`, `GUIA_SPECKIT.md`, `specs/` | Constitución, templates, flujo Speckit, instrucciones y evidencia granular | **Local/ignorado** según la política actual; Constitución 1.5.0, `AGENTS.md`, guía y template de plan normalizados al corte 2026-08-03 con seguridad, privacidad, resiliencia, Code Freeze, gates por riesgo y precedencia vigentes; el circuito TXT redundante fue retirado; no sustituyen documentación entregable |
+| `core-web/` | Contexto compacto para Gemini u otra IA externa | **Pendiente de regeneración**: corte Spec 217 del 2026-08-05; regenerar con baselines 234/252 y la normalización documental posterior a Spec 218 | Apto para subir como contexto derivado; regenerar cuando cambien contratos, métricas, arquitectura o riesgos canónicos |
+| `.specify/`, `.agents/`, `AGENTS.md`, `GUIA_SPECKIT.md`, `specs/` | Constitución, templates, flujo Speckit, instrucciones y evidencia granular | **Local/ignorado** según la política actual; Constitución 1.5.0 y Spec 218 vigentes; `AGENTS.md` reconciliado al 08/08 con baseline 234/252 y mesa no realizada | No sustituyen documentación entregable; conservar T022/T023/CF-06 abiertos hasta evidencia real |
 | Plantilla DOCX y programa de la materia en raíz | Fuentes institucionales de entrada | Conservar como referencia local; no tratarlos como documentación técnica del sistema |
 | Scripts de secretos y archivos `.env` locales | Configuración privada | Deben permanecer ignorados, sin valores reales en documentación ni commits |
 
@@ -138,7 +143,7 @@ vista resumida claramente identificada y de mantenimiento razonable.
 
 ### 6.1 Baseline técnico documentado
 
-- Último preflight conjunto: backend **234/234** y frontend **251/251** en el worktree de
+- Último preflight conjunto: backend **234/234** y frontend **252/252** en el worktree de
   Spec 218, con builds, EF, Compose y whitespace en PASS.
 - Ambos baselines deben repetirse o vincularse al SHA candidato limpio antes de convertirlos en
   evidencia de release (`REL-001`).
@@ -152,7 +157,7 @@ vista resumida claramente identificada y de mantenimiento razonable.
   con correlation ID, logs y probes live/ready, pero la plataforma central sigue bloqueada
   por el ambiente de destino.
 
-### 6.2 Cierre técnico antes de la defensa
+### 6.2 Cierre técnico antes de una futura defensa
 
 | Bloque | Estado | Trabajo pendiente | Estimación canónica |
 |---|---|---|---:|
@@ -207,7 +212,7 @@ estado actual prevalecen las secciones 3 y 6, el roadmap y el informe final de a
 | `specs/215-profile-storage-hydration-resilience` | **Implementada `[I]`**: provider explícito Local/Cloudinary, Production fail-closed, timeout/cancelación, 503 correlacionado, limpieza de parciales e hidratación completa. Backend 230/230, frontend 240/240, builds, Compose y EF sin drift PASS; browser local y Cloudinary real pendientes |
 | `specs/216-feed-pagination-observability` | **Implementada `[I]`**: hook canónico, doble-click guard, Strict Mode, deduplicación, filtros aislados, error recuperable y fin explícito. Backend 234/234, frontend 249/249 y builds PASS; browser con dataset >15 pendiente |
 | `specs/217-institutional-landing-theme-polish` | **Implementada `[I]`**: transición React/CSS de 1300 ms con fallbacks accesibles, narrativa institucional trazable y tres enlaces externos seguros. Frontend 251/251, focalizadas 17/17, Vite PASS y Home claro 320/768/1440 sin overflow, headings truncados ni ruido de consola; pasada perceptual dark/reduced-motion pendiente |
-| `specs/218-candidate-freeze-predefense-gate` | **En progreso `[P]`**: contrato same-SHA, 88 rutas clasificadas, backend 234/234, frontend 251/251, builds, EF, Compose, Redis/Mailpit, base demo, seis logins, ocho dominios y cleanup PASS. `npm audit` conserva `RR-09`; browser por roles, dos sesiones y congelamiento Git permanecen abiertos; no existe todavía SHA candidato |
+| `specs/218-candidate-freeze-predefense-gate` | **En progreso `[P]`**: contrato same-SHA y preflight 234/252 preservados; inventario inicial del 08/08 clasificó 37 rutas Git visibles y el árbol reconciliado conserva 38 (11 modificadas, 27 no rastreadas), además de artefactos Word/Agy ignorados. T022 está `NOT RUN`; T023 está abierto con observaciones parciales pero sin matriz exhaustiva; `CF-03` a `CF-06` siguen abiertos y no existe SHA final/tag/versión presentada |
 | `specs/203-microsoft-session-commit-stabilization` | Limpieza diferenciada por proveedor, commit observado, purga de sesiones parciales, operaciones públicas fuera de la expiración global, recuperación acotada si MSAL restaura Login y timeout cancelable de backend. QA HIGH PASS, callback 11/11, frontend 163/163 y Vite sin errores; acceso institucional real aceptado hasta onboarding/muro, con logout/segunda cuenta pendientes |
 | `specs/202-entra-redirect-acceptance` | `AADSTS50011` acotado a App Registration; callback local/configuración backend verificados sin exponer valores, HTTP restringido a loopback y casos de URI inseguros cubiertos. QA HIGH PASS, Entra focalizadas 46/46, frontend 151/151 y Vite 862 ms; aceptación Microsoft 365 real continúa bloqueada hasta el smoke de tenant |
 | `specs/201-final-audit-closure` | Registro Student-only con dominio/anti-enumeración/limiter, Profesor acotado por carrera, privacidad sin Follow, SQL productivo sin trust bypass predeterminado y probes live/ready. Backend 198/198, frontend 144/144, builds y EF PASS en worktree; SHA, DOCX/PDF y diagramas siguen como gates separados |

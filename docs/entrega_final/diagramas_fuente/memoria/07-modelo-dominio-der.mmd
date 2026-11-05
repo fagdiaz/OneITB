@@ -1,0 +1,311 @@
+erDiagram
+    USER {
+        uuid Id PK
+        string FirstName
+        string LastName
+        string Role
+        string Biography
+        string Phone
+        string AvatarUrl
+        bool IsActive
+        bool IsPublicProfile
+        datetime MutedUntil
+    }
+    ACCOUNT {
+        uuid Id PK
+        string Email UK
+        string PasswordHash "nullable for external-only"
+        string ExternalProvider
+        string ExternalTenantId
+        string ExternalSubjectId
+        datetime LastExternalLoginAt
+        int FailedLoginAttempts
+        datetime LockoutEnd
+        datetime CreatedAt
+    }
+    MAGIC_LINK {
+        uuid Id PK
+        uuid AccountId FK
+        string Token "digest SHA-256; el secreto viaja fuera de banda"
+        datetime ExpiresAt
+        bool IsUsed
+    }
+    EMPLOYER_REQUEST {
+        uuid Id PK
+        string CompanyName
+        string ContactName
+        string Email
+        string Phone
+        string TaxId
+        string Status
+        datetime CreatedAt
+        datetime ProcessedAt
+        uuid ProcessedByAdminId FK
+        uuid ProvisionedUserId FK
+        string EmailDeliveryStatus
+    }
+    EMPLOYER_ONBOARDING_OUTBOX {
+        uuid Id PK
+        uuid EmployerRequestId FK,UK
+        string Status
+        datetime NextAttemptAt
+        datetime LeaseExpiresAt
+        datetime ProcessedAt
+        int Attempts
+        string LastErrorCode
+    }
+    CAREER {
+        int Id PK
+        string Name
+        string Code
+        bool IsActive
+    }
+    USER_CAREER {
+        uuid UserId PK,FK
+        int CareerId PK,FK
+    }
+    SUBJECT {
+        int Id PK
+        int CareerId FK
+        string Name
+        string Code
+        int Year
+        bool IsActive
+    }
+    SUBJECT_PREREQUISITE {
+        int SubjectId PK,FK
+        int PrerequisiteId PK,FK
+    }
+    INQUIRY {
+        uuid Id PK
+        uuid UserId FK
+        int SubjectId FK
+        string Title
+        string Content
+        bool IsActive
+        bool IsHiddenByModerator
+        bool PreferAttachmentCover
+        datetime CreatedAt
+    }
+    COMMENT {
+        uuid Id PK
+        uuid InquiryId FK
+        uuid UserId FK
+        uuid ParentCommentId FK
+        uuid ReplyToUserId FK
+        string Content
+        bool IsActive
+        bool IsHiddenByModerator
+        datetime CreatedAt
+    }
+    SOCIAL_ATTACHMENT {
+        uuid Id PK
+        uuid InquiryId FK
+        uuid CommentId FK
+        string FileUrl
+        string OriginalFileName
+        string ContentType
+        long Size
+        int SortOrder
+    }
+    REACTION {
+        uuid Id PK
+        uuid InquiryId FK
+        uuid UserId FK
+    }
+    COMMENT_REACTION {
+        uuid Id PK
+        uuid CommentId FK
+        uuid UserId FK
+    }
+    COMMUNITY_REPORT {
+        uuid Id PK
+        uuid InquiryId FK
+        uuid ReporterId FK
+        string Reason
+        string Status
+        datetime CreatedAt
+    }
+    USER_INTERACTION {
+        uuid Id PK
+        uuid ObserverId FK
+        uuid TargetId FK
+        string Type
+        datetime CreatedAt
+    }
+    MESSAGE {
+        uuid Id PK
+        uuid SenderId FK
+        uuid ReceiverId FK
+        string Content
+        datetime SentAt
+        bool IsRead
+    }
+    NOTIFICATION {
+        uuid Id PK
+        uuid UserId FK
+        uuid RelatedInquiryId FK
+        string Type
+        string Message
+        string ActionUrl
+        bool IsRead
+        string GroupKey
+        int AggregateCount
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    NOTIFICATION_PREFERENCE {
+        uuid Id PK
+        uuid UserId FK
+        string Type
+        bool IsEnabled
+        datetime UpdatedAt
+    }
+    ACADEMIC_RESOURCE {
+        uuid Id PK
+        int SubjectId FK
+        uuid UploaderId FK
+        string Title
+        string FileUrl
+        string ExternalUrl
+        string Category
+        int Version
+        bool IsActive
+    }
+    ACADEMIC_PROGRESS {
+        uuid Id PK
+        uuid UserId FK
+        int SubjectId FK
+        uuid AssignedById FK
+        decimal Score
+        string Status
+        string Notes
+        datetime UpdatedAt
+    }
+    JOB_OFFER {
+        uuid Id PK
+        uuid EmployerId FK
+        string Title
+        string Company
+        string Location
+        bool IsActive
+        datetime CreatedAt
+    }
+    JOB_APPLICATION {
+        uuid Id PK
+        uuid JobOfferId FK
+        uuid ApplicantId FK
+        string Status
+        datetime AppliedAt
+    }
+    USER_CV_EXPERIENCE {
+        uuid Id PK
+        uuid UserId FK
+        string Company
+        string Role
+        bool IsHidden
+        int SortOrder
+    }
+    USER_CV_EDUCATION {
+        uuid Id PK
+        uuid UserId FK
+        string Institution
+        string Degree
+        bool IsHidden
+        int SortOrder
+    }
+    USER_CV_PROJECT {
+        uuid Id PK
+        uuid UserId FK
+        string Name
+        string Role
+        string Url
+        bool IsHidden
+    }
+    USER_CV_SKILL {
+        uuid Id PK
+        uuid UserId FK
+        string Name
+        string Level
+        bool IsHidden
+    }
+    USER_CV_LANGUAGE {
+        uuid Id PK
+        uuid UserId FK
+        string Name
+        string Level
+        bool IsHidden
+    }
+    AUDIT_LOG {
+        uuid Id PK
+        uuid ActorUserId FK
+        string CorrelationId
+        string Action
+        string EntityName
+        string EntityId
+        string OldValuesJson
+        string NewValuesJson
+        datetime CreatedAt
+    }
+    MODERATION_AUDIT {
+        uuid Id PK
+        uuid ActorUserId FK
+        uuid TargetUserId FK
+        uuid TargetInquiryId FK
+        uuid TargetCommentId FK
+        uuid TargetReportId FK
+        string Action
+        string Summary
+        datetime CreatedAt
+    }
+
+    USER ||--|| ACCOUNT : owns
+    ACCOUNT ||--o{ MAGIC_LINK : issues
+    USER o|--o{ EMPLOYER_REQUEST : processes
+    USER o|--o| EMPLOYER_REQUEST : provisioned_as
+    EMPLOYER_REQUEST ||--o| EMPLOYER_ONBOARDING_OUTBOX : enqueues
+    USER ||--o{ USER_CAREER : enrolls
+    CAREER ||--o{ USER_CAREER : includes
+    CAREER ||--o{ SUBJECT : contains
+    SUBJECT ||--o{ SUBJECT_PREREQUISITE : requires
+    SUBJECT ||--o{ SUBJECT_PREREQUISITE : prerequisite_for
+    USER ||--o{ INQUIRY : authors
+    SUBJECT ||--o{ INQUIRY : classifies
+    INQUIRY ||--o{ COMMENT : receives
+    USER ||--o{ COMMENT : writes
+    USER o|--o{ COMMENT : mentioned
+    COMMENT o|--o{ COMMENT : replies
+    INQUIRY o|--o{ SOCIAL_ATTACHMENT : has
+    COMMENT o|--o{ SOCIAL_ATTACHMENT : has
+    INQUIRY ||--o{ REACTION : receives
+    USER ||--o{ REACTION : makes
+    COMMENT ||--o{ COMMENT_REACTION : receives
+    USER ||--o{ COMMENT_REACTION : makes
+    INQUIRY ||--o{ COMMUNITY_REPORT : receives
+    USER ||--o{ COMMUNITY_REPORT : files
+    USER ||--o{ USER_INTERACTION : observes
+    USER ||--o{ USER_INTERACTION : targeted_by
+    USER ||--o{ MESSAGE : sends
+    USER ||--o{ MESSAGE : receives
+    USER ||--o{ NOTIFICATION : receives
+    INQUIRY o|--o{ NOTIFICATION : groups
+    USER ||--o{ NOTIFICATION_PREFERENCE : configures
+    SUBJECT ||--o{ ACADEMIC_RESOURCE : groups
+    USER ||--o{ ACADEMIC_RESOURCE : uploads
+    USER ||--o{ ACADEMIC_PROGRESS : owns
+    SUBJECT ||--o{ ACADEMIC_PROGRESS : evaluates
+    USER ||--o{ ACADEMIC_PROGRESS : assigns
+    USER ||--o{ JOB_OFFER : publishes
+    JOB_OFFER ||--o{ JOB_APPLICATION : receives
+    USER ||--o{ JOB_APPLICATION : submits
+    USER ||--o{ USER_CV_EXPERIENCE : records
+    USER ||--o{ USER_CV_EDUCATION : records
+    USER ||--o{ USER_CV_PROJECT : records
+    USER ||--o{ USER_CV_SKILL : records
+    USER ||--o{ USER_CV_LANGUAGE : records
+    USER o|--o{ AUDIT_LOG : acts
+    USER ||--o{ MODERATION_AUDIT : performs
+    USER o|--o{ MODERATION_AUDIT : target_user
+    INQUIRY o|--o{ MODERATION_AUDIT : target_inquiry
+    COMMENT o|--o{ MODERATION_AUDIT : target_comment
+    COMMUNITY_REPORT o|--o{ MODERATION_AUDIT : target_report

@@ -1,0 +1,24 @@
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant F as Frontend (React)
+    participant C as API GraphQL OneITB
+    participant DB as SQL Server
+
+    rect rgb(15, 23, 42)
+    note right of U: Flujo de Registro de Usuario
+    end
+
+    U->>F: registrarUsuario(datos)
+    activate F
+    F->>C: POST /graphql (register mutation)
+    activate C
+    C->>C: hashear password (BCrypt)
+    C->>DB: guardarUsuario(datos, hash)
+    activate DB
+    DB-->>C: confirmación de creación
+    deactivate DB
+    C-->>F: retorna usuario creado (sin JWT)
+    deactivate C
+    F->>U: redirigir a /login con mensaje de éxito
+    deactivate F

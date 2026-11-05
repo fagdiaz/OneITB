@@ -1,0 +1,163 @@
+erDiagram
+    USER {
+        uuid Id PK
+        string Role
+        string FirstName
+        string LastName
+        string Email
+    }
+    CAREER {
+        uuid Id PK
+        string Name
+        string Code
+        string Description
+        bool IsActive
+        datetime CreatedAt
+    }
+    USER_CAREER {
+        uuid Id PK
+        uuid UserId FK
+        uuid CareerId FK
+        bool IsPrimary
+        datetime EnrollmentDate
+        string Status
+    }
+    SUBJECT {
+        uuid Id PK
+        uuid CareerId FK
+        string Name
+        string Code
+        int Year
+        int Semester
+        bool IsActive
+    }
+    SUBJECT_PREREQUISITE {
+        uuid Id PK
+        uuid SubjectId FK
+        uuid PrerequisiteSubjectId FK
+    }
+    ACADEMIC_RESOURCE {
+        uuid Id PK
+        uuid SubjectId FK
+        uuid UploaderId FK
+        string Title
+        string Description
+        string FileUrl
+        string Category
+        int DownloadCount
+        datetime CreatedAt
+    }
+    ACADEMIC_PROGRESS {
+        uuid Id PK
+        uuid StudentId FK
+        uuid SubjectId FK
+        uuid AssignedByUserId FK
+        string Status
+        decimal Grade
+        datetime FinalExamDate
+        datetime UpdatedAt
+    }
+    JOB_OFFER {
+        uuid Id PK
+        uuid EmployerId FK
+        string Title
+        string Description
+        string Requirements
+        string Location
+        string JobType
+        string SalaryRange
+        string Status
+        datetime CreatedAt
+        datetime ExpiresAt
+    }
+    JOB_APPLICATION {
+        uuid Id PK
+        uuid JobOfferId FK
+        uuid ApplicantId FK
+        string CoverLetter
+        string Status
+        datetime AppliedAt
+        datetime ReviewedAt
+    }
+    USER_CV_EXPERIENCE {
+        uuid Id PK
+        uuid UserId FK
+        string Company
+        string Position
+        datetime StartDate
+        datetime EndDate
+        bool IsCurrent
+        int DisplayOrder
+    }
+    USER_CV_EDUCATION {
+        uuid Id PK
+        uuid UserId FK
+        string Institution
+        string Degree
+        datetime StartDate
+        datetime EndDate
+        bool IsCompleted
+        int DisplayOrder
+    }
+    USER_CV_PROJECT {
+        uuid Id PK
+        uuid UserId FK
+        string Title
+        string Description
+        string ProjectUrl
+        int DisplayOrder
+    }
+    USER_CV_SKILL {
+        uuid Id PK
+        uuid UserId FK
+        string Name
+        string Category
+        int ProficiencyLevel
+        int DisplayOrder
+    }
+    USER_CV_LANGUAGE {
+        uuid Id PK
+        uuid UserId FK
+        string Language
+        string Proficiency
+        int DisplayOrder
+    }
+    AUDIT_LOG {
+        uuid Id PK
+        uuid ActorId FK
+        string Action
+        string EntityName
+        uuid EntityId
+        string OldValues
+        string NewValues
+        datetime Timestamp
+        string IpAddress
+    }
+    MODERATION_AUDIT {
+        uuid Id PK
+        uuid ModeratorId FK
+        string Action
+        string Reason
+        string TargetType
+        uuid TargetId
+        datetime CreatedAt
+    }
+
+    CAREER ||--o{ USER_CAREER : agrupa
+    USER ||--o{ USER_CAREER : cursa
+    CAREER ||--o{ SUBJECT : contiene
+    SUBJECT ||--o{ SUBJECT_PREREQUISITE : correlativas
+    SUBJECT ||--o{ ACADEMIC_RESOURCE : dispone
+    USER ||--o{ ACADEMIC_RESOURCE : sube
+    SUBJECT ||--o{ ACADEMIC_PROGRESS : califica
+    USER ||--o{ ACADEMIC_PROGRESS : cursa_registra
+    USER ||--o{ JOB_OFFER : publica
+    JOB_OFFER ||--o{ JOB_APPLICATION : recibe
+    USER ||--o{ JOB_APPLICATION : postula
+    USER ||--o{ USER_CV_EXPERIENCE : registra
+    USER ||--o{ USER_CV_EDUCATION : registra
+    USER ||--o{ USER_CV_PROJECT : registra
+    USER ||--o{ USER_CV_SKILL : registra
+    USER ||--o{ USER_CV_LANGUAGE : registra
+    USER o|--o{ AUDIT_LOG : ejecuta
+    USER ||--o{ MODERATION_AUDIT : modera

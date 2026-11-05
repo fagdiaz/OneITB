@@ -1,0 +1,25 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    A["Estudiante"] -->|"crea su perfil y elige carreras"| P["OneITB23"]
+    P --> M["Muro por materias"]
+    P --> R["Recursos académicos"]
+    P --> C["Mensajería privada"]
+    P --> N["Notas y progreso"]
+    P --> E["Bolsa de Trabajo"]
+
+    D["Profesor"] -->|"publica recursos y asigna progreso"| R
+    D -->|"responde y orienta"| M
+    B["Empleador"] -->|"publica ofertas"| E
+    E -->|"postulación y cambio de estado"| A
+    C <-->|"conversación uno a uno"| D
+    M -->|"comentarios, reacciones y menciones"| A
+    R -->|"descarga o consulta"| A
+    N -->|"consulta privada"| A
+    X["Administración y Moderación"] -->|"protege, audita y organiza"| P
+
+    classDef person fill:#dbeafe,stroke:#2563eb,color:#0f172a,stroke-width:2px;
+    classDef platform fill:#0f172a,stroke:#38bdf8,color:#f8fafc,stroke-width:3px;
+    classDef module fill:#f1f5f9,stroke:#64748b,color:#0f172a;
+    class A,D,B,X person;
+    class P platform;
+    class M,R,C,N,E module;

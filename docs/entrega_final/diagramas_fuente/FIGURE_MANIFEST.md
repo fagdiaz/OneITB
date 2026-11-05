@@ -1,0 +1,44 @@
+# Manifiesto Editorial de Figuras y Diagramas - OneITB23
+
+Este manifiesto documenta el inventario oficial de fuentes Mermaid (`.mmd`) extraídas para la memoria técnica y el paquete técnico complementario de OneITB23.
+
+---
+
+## Tabla A — Figuras principales de la memoria
+
+Fuentes extraídas de `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`. Destinadas al cuerpo principal del documento.
+
+| Número | Título | Archivo `.mmd` | Tipo de diagrama | Orientación A4 | Herramienta recomendada | Salida esperada | Destino | Pie de figura sugerido | Estado |
+|---:|---|---|---|---|---|---|---|---|---|
+| 1 | Infografía: interacción del alumno con la comunidad OneITB | `memoria/01-infografia-interaccion-alumno.mmd` | Flowchart (LR) | Horizontal (Landscape) | Mermaid Live Editor / SVG direct | SVG / PNG | Cuerpo principal (Sección 1.3) | *Figura 1.* Interacción del alumno con la comunidad OneITB. *Nota.* Elaboración propia a partir de la arquitectura de OneITB23. | `Fuente extraída` |
+| 2 | Casos de uso - Módulo Social y Académico | `memoria/02-casos-uso-social-academico.mmd` | Flowchart / Casos de uso (LR) | Horizontal (Landscape) | Mermaid Live Editor / Draw.io | SVG / PNG | Cuerpo principal (Sección 3.1) | *Figura 2.* Casos de uso del Módulo Social y Académico. *Nota.* Elaboración propia. | `Fuente extraída` |
+| 3 | Casos de uso - Módulo de Bolsa de Trabajo | `memoria/03-casos-uso-bolsa-trabajo.mmd` | Flowchart / Casos de uso (LR) | Horizontal (Landscape) | Mermaid Live Editor / Draw.io | SVG / PNG | Cuerpo principal (Sección 3.1) | *Figura 3.* Casos de uso del Módulo de Bolsa de Trabajo. *Nota.* Elaboración propia. | `Fuente extraída` |
+| 4 | Casos de uso - Módulo de Administración | `memoria/04-casos-uso-administracion.mmd` | Flowchart / Casos de uso (LR) | Horizontal (Landscape) | Mermaid Live Editor / Draw.io | SVG / PNG | Cuerpo principal (Sección 3.1) | *Figura 4.* Casos de uso del Módulo de Administración. *Nota.* Elaboración propia. | `Fuente extraída` |
+| 5 | Secuencia - Flujo de Registro de Usuario | `memoria/05-secuencia-registro.mmd` | SequenceDiagram | Vertical (Portrait) | Mermaid Live Editor | SVG / PNG | Cuerpo principal (Sección 3.2) | *Figura 5.* Flujo de secuencia del registro de usuario estudiantil. *Nota.* Elaboración propia. | `Fuente extraída` |
+| 6 | Secuencia - Flujo de Inicio de Sesión (Login) | `memoria/06-secuencia-inicio-sesion.mmd` | SequenceDiagram | Vertical (Portrait) | Mermaid Live Editor | SVG / PNG | Cuerpo principal (Sección 3.2) | *Figura 6.* Flujo de secuencia de inicio de sesión local y Microsoft 365. *Nota.* Elaboración propia. | `Fuente extraída` |
+| 7 | Modelo de Dominio (DER) | `memoria/07-modelo-dominio-der.mmd` | ERDiagram | Horizontal (Landscape) | Draw.io / diagrams.net | `.drawio` + SVG / PNG | Cuerpo principal (Sección 3.3) | *Figura 7.* Modelo de dominio entidad-relación de OneITB23. *Nota.* Elaboración propia. | `Fuente extraída` |
+| 8 | Arquitectura de Componentes | `memoria/08-arquitectura-componentes.mmd` | Flowchart (TB) | Vertical / Horizontal | Mermaid Live Editor | SVG / PNG | Cuerpo principal (Sección 4.1) | *Figura 8.* Diagrama de componentes lógicos de la solución. *Nota.* Elaboración propia. | `Fuente extraída` |
+| 9 | Arquitectura de Despliegue | `memoria/09-arquitectura-despliegue.mmd` | Flowchart (LR) | Horizontal (Landscape) | Mermaid Live Editor | SVG / PNG | Cuerpo principal (Sección 4.2) | *Figura 9.* Diagrama de despliegue en contenedores Docker. *Nota.* Elaboración propia. | `Fuente extraída` |
+| 10 | Calendarización del proyecto (Gantt) | `memoria/10-calendarizacion-gantt.mmd` | Gantt | Horizontal (Landscape) | Mermaid Live Editor | SVG / PNG | Cuerpo principal (Sección 5.1) | *Figura 10.* Calendarización del proyecto OneITB23 (Abril a Cierre de Julio de 2026). *Nota.* Elaboración propia. | `Fuente extraída` |
+
+---
+
+## Tabla B — Paquete técnico complementario
+
+Vistas técnicas extraídas de `docs/academic/04-design-diagrams.md`. Se incorporan al Word únicamente como anexos citados tras verificar su legibilidad.
+
+| Número | Título | Archivo `.mmd` | Tipo de diagrama | Orientación A4 | Herramienta recomendada | Salida esperada | Destino | Pie de figura sugerido | Estado | Cuerpo o anexo | Nivel de saturación | Recreación manual requerida |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Contexto del sistema | `tecnicos/01-contexto-sistema.mmd` | Flowchart (LR) | Horizontal (Landscape) | Mermaid Live Editor / Draw.io | SVG / PNG | Anexo / Presentación | *Figura T1.* Contexto general del sistema OneITB. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Muy bajo | No (candidata SVG directo) |
+| 2 | Componentes lógicos | `tecnicos/02-componentes-logicos.mmd` | Flowchart (TB) | Vertical (Portrait) | Mermaid Live Editor | SVG / PNG | Anexo / Memoria técnica | *Figura T2.* Componentes lógicos y capas de API ASP.NET Core. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Bajo | No (candidata SVG directo) |
+| 3 | DER de identidad, perfil y catálogo académico | `tecnicos/03-der-identidad-perfil-catalogo.mmd` | ERDiagram | Horizontal (Landscape) | Draw.io / diagrams.net | `.drawio` + SVG / PNG | Anexo de datos | *Figura T3.* DER de identidad, perfil y catálogo. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Medio (12 entidades) | Sí (Crow's Foot en Draw.io) |
+| 4 | DER social, mensajería y moderación | `tecnicos/04-der-social-mensajeria-moderacion.mmd` | ERDiagram | Horizontal (Landscape) | Draw.io / diagrams.net | `.drawio` + SVG / PNG | Anexo de datos | *Figura T4.* DER social, mensajería y moderación. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Alto (13 entidades) | Sí (Crow's Foot en Draw.io) |
+| 5 | DER académico, empleabilidad, onboarding y auditoría | `tecnicos/05-der-academico-empleabilidad-auditoria.mmd` | ERDiagram | Horizontal (Landscape) | Draw.io / diagrams.net | `.drawio` + SVG / PNG | Anexo de datos | *Figura T5.* DER académico, empleabilidad y auditoría. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Medio (9 entidades) | Sí (Crow's Foot en Draw.io) |
+| 6 | Autenticación Microsoft Entra por redirect | `tecnicos/06-autenticacion-microsoft-entra.mmd` | SequenceDiagram | Vertical (Portrait) | Mermaid Live Editor | SVG / PNG | Anexo de seguridad | *Figura T6.* Secuencia de autenticación Microsoft Entra por redirect. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Bajo | No (candidata SVG directo) |
+| 7 | Publicación multimedia con carga desacoplada | `tecnicos/07-publicacion-multimedia.mmd` | SequenceDiagram | Vertical (Portrait) | Mermaid Live Editor | SVG / PNG | Anexo técnico | *Figura T7.* Secuencia de carga multimedia desacoplada REST + GraphQL. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Bajo | No (candidata SVG directo) |
+| 8 | Sincronización académica mediante SIU mock | `tecnicos/08-sincronizacion-siu-mock.mmd` | SequenceDiagram | Vertical (Portrait) | Mermaid Live Editor | SVG / PNG | Anexo técnico | *Figura T8.* Secuencia de sincronización mediante adaptador SIU mock. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Bajo | No (candidata SVG directo) |
+| 9 | Solicitud, aprobación y bienvenida de empleador | `tecnicos/09-onboarding-empresarial.mmd` | SequenceDiagram | Vertical (Portrait) | Mermaid Live Editor | SVG / PNG | Anexo B2B | *Figura T9.* Secuencia de onboarding empresarial con patrón Outbox. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Medio | No (candidata SVG directo) |
+| 10 | Notificaciones y mensajes en tiempo real | `tecnicos/10-notificaciones-pubsub.mmd` | Flowchart (LR) | Horizontal (Landscape) | Mermaid Live Editor | SVG / PNG | Anexo / Cuerpo | *Figura T10.* Arquitectura de notificaciones y mensajes Pub/Sub. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Bajo | No (candidata SVG directo) |
+| 11 | Entorno local y de aceptación | `tecnicos/11-despliegue-local-aceptacion.mmd` | Flowchart (LR) | Horizontal (Landscape) | Mermaid Live Editor | SVG / PNG | Anexo / Cuerpo | *Figura T11.* Entorno de despliegue local y aceptación con Docker. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Bajo | No (candidata SVG directo) |
+| 12 | Plantilla de despliegue productivo | `tecnicos/12-plantilla-productiva.mmd` | Flowchart (LR) | Horizontal (Landscape) | Mermaid Live Editor / Draw.io | SVG / PNG | Anexo Cloud | *Figura T12.* Plantilla de arquitectura de despliegue productivo objetivo. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Medio | No (candidata SVG directo) |
+| 13 | Rebaseline y aceptación de la base demo | `tecnicos/13-rebaseline-base-demo.mmd` | Flowchart (LR) | Horizontal (Landscape) | Mermaid Live Editor | SVG / PNG | Anexo operativo | *Figura T13.* Flujo de rebaseline y verificación idempotente de la base demo. *Nota.* Elaboración propia. | `Fuente extraída` | Anexo | Medio (14 pasos) | No (candidata SVG directo) |

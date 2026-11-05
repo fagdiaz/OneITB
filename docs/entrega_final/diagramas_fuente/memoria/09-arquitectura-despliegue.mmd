@@ -1,0 +1,24 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    USER["Navegador del usuario"] -->|"HTTPS"| WEB["Contenedor Frontend<br/>Nginx Alpine"]
+
+    subgraph HOST["Host Docker / servidor"]
+        WEB -->|"/graphql y /api"| API["Contenedor Backend<br/>ASP.NET Core .NET 8"]
+        API -->|"TDS / SQL Auth"| DB[("Contenedor SQL Server 2022")]
+        API <-->|"Pub/Sub"| REDIS[("Contenedor Redis 7")]
+        DB --> SQLVOL[("Volumen SQL")]
+        API --> UPVOL[("Volumen uploads local")]
+    end
+
+    API -.->|"provider productivo explícito"| CLOUD["Cloudinary"]
+    API -.->|"si está configurado"| MAIL["Proveedor SMTP"]
+    CI["GitHub Actions<br/>Quality Gates"] -->|"build y tests"| HOST
+    OPS["Administrador técnico"] -->|"variables y secretos"| HOST
+
+    classDef external fill:#f1f5f9,stroke:#64748b,color:#0f172a;
+    classDef container fill:#dbeafe,stroke:#2563eb,color:#0f172a,stroke-width:2px;
+    classDef storage fill:#dcfce7,stroke:#15803d,color:#0f172a;
+    class USER,CI,OPS,CLOUD,MAIL external;
+    class WEB,API container;
+    class DB,REDIS,SQLVOL,UPVOL storage;
+    style HOST fill:#f8fafc,stroke:#0f172a,stroke-width:2px

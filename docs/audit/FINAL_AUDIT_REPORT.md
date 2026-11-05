@@ -2,11 +2,11 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Fecha de corte documental** | 2026-08-05 |
+| **Fecha de corte documental** | 2026-08-08 |
 | **Stack auditado** | .NET 8, EF Core 8, HotChocolate 14, React 18, Apollo Client 3, SQL Server 2022 en Docker |
 | **Estado funcional del roadmap** | 100%: 117/117 ítems, compuesto por 109 ítems funcionales/operativos y 8 remediaciones de auditoría |
 | **Distribución de evidencia** | 46 ítems verificados `[V]` y 71 implementados `[I]` |
-| **Corte técnico documentado** | Specs 186-218; Spec 218 ejecutó preflight conjunto sobre worktree, pero el gate integral debe repetirse o vincularse al SHA candidato de defensa |
+| **Corte técnico documentado** | Specs 186-218; Spec 218 ejecutó preflight conjunto sobre worktree, pero el gate integral debe repetirse o vincularse al futuro SHA candidato |
 | **Clasificación recomendada** | **Release Candidate académico, core Feature Complete y Code Freeze operativo local** |
 | **Producción pública** | No certificada: conserva gates externos, operativos y de seguridad en profundidad |
 
@@ -37,9 +37,12 @@ Las Specs 204-211 cerraron cardinalidad académica, hidratación de perfil, nave
 adaptativa, recursos visuales locales, CV semántico, recuperación de schema activo,
 composición de marca/tema e integridad reproducible de la fuente de iconos.
 
-El sistema puede presentarse ante la mesa académica como un **Release Candidate estable
-en un entorno controlado**, siempre que antes de la defensa se ejecute el gate integral
-sobre un SHA inmutable y se complete la regresión manual por roles. No corresponde
+El sistema mantiene la clasificación de **Release Candidate académico en un entorno
+controlado**, condicionada a que antes de una futura defensa se ejecute el gate integral
+sobre un SHA inmutable y se complete la regresión manual por roles. La mesa planificada
+para el 7 de agosto de 2026 no ocurrió porque no se completaron a tiempo la documentación
+final, el refinamiento/cierre y la auditoría manual. No hubo versión presentada, tag final
+ni cierre de `CF-06`, y no existe una nueva fecha documentada. No corresponde
 declararlo listo para producción pública hasta validar proveedores reales, Microsoft
 Entra con una cuenta organizacional, observabilidad de destino y controles adicionales
 de archivos.
@@ -48,8 +51,8 @@ de archivos.
 
 - **Sí significa** que los 117 ítems del alcance funcional y de remediación contabilizado
   están implementados y cuentan con el nivel de evidencia indicado en el roadmap.
-- **No significa** que los 117 estén todos verificados en producción: 72 permanecen en
-  estado `[I]`, mientras 45 poseen evidencia `[V]`.
+- **No significa** que los 117 estén todos verificados en producción: 71 permanecen en
+  estado `[I]`, mientras 46 poseen evidencia `[V]`.
 - **No incluye** maquetación, impresión, presentación, ensayo, aprovisionamiento de
   proveedores ni evolución cloud/móvil.
 - **No reemplaza** la aceptación final sobre el commit exacto que se presentará. Las
@@ -132,7 +135,7 @@ Son condiciones pendientes para aceptación manual, piloto institucional o produ
 | `RR-07` | Fallos persistentes del cleanup de uploads solo producen warning local | Medio operativo | `[I]` | Configurar alerta, umbral, retención, dashboard y procedimiento de recuperación | `PR-06` | No | Sí |
 | `RR-08` | Uploads sin antivirus/CDR externo | Medio de defensa en profundidad | Fuera del MVP | Seleccionar proveedor, política de cuarentena, privacidad, timeout, rechazo y reintento | `PR-07` | No | Sí para exposición pública amplia |
 | `RR-09` | React Router 6.30.4 conserva advisories moderados upstream | Moderado aceptado | Aceptado | Mantener sanitización de destinos; reevaluar 7.x fuera del Code Freeze con suite completa | Evolución postdefensa | No | Revisión previa al despliegue |
-| `RR-10` | Backend 234/234 y frontend 251/251 pasaron juntos en el preflight de Spec 218, pero no sobre un SHA candidato congelado | Medio de liberación | `[I]` | Resolver higiene, congelar el SHA, repetir o vincular gates integrales y registrar fecha, versiones y resultados | `CF-01`, `CF-03`, `CF-06` | Sí | Sí |
+| `RR-10` | Backend 234/234 y frontend 252/252 pasaron juntos en el preflight de Spec 218, pero no sobre un SHA candidato congelado | Medio de liberación | `[I]` | Resolver higiene, congelar el SHA, repetir o vincular gates integrales y registrar fecha, versiones y resultados | `CF-01`, `CF-03`, `CF-06` | Sí | Sí |
 | `RR-11` | `/uploads` local entrega objetos por URL directa sin autorización por recurso | Alto para piloto abierto | Aceptado solo para demo controlada | Migrar a storage privado con URL firmada o endpoint autorizado según ownership/carrera antes de admitir usuarios externos | `PR-03` y evolución de storage | No | Sí |
 | `RR-12` | TLS SQL, observabilidad y alertas no aceptados en un ambiente remoto | Alto operativo de destino | `[B]` | Inyectar cadena con certificado verificable, probar `/health/ready`, centralizar logs/métricas/traces y aprobar alertas/incident response | `PR-06` | No | Sí |
 | `RR-13` | La cardinalidad académica de Estudiante requería selección única y reconciliación de datos heredados | Bajo de aceptación | `[I]` | Spec 204 cerró los bypasses de onboarding, registro, perfil y mutación legacy con servicio transaccional y pruebas; resta repetir el recorrido Microsoft/onboarding/feed en el runtime recompilado | Spec 204 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
@@ -145,7 +148,7 @@ Son condiciones pendientes para aceptación manual, piloto institucional o produ
 | `RR-20` | Font Awesome 6.1.2 vendorizado provocaba ajustes `glyf bbox` en Firefox | Cerrado | `[V]` | Spec 211 migró a paquete oficial 6.7.2 exacto con integridad SHA-512; Firefox nativo sobre `2f20bce` cargó el WOFF2 local y no emitió `download failed`, `glyf bbox` ni errores Font Awesome | Spec 211 / evidencia 05/08/2026 | No | No |
 | `RR-21` | “Cargar más” no distinguía página terminal, error recuperable ni doble click en todos los consumidores | Bajo de aceptación | `[I]` | Spec 216 consolidó el hook, deduplicó, aisló filtros y cubrió bordes/concurrencia/error; ejecutar browser con dataset >15, cambio de carrera y fallo forzado | Spec 216 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
 
-### 3.1 Acciones obligatorias antes de la defensa
+### 3.1 Acciones obligatorias antes de una futura defensa
 
 1. Ejecutar la aceptación manual coordinada de Specs 204 a 208, incluyendo onboarding,
    perfil/avatar, navegación responsive, temas, teclado, offline y PDF optimizado para ATS.
@@ -156,7 +159,8 @@ Son condiciones pendientes para aceptación manual, piloto institucional o produ
 4. Recorrer Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador.
 5. Validar chat/notificaciones con dos perfiles de navegador aislados.
 6. Recorrer solicitud empresarial, aprobación/rechazo y acceso del Empleador.
-7. Consolidar resultados, desviaciones y capturas; etiquetar el SHA presentado.
+7. Consolidar resultados, desviaciones y capturas; etiquetar el SHA final solo con
+   autorización explícita y después de satisfacer el predicado de freeze.
 
 ### 3.2 Acciones obligatorias antes de producción pública
 
@@ -459,7 +463,7 @@ infografía promocional se movió al paquete académico y el logo anterior se pr
 e ignorado, fuera del candidato. El scan de alta confianza no halló claves privadas ni
 tokens y la configuración rastreada no contiene credenciales SQL embebidas.
 
-Sobre el preflight pasaron juntos backend 234/234, frontend 251/251, ambos builds,
+Sobre el preflight pasaron juntos backend 234/234, frontend 252/252, ambos builds,
 EF sin drift, Compose y whitespace. Redis/Mailpit, aislamiento automatizado, integridad
 SQL, seis logins y smokes de ocho dominios pasaron con cleanup; el SQL existente no fue
 modificado. `npm audit` confirmó únicamente los dos advisories moderados de React Router
@@ -780,7 +784,7 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 | **Spec 215** | 230/230 | 240/240, más 44/44 uploads y 12/12 perfil/upload | Builds sin warnings, Compose productivo válido y EF sin drift; provider explícito, timeout, cancelación, 503 sanitizado e hidratación atómica | `[I]`; browser local y Cloudinary real pendientes |
 | **Spec 216** | 234/234, más 14/14 focalizadas | 249/249, más 16/16 focalizadas | Builds sin warnings; bordes 0/1/15/16, Strict Mode, concurrencia, deduplicación, error y aislamiento por carrera | `[I]`; browser con dataset >15 pendiente |
 | **Spec 217** | No modifica backend | 251/251, más 17/17 focalizadas | Vite 565 módulos; Home claro 320/768/1440 sin overflow o headings truncados; enlaces externos seguros y consola limpia | `[I]`; contraste dark y reduced-motion perceptual pendientes en el SHA candidato |
-| **Spec 218 preflight** | 234/234 | 252/252 | Builds, EF, Compose, Redis/Mailpit, base demo, seis logins, ocho dominios, matriz browser representativa, aislamiento de relogin y cleanup PASS | Corte publicado; visual exhaustivo, dos sesiones realtime y congelamiento final pendientes |
+| **Spec 218 preflight** | 234/234 | 252/252 | Builds, EF, Compose, Redis/Mailpit, base demo, seis logins, ocho dominios, matriz browser representativa, aislamiento de relogin y cleanup PASS | Corte técnico previo publicado; no presentado; visual exhaustivo, dos sesiones realtime y congelamiento final pendientes |
 
 La referencia operativa para el siguiente gate es **234 tests backend y 252 frontend**.
 Spec 218 ya los ejecutó juntos, pero sobre un worktree mutable. El árbol todavía debe
@@ -792,7 +796,7 @@ de declarar `CF-06`.
 | Gate | Resultado requerido | Evidencia mínima |
 |---|---|---|
 | Backend tests | 234/234 o mayor, sin fallos | Comando, SHA, fecha, duración y salida completa |
-| Frontend tests | 251/251 o mayor, sin fallos | Comando, SHA, fecha y salida completa |
+| Frontend tests | 252/252 o mayor, sin fallos | Comando, SHA, fecha y salida completa |
 | Backend Release | 0 warnings / 0 errores | Build sobre el mismo SHA |
 | Frontend Vite | Build limpio | Cantidad de módulos, duración y artefacto generado |
 | EF model drift | Sin cambios pendientes | Modelo, última migración y destino SQL identificados |
@@ -823,8 +827,8 @@ de declarar `CF-06`.
 
 ### 8.4 Recomendación final
 
-Se recomienda mantener **Code Freeze** y no agregar nuevas funcionalidades antes de la
-mesa. Solo deben aceptarse correcciones de defectos reproducibles que bloqueen la demo,
+Se recomienda mantener **Code Freeze** y no agregar nuevas funcionalidades antes de una
+futura mesa. Solo deben aceptarse correcciones de defectos reproducibles que bloqueen la demo,
 acompañadas por prueba de regresión y actualización de evidencia.
 
 Para la defensa, el sistema debe describirse como:
@@ -851,16 +855,17 @@ como sobreprometer controles que aún dependen de infraestructura externa.
 6. La base demo posee backup verificable y puede reconstruirse sin depender de datos
    históricos manuales.
 7. Ningún gate externo figura como `[V]` sin secretos, ambiente y evidencia reales.
-8. El commit presentado queda etiquetado o registrado de forma inmutable y existe un
-   respaldo offline recuperable.
+8. El futuro commit candidato queda etiquetado o registrado de forma inmutable y existe
+   un respaldo offline recuperable; al 08/08/2026 no existe commit presentado.
 
-### 8.6 Decisión Go/No-Go por destino al 5 de agosto de 2026
+### 8.6 Decisión Go/No-Go por destino al 8 de agosto de 2026
 
 | Destino | Decisión actual | Condición para avanzar |
 |---|---|---|
-| Demo académica local controlada | **GO condicional** | Congelar SHA, repetir gate integrado, completar seis roles y realtime, y conservar plan de contingencia |
+| Mesa académica del 07/08/2026 | **NO REALIZADA** | Documentación final, refinamiento/cierre y auditoría manual no se completaron; no hubo versión presentada |
+| Futura demo académica local controlada | **GO condicional** | Congelar SHA, repetir gate integrado, completar T022/T023, seis roles y realtime, y conservar plan de contingencia |
 | Congelamiento técnico del candidato | **NO-GO temporal** | `REL-001`/`CF-01` a `CF-06`: worktree integrado, limpio, publicado y validado sobre el mismo SHA |
-| Paquete para imprenta | **NO-GO temporal** | `DF-01`, `DF-03` a `DF-06` y `DEL-001`: figuras, DOCX/PDF, revisión visual/APA y envío el 4 de agosto |
+| Paquete para imprenta | **NO-GO temporal** | Existe un v2.3 estructural determinístico con 26 CU, tablas/campos y accesibilidad auditados, pero `DF-01`, `DF-03` a `DF-06` y `DEL-001` siguen abiertos: faltan figuras, Diagrama de Clases, actualización Word, PDF y revisión visual/APA; la fecha objetivo del 4 de agosto quedó vencida |
 | Piloto institucional abierto | **NO-GO** | Cerrar `GAP-FILE-01`, aceptar Microsoft Entra y completar controles operativos/de privacidad del destino |
 | Producción pública | **NO-GO** | Además del piloto: TLS SQL real, SMTP/Redis/storage administrados, observabilidad, backup/restore, alertas, antivirus/CDR y pruebas de carga/seguridad |
 

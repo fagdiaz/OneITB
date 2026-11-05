@@ -1,0 +1,35 @@
+%%{init: {"theme": "default"}}%%
+sequenceDiagram
+    autonumber
+    actor V as Visitante empresa
+    actor A as Administrador
+    participant FE as React
+    participant GQL as GraphQL API
+    participant S as EmployerRequestService
+    participant DB as SQL Server
+    participant W as Outbox Worker
+    participant MAIL as IEmailSender
+
+    V->>FE: Enviar solicitud empresarial
+    FE->>GQL: submitEmployerRequest(input)
+    GQL->>S: SubmitAsync(input, fingerprint)
+    S->>S: Honeypot temprano + normalización + rate limit
+    S->>DB: INSERT Pending si corresponde
+    S-->>GQL: Respuesta genérica anti-enumeración
+    GQL-->>FE: Confirmación uniforme
+
+    A->>FE: Aprobar solicitud Pendiente
+    FE->>GQL: approveEmployerRequest(requestId)
+    GQL->>S: ApproveAsync(admin, requestId)
+    S->>DB: BEGIN TRANSACTION SERIALIZABLE
+    S->>DB: Status Approved + Account/User Empleador + Audit + Outbox
+    DB-->>S: COMMIT
+    S-->>GQL: Solicitud aprobada
+
+    W->>DB: Adquirir lease de Outbox
+    W->>MAIL: Enviar bienvenida + Magic Link
+    alt Entrega exitosa
+        W->>DB: Marcar Delivered
+    else Falla transitoria
+        W->>DB: Incrementar intento y programar retry
+    end

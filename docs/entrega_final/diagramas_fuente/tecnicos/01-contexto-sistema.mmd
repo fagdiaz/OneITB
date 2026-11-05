@@ -1,0 +1,36 @@
+%%{init: {"theme": "default", "flowchart": {"curve": "linear"}}}%%
+flowchart LR
+    VIS["Visitante"]
+    EST["Estudiante"]
+    PRO["Profesor"]
+    EGR["Egresado"]
+    EMP["Empleador"]
+    MOD["Moderador"]
+    ADM["Administrador"]
+
+    SYS["OneITB<br/>Red social académica y Bolsa de Trabajo"]
+
+    ENTRA["Microsoft Entra ID"]
+    SMTP["SMTP / Mailpit"]
+    SIU["SIU Guaraní<br/>adaptador mock"]
+    STORAGE["Disco local / Cloudinary"]
+
+    VIS -->|"registro, login, solicitud empresarial"| SYS
+    EST -->|"comunidad, académico, chat, postulaciones"| SYS
+    PRO -->|"comunidad y gestión académica autorizada"| SYS
+    EGR -->|"comunidad, perfil y postulaciones"| SYS
+    EMP -->|"ofertas y postulaciones propias"| SYS
+    MOD -->|"reportes y moderación"| SYS
+    ADM -->|"gobierno y auditoría"| SYS
+
+    SYS <-->|"OIDC / OAuth 2.0 + PKCE"| ENTRA
+    SYS -->|"correo"| SMTP
+    SYS <-->|"registros simulados"| SIU
+    SYS -->|"archivos"| STORAGE
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:1.5px;
+    classDef system fill:#0f172a,stroke:#38bdf8,color:#f8fafc,stroke-width:3px;
+    classDef external fill:#f1f5f9,stroke:#64748b,color:#0f172a,stroke-dasharray:5 3;
+    class VIS,EST,PRO,EGR,EMP,MOD,ADM actor;
+    class SYS system;
+    class ENTRA,SMTP,SIU,STORAGE external;

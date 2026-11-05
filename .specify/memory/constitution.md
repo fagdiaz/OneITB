@@ -1,16 +1,16 @@
 <!--
 SYNC IMPACT REPORT
-- Version change: 1.5.0 -> 1.6.0
-- Amendment type: MINOR; formalizes Single-Spec Execution Invariant, Model Workload Protocol,
-  and mandatory speckit-stabilize dual-stack release closeout gate.
-- Added principles:
-  * IX. Single-Spec Execution Invariant and Deep Analysis Rule
-  * X. Gemini 3.8 Flash High Maximization & Scaled Delegation Rule
+- Version change: 1.6.0 -> 1.7.0
+- Amendment type: MINOR; formalizes Model Delegation Doctrine, Dedicated Channel Architecture (6 Astra & 6.1 Sol),
+  Reasoning Effort Mapping, and Mandatory Console Notification Block.
+- Modified principles:
+  * X. Model Workload & Scaled Delegation Doctrine (Codex 6 Astra & 6.1 Sol Dedicated Channels)
 - Modified governance:
-  * Require speckit-stabilize as the authoritative quality and release closeout gate before commit/push.
+  * Prohibits sub-optimal models (Terra, Luna, 5.6) and Low reasoning effort.
+  * Establishes mandatory end-of-turn console model notification.
 - Dependent artifacts reviewed:
-  * AGENTS.md - aligned with Single-Spec and Model Workload protocols
-  * prompt.txt - standardized with modern execution and validation commands
+  * AGENTS.md - aligned with Dedicated Channels and Reasoning Effort levels
+  * prompt.txt - aligned with Channel templates
 -->
 
 # OneITB23 Constitution
@@ -169,14 +169,24 @@ At any given moment, **AT MOST ONE SPEC MAY BE ACTIVELY IMPLEMENTED OR MODIFIED 
    - Feature-scoped commit.
 4. **Pre-Implementation Deep Analysis**: Before modifying code, models MUST analyze shared state, Apollo cache boundaries, EF Core relationships, and authorization contracts. Partial or unmigrated refactors are strictly forbidden.
 
-### X. Gemini 3.8 Flash High Maximization & Scaled Delegation Rule
+### X. Model Workload, Dedicated Channels & Scaled Delegation Doctrine
 
-Gemini 3.8 Flash High (or Gemini 3.7 Flash High) MUST be prioritized as the primary engine for all tasks within its reasoning and context capacity: code reading, architecture analysis, pure domain logic, data contracts, schemas, comprehensive test suites (xUnit, Vitest, integration, benchmarks), documentation, SpecKit tracking, and bounded feature implementations. Tasks MUST be executed in iterative, bounded turns without asking for unbounded multi-file refactors in a single turn.
+Gemini 3.8 Flash High (or Gemini 3.7 Flash High) MUST be prioritized as the primary engine for all local tasks within its reasoning and context capacity: code reading, architecture analysis, pure domain logic, data contracts, schemas, comprehensive test suites (xUnit, Vitest, integration, benchmarks), documentation, SpecKit tracking, and bounded feature implementations. Tasks MUST be executed in iterative, bounded turns without asking for unbounded multi-file refactors in a single turn.
 
-Higher-reasoning models MUST be invoked on-demand only when the specific task requires it:
-1. **Claude Sonnet 4.6 (Thinking)**: Escalate ONLY when implementing or modifying live real-time concurrency (WebSockets, GraphQL subscriptions, SignalR hubs, multi-tab Apollo cache coordination) or complex multi-entity EF Core transaction lifecycles where race conditions risk state corruption.
-2. **Claude Opus 4.6 (Thinking)**: Escalate STRICTLY as the terminal escalation option for persistent circular test failures, complex security vulnerabilities surviving Sonnet, or major cross-subsystem architectural redesigns.
-Every model at the end of its session MUST leave an updated, ready-to-run prompt in `prompt.txt`.
+Higher-reasoning models MUST be invoked on-demand using two dedicated long-standing external channels (Codex / ChatGPT Plus) strictly adhering to their specialization and reasoning effort levels:
+1. **Canal 1: `[OneITB] Auditoría & Arquitectura` (Modelo: `6 Astra`)**:
+   - *Razonamiento `Muy Alto`*: Auditoría de seguridad profunda de tokens/roles, análisis adversarial de vectores de ataque en GraphQL y autorización institucional.
+   - *Razonamiento `Alto`*: Diseño arquitectónico mayor o arbitraje de contratos y migraciones complejas.
+   - *Razonamiento `Ultra`*: Reservado exclusivamente como opción terminal ante crisis irresolubles en `Muy Alto`.
+2. **Canal 2: `[OneITB] Hardening & Testing` (Modelo: `6.1 Sol`)**:
+   - *Razonamiento `Alto`*: Concurrencia en tiempo real, WebSockets, sincronización multi-pestaña de Apollo Cache y fallos de estado por desconexión.
+   - *Razonamiento `Medio`*: Generación de suites de pruebas unitarias exhaustivas, mocks y casos de borde de dominio.
+
+**Prohibiciones Constitucionales**:
+- El uso de modelos sub-óptimos o económicos (`6 Luna`, `6.1 Terra` y toda la serie `5.6`) queda TERMINANTEMENTE PROHIBIDO: representan un downgrade respecto a Gemini 3.8 Flash High o un gasto ineficiente de cuota.
+- El nivel de esfuerzo de razonamiento `Bajo` queda TERMINANTEMENTE PROHIBIDO.
+
+Every model at the end of its session MUST leave an updated, ready-to-run prompt in `prompt.txt`, and MUST include the formal Console Notification Block indicating target channel, recommended model, and reasoning effort.
 
 ## Development Workflow and Quality Gates
 
@@ -222,4 +232,4 @@ Direct commits to `main` or `master` are forbidden. Integration uses a feature b
 review. Existing gaps do not weaken a principle: they remain visible until remediated,
 accepted with compensating controls, or removed from the deployment scope.
 
-**Version**: 1.6.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-10-27
+**Version**: 1.7.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-10-27

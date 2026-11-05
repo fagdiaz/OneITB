@@ -9,11 +9,21 @@ interface CVATSPrintTemplateProps {
   className?: string;
 }
 
-const THEME_CLASSES: Record<CvAccentTheme, { heading: string; rule: string }> = {
-  graphite: { heading: 'text-slate-800', rule: 'border-slate-400' },
-  deepTeal: { heading: 'text-teal-900', rule: 'border-teal-700' },
-  navyInk: { heading: 'text-blue-950', rule: 'border-blue-900' },
-  mutedOlive: { heading: 'text-emerald-950', rule: 'border-emerald-800' },
+/**
+ * Print-class map for editorial A4 theming reconciled from cv-builder.
+ * Each theme carries:
+ *  - heading: Tailwind text color for section headings
+ *  - rule:    Tailwind border color for section dividers
+ *  - printClass: Root CSS class that drives the @media print border-left accent
+ */
+const THEME_CLASSES: Record<
+  CvAccentTheme,
+  { heading: string; rule: string; printClass: string }
+> = {
+  graphite:  { heading: 'text-slate-800',   rule: 'border-slate-400',  printClass: 'resume-theme-graphite'   },
+  deepTeal:  { heading: 'text-teal-900',    rule: 'border-teal-700',   printClass: 'resume-theme-deep-teal'  },
+  navyInk:   { heading: 'text-blue-950',    rule: 'border-blue-900',   printClass: 'resume-theme-navy-ink'   },
+  mutedOlive:{ heading: 'text-emerald-950', rule: 'border-emerald-800',printClass: 'resume-theme-muted-olive'},
 };
 
 const text = (value?: string | null): string => value?.trim() ?? '';
@@ -77,7 +87,8 @@ const ContactLink = ({ label, value, href }: { label: string; value: string; hre
 
 export const CVATSPrintTemplate = React.forwardRef<HTMLElement, CVATSPrintTemplateProps>(
   ({ data, activeTheme = 'graphite', className = '' }, ref) => {
-    const theme = THEME_CLASSES[activeTheme];
+    const { heading, rule, printClass } = THEME_CLASSES[activeTheme];
+    const theme = { heading, rule };
     const { personalInfo } = data;
     const experience = visible(data.experience).filter((item) =>
       hasAnyText([item.role, item.company, item.description]),
@@ -109,7 +120,7 @@ export const CVATSPrintTemplate = React.forwardRef<HTMLElement, CVATSPrintTempla
         aria-label="Currículum optimizado para ATS"
         data-testid="cv-ats-document"
         data-ats-theme={activeTheme}
-        className={`cv-ats-document mx-auto w-full max-w-[210mm] bg-slate-50 px-[10mm] py-[11mm] text-left text-[11pt] leading-[1.45] text-slate-900 shadow-xl ring-1 ring-slate-200 ${className}`.trim()}
+        className={`cv-ats-document resume-print-target ${printClass} mx-auto w-full max-w-[210mm] bg-white px-[14mm] py-[12mm] text-left text-[11pt] leading-[1.45] text-slate-900 shadow-xl ring-1 ring-slate-200 ${className}`.trim()}
       >
         <header className="cv-ats-header border-b-2 border-slate-700 pb-3">
           <h1 className="text-2xl font-bold tracking-tight text-slate-950">

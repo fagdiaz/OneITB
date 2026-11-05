@@ -1,0 +1,30 @@
+%%{init: {"theme": "default"}}%%
+sequenceDiagram
+    autonumber
+    actor A as Administrador
+    participant FE as AcademicDashboard
+    participant GQL as GraphQL Mutation
+    participant S as AcademicService
+    participant SIU as ISiuIntegrationService (Mock)
+    participant DB as SQL Server
+    participant N as NotificationService
+
+    A->>FE: Sincronizar materia
+    FE->>GQL: syncSiuGrades(subjectId)
+    GQL->>S: SyncSiuGradesAsync(actor, subjectId)
+    S->>S: Validar rol y materia
+    S->>SIU: GetGradesAsync(subjectId)
+    SIU-->>S: Registros simulados
+    loop Cada registro
+        S->>S: Validar identidad, nota 0-10 y estado
+        alt Registro válido
+            S->>DB: Upsert AcademicProgress
+        else Registro inválido
+            S->>S: Agregar skipped item
+        end
+    end
+    S->>DB: SaveChangesAsync + AuditLog
+    S->>N: Crear notificaciones académicas
+    N->>DB: INSERT Notifications
+    S-->>GQL: SiuSyncResult
+    GQL-->>FE: Totales, actualizados y omitidos

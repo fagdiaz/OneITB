@@ -1,0 +1,21 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    EGR["Egresado"]:::actor
+
+    subgraph SYS["Sistema OneITB23 — Casos de Uso del Graduado"]
+        UC1(["Autenticarse y mantener CV institucional"]):::usecase
+        UC2(["Participar en muro de egresados y materias"]):::usecase
+        UC3(["Explorar búsquedas y pasantías laborales"]):::usecase
+        UC4(["Postularse a oportunidades profesionales"]):::usecase
+        UC5(["Comunicarse mediante mensajería privada"]):::usecase
+    end
+
+    EGR --> UC1
+    EGR --> UC2
+    EGR --> UC3
+    EGR --> UC4
+    EGR --> UC5
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px;
+    style SYS fill:#f8fafc,stroke:#0f172a,stroke-width:2px

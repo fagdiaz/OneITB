@@ -193,9 +193,14 @@ La formulación recomendada para la defensa es:
 > aceptación productiva de proveedores externos, observabilidad y controles operativos
 > permanece como evolución posterior.
 
-Los baselines más recientes alcanzaron 234/234 pruebas backend en Spec 216 y 251/251
-frontend en Spec 217. El gate conjunto debe repetirse sobre el SHA candidato definitivo
-antes de congelarlo para la presentación.
+La Spec 218 ejecutó conjuntamente 234/234 pruebas backend y 252/252 frontend sobre el
+mismo worktree. Esa ejecución todavía no equivale al gate integral sobre un SHA candidato
+congelado; ambas suites deben repetirse o vincularse al SHA definitivo antes de declarar
+`CF-06`.
+
+La defensa planificada para el 7 de agosto de 2026 no se realizó: la documentación final,
+el refinamiento/cierre y la auditoría manual no llegaron a completarse. La fecha permanece
+como antecedente histórico; no hay una nueva mesa documentada ni una versión presentada.
 
 ## 1.9 Límites, brechas y evolución
 

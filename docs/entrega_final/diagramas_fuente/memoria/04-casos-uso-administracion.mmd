@@ -1,0 +1,25 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    MOD["Moderador"]:::actor
+    ADM["Administrador"]:::actor
+
+    subgraph SYS["C) Módulo de Administración"]
+        UC7(["Publicar recursos y asignar progreso"])
+        UC8(["Publicar ofertas"])
+        UC10(["Moderar contenido reportado"])
+        UC11(["Administrar usuarios y catálogo"])
+        UC12(["Auditar y probar infraestructura"])
+    end
+
+    MOD --> UC10
+    ADM --> UC7
+    ADM --> UC8
+    ADM --> UC10
+    ADM --> UC11
+    ADM --> UC12
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a;
+    class MOD,ADM actor;
+    class UC7,UC8,UC10,UC11,UC12 usecase;
+    style SYS fill:#f1f5f9,stroke:#0f172a,stroke-width:2px

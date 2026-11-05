@@ -1,0 +1,23 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    EMP["Empleador"]:::actor
+
+    subgraph SYS["Sistema OneITB23 — Casos de Uso del Empleador"]
+        UC1(["Solicitar registro institucional B2B"]):::usecase
+        UC2(["Acceder mediante Magic Link seguro"]):::usecase
+        UC3(["Publicar y editar ofertas laborales y pasantías"]):::usecase
+        UC4(["Consultar postulantes y revisar CV académico"]):::usecase
+        UC5(["Actualizar estado de postulaciones"]):::usecase
+        UC6(["Cerrar o archivar convocatorias"]):::usecase
+    end
+
+    EMP --> UC1
+    EMP --> UC2
+    EMP --> UC3
+    EMP --> UC4
+    EMP --> UC5
+    EMP --> UC6
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px;
+    style SYS fill:#f8fafc,stroke:#0f172a,stroke-width:2px

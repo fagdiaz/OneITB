@@ -1,0 +1,31 @@
+%%{init: {"theme": "default"}}%%
+gantt
+    title Calendarización OneITB23 - Abril a cierre de Julio de 2026
+    dateFormat YYYY-MM-DD
+    axisFormat %d/%m
+    excludes weekends
+
+    section Descubrimiento y diseño
+    Relevamiento institucional                 :done, a1, 2026-04-15, 2026-04-24
+    Requerimientos y alcance                   :done, a2, 2026-04-20, 2026-05-01
+    Arquitectura y modelo de dominio           :done, a3, 2026-04-27, 2026-05-08
+
+    section Núcleo técnico
+    Autenticación, usuarios y EF Core          :done, b1, 2026-05-04, 2026-05-15
+    GraphQL, autorización y administración     :done, b2, 2026-05-11, 2026-05-29
+    Base React, Apollo y sistema visual        :done, b3, 2026-05-11, 2026-05-29
+
+    section Módulos funcionales
+    Muro social, comentarios y multimedia      :done, c1, 2026-05-18, 2026-06-12
+    Mensajería y notificaciones en tiempo real :done, c2, 2026-05-28, 2026-06-16
+    Perfil, CV, carreras y materias            :done, c3, 2026-06-01, 2026-06-23
+    Recursos, progreso y adaptador SIU         :done, c4, 2026-06-08, 2026-06-26
+    Moderación y auditoría                     :done, c5, 2026-06-15, 2026-07-01
+    Bolsa de Trabajo y postulaciones           :done, c6, 2026-06-25, 2026-07-06
+
+    section Hardening y entrega
+    Docker, seguridad y observabilidad         :done, d1, 2026-06-29, 2026-07-08
+    Pruebas y remediación de auditoría          :done, d2, 2026-07-02, 2026-07-27
+    Aceptación operacional local               :done, d3, 2026-07-24, 2026-07-28
+    Normalización documental y memoria final   :done, d4, 2026-07-08, 2026-07-28
+    Maquetación DOCX PDF y ensayo de defensa   :active, d5, 2026-07-28, 2026-07-31

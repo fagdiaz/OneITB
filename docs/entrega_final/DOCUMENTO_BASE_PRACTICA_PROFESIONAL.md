@@ -7,9 +7,10 @@
 **Alumno:** Francisco Díaz<br>
 **Mesa evaluadora:** Saldivar Sebastian Alfredo (presidente) y Benitez Silvio Daniel (vocal)<br>
 **Ciclo lectivo:** 2026<br>
-**Versión del documento:** 2.1 - normalización final previa a maquetación<br>
-**Fecha de corte técnico-documental:** 5 de agosto de 2026<br>
-**Fecha prevista de defensa:** 7 de agosto de 2026, 09:00<br>
+**Versión del documento:** 2.3 - borrador consolidado de texto para revisión editorial y visual<br>
+**Fecha de corte técnico-documental:** 8 de agosto de 2026<br>
+**Fecha originalmente prevista de defensa:** 7 de agosto de 2026, 09:00 (no realizada)<br>
+**Nueva fecha de defensa:** no documentada<br>
 
 > **Alcance de esta memoria.** Este documento describe el estado comprobable del repositorio OneITB23 al momento de su redacción. Distingue entre funcionalidades implementadas, validaciones automatizadas y verificaciones externas todavía pendientes. Los nombres y versiones se corresponden con el código fuente: .NET 8 (Microsoft, 2023a), Entity Framework Core 8.0.6 (Microsoft, 2023b), Hot Chocolate 14.2.0 (ChilliCream, s. f.), GraphQL (GraphQL Foundation, 2021), React 18 (React Team, 2022), Apollo Client 3.7 (Apollo GraphQL, s. f.), Vite 8 (Vite Team, 2026), Tailwind CSS 4 (Wathan, 2025) y SQL Server 2022 (Microsoft, 2025).
 
@@ -22,10 +23,11 @@ La solución adopta una arquitectura desacoplada: una aplicación de página ún
 El núcleo funcional se encuentra implementado y el roadmap registra un 100 % global
 (117 de 117 ítems): 46 se encuentran verificados `[V]` y 71 implementados `[I]`. Esta
 medición expresa cobertura del alcance contabilizado, no aceptación productiva total.
-Los últimos baselines por capa alcanzaron 234 pruebas backend en la Spec 216 y 251
-pruebas frontend en la Spec 217; todavía no constituyen una ejecución conjunta sobre un
-SHA candidato congelado. El candidato definitivo requiere repetir ambas suites y builds
-sobre el mismo SHA antes de congelarse. La base de demostración fue
+La Spec 218 ejecutó conjuntamente 234 pruebas backend y 252 pruebas frontend sobre el
+mismo worktree, junto con ambos builds, EF sin drift y los controles locales registrados.
+Ese preflight todavía no constituye el gate integral sobre un SHA candidato congelado.
+El candidato definitivo requiere repetir o vincular esas suites y builds al mismo SHA
+antes de congelarse. La base de demostración fue
 respaldada y reconstruida
 desde las migraciones canónicas; las migraciones posteriores incorporaron identidad
 Microsoft Entra y onboarding B2B sin alterar el grafo demo. Dos ejecuciones del seeder
@@ -40,6 +42,10 @@ logout y aislamiento con una segunda cuenta. El alta empresarial se verificó
 desde la solicitud GraphQL hasta aprobación, Outbox y correo `.eml`; su recorrido visual
 público/Admin queda pendiente. También restan la regresión manual del rol Moderador, la
 prueba WebSocket con dos sesiones aisladas y la producción material de la entrega.
+
+La defensa planificada para el 7 de agosto de 2026 no se realizó porque no se completaron
+a tiempo la documentación final, el refinamiento/cierre y la auditoría manual. No hubo
+versión presentada, tag final ni cierre de `CF-06`, y no existe una nueva fecha documentada.
 
 **Índice**
 
@@ -524,7 +530,7 @@ erDiagram
     MAGIC_LINK {
         uuid Id PK
         uuid AccountId FK
-        string Token
+        string Token "digest SHA-256; el secreto viaja fuera de banda"
         datetime ExpiresAt
         bool IsUsed
     }
@@ -1082,16 +1088,17 @@ La estrategia combina análisis estático, pruebas automatizadas, compilación, 
 
 **Evidencia automatizada de cierre disponible**
 
-Los baselines siguientes corresponden al worktree integrado consolidado en `2f20bce`.
+Los baselines siguientes corresponden a la ejecución conjunta sobre el worktree de
+Spec 218: backend 234/234 y frontend 252/252 corrieron en el mismo preflight.
 Todavía no reemplazan el gate integral sobre el SHA candidato definitivo: el árbol debe
-congelarse, quedar limpio y repetir los controles sin cambios posteriores.
+congelarse, quedar limpio y repetir los controles sobre ese SHA sin cambios posteriores.
 
 | Control | Resultado documentado más reciente |
 |---|---|
 | Pruebas backend | 234/234 aprobadas; incluye bordes 0/1/15/16 del feed, provider explícito, storage, uploads, registro, academia, privacidad y carrera estudiantil única |
-| Pruebas frontend | 251/251 aprobadas; incluye paginación observable, Strict Mode, aislamiento por carrera, hidratación/avatar, navegación adaptativa, branding institucional, tema accesible, CV semántico y transición Microsoft |
-| Build backend Release | 0 errores y 0 advertencias en Spec 215 |
-| Build frontend Vite | 562 módulos; 603 ms; 0 errores en Spec 215 |
+| Pruebas frontend | 252/252 aprobadas; incluye regresión del errorLink Apollo, paginación observable, Strict Mode, aislamiento por carrera, hidratación/avatar, navegación adaptativa, branding institucional, tema accesible, CV semántico y transición Microsoft |
+| Build backend Release | 0 errores y 0 advertencias en Spec 218 |
+| Build frontend Vite | 565 módulos; 716 ms; 0 errores en Spec 218 |
 | Modelo EF Core | Sin cambios pendientes respecto de migraciones |
 | Sesión y roles | Reemplazo Estudiante -> Moderador sin fuga de identidad, caché ni transporte |
 | Redis local | Entrega exacta entre dos proveedores Hot Chocolate y aislamiento de topic |
@@ -1305,7 +1312,7 @@ Seleccionar **Salir** desde el menú de usuario. La operación elimina la sesió
 
 ### 7.1 Repositorio de código fuente
 
-- Repositorio principal: [https://github.com/fagdiaz/OneITB](https://github.com/fagdiaz/OneITB)
+- Repositorio principal: [Repositorio OneITB23 en GitHub](https://github.com/fagdiaz/OneITB)
 - El acceso, las ramas y los permisos dependen de la configuración del repositorio al momento de la evaluación.
 
 ### 7.2 Documentación técnica canónica
@@ -1389,14 +1396,14 @@ El proyecto utiliza Spec Kit. Cada intervención relevante dispone, cuando corre
 | Soft delete | Baja lógica que conserva el registro y lo excluye de consultas ordinarias. |
 | WebSocket | Canal persistente utilizado para mensajes y notificaciones en tiempo real. |
 
-### 7.8 Declaración de estado para la defensa
+### 7.8 Declaración de estado para una futura defensa
 
-OneITB23 se presenta como un **Release Candidate académico**, con **Feature Complete del
-core** y **Code Freeze operativo local**. Dispone de documentación canónica, pruebas
-automatizadas, infraestructura de aceptación reproducible y una ruta controlada de
-ejecución. Esta denominación es deliberadamente más precisa que “producción completa”:
-reconoce que el software está preparado para la defensa y que los proveedores externos
-todavía requieren credenciales y smokes en el ambiente de destino.
+OneITB23 mantiene la clasificación de **Release Candidate académico**, con **Feature
+Complete del core** y **Code Freeze operativo local**. Dispone de documentación canónica,
+pruebas automatizadas, infraestructura de aceptación reproducible y una ruta controlada
+de ejecución. Esta denominación no implica que exista una versión final presentada: la
+documentación material, T022, T023 y el gate integral sobre SHA limpio siguen abiertos.
+Los proveedores externos todavía requieren credenciales y smokes en destino.
 
 La base de demostración forma parte de ese Release Candidate: no depende de datos
 históricos del equipo, se puede recuperar desde un backup verificado y cuenta con
@@ -1409,21 +1416,20 @@ La presentación debe diferenciar con precisión:
 - **Condicional:** requiere variables, secretos o proveedor externo.
 - **Pendiente de validación manual:** requiere recorrido visual final en navegador.
 
-Al corte del 5 de agosto de 2026, SMTP con Mailpit y Redis local poseen evidencia de
+Al corte reconciliado del 8 de agosto de 2026, SMTP con Mailpit y Redis local poseen evidencia de
 integración; no equivalen a validación de proveedor público. La aceptación Microsoft
 Entra en el tenant institucional, Cloudinary productivo, Redis administrado, SMTP
 público y el handshake WebSocket con dos navegadores
 permanecen identificados como gates. Esta distinción evita sobreafirmaciones, facilita
 preguntas técnicas y demuestra una gestión profesional de riesgos y evidencia.
 
-### 7.9 Condiciones oficiales de presentación y entrega
+### 7.9 Condiciones históricas y preparación de una nueva presentación
 
-La mesa evaluatoria comienza el **viernes 7 de agosto de 2026 a las 09:00**. El aula o
-laboratorio será informado ese mismo día. La instancia comprende exposición,
-demostración funcional y preguntas de los integrantes de la mesa. La duración oficial
-de la exposición es de **20 a 30 minutos** y puede extenderse por las preguntas o por la
-cantidad de integrantes. Para controlar el tiempo se planifica internamente una
-presentación base de **22 a 25 minutos**.
+La mesa evaluatoria originalmente comunicada para el **viernes 7 de agosto de 2026 a las
+09:00** no se realizó. No existe una nueva fecha, aula u horario documentados. Se conservan
+como requisitos reutilizables la exposición, la demostración funcional, las preguntas y
+el rango oficial de **20 a 30 minutos**; una presentación base de **22 a 25 minutos**
+continúa siendo el objetivo interno de ensayo.
 
 La entrega y el equipamiento previstos son:
 
@@ -1437,9 +1443,8 @@ La entrega y el equipamiento previstos son:
    presentación en un pendrive que no debe entregarse;
 6. computadora institucional como alternativa de contingencia.
 
-No existe una plantilla institucional adicional. Como recomendación operativa se prevé
-llegar entre las 08:15 y las 08:30 para confirmar aula, proyección y conectividad antes
-del inicio de la mesa.
+No existe una plantilla institucional adicional. La hora de llegada, el aula, la
+proyección y la conectividad deberán planificarse cuando exista una nueva convocatoria.
 
 ---
 

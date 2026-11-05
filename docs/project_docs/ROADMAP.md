@@ -1,6 +1,6 @@
 # Roadmap único de OneITB23
 
-**Ultima revision**: 2026-08-05
+**Ultima revision**: 2026-08-08
 
 ## 1. Estado ejecutivo y criterio de medición
 
@@ -11,13 +11,19 @@
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
 | Backend automatizado más reciente | **234/234** | Spec 218 repitió la suite junto al frontend sobre el mismo worktree; todavía no equivale a evidencia sobre SHA candidato |
 | Frontend automatizado más reciente | **252/252** | Spec 218 agregó la regresión del errorLink Apollo y repitió la suite completa; el gate integral sigue pendiente de cierre sobre el SHA definitivo |
-| Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; preparación documental y logística pendiente |
+| Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente; la mesa del 07/08 no se realizó |
 
 El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de
 auditoría incluidas en el denominador están implementados. No significa despliegue cloud
 productivo ni finalización material de la defensa. La aceptación con proveedores reales,
 la regresión visual final, la exportación DOCX/PDF, la presentación y la logística se
 administran como gates separados y no inflan ni reducen el 117/117.
+
+La defensa planificada para el **7 de agosto de 2026 a las 09:00 no ocurrió**. No se
+completaron a tiempo la documentación final, el refinamiento/cierre del código y la
+auditoría manual coordinada. El preflight verde de Spec 218 se conserva como evidencia
+histórica válida, pero no hubo versión presentada, tag final ni cierre de `CF-06`. No hay
+una nueva fecha de defensa documentada.
 
 Las Specs 194-196 verificaron los recorridos principales, la infraestructura local y la
 base demo canónica. La Spec 197 implementó Microsoft Entra ID; la 198 incorporó el alta
@@ -603,19 +609,24 @@ legible en light/dark. Permanecen abiertos: reconciliación cero/múltiples comp
 reduced-motion (**20-30 min**) y red offline + print preview (**20-30 min**). Estos pases
 parciales no cambian `[I]` a `[V]`.
 
-## 6. Plan operativo de cierre para la defensa
+## 6. Plan operativo de cierre académico reprogramable
 
 Este plan no agrega alcance funcional ni modifica el calculo de 117/117 items. Convierte
-el Release Candidate academico en un paquete reproducible de defensa. Las estimaciones
+el Release Candidate academico en un paquete reproducible para una futura defensa cuya
+fecha todavía no está documentada. Las estimaciones
 representan tiempo efectivo de una persona con el entorno ya instalado; no incluyen
 esperas institucionales, aprobacion de credenciales ni incidentes de terceros.
 
-**Regla de ejecución hasta la mesa:** no incorporar features nuevas. Solo se aceptan
+**Regla de ejecución hasta la próxima mesa:** no incorporar features nuevas. Solo se aceptan
 correcciones de defectos reproducibles que bloqueen la demostración, con prueba de
 regresión y actualización de evidencia. Los trabajos documentales, visuales y logísticos
 tienen prioridad sobre mejoras cosméticas no comprometidas.
 
-### 6.1 Secuencia recomendada del 3 al 7 de agosto
+### 6.1 Secuencia histórica planificada del 3 al 7 de agosto
+
+La siguiente tabla se conserva para trazabilidad. El resultado real fue que la mesa del
+07/08 no se realizó y que quedaron abiertos los gates documentales, manuales y de freeze;
+no debe reutilizarse como cronograma futuro.
 
 | Jornada | Foco principal | Carga sugerida | Resultado esperado al cerrar el día |
 |---|---|---:|---|
@@ -623,7 +634,7 @@ tienen prioridad sobre mejoras cosméticas no comprometidas.
 | **Martes 04/08** | Diagramas, maquetación DOCX, auditoría PDF y envío a imprenta | 10-14 h, con trabajo visual en paralelo | Memoria final enviada a impresión a color; copia digital verificada |
 | **Miércoles 05/08** | Regresión por seis roles, realtime con dos sesiones, capturas y presentación | 8-11 h | Checklist funcional cerrado, material visual de contingencia y PPTX/PDF estructurado |
 | **Jueves 06/08** | Congelamiento del SHA, backups, retiro de impresión y dos ensayos | 6-8 h | Corte inmutable, paquete físico/digital completo y exposición dentro de 20-30 minutos |
-| **Viernes 07/08** | Contingencia mínima y presentación | Llegada 08:15-08:30 | Notebook, HDMI, pendrive, copia impresa y demo listos antes de las 09:00 |
+| **Viernes 07/08** | Contingencia mínima y presentación | No ejecutada | Defensa no realizada; documentación, refinamiento/cierre y auditoría manual incompletos |
 
 El orden debe solaparse el 4 de agosto para cumplir la imprenta. No debe exportarse el PDF
 definitivo antes de cerrar los diagramas. Desde que el PDF se envía a imprimir solo se
@@ -636,10 +647,10 @@ contradecir la memoria impresa.
 |---|---|---|---:|---|---|
 | `CF-01` | Consolidar y publicar el corte de Specs 198-201; revisar e integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota y SHA candidato identificados, sin perder código ni evidencia de las cuatro specs |
 | `CF-02` | Completar la auditoría de archivos auxiliares de raíz y secretos ignorados; el prompt histórico `prompt_modulo1.txt` fue retirado el 2026-08-03 | `[ ] [P]` | 15-30 min | Decisión explícita de conservar, mover, ignorar o eliminar cada artefacto restante | `git status` limpio; ningún secreto, fixture personal o archivo de trabajo entra al corte |
-| `CF-03` | Ejecutar gates de predefensa, infraestructura local y base demo sobre el SHA candidato | `[ ] [P]` | 75-105 min | Docker operativo | Backend 234/234 o mayor, frontend 251/251 o mayor, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS o con desviación documentada |
+| `CF-03` | Ejecutar gates integrales, infraestructura local y base demo sobre el SHA candidato | `[ ] [P]` | 75-105 min | Docker operativo | Backend 234/234 o mayor, frontend 252/252 o mayor, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS o con desviación documentada |
 | `CF-04` | Regresion manual guiada por roles: Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador | `[ ] [P]` | 3-4 h | `CF-03` | Checklist firmado, consola limpia y capturas de los flujos principales |
 | `CF-05` | Validar chat/notificaciones con dos navegadores o perfiles aislados | `[ ] [P]` | 60-90 min | API y frontend temporales, dos identidades | Handshake WebSocket, aislamiento de topic, badges y lectura comprobados |
-| `CF-06` | Consolidar evidencia, congelar el corte y etiquetar el commit presentado | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, métricas, resultados, limitaciones y versión documental coinciden en repositorio, auditoría y presentación |
+| `CF-06` | Consolidar evidencia, congelar el corte y, si se autoriza, etiquetar el candidato final | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, métricas, resultados y limitaciones coinciden en repositorio, auditoría y documentación; no existe aún commit presentado |
 
 **Spec 218 - Candidate Freeze & Pre-Defense Gate (`[ ] [P]`, activa):** formalizó
 el contrato de evidencia y ejecutó el primer preflight conjunto del worktree. Pasaron
@@ -655,6 +666,13 @@ representativa de Visitante y seis roles pasó y permitió corregir un payload G
 no-array en el errorLink de Apollo. Logout/relogin Empleador -> Estudiante quedó sin
 identidad residual ni errores de consola. No se creó tag ni se reinició la base.
 
+**Estado posterior a la mesa no realizada (08/08/2026):** T022 sigue `NOT RUN`; T023
+sigue abierto con observaciones parciales de loading poblado y consola, pero sin matriz
+completa de empty/error, teclado, responsive, temas e impresión. El worktree documental
+actual conserva 38 rutas visibles: 12 archivos modificados y 26 rutas no rastreadas
+después de excluir de forma específica, sin borrarlo, el prompt local de Agy. Por ello `CF-03`,
+`CF-04`, `CF-05` y `CF-06` continúan abiertos.
+
 **Subtotal estimado:** **6 h 45 min a 9 h 30 min**. La ruta critica es
 `CF-01 -> CF-03 -> CF-04/CF-05 -> CF-06`.
 
@@ -662,20 +680,29 @@ identidad residual ni errores de consola. No se creó tag ni se reinició la bas
 
 | ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
 |---|---|---|---:|---|---|
-| `DF-01` | Completar nombre, docentes, fecha y datos institucionales de portada | `[ ] [P]` | 20-30 min | Datos oficiales | Portada sin marcadores `[Completar]` |
-| `DF-02` | Sincronizar memoria y guía con el corte documental vigente, baselines por capa 234/251 y riesgos actuales | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown alineado con roadmap y auditoría al 2026-08-05; aceptación Entra hasta onboarding/muro, archivos privados y proveedores externos permanecen explícitos |
-| `DF-03` | Seleccionar, renderizar e insertar los 10 diagramas Mermaid de la memoria | `[ ] [P]` | 2-3 h | `DF-02` | SVG/PNG legibles, numerados, insertados en el Word y aprobados visualmente en tamaño A4 |
-| `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | 4 fuentes editables y 4 PNG/SVG consistentes con el modelo |
-| `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[ ] [P]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable, estilos APA, tablas/figuras dentro de margenes |
-| `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[ ] [P]` | 2-3 h | `DF-05` | PDF revisado pagina por pagina, enlaces y accesibilidad basica |
+| `DF-01` | Completar nombre, docentes, fecha y datos institucionales de portada | `[x] [I]` | 20-30 min | Datos oficiales | Portada oficial 2026 con logos Beltrán y BA Educación integrada en v2.0 |
+| `DF-02` | Sincronizar memoria y guía con el corte documental vigente, baselines 234/252 en preflight conjunto Spec 218 y riesgos actuales | `[x] [I]` | 90-120 min | Evidencia canónica | Markdown reconciliado al 2026-08-08 con la mesa no realizada; gate integral sobre SHA definitivo pendiente; aceptación Entra, archivos privados y proveedores externos permanecen explícitos |
+| `DF-03` | Seleccionar, renderizar e insertar los 10 diagramas Mermaid de la memoria | `[x] [I]` | 2-3 h | `DF-02` | Diagramas renderizados en SVG/PNG alta resolución e insertados en el Word v2.0 |
+| `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | DER doble página A4 facing integrado; 3 gráficos de gestión anexos |
+| `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[x] [I]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable v2.0 (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx`), estilos APA, 10 mockups, tablas bordeadas con padding |
+| `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[x] [I]` | 2-3 h | `DF-05` | PDF oficial generado vía Word COM (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf`), 45 páginas, TOC y campos actualizados |
 | `DF-07` | Diseñar presentación de defensa en PPTX/PDF con narrativa problema-solución-arquitectura-demo-evidencia | `[ ] [P]` | 2 h 30 min-4 h | `DF-03`, `DF-04` y evidencia de `CF-03` | Presentación legible, visual, con demo guiada, métricas verificables y límites honestos; sin copiar páginas completas de la memoria |
 | `DF-08` | Preparar guion, contingencias y ejecutar al menos dos ensayos cronometrados | `[ ] [P]` | 3-4 h | `CF-06`, `DF-06` y `DF-07` | Exposición base de 22-25 min dentro del rango oficial de 20-30 min, transiciones ensayadas y respuestas preparadas sobre seguridad, arquitectura y límites |
 
-**Corte documental del 05/08/2026:** el alumno informó que ya renderizó los 13 bloques
-Mermaid del paquete técnico `docs/academic/04-design-diagrams.md`. Ese paquete sirve
+**Inventario documental al 08/08/2026:** existen fuentes extraídas para 10 figuras de la
+memoria y 13 vistas técnicas. Los 13 bloques de `docs/academic/04-design-diagrams.md`
+fueron auditados estáticamente, pero no tienen render compilado ni QA visual A4. Ese paquete sirve
 como fuente técnica y material de anexo, pero no reemplaza uno a uno las 10 figuras
 Mermaid requeridas por la memoria. `DF-03` se cerrará cuando las figuras definitivas
 hayan sido seleccionadas, insertadas en el Word y revisadas por legibilidad en página A4.
+
+Existe además un v2.3 `CODEX_BORRADOR_TEXTO` ignorado, reconstruido de manera
+determinística desde la memoria canónica y los 26 casos de uso. Pasó integridad OOXML,
+geometría de 38 tablas, estructura CU-01..CU-26, campos TOC/PAGE y accesibilidad sin
+hallazgos; dos builds produjeron el mismo SHA-256 `b3ffe503...143f2`. Conserva reservas
+para las 13 figuras y el Diagrama de Clases todavía no resuelto. `DF-05` permanece abierto
+porque no se insertaron las figuras, no se actualizaron los campos en Word y el render
+PDF/PNG quedó bloqueado por ausencia de LibreOffice/`soffice`; no existe QA visual A4.
 
 **Subtotal pendiente estimado:** **16 h 50 min a 24 h 30 min**, porque `DF-02` ya
 quedó implementado documentalmente. La entrega académica completa, incluyendo el cierre
@@ -684,20 +711,20 @@ plan exigente de cuatro jornadas: los rangos altos requieren delegar la impresi�
 evitar refactors no bloqueantes y trabajar presentación/documentación en paralelo con
 la regresión manual.
 
-### 6.4 Condiciones oficiales y logística de mesa
+### 6.4 Condiciones históricas y logística para una futura mesa
 
-La mesa comienza el **viernes 7 de agosto de 2026 a las 09:00**. El aula o laboratorio
-se confirmara ese mismo dia. La duracion oficial de exposicion es **20-30 minutos** y
-puede extenderse por preguntas; el objetivo interno de **22-25 minutos** deja margen
-para transiciones sin redefinir el requisito de la catedra.
+La mesa originalmente comunicada para el **viernes 7 de agosto de 2026 a las 09:00** no
+se realizó. Se conservan los requisitos logísticos y el rango oficial de exposición de
+**20-30 minutos** como preparación reutilizable, pero no hay nueva fecha, aula ni horario
+documentados. El objetivo interno de **22-25 minutos** sigue siendo una pauta de ensayo.
 
 | ID | Tarea | Estado | Estimacion | Condicion oficial o criterio |
 |---|---|---|---:|---|
 | `LG-01` | Imprimir una copia de la memoria tecnica, preferentemente a color, y anillarla o encuadernarla | `[ ] [P]` | 60-90 min de preparacion, mas plazo de imprenta | Una copia fisica para la mesa |
 | `LG-02` | Preparar notebook propia, cargador y adaptador HDMI compatible | `[ ] [P]` | 60-90 min | Sistema instalado, configurado y probado; el equipo institucional queda como respaldo |
 | `LG-03` | Crear y verificar pendrive de contingencia | `[ ] [P]` | 45-60 min | Sistema, repositorio, memoria DOCX/PDF y presentacion PPTX/PDF; el pendrive no se entrega |
-| `LG-04` | Confirmar repositorio remoto actualizado y conservar un snapshot offline | `[ ] [P]` | 30-45 min | Corte presentado identificable y recuperable sin Internet |
-| `LG-05` | Llegar entre 08:15 y 08:30 y confirmar aula/equipamiento | `[ ] [P]` | 15-30 min in situ | Recomendacion operativa; la mesa inicia a las 09:00 |
+| `LG-04` | Confirmar repositorio remoto actualizado y conservar un snapshot offline | `[ ] [P]` | 30-45 min | Futuro corte candidato identificable y recuperable sin Internet |
+| `LG-05` | Confirmar horario, aula y equipamiento cuando exista nueva convocatoria | `[ ] [P]` | 15-30 min in situ | Sin fecha ni horario vigentes documentados |
 
 Las estimaciones `LG-01` a `LG-04` se solapan con `DF-05` a `DF-08` y no deben sumarse
 por segunda vez al subtotal documental. No se requiere un Manual de Usuario separado:

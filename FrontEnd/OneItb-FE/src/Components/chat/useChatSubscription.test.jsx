@@ -37,7 +37,6 @@ vi.mock('./chatCache', () => ({
 
 import {
   appendMessageToConversation,
-  clearConversationUnread,
   updateContactCache,
 } from './chatCache';
 import { subscribeToGraphQLWsStatus } from '../../data/graphql/GraphqlProvider';

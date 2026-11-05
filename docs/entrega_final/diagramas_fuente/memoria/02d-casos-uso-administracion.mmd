@@ -1,0 +1,26 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    ADM["Administrador"]:::actor
+    MOD["Moderador"]:::actor
+
+    subgraph SYS["Sistema OneITB23 — Casos de Uso de Administración y Moderación"]
+        UC1(["Moderar publicaciones y comentarios reportados"]):::usecase
+        UC2(["Aplicar advertencias o sanciones temporales"]):::usecase
+        UC3(["Administrar catálogo de carreras y materias"]):::usecase
+        UC4(["Gestionar cuentas de usuario y asignación de roles"]):::usecase
+        UC5(["Aprobar o rechazar solicitudes de empleadores"]):::usecase
+        UC6(["Consultar registros de auditoría y seguridad"]):::usecase
+    end
+
+    MOD --> UC1
+    MOD --> UC2
+    ADM --> UC1
+    ADM --> UC2
+    ADM --> UC3
+    ADM --> UC4
+    ADM --> UC5
+    ADM --> UC6
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px;
+    style SYS fill:#f8fafc,stroke:#0f172a,stroke-width:2px

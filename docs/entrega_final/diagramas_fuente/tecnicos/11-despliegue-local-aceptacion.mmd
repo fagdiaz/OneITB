@@ -1,0 +1,26 @@
+%%{init: {"theme": "default", "flowchart": {"curve": "linear"}}}%%
+flowchart LR
+    DEV["Notebook del desarrollador"]
+    BROWSER["Browser"]
+    VITE["Vite :5173"]
+    API["ASP.NET Core :44397"]
+
+    subgraph DOCKER["Docker local"]
+        SQL["SQL Server 2022<br/>host 1433 → contenedor 1433"]
+        REDIS["Redis<br/>host 16379 → contenedor 6379<br/>aceptación"]
+        MAILPIT["Mailpit<br/>SMTP host 11025 → 1025<br/>UI host 18025 → 8025<br/>aceptación"]
+        VOL[("Volumen SQL")]
+        SQL --> VOL
+    end
+
+    UPLOADS[("wwwroot/uploads")]
+    PICKUP[("pickup .eml ignorado")]
+
+    DEV --> BROWSER
+    BROWSER --> VITE
+    VITE -->|"proxy HTTP + WS + REST"| API
+    API -->|"EF Core / SQL Auth"| SQL
+    API -->|"Pub/Sub opcional"| REDIS
+    API -->|"SMTP local opcional"| MAILPIT
+    API --> UPLOADS
+    API --> PICKUP

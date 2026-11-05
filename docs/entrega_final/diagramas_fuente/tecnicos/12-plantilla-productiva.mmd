@@ -1,0 +1,33 @@
+%%{init: {"theme": "default", "flowchart": {"curve": "linear"}}}%%
+flowchart LR
+    USER["Usuarios HTTPS"]
+    DNS["DNS + certificado TLS"]
+    NGINX["Nginx<br/>React estático + reverse proxy"]
+    API1["API OneITB réplica A"]
+    API2["API OneITB réplica B<br/>(escalado horizontal futuro)"]
+    SQL[("SQL Server / Azure SQL")]
+    REDIS[("Redis administrado")]
+    CLOUD["Cloudinary / storage privado"]
+    SMTP["Proveedor SMTP"]
+    ENTRA["Microsoft Entra ID"]
+    OBS["Logs + métricas + trazas + alertas"]
+    CICD["GitHub Actions"]
+
+    USER --> DNS --> NGINX
+    NGINX -->|"GraphQL HTTP/WS + REST"| API1
+    NGINX -->|"GraphQL HTTP/WS + REST"| API2
+    API1 --> SQL
+    API2 --> SQL
+    API1 <--> REDIS
+    API2 <--> REDIS
+    API1 --> CLOUD
+    API2 --> CLOUD
+    API1 --> SMTP
+    API2 --> SMTP
+    API1 <--> ENTRA
+    API2 <--> ENTRA
+    API1 --> OBS
+    API2 --> OBS
+    CICD -.->|"build, tests, imagen y despliegue"| NGINX
+    CICD -.-> API1
+    CICD -.-> API2

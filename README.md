@@ -9,18 +9,20 @@ Superior en Análisis de Sistemas del Instituto Tecnológico Beltrán.
 
 ## Estado del proyecto
 
-| Indicador | Estado documentado al 05/08/2026 |
+| Indicador | Estado documentado al 08/08/2026 |
 |---|---|
 | Alcance contabilizado | **100 % (117/117)**: 46 ítems verificados `[V]` y 71 implementados `[I]` |
 | Backend automatizado | **234/234** pruebas aprobadas en el worktree de Spec 216 |
-| Frontend automatizado | **251/251** pruebas aprobadas en el worktree de Spec 217 |
-| Entrega | **Release Candidate académico**, core Feature Complete y Code Freeze operativo local |
+| Frontend automatizado | **252/252** pruebas aprobadas en el preflight conjunto de Spec 218 |
+| Entrega | **Release Candidate académico**, core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente |
 | Base de datos | 34 migraciones; base demo canónica con doble seed idempotente y seis roles |
 
-El baseline backend 234/234 procede de la Spec 216 y el frontend 251/251 de la Spec 217;
-todavía no constituyen una ejecución conjunta sobre un SHA candidato. Antes de cerrar el
-corte de la defensa deben repetirse ambos
-gates sobre ese SHA definitivo y completar la regresión manual definida en el
+La Spec 218 ejecutó conjuntamente backend 234/234 y frontend 252/252 sobre el mismo
+worktree; todavía no equivale a evidencia sobre un SHA candidato congelado. La defensa
+planificada para el 7 de agosto de 2026 no ocurrió porque no se completaron a tiempo la
+documentación final, el refinamiento/cierre y la auditoría manual. No existe una nueva
+fecha documentada. Antes de cerrar un futuro corte deben repetirse ambos gates sobre ese
+SHA definitivo y completar la regresión manual definida en el
 [Roadmap](docs/project_docs/ROADMAP.md) y el
 [Runbook](docs/audit/RUNBOOK_DEV.md).
 

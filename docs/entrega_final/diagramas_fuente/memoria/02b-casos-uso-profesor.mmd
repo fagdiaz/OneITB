@@ -1,0 +1,23 @@
+%%{init: {"flowchart": {"curve": "step"}}}%%
+flowchart LR
+    PRO["Profesor"]:::actor
+
+    subgraph SYS["Sistema OneITB23 — Casos de Uso del Docente"]
+        UC1(["Autenticarse con credenciales o Microsoft"]):::usecase
+        UC2(["Publicar recursos académicos por materia"]):::usecase
+        UC3(["Asignar calificaciones y registrar progreso"]):::usecase
+        UC4(["Orientar consultas en el muro de materias"]):::usecase
+        UC5(["Atender mensajería directa con alumnos"]):::usecase
+        UC6(["Consultar nómina de alumnos cursantes"]):::usecase
+    end
+
+    PRO --> UC1
+    PRO --> UC2
+    PRO --> UC3
+    PRO --> UC4
+    PRO --> UC5
+    PRO --> UC6
+
+    classDef actor fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px;
+    classDef usecase fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px;
+    style SYS fill:#f8fafc,stroke:#0f172a,stroke-width:2px

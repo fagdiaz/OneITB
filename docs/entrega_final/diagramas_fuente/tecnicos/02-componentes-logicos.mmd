@@ -1,0 +1,52 @@
+%%{init: {"theme": "default", "flowchart": {"curve": "linear"}}}%%
+flowchart TB
+    subgraph CLIENT["Navegador"]
+        UI["React 18 + Tailwind CSS 4"]
+        AUTH["AuthContext + ThemeContext"]
+        APOLLO["Apollo Client + InMemoryCache"]
+        REST["Upload client"]
+        ERROR["Global Error Boundary"]
+        UI --> AUTH
+        UI --> APOLLO
+        UI --> REST
+        ERROR --> UI
+    end
+
+    subgraph API["API ASP.NET Core .NET 8"]
+        HTTP["GraphQL HTTP<br/>Queries + Mutations"]
+        WS["GraphQL WebSocket<br/>Subscriptions"]
+        UPLOAD["UploadController REST"]
+        SERVICES["Servicios de dominio"]
+        WORKERS["Hosted services<br/>cleanup + reminders + Outbox"]
+        ADAPTERS["Adaptadores<br/>Entra + SIU + email + storage"]
+        AUDIT["Audit interceptor + middleware"]
+        HTTP --> SERVICES
+        WS --> SERVICES
+        UPLOAD --> SERVICES
+        WORKERS --> SERVICES
+        SERVICES --> ADAPTERS
+        SERVICES --> AUDIT
+    end
+
+    subgraph DATA["Persistencia e infraestructura"]
+        SQL[("SQL Server 2022")]
+        REDIS[("Redis opcional")]
+        FILES[("Storage local / Cloudinary")]
+        MAIL["SMTP / pickup"]
+    end
+
+    APOLLO -->|"HTTPS /graphql"| HTTP
+    APOLLO -->|"WSS /graphql"| WS
+    REST -->|"multipart/form-data /api/upload"| UPLOAD
+    SERVICES -->|"EF Core 8"| SQL
+    AUDIT --> SQL
+    WS --> REDIS
+    ADAPTERS --> FILES
+    ADAPTERS --> MAIL
+
+    classDef client fill:#e0f2fe,stroke:#0284c7,color:#0f172a;
+    classDef backend fill:#ede9fe,stroke:#7c3aed,color:#0f172a;
+    classDef data fill:#ecfccb,stroke:#65a30d,color:#0f172a;
+    class UI,AUTH,APOLLO,REST,ERROR client;
+    class HTTP,WS,UPLOAD,SERVICES,WORKERS,ADAPTERS,AUDIT backend;
+    class SQL,REDIS,FILES,MAIL data;

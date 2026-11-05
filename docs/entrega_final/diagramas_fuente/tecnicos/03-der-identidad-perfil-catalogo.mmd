@@ -1,0 +1,104 @@
+erDiagram
+    ACCOUNT {
+        guid Id PK
+        string Email UK
+        string PasswordHash "nullable para cuenta externa"
+        bool MagicLinkEnabled
+        string ExternalProvider "nullable; UK compuesto con TenantId y SubjectId"
+        string ExternalTenantId "nullable"
+        string ExternalSubjectId "nullable"
+        datetime LastExternalLoginAt "nullable"
+        int FailedLoginAttempts
+        datetime LockoutEnd "nullable"
+        datetime CreatedAt
+    }
+    USER {
+        guid Id PK,FK "1:1 con Account"
+        string FirstName
+        string LastName
+        string Role
+        bool IsActive
+        bool IsPublicProfile
+        string Biography "nullable"
+        string Phone "nullable"
+        string AvatarUrl "nullable"
+        datetime MutedUntil "nullable"
+    }
+    MAGIC_LINK {
+        guid Id PK
+        guid AccountId FK
+        string Token "digest SHA-256; secreto viaja fuera de banda"
+        datetime ExpiresAt
+        bool IsUsed
+        datetime CreatedAt
+    }
+    CAREER {
+        int Id PK
+        string Name UK
+        string Code
+        bool IsActive
+    }
+    USER_CAREER {
+        guid UserId PK,FK
+        int CareerId PK,FK
+    }
+    SUBJECT {
+        int Id PK
+        int CareerId FK
+        string Name UK
+        string Code UK
+        int Year
+        bool IsActive
+    }
+    SUBJECT_PREREQUISITE {
+        int SubjectId PK,FK
+        int PrerequisiteId PK,FK
+    }
+    USER_CV_EXPERIENCE {
+        guid Id PK
+        guid UserId FK
+        string Company
+        string Role
+        int SortOrder "índice compuesto con UserId"
+    }
+    USER_CV_EDUCATION {
+        guid Id PK
+        guid UserId FK
+        string Institution
+        string Degree
+        int SortOrder "índice compuesto con UserId"
+    }
+    USER_CV_PROJECT {
+        guid Id PK
+        guid UserId FK
+        string Name
+        string Role "nullable"
+        int SortOrder "índice compuesto con UserId"
+    }
+    USER_CV_SKILL {
+        guid Id PK
+        guid UserId FK
+        string Name
+        string Level "nullable"
+        int SortOrder "índice compuesto con UserId"
+    }
+    USER_CV_LANGUAGE {
+        guid Id PK
+        guid UserId FK
+        string Name
+        string Level "nullable"
+        int SortOrder "índice compuesto con UserId"
+    }
+
+    ACCOUNT ||--|| USER : authenticates
+    ACCOUNT ||--o{ MAGIC_LINK : owns
+    USER ||--o{ USER_CAREER : enrolls
+    CAREER ||--o{ USER_CAREER : includes
+    CAREER ||--o{ SUBJECT : defines
+    SUBJECT ||--o{ SUBJECT_PREREQUISITE : subject
+    SUBJECT ||--o{ SUBJECT_PREREQUISITE : prerequisite
+    USER ||--o{ USER_CV_EXPERIENCE : has
+    USER ||--o{ USER_CV_EDUCATION : has
+    USER ||--o{ USER_CV_PROJECT : has
+    USER ||--o{ USER_CV_SKILL : has
+    USER ||--o{ USER_CV_LANGUAGE : has

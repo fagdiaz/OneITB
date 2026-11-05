@@ -3,22 +3,28 @@
 **Proyecto:** OneITB23<br>
 **Documento fuente:** `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`<br>
 **Resultado esperado:** archivo `.docx` editable y archivo `.pdf` listo para presentar<br>
-**Versión de la guía:** 3.2 - procedimiento final alineado al corte documental del 5 de agosto de 2026<br>
+**Versión de la guía:** 3.3 - procedimiento reconciliado al 8 de agosto de 2026<br>
 **Inventario de la memoria:** 10 diagramas Mermaid y 3 gráficos de gestión para anexos<br>
 **Paquete técnico complementario:** 13 vistas Mermaid en `docs/academic/04-design-diagrams.md`<br>
 **Criterio editorial:** APA 7, sujeto a los requisitos particulares del Instituto Tecnológico Beltrán
 
 > El documento Markdown es la fuente canónica. No debe reemplazarse ni editarse destructivamente durante la maquetación. Se recomienda trabajar sobre una copia y conservar los diagramas originales en formato Mermaid.
 
-> **Estado de entrada (5 de agosto de 2026).** La memoria fuente está alineada con el
+> **Estado de entrada reconciliado (8 de agosto de 2026).** La memoria fuente está alineada con el
 > Release Candidate académico: 117/117 ítems contabilizados (46 verificados y 71
-> implementados), últimos baselines de 216 pruebas backend y 225 frontend por capa
-> registrados en worktrees sucesivos, builds limpios, 34 migraciones, base demo canónica, acceso Microsoft Entra
-> real hasta onboarding/muro, Redis local y SMTP Mailpit verificados. Ese corte no
-> reemplaza el gate integral del SHA candidato definitivo. El alumno informó haber
-> renderizado los 13 Mermaid del paquete técnico; su selección, inserción y revisión
-> visual dentro del Word continúan siendo un gate editorial. Esta guía no debe utilizarse
-> para declarar como productivos los proveedores externos pendientes.
+> implementados), últimos baselines de 234 pruebas backend y 252 frontend ejecutados
+> conjuntamente en el preflight del worktree de Spec 218, builds limpios, 34 migraciones,
+> base demo canónica, acceso Microsoft Entra real hasta onboarding/muro, Redis local y
+> SMTP Mailpit verificados. Ese preflight no equivale al gate integral sobre el SHA
+> candidato definitivo; ambas suites deben repetirse o vincularse al SHA antes de `CF-06`.
+> Los 13 Mermaid del paquete técnico fueron auditados estáticamente; el render compilado,
+> la selección, inserción y revisión visual dentro del Word continúan siendo gates editoriales
+> pendientes. Esta guía no debe utilizarse para declarar como productivos los proveedores
+> externos pendientes.
+>
+> La defensa planificada para el 7 de agosto de 2026 no se realizó porque la
+> documentación final, el refinamiento/cierre y la auditoría manual no se completaron a
+> tiempo. No hubo versión presentada ni tag final y no existe una nueva fecha documentada.
 
 ---
 
@@ -155,9 +161,10 @@ siguiente artefacto:
 | C. DOCX | Gates A y B aprobados | Índice actualizado, estilos APA, tablas/figuras estables y ausencia de instrucciones editoriales |
 | D. PDF e imprenta | Gate C aprobado | PDF auditado en cuatro pasadas, hash SHA-256, copia abierta en otro equipo y orden de impresión autorizado |
 
-La fecha objetivo para enviar el material a imprenta es el **4 de agosto de 2026**. Si
-un gate no puede cerrarse, se debe reducir decoración o cantidad de láminas auxiliares,
-pero nunca omitir la revisión de contenido, el DER, la arquitectura ni el PDF final.
+La fecha objetivo original para enviar el material a imprenta era el **4 de agosto de
+2026** y quedó vencida. La mesa del 7 de agosto tampoco se realizó. Hasta que exista una
+nueva convocatoria, el trabajo debe avanzar por gates y calidad, sin inventar urgencia o
+fecha: nunca se omiten la revisión de contenido, el DER, la arquitectura ni el PDF final.
 
 ---
 
@@ -624,14 +631,14 @@ El `.docx` debe considerarse el archivo de edición final; el PDF es la versión
 
 ---
 
-## 5. CIERRE, ENTREGA Y DEFENSA
+## 5. CIERRE, ENTREGA Y FUTURA DEFENSA
 
-### 5.1 Condiciones oficiales de la mesa
+### 5.1 Condiciones históricas y requisitos reutilizables
 
-La mesa comienza el **viernes 7 de agosto de 2026 a las 09:00**. El aula o laboratorio
-se confirmará ese mismo día. La instancia incluye exposición, demostración funcional y
-preguntas. La duración oficial de la exposición es de **20 a 30 minutos** y puede
-extenderse por las preguntas o por la cantidad de integrantes.
+La mesa comunicada para el **viernes 7 de agosto de 2026 a las 09:00** no se realizó. No
+hay una nueva fecha, aula u horario documentados. Se conservan como requisitos
+reutilizables la exposición, la demostración funcional, las preguntas y la duración
+oficial de **20 a 30 minutos**.
 
 La cátedra confirmó los siguientes requisitos:
 
@@ -650,22 +657,25 @@ El Manual de Usuario no constituye un entregable separado: está integrado en la
 6 de `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`, conforme a la indicación del presidente
 de mesa. No existe otra plantilla institucional obligatoria.
 
-Como recomendación operativa, llegar entre las **08:15 y las 08:30** para identificar
-el aula, conectar el equipo y comprobar proyección y audio antes del inicio.
+La anticipación de llegada, el aula y las pruebas de proyección/audio deberán ajustarse
+cuando la institución comunique una nueva convocatoria.
 
 ### 5.2 Paquete mínimo entregable
 
 El paquete académico se considera completo cuando contiene:
 
 1. una copia impresa, preferentemente a color, anillada o encuadernada, de la memoria aprobada;
-2. `OneITB23_Memoria_Tecnica_PP3_2026_v2.1.docx`, editable y sin comentarios;
-3. `OneITB23_Memoria_Tecnica_PP3_2026_v2.1.pdf`, idéntico al DOCX aprobado;
+2. `OneITB23_Memoria_Tecnica_PP3_2026_v2.3.docx`, editable, sin comentarios y solo
+   después de aprobar figuras, campos y revisión visual; el archivo
+   `v2.3_CODEX_BORRADOR_TEXTO` no cumple todavía este punto;
+3. `OneITB23_Memoria_Tecnica_PP3_2026_v2.3.pdf`, idéntico al DOCX aprobado y auditado
+   página por página;
 4. presentación `OneITB23_Defensa_2026.pptx` y su exportación PDF;
 5. las 13 figuras en formato de entrega y sus fuentes editables;
 6. el Markdown canónico utilizado para producir el documento;
 7. el archivo SHA-256 del PDF revisado;
-8. un archivo o lámina breve con el SHA del código presentado, versión del sistema y
-   fecha del último gate.
+8. un archivo o lámina breve con el SHA del futuro corte de demostración, versión del
+   sistema y fecha del último gate; no denominarlo "presentado" antes de una defensa real.
 
 No incluir en el paquete contraseñas demo, secretos, cadenas de conexión, archivos
 `.env`, buzones SMTP capturados ni datos personales que no sean necesarios.
@@ -677,7 +687,7 @@ Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
 | Afirmación documental | Fuente de comprobación |
 |---|---|
 | 100 % global y 117/117 ítems | `docs/project_docs/ROADMAP.md` |
-| 216 pruebas backend y 225 frontend como últimos baselines por capa; repetición conjunta pendiente sobre SHA definitivo | Specs 205/212, `DEVELOPMENT_LOG.md` y `DOCUMENTATION_STATUS.md` |
+| 234 pruebas backend y 252 frontend ejecutados conjuntamente en el preflight de Spec 218; repetición conjunta pendiente sobre SHA candidato definitivo | Spec 218, `DEVELOPMENT_LOG.md` y `DOCUMENTATION_STATUS.md` |
 | EF Core sin drift | salida del gate de predefensa |
 | Backup, 34 migraciones, seed doble y seis roles | evidencia de Spec 196, Runbook y auditoría final |
 | 47 mutaciones GraphQL en el schema vigente | arquitectura, auditoría final y schema generado |
@@ -751,7 +761,7 @@ Redis administrado durante la defensa. La demo controlada debe utilizar cuentas 
 fallbacks y contenedores ya verificados. El pendrive no se entrega y no debe contener `.env`, secretos, contraseñas,
 tokens, cadenas de conexión ni datos personales innecesarios.
 
-El día anterior y nuevamente en el equipo que se llevará a la mesa, ejecutar
+El día anterior a una futura mesa y nuevamente en el equipo que se llevará, ejecutar
 `scripts/validate-demo-database.ps1`. Conservar el backup verificado en la notebook,
 pero **no** copiar archivos `.bak` al pendrive académico ni al repositorio: pueden
 contener datos y hashes locales. La contingencia debe apoyarse en el runbook, el código,
@@ -774,9 +784,9 @@ las migraciones y capturas de la demostración, no en distribuir la base.
 - [ ] Notebook, cargador y adaptador HDMI probados.
 - [ ] SQL Docker saludable y `scripts/validate-demo-database.ps1` en PASS con seis roles.
 - [ ] Pendrive verificado, sin secretos y con sistema, documentación, presentación y snapshot.
-- [ ] Repositorio remoto actualizado y corte presentado identificado por SHA.
+- [ ] Repositorio remoto actualizado y futuro corte candidato identificado por SHA.
 - [ ] Ensayo cronometrado de 22-25 minutos realizado dentro del rango oficial de 20-30.
-- [ ] Llegada planificada para las 08:15-08:30; aula y equipamiento se confirman ese día.
+- [ ] Nueva fecha, horario, llegada, aula y equipamiento confirmados por la institución.
 - [ ] Límites externos y plan de contingencia explicados correctamente.
 
 Solo después de completar esta lista debe utilizarse la palabra **final** en el nombre

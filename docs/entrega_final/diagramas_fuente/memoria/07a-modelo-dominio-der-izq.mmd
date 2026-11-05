@@ -1,0 +1,164 @@
+erDiagram
+    USER {
+        uuid Id PK
+        string FirstName
+        string LastName
+        string Role
+        string Biography
+        string Phone
+        string AvatarUrl
+        bool IsActive
+        bool IsPublicProfile
+        datetime MutedUntil
+    }
+    ACCOUNT {
+        uuid Id PK
+        string Email UK
+        string PasswordHash
+        string ExternalProvider
+        string ExternalTenantId
+        string ExternalSubjectId
+        datetime LastExternalLoginAt
+        int FailedLoginAttempts
+        datetime LockoutEnd
+        datetime CreatedAt
+    }
+    MAGIC_LINK {
+        uuid Id PK
+        uuid AccountId FK
+        string Token
+        datetime ExpiresAt
+        bool IsUsed
+    }
+    EMPLOYER_REQUEST {
+        uuid Id PK
+        string CompanyName
+        string ContactName
+        string Email
+        string Phone
+        string TaxId
+        string Status
+        datetime CreatedAt
+        datetime ProcessedAt
+        uuid ProcessedByAdminId FK
+        uuid ProvisionedUserId FK
+        string EmailDeliveryStatus
+    }
+    EMPLOYER_ONBOARDING_OUTBOX {
+        uuid Id PK
+        uuid EmployerRequestId FK,UK
+        string Status
+    }
+    INQUIRY {
+        uuid Id PK
+        string Title
+        string Content
+        uuid AuthorId FK
+        uuid SubjectId FK
+        uuid CareerId FK
+        int ViewCount
+        int UpvotesCount
+        bool IsPinned
+        bool IsClosed
+        bool IsResolved
+        bool IsActive
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    COMMENT {
+        uuid Id PK
+        uuid InquiryId FK
+        uuid AuthorId FK
+        uuid ParentCommentId FK
+        string Content
+        int UpvotesCount
+        bool IsSolution
+        bool IsActive
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    SOCIAL_ATTACHMENT {
+        uuid Id PK
+        uuid InquiryId FK
+        uuid CommentId FK
+        string FileUrl
+        string FileType
+        string OriginalFileName
+        bigint FileSizeBytes
+        datetime UploadedAt
+    }
+    REACTION {
+        uuid Id PK
+        uuid InquiryId FK
+        uuid UserId FK
+        string Type
+        datetime CreatedAt
+    }
+    COMMENT_REACTION {
+        uuid Id PK
+        uuid CommentId FK
+        uuid UserId FK
+        string Type
+        datetime CreatedAt
+    }
+    COMMUNITY_REPORT {
+        uuid Id PK
+        uuid ReporterId FK
+        string TargetType
+        uuid TargetId
+        string Reason
+        string Details
+        string Status
+        datetime CreatedAt
+    }
+    USER_INTERACTION {
+        uuid Id PK
+        uuid UserId FK
+        uuid TargetUserId FK
+        string Type
+        datetime CreatedAt
+    }
+    MESSAGE {
+        uuid Id PK
+        uuid SenderId FK
+        uuid ReceiverId FK
+        string Content
+        bool IsRead
+        datetime ReadAt
+        datetime CreatedAt
+    }
+    NOTIFICATION {
+        uuid Id PK
+        uuid UserId FK
+        string Title
+        string Message
+        string Type
+        string TargetUrl
+        bool IsRead
+        datetime CreatedAt
+    }
+    NOTIFICATION_PREFERENCE {
+        uuid Id PK
+        uuid UserId FK
+        bool EmailJobAlerts
+        bool EmailMentions
+        bool EmailDigest
+        bool InAppSound
+    }
+
+    USER ||--|| ACCOUNT : autentica
+    ACCOUNT ||--o{ MAGIC_LINK : autoriza
+    EMPLOYER_REQUEST ||--o| EMPLOYER_ONBOARDING_OUTBOX : despacha
+    USER ||--o{ INQUIRY : publica
+    USER ||--o{ COMMENT : comenta
+    INQUIRY ||--o{ COMMENT : contiene
+    COMMENT ||--o{ COMMENT : responde
+    INQUIRY ||--o{ SOCIAL_ATTACHMENT : adjunta_XOR
+    COMMENT ||--o{ SOCIAL_ATTACHMENT : adjunta_XOR
+    INQUIRY ||--o{ REACTION : recibe
+    COMMENT ||--o{ COMMENT_REACTION : recibe
+    USER ||--o{ COMMUNITY_REPORT : reporta
+    USER ||--o{ USER_INTERACTION : interactua
+    USER ||--o{ MESSAGE : envia_recibe
+    USER ||--o{ NOTIFICATION : recibe
+    USER ||--|| NOTIFICATION_PREFERENCE : configura

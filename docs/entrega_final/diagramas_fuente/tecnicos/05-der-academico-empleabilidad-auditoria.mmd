@@ -1,0 +1,84 @@
+erDiagram
+    USER {
+        guid Id PK
+        string Role
+    }
+    SUBJECT {
+        int Id PK
+    }
+    ACADEMIC_RESOURCE {
+        guid Id PK
+        int SubjectId FK
+        guid UploaderId FK
+        string Title
+        string ResourceType "File u otros"
+        string Category "enum AcademicResourceCategory"
+        string FileUrl "nullable"
+        string ExternalUrl "nullable"
+        int Version
+        bool IsActive
+    }
+    ACADEMIC_PROGRESS {
+        guid Id PK
+        guid UserId FK
+        int SubjectId FK
+        guid AssignedById FK
+        decimal Score "nullable"
+        string Status "enum AcademicProgressStatus"
+        string Notes "nullable"
+    }
+    JOB_OFFER {
+        guid Id PK
+        guid EmployerId FK
+        string Title
+        string Company
+        bool IsActive
+        datetime CreatedAt
+    }
+    JOB_APPLICATION {
+        guid Id PK
+        guid JobOfferId FK
+        guid ApplicantId FK
+        string Status "UK compuesto JobOfferId+ApplicantId"
+        datetime AppliedAt
+    }
+    EMPLOYER_REQUEST {
+        guid Id PK
+        string CompanyName
+        string Email "UK filtrado Pending/Approved"
+        string TaxId "UK filtrado Pending/Approved"
+        string Status
+        guid ProcessedByAdminId FK "nullable"
+        guid ProvisionedUserId FK "nullable"
+        datetime ProcessedAt "nullable"
+    }
+    EMPLOYER_ONBOARDING_OUTBOX {
+        guid Id PK
+        guid EmployerRequestId FK "UK"
+        string Status
+        int Attempts
+        datetime NextAttemptAt
+        datetime LeaseExpiresAt "nullable"
+    }
+    AUDIT_LOG {
+        guid Id PK
+        guid ActorUserId FK "nullable"
+        string CorrelationId "nullable"
+        string Action
+        string EntityName
+        string EntityId
+        datetime CreatedAt
+    }
+
+    SUBJECT ||--o{ ACADEMIC_RESOURCE : provides
+    USER ||--o{ ACADEMIC_RESOURCE : uploads
+    SUBJECT ||--o{ ACADEMIC_PROGRESS : tracks
+    USER ||--o{ ACADEMIC_PROGRESS : owns
+    USER ||--o{ ACADEMIC_PROGRESS : assigns
+    USER ||--o{ JOB_OFFER : publishes
+    JOB_OFFER ||--o{ JOB_APPLICATION : receives
+    USER ||--o{ JOB_APPLICATION : applies
+    USER o|--o{ EMPLOYER_REQUEST : processes
+    USER o|--o| EMPLOYER_REQUEST : provisioned_as
+    EMPLOYER_REQUEST ||--o| EMPLOYER_ONBOARDING_OUTBOX : enqueues
+    USER o|--o{ AUDIT_LOG : performs

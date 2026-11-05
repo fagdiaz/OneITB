@@ -18,6 +18,55 @@ reconstrucción destructiva.
 
 ---
 
+## 0. Inicio Rápido en PC Limpia (Quickstart End-to-End)
+
+Para levantar el entorno completo desde cero en una máquina limpia con Windows:
+
+### Paso 1: Actualizar el Repositorio
+```powershell
+git checkout codex/199-ux-b2b-academic-onboarding
+git pull origin codex/199-ux-b2b-academic-onboarding
+```
+
+### Paso 2: Iniciar SQL Server en Docker
+Abrir Docker Desktop y levantar el contenedor de base de datos en segundo plano:
+```powershell
+docker compose up -d oneitb-sql
+```
+
+### Paso 3: Recrear y Poblar la Base de Datos (Seeder Oficial)
+Aplica las migraciones EF Core y siembra las 15 cuentas deterministas con publicaciones, materias y chats:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/reset-demo-database.ps1 -ConfirmDatabaseReset
+```
+
+### Paso 4: Iniciar Backend (.NET 8)
+En una terminal dedicada:
+```powershell
+dotnet run --project "API Graphql/OneITB/GraphQL.csproj" --launch-profile OneITB
+```
+*Health check:* `https://localhost:44397/health` | *GraphQL Nitro:* `https://localhost:44397/graphql`
+
+### Paso 5: Iniciar Frontend (React 18 + Vite)
+En una segunda terminal:
+```powershell
+Push-Location "FrontEnd/OneItb-FE"
+npm.cmd run dev
+```
+*Abrir navegador:* `http://localhost:5173`
+
+---
+
+### Credenciales de Demostración (Contraseña: `Test1234!`)
+* **Administrador:** `admin1@itbeltran.com.ar` / `admin2@itbeltran.com.ar`
+* **Moderador:** `moderador1@itbeltran.com.ar`
+* **Profesor:** `profesor1.ads@itbeltran.com.ar` (Sistemas) / `profesor1.cdia@itbeltran.com.ar` (Datos)
+* **Estudiante:** `estudiante1.ads@itbeltran.com.ar` (Sistemas) / `estudiante1.cdia@itbeltran.com.ar` (Datos)
+* **Egresado:** `egresado1@itbeltran.com.ar` (Sistemas) / `egresado2@itbeltran.com.ar` (Datos)
+* **Empleador:** `empleador1@itbeltran.com.ar` (Tecnología) / `empleador2@itbeltran.com.ar` (Innovación)
+
+---
+
 ## 1. Convenciones de seguridad y operación
 
 ### 1.1 Clasificación de comandos
@@ -936,7 +985,12 @@ elimina la extracción y nunca imprime el texto completo ni valores personales.
 
 ---
 
-## 14. Evidencia y cierre predefensa
+## 14. Evidencia y cierre del candidato
+
+El nombre histórico `predefense` de los scripts se conserva por compatibilidad. La defensa
+planificada para el 7 de agosto de 2026 no ocurrió y no existe una nueva fecha documentada;
+este procedimiento se aplica al futuro candidato y no demuestra que haya existido una
+versión presentada.
 
 ### 14.1 Evidencia mínima por ejecución
 
@@ -964,7 +1018,8 @@ elimina la extracción y nunca imprime el texto completo ni valores personales.
    `GAP-PRIV-01`; registrar
    `GAP-FILE-01` como aceptación exclusiva de demo controlada y `GAP-INFRA-01` como gate
    de TLS del destino.
-9. Etiquetar el SHA que se presentará y crear snapshot offline.
+9. Con autorización explícita y después de completar T022/T023, etiquetar el SHA candidato
+   final y crear snapshot offline.
 10. No modificar código después del gate sin repetir la validación afectada.
 
 ### 14.3 Criterio de evidencia
