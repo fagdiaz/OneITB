@@ -19,6 +19,47 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-08] - Marco Multi-Agente, Skills de Rol, Spec 219 y Resolucion de Peer Review GOB-20261107-02 - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Formalizacion del ecosistema multi-agente (agent-orchestrator, agent-auditor-architect, agent-hardening-tester, agent-debugger, agent-ui-ux, agent-notebook-sync), ratificacion del Principio X en la Constitucion, resolucion integral de los hallazgos G1-G4 del Peer Review de 6 Astra (docs/audit/PEER_REVIEW_MULTI_AGENTE_2026-11-07.md), y blindaje del script de estabilizacion contra falsos PASS.
+
+### Hallazgos de Peer Review y Remediaciones Ejecutadas
+
+1. **G1 (Falso PASS en estabilizacion):**
+   - Remediado en .agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1. El script ahora exige resolucion y existencia fisica de la spec activa (falla con exit code 1 si falta). Omitir suites con -RunTests $false asigna estado SKIPPED y bloquea la certificacion (-Certify fuerza exit code 1). Se agregaron pruebas de rechazo independientes demostradas.
+2. **G2 (Compilacion de tests y persistencia de DLLs obsoletas):**
+   - Gate 5 compila los tests del corte con dotnet test -c Release --no-restore (eliminado flag --no-build). Incorporado Gate 7 con analisis estatico frontend-oxlint-check con cero advertencias permitidas. Actualizada la skill speckit-stabilize/SKILL.md con la baseline verificada de 258 pruebas frontend y 234 backend.
+3. **G3 (Autoridad exclusiva de Git):**
+   - Eliminadas todas las instrucciones de commit y push automatico en agent-notebook-sync/SKILL.md y speckit-stabilize/SKILL.md. La Fase 4 se redefine como Presentation & Authorization Gate, preservando la autoridad del usuario.
+4. **G4 (Seguridad de Handoff y Contradicciones):**
+   - Eliminada la referencia a 6.1 Terra en agent-ui-ux/SKILL.md y docs/project_docs/MULTI_AGENT_FRAMEWORK.md.
+   - Clarificado el diagnostico en agent-debugger/SKILL.md (consola DevTools del navegador para UUIDs de InterfaceFailureView).
+   - docs/project_docs/MULTI_AGENT_FRAMEWORK.md desglosa con precision la tarifa API de 272k tokens vs la cuota de suscripcion de Codex/Plus y el umbral de fidelidad de 200k tokens.
+   - Definido el Contrato de Handoff con ID, SHA completo, rama activa y desinfeccion estricta de credenciales en prompt.txt.
+
+### Validacion de Regresion Dual-Stack
+
+| Suite | Archivos | Tests | Estado |
+|---|---|---|---|
+| Backend xUnit (Services.Tests.dll - Release) | 1 | 234 | PASS (0 fallos, 0 omitidos) |
+| Frontend Vitest (npm run test -- --run) | 59 | 258 | PASS (0 fallos, 48.55s) |
+| Frontend Linter (oxlint FrontEnd/OneItb-FE/src) | 202 | - | 0 errores, 0 warnings (22ms) |
+| Preflight Negativo 1 (Spec ausente) | - | - | RECHAZADO (exit code 1, Status FAIL) |
+| Preflight Negativo 2 (Tests omitidos con -Certify) | - | - | RECHAZADO (exit code 1, Status FAIL) |
+
+### Ratificación Definitiva de Gobernanza Multi-Agente (GOB-20261108-07)
+- **Dictamen:** APROBADO SIN RESERVAS por Canal 1 (6 Astra).
+- **Invariante de Certificación:** Blindaje del script `preflight_stabilize.ps1` contra salidas simuladas; las simulaciones tienen prohibido otorgar `Certified=true` y solo producen resultados informativos en modo diagnóstico.
+- **Concurrencia Atómica:** Implementación de `PersistentHandoffLedger.ps1` con exclusión mutua cross-process mediante bloqueo exclusivo `.lock` con reintentos (`FileShare.None`).
+- **Resiliencia ante Corrupción:** Detección y bloqueo estricto ante archivos JSON corruptos, truncados o vacíos (0 bytes), preservando el archivo original en disco intacto para recuperación. Integrado `GOB-07-ledger.patch` (SHA-256: `7b258d04f3ca15109b74b316d039b33450bf6071e7ceaaa0d9f52ba604f67319`).
+- **Validación Automatizada:**
+  * `tests/test_governance_stabilize.ps1`: 8/8 aserciones en PASS (ExitCode 0).
+  * `tests/test_handoff_protocol.ps1`: 5/5 requisitos de protocolo en PASS con procesos paralelos reales (ExitCode 0).
+  * `git diff --cached --check`: 0 advertencias de espacios finales.
+  * Certificación oficial en vivo: 9/9 gates PASS, 234 backend xUnit, 258 frontend Vitest, `Certified=true`.
+  * Marco canónico formalmente ratificado en `docs/project_docs/MULTI_AGENT_FRAMEWORK.md`.
+
+---
 ## [2026-11-02] - Debugger Forense y Reconciliación CV Builder ATS — branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Corrección de ReferenceErrors de runtime en el módulo de chat, reconciliación editorial A4 del CV Builder ATS contra el proyecto de referencia `F:\React\cv-builder`, y auditoría de flujos de los 6 roles institucionales.
