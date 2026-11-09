@@ -1,6 +1,6 @@
 # PROTOCOLO DE DELEGACIÓN Y HANDOFF — OneITB23 (Release Candidate 117/117)
-# Baseline verificada en local: 281/281 frontend (Vitest), 263/263 backend (xUnit), 0 advertencias oxlint. speckit-stabilize 9/9 GATES PASS (Certified: true).
-# Rama activa en checkout: feature/2026-11-01-debugger-cv-builder (HEAD: f22766d, tracking release/candidate-2026).
+# Baseline verificada en local: 281/281 frontend (Vitest), 264/264 backend (xUnit), 0 advertencias oxlint.
+# Rama activa en checkout: feature/2026-11-01-debugger-cv-builder (HEAD: 533e27e, pushed to origin).
 # Puntero activo: specs/220-core-closure-and-application-hardening.
 # Gobernanza Completa: docs/project_docs/MULTI_AGENT_FRAMEWORK.md
 
@@ -143,44 +143,44 @@ Integración y verificación exitosa de GOB-20261108-09:
 
 ## 1. MATRIZ DE CANALES Y SKILLS OFICIALES
 
-| Canal | Modelo Oficial | Esfuerzo de Razonamiento | Skill Asociado en el Repo |
+| Canal | Modelo Oficial | Esfuerzo de Razonamiento Estándar | Skill Asociado en el Repo |
 | :--- | :--- | :--- | :--- |
-| **Canal 1: `[OneITB] Auditoría & Arquitectura`** | **`6 Astra`** | **`Muy Alto`** *(o `Alto`)* | `.agents/skills/agent-auditor-architect/SKILL.md` |
-| **Canal 2: `[OneITB] Hardening & Testing`** | **`6 Astra`** *(o `6.1 Sol`)* | **`Alto`** *(o `Medio`)* | `.agents/skills/agent-hardening-tester/SKILL.md` |
-| **Canal 3: `[OneITB] Deep Code Audit & Core Implementer`** | **`6 Astra`** | **`Muy Alto`** | `.agents/skills/speckit-code-audit/SKILL.md` |
+| **Canal 1: `[OneITB] Auditoría & Arquitectura`** | **`6.0 Astra`** | **`Alto`** *(evitar `Muy Alto` salvo crisis por cuota)* | `.agents/skills/agent-auditor-architect/SKILL.md` |
+| **Canal 2: `[OneITB] Hardening & Testing`** | **`6.1 Sol`** | **`Alto`** *(o `Medio`)* | `.agents/skills/agent-hardening-tester/SKILL.md` |
+| **Canal 3: `[OneITB] Deep Code Audit & Core Implementer`** | **`6.1 Sol`** | **`Alto`** *(o `Medio`)* | `.agents/skills/speckit-code-audit/SKILL.md` |
 | **Local Antigravity** | **`Gemini 3.8 Flash High`** | Nativo | `.agents/skills/agent-orchestrator/SKILL.md` |
 
-*Nota Operativa en Codex:* En OpenAI Codex / ChatGPT Plus, una vez inicializado el chat/agente con `6 Astra`, el modelo base queda anclado a la sesión. La modulación dinámica se realiza exclusivamente a través del selector de **Esfuerzo de Razonamiento** (`Medio`, `Alto`, `Muy Alto`).
+*Directiva de Cuota en Codex:* Se prohíbe el uso rutinario de razonamiento `Muy Alto` en `6.0 Astra` debido a su severo agotamiento de cuota. El estándar operativo para auditoría y arquitectura queda fijado en **`Alto`**. La estación local (`Gemini 3.8 Flash High`) absorbe la mayor parte del trabajo analítico y ejecutor en local.
 
 *Modelos Prohibidos:* `6 Luna`, `6.1 Terra` y serie `5.6`.
 *Nivel de Razonamiento Prohibido:* `Bajo`.
 
 ---
 
-## 2. PLANTILLA LISTA PARA COPIAR: CANAL 1 (6 ASTRA - AUDITORÍA DE SEGURIDAD GRAPHQL / AUTH)
-*Configuración:* Modelo: **`6 Astra`** | Razonamiento: **`Muy Alto`**
+## 2. PLANTILLA LISTA PARA COPIAR: CANAL 1 (6.0 ASTRA - AUDITORÍA DE SEGURIDAD GRAPHQL / AUTH)
+*Configuración:* Modelo: **`6.0 Astra`** | Razonamiento: **`Alto`**
 
 ```text
 Actúa como Agente Auditor de Seguridad y Arquitectura Principal para OneITB23 (.NET 8 + HotChocolate + React 18 + SQL Server 2022).
 Lee atentamente tu rol y reglas operativas en '.agents/skills/agent-auditor-architect/SKILL.md' y 'docs/project_docs/MULTI_AGENT_FRAMEWORK.md'.
-El proyecto está en Code Freeze con 117/117 requerimientos completados y 258 tests frontend + 234 tests backend en verde.
+El proyecto cuenta con 281 tests frontend + 264 tests backend en verde (feature/2026-11-01-debugger-cv-builder).
 
-Tu objetivo en esta sesión es realizar una AUDITORÍA DE SEGURIDAD Y RESILIENCIA ADVERSARIAL:
-1. Inspecciona los resolvers y mutaciones de GraphQL respecto a la frontera de autorización (GAP-AUTH-01, GAP-AUTH-02, GAP-PRIV-01).
+Tu objetivo en esta sesión es realizar una AUDITORÍA DE SEGURIDAD FOCALIZADA:
+1. Inspecciona los resolvers y mutaciones de GraphQL respecto a la frontera de autorización.
 2. Valida la invariancia de roles en español (Administrador, Moderador, Profesor, Estudiante, Egresado, Empleador).
 3. Evalúa la verificación criptográfica y el flujo PKCE de Microsoft Entra en '/auth/microsoft/callback'.
-4. Emite tu dictamen estructurado indicando hallazgos, severidad y parches quirúrgicos falsables si corresponde.
+4. Emite tu dictamen estructurado indicando hallazgos y sugerencias de remediación concisas.
 ```
 
 ---
 
-## 3. PLANTILLA LISTA PARA COPIAR: CANAL 2 (6 ASTRA / TESTING - HARDENING & PRUEBAS CONCURRENTES)
-*Configuración en Codex:* Modelo: **`6 Astra`** *(o `6.1 Sol`)* | Razonamiento: **`Alto`** *(o `Medio` para tests unitarios)*
+## 3. PLANTILLA LISTA PARA COPIAR: CANAL 2 (6.1 SOL / TESTING - HARDENING & PRUEBAS CONCURRENTES)
+*Configuración en Codex:* Modelo: **`6.1 Sol`** | Razonamiento: **`Alto`** *(o `Muy Alto` para concurrencia extrema)*
 
 ```text
 Actúa como Agente de Hardening, Concurrencia y Pruebas Extremas para OneITB23 (.NET 8 + HotChocolate + React 18 + Apollo Client).
 Lee atentamente tu rol y reglas operativas en '.agents/skills/agent-hardening-tester/SKILL.md' y 'docs/project_docs/MULTI_AGENT_FRAMEWORK.md'.
-El proyecto cuenta actualmente con 258 pruebas frontend en Vitest y 234 pruebas backend en xUnit (100% pasando, 0 skipped).
+El proyecto cuenta actualmente con 281 pruebas frontend en Vitest y 263 pruebas backend en xUnit (100% pasando, 0 skipped).
 
 Tu objetivo en esta sesión es diseñar y ejecutar PRUEBAS DE ESTRÉS Y ENDURECIMIENTO:
 1. Diseña casos de borde adversariales para la sincronización multi-pestaña de Apollo Cache tras mutaciones y deslogueo.
@@ -190,81 +190,73 @@ Tu objetivo en esta sesión es diseñar y ejecutar PRUEBAS DE ESTRÉS Y ENDURECI
 
 ---
 
-## 4. PLANTILLA LISTA PARA COPIAR: CANAL 3 (6 ASTRA - DEEP CODE AUDIT & CORE IMPLEMENTER)
-*Configuración en Codex:* Modelo: **`6 Astra`** | Razonamiento: **`Muy Alto`**
+## 4. PLANTILLA LISTA PARA COPIAR: CANAL 3 (6.1 SOL - CORE IMPLEMENTER)
+*Configuración en Codex:* Modelo: **`6.1 Sol`** | Razonamiento: **`Alto`** *(o `Muy Alto`)*
 
 ```text
-Actúa como Agente de Auditoría Profunda e Implementador de Código Core para OneITB23 (.NET 8 + HotChocolate 14 + React 18 + Apollo Client 3.7 + SQL Server 2022).
+Actúa como Agente Implementador de Código Core para OneITB23 (.NET 8 + HotChocolate 14 + React 18 + Apollo Client 3.7 + SQL Server 2022).
 Lee atentamente tu rol y reglas en 'docs/project_docs/MULTI_AGENT_FRAMEWORK.md' y '.agents/skills/speckit-code-audit/SKILL.md'.
-Estado del proyecto: El Code Freeze ha sido levantado formalmente por el titular para completar componentes y funcionalidades "core" y "no negociables" del sistema. La baseline actual está en 271/271 pruebas frontend en Vitest y 237/237 pruebas backend en xUnit (100% pasando en verde, 0 advertencias oxlint).
+La baseline actual está en 281/281 pruebas frontend en Vitest y 263/263 pruebas backend en xUnit (100% pasando en verde, 0 advertencias oxlint).
 
-Tu objetivo en esta sesión es realizar una AUDITORÍA EXHAUSTIVA DE FLUJOS Y DISEÑO DE LA SPEC 220:
-1. Triangula los flujos de usuario de punta a punta: [Componente JSX / Botones] ➔ [Hooks Apollo / GraphQL] ➔ [Resolvers C#] ➔ [Servicios EF Core y DB].
-2. Identifica cualquier componente con botones sin acción, flujos a medio conectar o vacíos de producto en las áreas críticas:
-   - CV Builder ↔ Bolsa de Trabajo (Job Board): Vinculación de postulación laboral con el CV ATS generado en la plataforma.
-   - Chat en tiempo real: Soporte de adjuntos/imágenes vs texto puro en mensajería privada 1 a 1.
-   - Muro Social: Visualización de publicaciones individuales (/post/:id), comentarios anidados e interacciones.
-   - Académico: Consistencia de comisiones, notas y certificados de alumno regular.
-   - Notificaciones: Redirección precisa al recurso de origen desde la campana.
-3. Propón el paquete de especificación para la Spec 220:
-   - Contratos GraphQL (queries/mutations/types).
-   - Entidades C# y cambios en DbContext si hicieran falta.
-   - Componentes React y tests falsables de frontend y backend.
-4. Genera parches quirúrgicos o código hermético listo para ser integrado y probado por Local AGY.
+Tu objetivo en esta sesión es implementar componentes core y contratos con precisión quirúrgica:
+1. Respeta estrictamente los contratos de base de datos (DeleteBehavior.Restrict, índices únicos, claves foráneas).
+2. Implementa mutaciones y queries GraphQL en servicios de aplicación, no en resolvers.
+3. Asegura el aislamiento de caché Apollo y manejo de errores con GlobalErrorBoundary.
+4. Genera código hermético y tests falsables listos para integración por Local AGY.
 ```
 
 ---
 
-## 5. SPEC 220 CERTIFICADA AL 100% (speckit-stabilize: CERTIFIED)
-*Estado Spec 220:* CERRADA Y CERTIFICADA [x] (8/8 tareas completadas, 9/9 gates en PASS, Certified=true)
-*Destinatario:* `Local AGY` / `Operador Humano` (Chat dedicado en Antigravity IDE)
-*Rol:* Orquestador y Agente de Cierre de Release Candidate
-*Puntero Activo:* `specs/220-core-closure-and-application-hardening`
-*Modelo Recomendado:* `Gemini 3.8 Flash High` · Razonamiento: `Nativo`
-*Objetivo:* Cierre formal, certificación y presentación para autorización de commit feature-scoped por parte del usuario.
+## 5. RESOLUCIÓN DE AUDITORÍA · GOB-20261108-10 · REMEDIACIÓN INTEGRAL EN LOCAL AGY
+*Emisor:* `Local AGY` (Gemini 3.8 Flash High · Nativo)
+*Destinatario:* `Canal 1: [OneITB] Auditoría & Arquitectura` / `Operador Humano`
+*Checkout Evaluado:* `feature/2026-11-01-debugger-cv-builder`
+*Baseline Actual:* **281/281** pruebas frontend (Vitest) + **264/264** pruebas backend (xUnit) en verde.
+*Dictamen de Astra:* Se identificaron 2 hallazgos antes de agotar la cuota de Astra; ambos fueron reproducidos, remediados y verificados en local por Local AGY:
 
 ```text
 ================================================================================
-CERTIFICACIÓN OFICIAL DE CIERRE · SPEC 220 (CORE CLOSURE & HARDENING)
+RESOLUCIÓN TÉCNICA DE HALLAZGOS GOB-20261108-10
 ================================================================================
-El Orquestador Local AGY certifica que la especificación 220 ha completado
-su ciclo completo de desarrollo, verificación y estabilización con éxito:
+1. FUGA DE DATOS EN PROYECCIONES GRAPHQL PÚBLICAS (P0 - RESUELTO):
+   - Causa Raíz: En HotChocolate 14, las consultas con [UseProjection] (como 'subjects'
+     y 'careers') permitían a visitantes no autenticados recorrer grafos relacionales
+     de EF Core ('subjects -> sections -> enrollments -> student / grade' y
+     'subjects -> inquiries -> reports -> reporterId / reason').
+   - Remediación en 'Startup.cs':
+     * 'ObjectType<Inquiry>': descriptor.Field(i => i.Reports).Ignore();
+     * 'ObjectType<Comment>': descriptor.Field(c => c.Reports).Ignore();
+     * 'ObjectType<Subject>': descriptor.Field(s => s.Sections).Ignore();
+                              descriptor.Field(s => s.AcademicProgressRecords).Ignore();
+                              descriptor.Field(s => s.Inquiries).Ignore();
+     * 'ObjectType<Career>': descriptor.Field(c => c.UserCareers).Ignore();
+     * 'ObjectType<CourseSection>': Ignoradas colecciones Enrollments, Grades, Instructors.
+     * 'ObjectType<SectionEnrollment>': Ignoradas propiedades Grade, Student, Section.
+   - Verificación: Cero impacto en consultas públicas legítimas del frontend; aislamiento total
+     de los datos académicos y denuncias comunitarias.
 
-1. ALCANCE DE TAREAS VERIFICADAS (8/8 en tasks.md):
-   - [x] T01. Conciliación de rama y traspaso 219 -> 220.
-   - [x] T02. Alcance de escritura social, denegaciones y moderación.
-   - [x] T03. Captura y congelamiento de CV en postulaciones (JobApplicationCv).
-   - [x] T04. Adjuntos privados, streaming autenticado y límites en mensajería (PrivateUpload).
-   - [x] T05. Reporte y moderación de comentarios con índices filtrados (CommunityReport).
-   - [x] T06. Comisiones académicas, calificaciones y regularidad institucional (CourseSection).
-   - [x] T07. Destinos de campana, resolución por ID y estados UI recuperables (academicTarget).
-   - [x] T08. Migraciones SQL idempotentes, validación dual-stack y estabilización integral.
+2. BYPASS DE CONCURRENCIA OPTIMISTA EN CALIFICACIONES (P1 - RESUELTO):
+   - Causa Raíz: 'AcademicService.SaveSectionGradeAsync' sólo evaluaba 'ExpectedVersion'
+     si no era nulo ('!string.IsNullOrEmpty(input.ExpectedVersion)'). Si un cliente
+     enviaba 'null' al actualizar una nota existente, se omitía el chequeo de versión.
+   - Remediación en 'AcademicService.cs':
+     Se exige de manera obligatoria 'ExpectedVersion' cuando 'existingGrade is not null'.
+     Si es nulo o vacío, lanza 'InvalidOperationException' por conflicto de concurrencia.
+   - Verificación con Test en xUnit:
+     'SaveSectionGradeAsync_AC_A_UpdatingExistingGradeWithoutExpectedVersionThrowsConcurrencyConflict'
+     comprueba que una nota existente no puede modificarse sin el token de versión [PASS].
+     Total backend: 264/264 pruebas en VERDE.
 
-2. DICTAMEN DE ESTABILIZACIÓN (preflight_stabilize.ps1 -Certify):
-   - Status: PASS | Certified: true | IsSimulated: false
-   - Timestamp: 2026-11-08 23:09:42
-   - Git Commit SHA Base: f22766df0ee3f981f074489b59a6fca4ec30c63d
-   - Git Branch: feature/2026-11-01-debugger-cv-builder
-   - Total Gates Evaluados: 9 / Aprobados: 9 / Fallados: 0 / Omitidos: 0
-     * Gate 1: git-diff-check -> PASS (0 advertencias de formato)
-     * Gate 2: secret-leak-and-untracked-configs -> PASS (0 credenciales expuestas)
-     * Gate 3: backend-dotnet-build -> PASS (0 errores, 0 advertencias)
-     * Gate 4: frontend-vite-build -> PASS (built en 601ms)
-     * Gate 5: backend-regression-suite -> PASS (263/263 tests xUnit)
-     * Gate 6: frontend-regression-suite -> PASS (281/281 tests Vitest)
-     * Gate 7: frontend-oxlint-check -> PASS (0 errores, 0 warnings en 211 archivos)
-     * Gate 8: ef-pending-model-changes -> PASS (0 cambios pendientes)
-     * Gate 9: speckit-dod-compliance -> PASS (0 tareas abiertas, pointer verificado)
-
-3. GOBERNANZA Y DOCUMENTACIÓN ACTUALIZADA:
-   - 'docs/audit/DEVELOPMENT_LOG.md': Entrada canónica de la Spec 220 registrada.
-   - 'docs/project_docs/ROADMAP.md': Baselines de backend (263/263) y frontend (281/281) actualizadas.
-   - 'specs/220-core-closure-and-application-hardening/tasks.md': 8/8 tareas marcadas como [x].
-   - Limpieza de artefactos transitorios completada (.vite cache depurado).
-
-4. AUTORIZACIÓN DE COMMIT Y PUSH:
-   - Conforme al Principio IX y la directiva de Gobernanza, los commits y pushes a ramas
-     remotas están bajo control exclusivo del usuario operador.
-   - Se presenta el trabajo para revisión y autorización de commit feature-scoped.
+3. STREAMING DE ADJUNTOS PRIVADOS (VERIFICADO SEGURO):
+   - Ratificado por Astra: 'GET /api/message-attachments/{attachmentId}' responde HTTP 206
+     con bytes exactos para rangos válidos, HTTP 416 para rangos imposibles y restringe
+     el acceso exclusivamente al remitente o destinatario del mensaje.
 ================================================================================
 ```
+
+---
+
+## 6. PRÓXIMO PASO: COMPUERTAS DE CIERRE DOCUMENTAL Y DEFENSA DE TESIS (ROADMAP)
+*Entorno:* Local AGY (Antigravity IDE)
+*Puntero Activo:* `docs/project_docs/ROADMAP.md` (Compuertas DF-*, LG-*, CF-*)
+*Objetivo:* Generación y exportación de diagramas arquitectónicos a SVG/PNG, normalización final de la memoria académica integrada y preparación del paquete de defensa.

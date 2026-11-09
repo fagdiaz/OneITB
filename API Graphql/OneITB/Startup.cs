@@ -361,6 +361,7 @@ namespace OneItb.GraphQL
                 }))
                 .AddType(new ObjectType<Inquiry>(descriptor =>
                 {
+                    descriptor.Field(i => i.Reports).Ignore();
                     descriptor.Field("reportCount")
                         .Type<NonNullType<IntType>>()
                         .Resolve(ctx =>
@@ -372,6 +373,7 @@ namespace OneItb.GraphQL
                 }))
                 .AddType(new ObjectType<Comment>(descriptor =>
                 {
+                    descriptor.Field(c => c.Reports).Ignore();
                     descriptor.Field("reportCount")
                         .Type<NonNullType<IntType>>()
                         .Resolve(ctx =>
@@ -380,6 +382,28 @@ namespace OneItb.GraphQL
                             return ctx.DataLoader<CommentReportCountDataLoader>()
                                 .LoadAsync(comment.Id, ctx.RequestAborted);
                         });
+                }))
+                .AddType(new ObjectType<Subject>(descriptor =>
+                {
+                    descriptor.Field(s => s.Sections).Ignore();
+                    descriptor.Field(s => s.AcademicProgressRecords).Ignore();
+                    descriptor.Field(s => s.Inquiries).Ignore();
+                }))
+                .AddType(new ObjectType<Career>(descriptor =>
+                {
+                    descriptor.Field(c => c.UserCareers).Ignore();
+                }))
+                .AddType(new ObjectType<CourseSection>(descriptor =>
+                {
+                    descriptor.Field(cs => cs.Enrollments).Ignore();
+                    descriptor.Field(cs => cs.Grades).Ignore();
+                    descriptor.Field(cs => cs.Instructors).Ignore();
+                }))
+                .AddType(new ObjectType<SectionEnrollment>(descriptor =>
+                {
+                    descriptor.Field(se => se.Grade).Ignore();
+                    descriptor.Field(se => se.Student).Ignore();
+                    descriptor.Field(se => se.Section).Ignore();
                 }))
                 .AddType(new ObjectType<CommentReportReceipt>(descriptor =>
                 {

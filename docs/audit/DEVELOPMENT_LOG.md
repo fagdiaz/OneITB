@@ -19,6 +19,33 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-09] - Post-Spec 220 Security Hardening & Concurrency Remediation - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Remediación inmediata y blindaje post-auditoría adversarial (GOB-20261108-10) sobre el corte Spec 220. Aislamiento de proyecciones GraphQL en HotChocolate 14 para impedir fuga de datos en consultas públicas (`subjects`, `careers`, `inquiries`), e imposición estricta de concurrencia optimista (`RowVersion`) en calificaciones de comisiones.
+
+### Tareas y Correcciones de Seguridad
+
+1. **Aislamiento de Proyecciones GraphQL Públicas (HotChocolate 14):**
+   - Configurados descriptores explícitos en `Startup.cs` ignorando navegaciones internas de EF Core en el esquema GraphQL:
+     * `Inquiry.Reports` y `Comment.Reports` suprimidos del grafo público.
+     * `Subject.Sections`, `Subject.AcademicProgressRecords` y `Subject.Inquiries` suprimidos del catálogo de materias.
+     * `Career.UserCareers` suprimido del catálogo de carreras.
+     * `CourseSection.Enrollments`, `CourseSection.Grades` y `CourseSection.Instructors` suprimidos de la entidad de comisión.
+     * `SectionEnrollment.Grade`, `SectionEnrollment.Student` y `SectionEnrollment.Section` aislados.
+   - Acceso a comisiones y calificaciones preservado exclusivamente a través de las operaciones autenticadas `myCourseSections` y `sectionRoster`.
+
+2. **Blindaje de Concurrencia Optimista en Carga de Calificaciones:**
+   - En `AcademicService.SaveSectionGradeAsync`, se impuso como obligatorio el token `ExpectedVersion` cuando se actualiza una calificación existente (`existingGrade is not null`).
+   - Solicitudes con `ExpectedVersion` nulo o vacío arrojan `InvalidOperationException` por conflicto de concurrencia, impidiendo sobrescrituras no versionadas.
+   - Verificado con test unitario `SaveSectionGradeAsync_AC_A_UpdatingExistingGradeWithoutExpectedVersionThrowsConcurrencyConflict` (264/264 PASS).
+
+3. **Métricas de Certificación:**
+   - Backend xUnit: 264/264 PASS (0 fallos, 0 omitidos).
+   - Frontend Vitest: 281/281 PASS en 65 suites (0 fallos).
+   - EF Core: 0 cambios de modelo pendientes (0 model drift).
+   - Frontend Linter: 0 errores y 0 advertencias en 211 archivos.
+
+---
 ## [2026-11-08] - Spec 220: Core Closure and Application Hardening - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Cierre integral y endurecimiento del núcleo de OneITB23 cubriendo persistencia de CV congelado en postulaciones (`JobApplicationCv`), adjuntos privados y entrega autorizada en mensajería (`PrivateUpload`, `MessageAttachment`, controlador con streaming protegido y límites de caducidad/consumo único), moderación y reporte de comentarios con índices filtrados (`CommunityReport.CommentId`, `AK_Comments_Id_InquiryId`), cursadas académicas con comisiones y certificados de alumno regular (`CourseSection`, `SectionInstructor`, `SectionEnrollment`, `SectionGrade`, `EnrollmentStanding`, `RegularStudentCertificate`), resolución profunda de destinos de notificación y estados UI recuperables (`academicTarget`, `employmentApplication`, `messagingPeer`), e inspección de migraciones SQL idempotentes.

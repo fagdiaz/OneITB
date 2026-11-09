@@ -627,16 +627,18 @@ namespace Services.Academic
 
             if (existingGrade is not null)
             {
-                if (!string.IsNullOrEmpty(input.ExpectedVersion))
+                if (string.IsNullOrWhiteSpace(input.ExpectedVersion))
                 {
-                    string currentVersion = existingGrade.RowVersion != null && existingGrade.RowVersion.Length > 0
-                        ? Convert.ToBase64String(existingGrade.RowVersion)
-                        : string.Empty;
+                    throw new InvalidOperationException("Conflicto de concurrencia: se requiere el token de versión esperado (expectedVersion) para actualizar una calificación existente.");
+                }
 
-                    if (!string.Equals(currentVersion, input.ExpectedVersion, StringComparison.Ordinal))
-                    {
-                        throw new InvalidOperationException("Conflicto de concurrencia: la nota fue modificada por otro usuario.");
-                    }
+                string currentVersion = existingGrade.RowVersion != null && existingGrade.RowVersion.Length > 0
+                    ? Convert.ToBase64String(existingGrade.RowVersion)
+                    : string.Empty;
+
+                if (!string.Equals(currentVersion, input.ExpectedVersion, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Conflicto de concurrencia: la nota fue modificada por otro usuario.");
                 }
 
                 existingGrade.AssignedById = professorId;

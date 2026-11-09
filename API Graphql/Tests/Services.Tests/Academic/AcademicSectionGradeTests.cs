@@ -200,6 +200,41 @@ public sealed class AcademicSectionGradeTests
     }
 
     [Fact]
+    public async Task SaveSectionGradeAsync_AC_A_UpdatingExistingGradeWithoutExpectedVersionThrowsConcurrencyConflict()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await ServiceTestData.SeedAcademicGraphAsync(context);
+
+        var notifications = CreateNotificationMock();
+        var siu = new Mock<ISiuIntegrationService>(MockBehavior.Strict);
+        var service = new AcademicService(context, notifications.Object, siu.Object);
+
+        var section = new CourseSection
+        {
+            Id = Guid.NewGuid(),
+            SubjectId = ServiceTestData.SubjectId,
+            Term = "2026-1C",
+            Code = "K3051"
+        };
+        context.CourseSections.Add(section);
+        context.SectionInstructors.Add(new SectionInstructor { SectionId = section.Id, ProfessorId = ServiceTestData.TeacherUserId });
+        context.SectionEnrollments.Add(new SectionEnrollment { SectionId = section.Id, StudentId = ServiceTestData.StudentUserId });
+        await context.SaveChangesAsync();
+
+        // Initial save with null expectedVersion (first time creation)
+        var initialInput = new SectionGradeInput(section.Id, ServiceTestData.StudentUserId, 8.0m, AcademicProgressStatus.Approved, null);
+        await service.SaveSectionGradeAsync(ServiceTestData.TeacherUserId, "Profesor", initialInput);
+
+        // Attempt: Update existing grade without providing expectedVersion (should throw concurrency conflict)
+        var unversionedInput = new SectionGradeInput(section.Id, ServiceTestData.StudentUserId, 4.0m, AcademicProgressStatus.InProgress, null);
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SaveSectionGradeAsync(ServiceTestData.TeacherUserId, "Profesor", unversionedInput));
+
+        Assert.Contains("concurrencia", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("expectedVersion", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task GetSectionRosterPageAsync_RejectsUnauthorizedCaller()
     {
         await using var context = ServiceTestData.CreateContext();
