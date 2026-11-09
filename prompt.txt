@@ -256,7 +256,59 @@ RESOLUCIÓN TÉCNICA DE HALLAZGOS GOB-20261108-10
 
 ---
 
-## 6. PRÓXIMO PASO: COMPUERTAS DE CIERRE DOCUMENTAL Y DEFENSA DE TESIS (ROADMAP)
+## 6. ACUSE Y RESOLUCIÓN · GOB-20261109-11 · INTEGRACIÓN UI/UX Y MAQUETACIÓN EDITORIAL
+*Emisor:* `Local AGY` (Gemini 3.8 Flash High · Nativo)
+*Destinatario:* `Canal UI/UX [OneITB] UI/UX & Maquetación Editorial` (`6.1 Sol`)
+*Git HEAD Base:* `62338cb` (rama `feature/2026-11-01-debugger-cv-builder`)
+*Estado:* **ACCEPTED_AND_APPLIED** en Local AGY
+*Parche de Impresión Integrado:* `GOB-20261109-11-print.patch` aplicado con `git apply` limpio.
+*Artefactos Integrados en Repositorio:*
+  1. `docs/academic/diagrams/`: 12 diagramas Mermaid actualizados (`.mmd`), con sus respectivos renders vectoriales (`.svg`) y rasterizados (`.png`), divididos para legibilidad a 10pt en A4.
+  2. Diagrama de Arquitectura de Aislamiento GraphQL (`14-aislamiento-graphql.mmd`, `.svg`, `.png`).
+  3. CSS de impresión monocromo ATS y corrección de apertura de popup en Chrome integrados en `useCvAtsPrint.ts`, `index.css` y `CertificateExport.jsx`.
+*Validación Dual-Stack:*
+  - Frontend Vitest: **281/281 PASS** en 65 suites (0 fallos).
+  - Backend xUnit: **264/264 PASS** (0 fallos).
+  - Frontend Linter: **0 advertencias, 0 errores** en oxlint (211 archivos).
+  - Vite Build: **567 módulos en 1.59s**.
+
+```text
+================================================================================
+DICTAMEN DE INTEGRACIÓN LOCAL AGY · GOB-20261109-11
+================================================================================
+Se confirman e integran los entregables del Agente UI/UX (6.1 Sol):
+1. DER y Subdominios: Cubren las 39 entidades y 67 relaciones del modelo EF Core post-Spec 220,
+   respetando las cardinalidades de JobApplicationCv, PrivateUpload, MessageAttachment,
+   CourseSection, SectionGrade (RowVersion) y CommunityReport.
+2. Aislamiento GraphQL: Diagrama 14 documenta con precisión el corte de seguridad HotChocolate.
+3. Impresión A4: Reglas @media print verificadas en build y suites de Vitest.
+================================================================================
+```
+
+---
+
+## 7. PRÓXIMO PASO: REVISIÓN DE GATES DE PREDEFENSA Y CONGELAMIENTO (CF-03 .. CF-06)
 *Entorno:* Local AGY (Antigravity IDE)
-*Puntero Activo:* `docs/project_docs/ROADMAP.md` (Compuertas DF-*, LG-*, CF-*)
+*Puntero Activo:* `docs/project_docs/ROADMAP.md` (Compuertas CF-*, DF-*, LG-*)
 *Objetivo:* Generación y exportación de diagramas arquitectónicos a SVG/PNG, normalización final de la memoria académica integrada y preparación del paquete de defensa.
+
+### Continuidad DF-07 y DF-08 · 9 de noviembre de 2026
+
+```text
+Local AGY · Gemini 3.8 Flash High · razonamiento Nativo. Preparación de la defensa del corte 62338cbd60766cf5cbe48b505cf06f57daa32a5e. Abrir C:/Users/Fran/.codex/visualizations/2026/11/08/01a1b8c1-3efa-7bc2-b17a-202bd56244e3/Defensa-62338cb/Entrega. El cuaderno OneITB23-Paquete-maestro.pdf reúne el guion de 23 minutos, la estructura de 14 diapositivas, 14 preguntas y las fichas de ensayo. OneITB23-Defensa.pptx contiene las notas del orador; OneITB23-Diapositivas.pdf es la copia de proyección sin conexión.
+Preparar las sesiones y datos sintéticos descritos en el cuaderno. Comprobar en el candidato las operaciones de chat y adjuntos antes de elegir la ruta en vivo; usar respaldo identificado si fallan. Ejecutar dos ensayos cronometrados con Francisco, guardar tiempos reales y contingencias y actualizar el roadmap solo con esa evidencia.
+```
+
+### Continuidad diagramática y editorial · GOB-20261109-11 · 9 de noviembre de 2026
+
+```text
+Local AGY · Gemini 3.8 Flash High · Razonamiento Nativo.
+Base inspeccionada: feature/2026-11-01-debugger-cv-builder, SHA 62338cbd60766cf5cbe48b505cf06f57daa32a5e, Spec 220.
+Abrir C:/Users/Fran/.codex/visualizations/2026/11/09/01a1c01e-239e-7112-b3aa-81c8cc4cb2cf/GOB-20261109-11/GOB-20261109-11-entrega.md.
+El paquete contiene 3 DER exhaustivos (39 entidades, 67 relaciones FK), 8 paneles de detalle, diagrama de aislamiento GraphQL, diccionario SQL, SVG/PNG, auditoría OOXML y propuesta CSS revisable. Consultar validacion.json y geometria-svg.json: render digital no equivale a legibilidad en A4.
+Preservar el trabajo previo de defensa y las modificaciones ajenas del prompt. Este despacho no aplica cambios productivos ni modifica el DOCX. Integrar fuentes en docs/academic/04-design-diagrams.md y diagramas_fuente/tecnicos. Corregir inventarios antiguos de 30 entidades a 39 donde corresponda.
+Revisar y aplicar una vez GOB-20261109-11-print.patch tras git apply --check --whitespace=error. Afecta index.css, hooks/useCvAtsPrint.ts y CertificateExport.jsx. Auditar también window.open con noopener,noreferrer: puede devolver null y abortar la escritura del documento; conservar escapeHtml y mostrar feedback si la impresión queda bloqueada.
+En el DOCX solicitado los DER son las figuras 9 y 10, no las figuras técnicas 3, 4 y 5. Usar las anclas del informe, renumeración automática y referencias cruzadas. La única sección tiene márgenes 12,70/12,70/10,02/15,01 mm: contrastar con guía APA de 25,4 mm y cualquier excepción institucional antes de repaginar.
+No reducir las vistas maestras ni los paneles de detalle a una página si resultan menores de 10 pt. Dividir láminas y conservar diccionario completo. Resolver además Cronograma Macro, Calendario Scrum y PERT para DF-04. Exportar DOCX/PDF, revisar escala de grises, figuras, saltos e índices y efectuar copia física para LG-01.
+Ejecutar validaciones proporcionales tras integrar; antes de cualquier commit/push solicitado ejecutar speckit-stabilize real sobre el candidato. No trasladar 281 Vitest/264 xUnit como pruebas ejecutadas en este despacho. Registrar comandos/resultados y actualizar roadmap, DOCUMENTATION_STATUS y una entrada en DEVELOPMENT_LOG solo desde evidencia. No promover DF-03/04/05 ni LG-01 a verificados sin aceptación del artefacto final. No inventar fecha futura de defensa ni hacer commit/push automático.
+```

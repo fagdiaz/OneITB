@@ -15,7 +15,7 @@ export const ATS_PAGE_STYLE = `
   @page { size: A4; margin: 12mm; }
   html, body {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
     -webkit-print-color-adjust: exact;
@@ -29,11 +29,11 @@ export const ATS_PAGE_STYLE = `
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 12mm 14mm !important;
+    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
     background-color: #ffffff !important;
-    color: #111827 !important;
+    color: #000000 !important;
     overflow: visible !important;
     transform: none !important;
     box-sizing: border-box !important;
@@ -42,10 +42,49 @@ export const ATS_PAGE_STYLE = `
   .resume-print-target * {
     font-family: Arial, Helvetica, "Segoe UI", sans-serif !important;
   }
-  .cv-ats-heading { break-after: avoid-page; page-break-after: avoid; }
-  .cv-ats-entry, .cv-ats-contact-item { break-inside: avoid-page; page-break-inside: avoid; }
+
+/* GOB-20261109-11: ATS monocromo; el margen pertenece a @page. */
+@media print {
+  .cv-ats-document.resume-print-target {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    font: 11pt/1.4 Arial, Helvetica, "Segoe UI", sans-serif !important;
+    color: #000 !important;
+    overflow: visible !important;
+    overflow-wrap: anywhere;
+  }
+  .cv-ats-document.resume-print-target * {
+    color: #000 !important;
+    background-color: transparent !important;
+    border-color: #000 !important;
+    text-shadow: none !important;
+  }
+  .cv-ats-document.resume-print-target > div { display: block !important; }
+  .cv-ats-section { break-inside: auto !important; page-break-inside: auto !important; }
+  .cv-ats-entry, .cv-ats-contact-item, .cv-ats-header {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .cv-ats-heading, .cv-ats-header, .cv-ats-entry h3 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
   .cv-ats-section p, .cv-ats-section li { orphans: 3; widows: 3; }
-  .cv-ats-link { color: #0f172a !important; text-decoration: underline !important; }
+  .cv-ats-link { color: #000 !important; text-decoration: underline !important; }
+}
+
+  .cv-ats-heading { break-after: avoid !important; page-break-after: avoid !important; }
+  .cv-ats-entry, .cv-ats-contact-item { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .cv-ats-section p, .cv-ats-section li { orphans: 3; widows: 3; }
+  .cv-ats-link { color: #000000 !important; text-decoration: underline !important; }
 `;
 
 export const useCvAtsPrint = ({ contentRef, documentTitle }: UseCvAtsPrintOptions) => {

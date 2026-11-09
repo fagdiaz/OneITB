@@ -1,0 +1,185 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    User {
+        guid Id PK,FK
+    }
+    Subject {
+        int Id PK
+    }
+    Inquiry {
+        guid Id PK
+        string Content
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        string FileUrl "NULL"
+        bool IsActive
+        bool IsHiddenByModerator
+        datetime ModificationDate
+        string ModificationUser
+        bool PreferAttachmentCover
+        datetime PublishDate
+        int SubjectId FK
+        string Title
+        datetime UpdatedAt "NULL"
+        guid UserId FK
+    }
+    Comment {
+        guid Id PK "AK Id,InquiryId"
+        string Content
+        datetime CreatedAt
+        string FileUrl "NULL"
+        guid InquiryId FK
+        bool IsActive
+        bool IsHiddenByModerator
+        guid ParentCommentId FK "NULL"
+        guid ReplyToUserId FK "NULL"
+        datetime UpdatedAt "NULL"
+        guid UserId FK
+    }
+    Reaction {
+        guid Id PK
+        datetime CreatedAt
+        guid InquiryId FK "UQ InquiryId,UserId"
+        guid UserId FK
+    }
+    CommentReaction {
+        guid Id PK
+        guid CommentId FK "UQ CommentId,UserId"
+        datetime CreatedAt
+        guid UserId FK
+    }
+    SocialAttachment {
+        guid Id PK
+        guid CommentId FK "NULL"
+        string ContentType
+        datetime CreatedAt
+        string FileUrl
+        guid InquiryId FK "NULL"
+        string OriginalFileName
+        long Size
+        int SortOrder
+    }
+    CommunityReport {
+        guid Id PK
+        guid CommentId FK "NULL; FK CommentId,InquiryId"
+        datetime CreatedAt
+        guid InquiryId FK "FK CommentId,InquiryId"
+        string Reason
+        guid ReporterId FK "UQ ReporterId,CommentId; UQ ReporterId,InquiryId"
+        string Status
+    }
+    UserInteraction {
+        guid Id PK
+        datetime CreatedAt
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        datetime ModificationDate
+        string ModificationUser
+        guid ObserverId FK "UQ ObserverId,TargetId,Type"
+        guid TargetId FK
+        string Type
+    }
+    Message {
+        guid Id PK
+        guid ClientMessageId "NULL"
+        string Content "NULL"
+        bool IsRead
+        guid ReceiverId FK
+        guid SenderId FK "UQ SenderId,ClientMessageId"
+        datetime SentAt
+    }
+    PrivateUpload {
+        guid Id PK
+        long ByteSize
+        string ContentType
+        datetime CreatedAtUtc
+        datetime ExpiresAtUtc
+        string FileName
+        bool IsConsumed
+        guid OwnerId FK
+        string StorageKey
+    }
+    MessageAttachment {
+        guid Id PK
+        long ByteSize
+        string ContentType
+        string FileName
+        guid MessageId FK
+        int OrderIndex
+        guid UploadId FK,UK
+    }
+    Notification {
+        guid Id PK
+        string ActionUrl "NULL"
+        int AggregateCount
+        datetime CreatedAt
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        string GroupKey "NULL"
+        bool IsRead
+        string Message
+        datetime ModificationDate
+        string ModificationUser
+        guid RelatedInquiryId FK "NULL"
+        bytes RowVersion "SQL rowversion"
+        string Type
+        datetime UpdatedAt "NULL"
+        guid UserId FK "UQ UserId,GroupKey"
+    }
+    NotificationPreference {
+        guid Id PK
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        bool IsEnabled
+        datetime ModificationDate
+        string ModificationUser
+        string Type
+        datetime UpdatedAt
+        guid UserId FK "UQ UserId,Type"
+    }
+    ModerationAudit {
+        guid Id PK
+        string Action
+        guid ActorUserId FK
+        datetime CreatedAt
+        string Summary
+        guid TargetCommentId FK "NULL"
+        guid TargetInquiryId FK "NULL"
+        guid TargetReportId FK "NULL"
+        guid TargetUserId FK "NULL"
+    }
+
+    Subject ||..o{ Inquiry : "SubjectId"
+    User ||..o{ Inquiry : "UserId"
+    Inquiry ||..o{ Comment : "InquiryId"
+    Comment o|..o{ Comment : "ParentCommentId"
+    User o|..o{ Comment : "ReplyToUserId"
+    User ||..o{ Comment : "UserId"
+    Inquiry ||..o{ Reaction : "InquiryId"
+    User ||..o{ Reaction : "UserId"
+    Comment ||..o{ CommentReaction : "CommentId"
+    User ||..o{ CommentReaction : "UserId"
+    Comment o|..o{ SocialAttachment : "CommentId"
+    Inquiry o|..o{ SocialAttachment : "InquiryId"
+    Inquiry ||..o{ CommunityReport : "InquiryId"
+    User ||..o{ CommunityReport : "ReporterId"
+    Comment o|..o{ CommunityReport : "CommentId,InquiryId"
+    User ||..o{ UserInteraction : "ObserverId"
+    User ||..o{ UserInteraction : "TargetId"
+    User ||..o{ Message : "ReceiverId"
+    User ||..o{ Message : "SenderId"
+    User ||..o{ PrivateUpload : "OwnerId"
+    Message ||..o{ MessageAttachment : "MessageId"
+    PrivateUpload ||..o| MessageAttachment : "UploadId"
+    Inquiry o|..o{ Notification : "RelatedInquiryId"
+    User ||..o{ Notification : "UserId"
+    User ||..o{ NotificationPreference : "UserId"
+    User ||..o{ ModerationAudit : "ActorUserId"
+    Comment o|..o{ ModerationAudit : "TargetCommentId"
+    Inquiry o|..o{ ModerationAudit : "TargetInquiryId"
+    CommunityReport o|..o{ ModerationAudit : "TargetReportId"
+    User o|..o{ ModerationAudit : "TargetUserId"

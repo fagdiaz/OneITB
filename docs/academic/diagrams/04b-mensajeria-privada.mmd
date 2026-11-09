@@ -1,0 +1,40 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    User {
+        guid Id PK,FK
+    }
+    Message {
+        guid Id PK
+        guid ClientMessageId "NULL"
+        string Content "NULL"
+        bool IsRead
+        guid ReceiverId FK
+        guid SenderId FK "UQ SenderId,ClientMessageId"
+        datetime SentAt
+    }
+    PrivateUpload {
+        guid Id PK
+        long ByteSize
+        string ContentType
+        datetime CreatedAtUtc
+        datetime ExpiresAtUtc
+        string FileName
+        bool IsConsumed
+        guid OwnerId FK
+        string StorageKey
+    }
+    MessageAttachment {
+        guid Id PK
+        long ByteSize
+        string ContentType
+        string FileName
+        guid MessageId FK
+        int OrderIndex
+        guid UploadId FK,UK
+    }
+
+    User ||..o{ Message : "ReceiverId"
+    User ||..o{ Message : "SenderId"
+    User ||..o{ PrivateUpload : "OwnerId"
+    Message ||..o{ MessageAttachment : "MessageId"
+    PrivateUpload ||..o| MessageAttachment : "UploadId"

@@ -1,0 +1,68 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    Account {
+        guid Id PK
+        datetime CreatedAt
+        string Email UK
+        string ExternalProvider "NULL; UQ ExternalProvider,ExternalTenantId,ExternalSubjectId"
+        string ExternalSubjectId "NULL"
+        string ExternalTenantId "NULL"
+        int FailedLoginAttempts
+        datetime LastExternalLoginAt "NULL"
+        datetime LockoutEnd "NULL"
+        bool MagicLinkEnabled
+        string PasswordHash "NULL"
+    }
+    User {
+        guid Id PK,FK
+        string AvatarUrl "NULL"
+        string Biography "NULL"
+        string Facebook "NULL"
+        string FirstName
+        string Instagram "NULL"
+        bool IsActive
+        bool IsPublicProfile
+        string LastName
+        string LinkedIn "NULL"
+        datetime MutedUntil "NULL"
+        string Phone "NULL"
+        string Role
+    }
+    MagicLink {
+        guid Id PK
+        guid AccountId FK
+        datetime CreatedAt
+        datetime ExpiresAt
+        bool IsUsed
+        string Token
+    }
+    Career {
+        int Id PK
+        string Code
+        bool IsActive
+        string Name UK
+    }
+    UserCareer {
+        guid UserId PK,FK
+        int CareerId PK,FK
+    }
+    Subject {
+        int Id PK
+        int CareerId FK
+        string Code UK
+        bool IsActive
+        string Name UK
+        int Year "NULL"
+    }
+    SubjectPrerequisite {
+        int SubjectId PK,FK
+        int PrerequisiteId PK,FK
+    }
+
+    Account ||--o| User : "Id"
+    Account ||..o{ MagicLink : "AccountId"
+    Career ||--o{ UserCareer : "CareerId"
+    User ||--o{ UserCareer : "UserId"
+    Career ||..o{ Subject : "CareerId"
+    Subject ||--o{ SubjectPrerequisite : "PrerequisiteId"
+    Subject ||--o{ SubjectPrerequisite : "SubjectId"

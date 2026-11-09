@@ -1,0 +1,63 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    User {
+        guid Id PK,FK
+    }
+    UserCvExperience {
+        guid Id PK
+        string Company
+        string Description "NULL"
+        string EndDate "NULL"
+        bool IsHidden
+        string Location "NULL"
+        string Role
+        int SortOrder
+        string StartDate "NULL"
+        guid UserId FK
+    }
+    UserCvEducation {
+        guid Id PK
+        string Degree
+        string Description "NULL"
+        string EndDate "NULL"
+        string Institution
+        bool IsHidden
+        string Location "NULL"
+        int SortOrder
+        string StartDate "NULL"
+        guid UserId FK
+    }
+    UserCvProject {
+        guid Id PK
+        string Description "NULL"
+        string EndDate "NULL"
+        bool IsHidden
+        string Name
+        string Role
+        int SortOrder
+        string StartDate "NULL"
+        string Url "NULL"
+        guid UserId FK
+    }
+    UserCvSkill {
+        guid Id PK
+        bool IsHidden
+        string Level "NULL"
+        string Name
+        int SortOrder
+        guid UserId FK
+    }
+    UserCvLanguage {
+        guid Id PK
+        bool IsHidden
+        string Level "NULL"
+        string Name
+        int SortOrder
+        guid UserId FK
+    }
+
+    User ||..o{ UserCvExperience : "UserId"
+    User ||..o{ UserCvEducation : "UserId"
+    User ||..o{ UserCvProject : "UserId"
+    User ||..o{ UserCvSkill : "UserId"
+    User ||..o{ UserCvLanguage : "UserId"

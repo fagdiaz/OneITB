@@ -1,0 +1,170 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    Account {
+        guid Id PK
+        datetime CreatedAt
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        string Email UK
+        string ExternalProvider "NULL; UQ ExternalProvider,ExternalTenantId,ExternalSubjectId"
+        string ExternalSubjectId "NULL"
+        string ExternalTenantId "NULL"
+        int FailedLoginAttempts
+        datetime LastExternalLoginAt "NULL"
+        datetime LockoutEnd "NULL"
+        bool MagicLinkEnabled
+        datetime ModificationDate
+        string ModificationUser
+        string PasswordHash "NULL"
+    }
+    User {
+        guid Id PK,FK
+        string AvatarUrl "NULL"
+        string Biography "NULL"
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        string Facebook "NULL"
+        string FirstName
+        string Instagram "NULL"
+        bool IsActive
+        bool IsPublicProfile
+        string LastName
+        string LinkedIn "NULL"
+        datetime ModificationDate
+        string ModificationUser
+        datetime MutedUntil "NULL"
+        string Phone "NULL"
+        string Role
+    }
+    MagicLink {
+        guid Id PK
+        guid AccountId FK
+        datetime CreatedAt
+        datetime ExpiresAt
+        bool IsUsed
+        string Token
+    }
+    Career {
+        int Id PK
+        string Code
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        bool IsActive
+        datetime ModificationDate
+        string ModificationUser
+        string Name UK
+    }
+    UserCareer {
+        guid UserId PK,FK
+        int CareerId PK,FK
+    }
+    Subject {
+        int Id PK
+        int CareerId FK
+        string Code UK
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        bool IsActive
+        datetime ModificationDate
+        string ModificationUser
+        string Name UK
+        int Year "NULL"
+    }
+    SubjectPrerequisite {
+        int SubjectId PK,FK
+        int PrerequisiteId PK,FK
+    }
+    UserCvExperience {
+        guid Id PK
+        string Company
+        datetime CreationDate
+        string CreationUser
+        string Description "NULL"
+        bool Disabled
+        string EndDate "NULL"
+        bool IsHidden
+        string Location "NULL"
+        datetime ModificationDate
+        string ModificationUser
+        string Role
+        int SortOrder
+        string StartDate "NULL"
+        guid UserId FK
+    }
+    UserCvEducation {
+        guid Id PK
+        datetime CreationDate
+        string CreationUser
+        string Degree
+        string Description "NULL"
+        bool Disabled
+        string EndDate "NULL"
+        string Institution
+        bool IsHidden
+        string Location "NULL"
+        datetime ModificationDate
+        string ModificationUser
+        int SortOrder
+        string StartDate "NULL"
+        guid UserId FK
+    }
+    UserCvProject {
+        guid Id PK
+        datetime CreationDate
+        string CreationUser
+        string Description "NULL"
+        bool Disabled
+        string EndDate "NULL"
+        bool IsHidden
+        datetime ModificationDate
+        string ModificationUser
+        string Name
+        string Role
+        int SortOrder
+        string StartDate "NULL"
+        string Url "NULL"
+        guid UserId FK
+    }
+    UserCvSkill {
+        guid Id PK
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        bool IsHidden
+        string Level "NULL"
+        datetime ModificationDate
+        string ModificationUser
+        string Name
+        int SortOrder
+        guid UserId FK
+    }
+    UserCvLanguage {
+        guid Id PK
+        datetime CreationDate
+        string CreationUser
+        bool Disabled
+        bool IsHidden
+        string Level "NULL"
+        datetime ModificationDate
+        string ModificationUser
+        string Name
+        int SortOrder
+        guid UserId FK
+    }
+
+    Account ||--o| User : "Id"
+    Account ||..o{ MagicLink : "AccountId"
+    Career ||--o{ UserCareer : "CareerId"
+    User ||--o{ UserCareer : "UserId"
+    Career ||..o{ Subject : "CareerId"
+    Subject ||--o{ SubjectPrerequisite : "PrerequisiteId"
+    Subject ||--o{ SubjectPrerequisite : "SubjectId"
+    User ||..o{ UserCvExperience : "UserId"
+    User ||..o{ UserCvEducation : "UserId"
+    User ||..o{ UserCvProject : "UserId"
+    User ||..o{ UserCvSkill : "UserId"
+    User ||..o{ UserCvLanguage : "UserId"

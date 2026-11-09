@@ -33,6 +33,7 @@ const formatScore = (value) => {
 };
 
 export const CertificateExport = ({ progress, loading, user }) => {
+  const [printError, setPrintError] = React.useState('');
   const items = progress ?? [];
   const approvedCount = items.filter((item) => item.status === 'APPROVED').length;
 
@@ -73,8 +74,13 @@ export const CertificateExport = ({ progress, loading, user }) => {
       </tr>
     `).join('');
 
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
-    if (!printWindow) return;
+    setPrintError('');
+    const printWindow = window.open('about:blank', '_blank');
+    if (!printWindow) {
+      setPrintError('No se pudo abrir la impresión. Habilita las ventanas emergentes e intenta nuevamente.');
+      return;
+    }
+    printWindow.opener = null;
 
     printWindow.document.write(`
       <!doctype html>
@@ -98,7 +104,32 @@ export const CertificateExport = ({ progress, loading, user }) => {
             th { text-align: left; color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
             th, td { border-bottom: 1px solid #e2e8f0; padding: 10px 8px; }
             footer { padding: 18px 34px 30px; color: #64748b; font-size: 11px; }
-            @media print { body { background: white; } main { margin: 0; border: 0; border-radius: 0; width: auto; min-height: auto; } }
+
+            @page { size: A4; margin: 12mm; }
+            @media print {
+              html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+              *, *::before, *::after { box-sizing: border-box; box-shadow: none !important; text-shadow: none !important; }
+              main { width: 100% !important; max-width: 100% !important; min-height: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; overflow: visible !important; }
+              main, main * { color: #000 !important; background-color: transparent !important; font-family: Arial, Helvetica, "Segoe UI", sans-serif !important; border-color: #000 !important; }
+              body { font-size: 11pt; line-height: 1.4; }
+              header, section, footer { padding: 0 !important; }
+              header { border-bottom: 1pt solid #000; padding-bottom: 4mm !important; }
+              section { padding-top: 4mm !important; }
+              footer { padding-top: 4mm !important; }
+              .summary { display: block; margin: 4mm 0; }
+              .card { border: 1px solid #000; border-radius: 0; margin-bottom: 2mm; padding: 2mm; }
+              .eyebrow, .label, th, footer { font-size: 10pt; letter-spacing: normal; }
+              table { width: 100%; table-layout: fixed; font-size: 10pt; }
+              th, td { padding: 2mm; overflow-wrap: anywhere; vertical-align: top; }
+              thead { display: table-header-group; }
+              tbody { break-inside: auto; page-break-inside: auto; }
+              header, footer, .card, tr {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+              }
+              h1, .student, thead { break-after: avoid !important; page-break-after: avoid !important; }
+              p { orphans: 3; widows: 3; }
+            }
           </style>
         </head>
         <body>
@@ -126,7 +157,7 @@ export const CertificateExport = ({ progress, loading, user }) => {
               Documento generado desde OneITB. Para credenciales publicas, utilice los enlaces disponibles en materias aprobadas.
             </footer>
           </main>
-          <script>window.onload = () => { window.print(); window.close(); };</script>
+          <script>window.addEventListener('afterprint', () => window.close(), { once: true }); window.onload = () => window.print();</script>
         </body>
       </html>
     `);
@@ -135,6 +166,7 @@ export const CertificateExport = ({ progress, loading, user }) => {
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+      {printError && <p role="alert" className="mb-3 text-sm text-red-700 dark:text-red-300">{printError}</p>}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-500">Constancias</p>

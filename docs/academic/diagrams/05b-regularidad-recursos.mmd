@@ -1,0 +1,67 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    Career {
+        int Id PK
+    }
+    Subject {
+        int Id PK
+    }
+    User {
+        guid Id PK,FK
+    }
+    AcademicResource {
+        guid Id PK
+        string Category
+        datetime CreatedAt
+        string Description "NULL"
+        string ExternalUrl "NULL"
+        string FileUrl "NULL"
+        bool IsActive
+        string ResourceType
+        int SubjectId FK
+        string Title
+        datetime UpdatedAt "NULL"
+        guid UploaderId FK
+        int Version
+    }
+    AcademicProgress {
+        guid Id PK
+        guid AssignedById FK
+        string Notes "NULL"
+        decimal Score "NULL; decimal(5,2)"
+        string Status
+        int SubjectId FK
+        datetime UpdatedAt
+        guid UserId FK "UQ UserId,SubjectId"
+    }
+    EnrollmentStanding {
+        guid Id PK
+        int CareerId FK
+        datetime CreatedAtUtc
+        datetime RevokedAtUtc "NULL"
+        string Source
+        string SourceReference
+        string Status
+        guid StudentId FK
+        string Term
+        datetime ValidFromUtc
+        datetime ValidUntilUtc
+    }
+    RegularStudentCertificate {
+        guid Id PK
+        string CareerName
+        string FullName
+        datetime IssuedAt
+        guid StandingId FK
+        string Term
+        datetime ValidUntil
+    }
+
+    Subject ||..o{ AcademicResource : "SubjectId"
+    User ||..o{ AcademicResource : "UploaderId"
+    User ||..o{ AcademicProgress : "AssignedById"
+    Subject ||..o{ AcademicProgress : "SubjectId"
+    User ||..o{ AcademicProgress : "UserId"
+    Career ||..o{ EnrollmentStanding : "CareerId"
+    User ||..o{ EnrollmentStanding : "StudentId"
+    EnrollmentStanding ||..o{ RegularStudentCertificate : "StandingId"

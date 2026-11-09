@@ -1,0 +1,342 @@
+{
+  "speech": [
+    [
+      1,
+      "Apertura",
+      "Portada. Mirar a la mesa y señalar el nombre del instituto.",
+      "Buen día. Soy Francisco Díaz, de la Tecnicatura Superior en Análisis de Sistemas del ISFT N.º 197. Presento OneITB23, el proyecto de Práctica Profesionalizante III. Es una red social académica con bolsa de trabajo institucional. Voy a seguir a una estudiante desde una postulación hasta una consulta académica. En ese recorrido hay una pregunta que sirve para evaluar todo el sistema: ¿quién puede ver o cambiar cada dato, y qué comprobación permite sostener esa respuesta? Empecemos por una situación que podría ocurrir en la comunidad."
+    ],
+    [
+      2,
+      "Una postulación concreta",
+      "Mostrar los tres actores del caso. Presentarlos como ejemplo ficticio.",
+      "Una estudiante envía su currículum a una empresa y, unos días después, incorpora una experiencia nueva a su perfil. La empresa vuelve a abrir la postulación. ¿Qué debería encontrar: el currículum de hoy o el que la estudiante eligió enviar? Si el intercambio pasa por archivos sueltos, para responder hay que reconstruir conversaciones y versiones. En una institución, esa ambigüedad también aparece al buscar un recurso de una materia o al decidir a qué comisión corresponde una nota. El problema de diseño es conservar el contexto de cada acción."
+    ],
+    [
+      2,
+      "Objetivos y alcance",
+      "Señalar estudiantes, docentes y empleadores. Indicar qué hará cada uno en la demo.",
+      "El objetivo fue reunir esas interacciones en un espacio institucional con responsabilidades distintas. La estudiante mantiene su perfil, el empleador consulta las postulaciones de su oferta y el docente trabaja con su comisión. La moderación necesita atender una denuncia sin publicar la identidad del denunciante en el muro. Los 117 ítems del alcance están contabilizados en el roadmap. Para explicar qué significa ese avance, voy a mostrar cuatro flujos y, en cada uno, una decisión que se pueda comprobar. Primero veamos por dónde pasa una operación."
+    ],
+    [
+      3,
+      "Del clic al servidor",
+      "Recorrer el diagrama de izquierda a derecha; seguir la consulta de una oferta.",
+      "Al abrir la bolsa de trabajo, React 18 presenta la interfaz y Apollo Client arma la operación GraphQL. Vite 8 interviene en desarrollo y en la construcción del frontend. En el servidor, HotChocolate 14 publica el esquema sobre .NET 8. Un resolver identifica al actor y deriva la regla al servicio correspondiente. Entity Framework Core consulta SQL Server 2022. El resultado vuelve a la pantalla con la forma solicitada. Esta separación permite cambiar la presentación sin trasladar al navegador la decisión de quién puede leer una candidatura."
+    ],
+    [
+      3,
+      "Dos transportes para un contrato",
+      "Señalar /graphql sobre HTTP y WebSocket; después las rutas binarias.",
+      "Una consulta o una mutación viaja normalmente por HTTP a barra graphql. Una suscripción usa WebSocket para recibir un evento cuando ocurre, por ejemplo un mensaje dirigido al usuario conectado. Los archivos siguen otro recorrido: se cargan mediante un POST autenticado y se descargan desde un endpoint que comprueba los participantes. Así el contenido binario puede transmitirse por rangos. En pantalla ven tres responsabilidades diferentes: consultar datos, comunicar un cambio y transferir bytes. En la demostración del chat se van a encontrar en una misma acción."
+    ],
+    [
+      4,
+      "Contratos y persistencia",
+      "Seguir la relación comisión → inscripción → nota en la diapositiva.",
+      "Tomemos una calificación. Un rol docente permite entrar en la función; después el servicio comprueba la comisión asignada y la matrícula del alumno. La base conserva una clave que enlaza la nota con esa matrícula. Si otra vía intenta guardar una combinación imposible, la base aporta una segunda defensa. Usamos claves foráneas explícitas y borrado restringido donde corresponde preservar historia. En el dominio social, las bajas lógicas permiten retirar contenido conservando las referencias necesarias para moderar. La regla de negocio y la restricción relacional responden a fallos distintos."
+    ],
+    [
+      4,
+      "Qué aporta HotChocolate",
+      "Mostrar la diferencia entre entidad EF y campos seleccionables; anticipar la prueba negativa.",
+      "Elegimos HotChocolate porque permite expresar en .NET un esquema tipado para consultas, mutaciones y suscripciones. Ese esquema es un contrato que también se puede inspeccionar y probar. La contrapartida es que una relación útil dentro de la base puede resultar excesiva para una consulta pública. En el catálogo, por ejemplo, una materia necesita nombre e identificador. Si el mismo tipo deja navegar hasta las comisiones, el cliente puede intentar una selección que nuestra interfaz jamás dibuja. Esa observación nos lleva a distinguir identidad, permisos y campos expuestos."
+    ],
+    [
+      5,
+      "Quién inicia la sesión",
+      "Mostrar flujo local y flujo Microsoft; no proyectar credenciales ni tokens.",
+      "Con una cuenta local, el servidor verifica la contraseña mediante BCrypt. La base conserva el hash y su configuración de costo. Después del acceso, la aplicación usa un JWT firmado con identidad, rol y vencimiento. En el acceso institucional, Microsoft Entra usa redirección y el flujo de código de autorización con PKCE. El verificador liga el canje de ese código al cliente que inició el flujo. Al volver por la ruta de callback, el backend valida la identidad del proveedor antes de emitir la sesión local. La aceptación con un tenant institucional real es una comprobación externa."
+    ],
+    [
+      5,
+      "Rol y pertenencia",
+      "Señalar los seis roles. Detenerse en Profesor y Empleador.",
+      "Los roles persistidos son Administrador, Moderador, Profesor, Estudiante, Egresado y Empleador. El rol establece qué clase de operación puede intentarse. La pertenencia define sobre qué objeto puede ejercerse. Un empleador autenticado puede consultar la postulación de su propia oferta; conocer el identificador de una postulación ajena no le otorga ese derecho. El servidor toma la identidad del token validado. Los botones que ocultamos en React ayudan a navegar, pero el control que importa sigue funcionando cuando alguien construye su propia petición."
+    ],
+    [
+      6,
+      "Una consulta que el esquema debe rechazar",
+      "Mostrar la selección de subjects y el campo sections excluido en Startup.cs.",
+      "La auditoría probó precisamente esa situación. Desde el catálogo público se podía seguir una relación hasta datos que pertenecían a otros usuarios. En el corte que presento se excluyeron campos concretos: entre ellos, las comisiones y el progreso de la materia, el vínculo de carrera a usuarios y los reportes completos de publicaciones y comentarios. Si el cliente solicita uno de esos campos excluidos, el esquema debe rechazar la selección. El padrón autorizado tiene su propia operación. Veamos ahora cómo cambia el dato que recibe cada persona en la bolsa de trabajo."
+    ],
+    [
+      7,
+      "Confirmar un CV",
+      "Perfil Estudiante en /empleos. Abrir la oferta preparada y la vista previa.",
+      "Estoy en la cuenta de la estudiante. Voy a abrir la oferta y revisar la vista previa antes de confirmar. Fíjense en el resumen y en la experiencia visible; son los datos que la empresa recibiría. El servidor calcula una versión de esa proyección. La confirmación envía la versión revisada, de modo que, si el perfil cambió entre ambas acciones, la estudiante debe volver a comprobar qué está entregando. Ahora confirmo la postulación y paso al perfil de empleador que ya está abierto en otra sesión."
+    ],
+    [
+      7,
+      "Ver qué quedó congelado",
+      "En /empleos/mis-ofertas abrir la candidatura. Comparar el texto con /profile/edit y la vista ATS.",
+      "En la candidatura se lee el texto que se presentó. Para hacer visible la diferencia, comparo una captura histórica preparada con el perfil que después fue editado. La empresa sigue viendo el texto original. La fila JobApplicationCv está vinculada a esa candidatura y conserva un JSON con versión de esquema. El formato ATS organiza las secciones para lectura e impresión. La garantía histórica corresponde a los datos entregados; el diseño visual puede evolucionar. Si una postulación antigua carece de captura, no reconstruimos retrospectivamente lo que la persona habría enviado."
+    ],
+    [
+      8,
+      "Recibir un mensaje",
+      "Mostrar /chat en dos perfiles aislados. Enviar texto; si el cliente falla, activar el respaldo previsto.",
+      "A la izquierda está quien envía y a la derecha quien recibe. Voy a enviar un mensaje con una referencia que ambos puedan reconocer. La persistencia conserva el mensaje y la suscripción avisa al interlocutor. El identificador generado por el cliente permite reconocer un reintento; la interfaz también debe evitar duplicar lo que ya mostró. Si se interrumpe la conexión, necesitamos recuperar la conversación desde el servidor. Para el archivo hay una comprobación adicional que podemos observar sin exponer el contenido de una sesión."
+    ],
+    [
+      8,
+      "Descargar un intervalo",
+      "Abrir respuesta preparada para Range bytes=2-4. Mostrar solo estado, Content-Range y Cache-Control.",
+      "El archivo privado tiene un propietario y se vincula al mensaje. La descarga identifica al solicitante y comprueba si es remitente o destinatario antes de abrir el archivo. En este ejemplo sintético el contenido tiene diez bytes. Pedimos del dos al cuatro: el resultado esperado es 206, tres bytes, y el encabezado indica cuál fue el intervalo servido. Una identidad ajena recibe una denegación. La directiva de caché pide que el contenido no se almacene. Pasemos de una conversación entre dos personas a una intervención que necesita moderación."
+    ],
+    [
+      9,
+      "Denunciar un comentario",
+      "En /feed abrir el comentario preparado, elegir Reportar y confirmar un motivo sintético.",
+      "Voy a señalar el comentario específico y abrir la opción para reportarlo. El cliente envía el identificador del comentario y el motivo. El backend verifica que sea visible para el denunciante y determina la publicación desde la fila del comentario. Esto evita confiar en que el usuario haya enviado correctamente la publicación asociada. Confirmo el reporte. La relación compuesta exige que el comentario y la publicación coincidan también en la base. La denuncia queda referida al contenido exacto sobre el que debe decidir moderación."
+    ],
+    [
+      9,
+      "Deduplicar en la base",
+      "Repetir el envío controlado o mostrar el recibo preparado. Señalar ambos índices filtrados.",
+      "Si dos envíos coinciden, comprobar primero si existe un reporte no alcanza: ambos podrían leer que todavía no hay ninguno. SQL Server aplica un índice único sobre los reportes pendientes del mismo denunciante y comentario. Para las publicaciones hay otro índice, con un filtro diferente. Así distinguimos reportar el comentario de reportar la publicación que lo contiene. Una vez resuelto el pendiente, cambia la condición del índice. Esa misma idea de representar con precisión el objeto de una acción aparece en el último recorrido, la carga de notas."
+    ],
+    [
+      10,
+      "Calificar con versión",
+      "Mostrar sectionRoster autenticado. Ejecutar saveSectionGrade con versión actual y repetir con la anterior.",
+      "Aquí el docente tiene asignada una comisión y el alumno está inscripto. Uso el padrón autorizado y leo la versión de una calificación existente. Guardo un cambio con esa versión y repito la operación con la anterior. En el segundo intento esperamos un conflicto y que la primera nota se conserve. Si omitimos la versión al actualizar, el servicio también rechaza la petición. SQL Server genera una nueva rowversion cuando se modifica la fila. Una cursada en otro período tiene otra comisión y conserva su propio intento."
+    ],
+    [
+      10,
+      "Acreditar regularidad",
+      "Cambiar a sesión Estudiante. Ejecutar la consulta de constancia preparada y señalar período y vigencia.",
+      "La regularidad responde a otra pregunta. Estar asociado a una carrera o haber aprobado una asignatura no prueba que el alumno sea regular hoy. Para emitir la constancia, el servicio consulta la acreditación institucional del estudiante en esa carrera: estado regular, intervalo vigente y ausencia de revocación. En la respuesta señalo el período y la fecha de vigencia. En la demo usamos una acreditación sintética identificada como tal. Para vincularlo a registros institucionales reales habría que aceptar el origen de esos datos con el instituto. ¿Qué evidencia respalda estos recorridos?"
+    ],
+    [
+      11,
+      "Qué midieron las pruebas",
+      "Mostrar resultados registrados y SHA. Leer denominadores por separado.",
+      "El corte de referencia es seis dos tres tres ocho ce be. En el registro del proyecto aparecen 281 pruebas frontend con Vitest y 264 backend con xUnit aprobadas. Son suites distintas: una observa comportamiento del cliente y otra verifica servicios y contratos. Además se comprobó la correspondencia entre el modelo de Entity Framework y sus migraciones. Para reproducir el resultado importa conocer el commit, el comando y el entorno. Una prueba verde de un servicio tampoco demuestra por sí sola que una consulta pública no tenga un camino alternativo."
+    ],
+    [
+      11,
+      "Del fallo al caso negativo",
+      "Señalar el caso de prueba de actualización sin versión. Distinguir modelo de base aplicada.",
+      "La regresión que mejor explica ese corte es una prueba negativa. Se parte de una nota existente y se intenta modificarla sin proporcionar su versión. El resultado esperado es rechazo y conservación de la nota. Si un cambio futuro vuelve a permitirlo, esa prueba debe fallar. Para demostrar la carrera del motor se necesitan además dos contextos sobre SQL Server. Del mismo modo, que el modelo coincida con las migraciones es distinto de haber aplicado esas migraciones en cada base de destino. Lo segundo se comprueba contra la base concreta."
+    ],
+    [
+      12,
+      "Cómo se gobernó la verificación",
+      "Recorrer propuesta, contraste y ejecución local. Marcar el comando del preflight.",
+      "Durante el cierre usamos revisiones especializadas. Arquitectura buscó caminos de acceso alternativos; hardening diseñó situaciones adversariales y el implementador preparó cambios acotados. La integración y la ejecución se concentraron en el entorno local. El preflight de estabilización reúne compilación, pruebas y comprobaciones del corte; una simulación no puede otorgar certificación oficial. El valor de este reparto estuvo en descubrir un error concreto, reproducirlo y convertirlo en una regresión. La responsabilidad de aceptar el resultado y autorizar una publicación sigue siendo humana."
+    ],
+    [
+      13,
+      "Qué aprendí",
+      "Volver al ejemplo del CV y a la versión de la nota. Hacer una pausa antes del cierre.",
+      "La decisión más instructiva fue reconocer que una entidad tiene significados distintos según quién la consulta y en qué momento. Para una estudiante, su perfil es editable. Para el empleador, la postulación debe conservar lo que recibió. Para dos docentes, la versión que cada uno leyó importa tanto como el valor que quieren guardar. En el catálogo aprendí que publicar un campo también es una decisión de seguridad. Por eso las preguntas sobre quién, cuándo y con qué autorización resultaron tan importantes como la elección de tecnologías."
+    ],
+    [
+      14,
+      "Cierre e invitación",
+      "Mostrar tesis final y tres evidencias. Dejar la diapositiva visible durante las preguntas.",
+      "OneITB23 integra la actividad académica y laboral bajo reglas observables. Hoy vimos una candidatura que conserva su historia, un archivo accesible para los participantes de un mensaje, una denuncia que identifica el comentario correcto y una calificación que exige la versión leída. El alcance funcional está cubierto y el corte tiene evidencia automatizada. La aceptación con servicios institucionales reales y la preparación operativa para uso público siguen teniendo sus propios criterios. Con esto cierro la exposición. Muchas gracias; quedo a disposición para profundizar en cualquiera de estas decisiones."
+    ]
+  ],
+  "slides": [
+    [
+      "OneITB23",
+      "Red social académica y bolsa de trabajo institucional.",
+      "Práctica Profesionalizante III|ISFT N.º 197 · Análisis de Sistemas",
+      "Identidad institucional sobre fondo oscuro, con el nombre del proyecto en primer plano.",
+      "Abrir con la estudiante y el CV que cambia. Evitar enumerar tecnologías antes de presentar el problema.",
+      "docs/project_docs/scope-and-requirements.md §1",
+      ""
+    ],
+    [
+      "Información dispersa",
+      "Una comunidad necesita saber qué ocurrió, quién participó y qué se conserva.",
+      "Consultas vinculadas a materia|Postulaciones con historia|Moderación con un destino preciso",
+      "Secuencia de una estudiante que edita su perfil después de enviar una candidatura.",
+      "Presentar la situación como ejemplo ficticio; no atribuir encuestas, adopción o ahorros al instituto.",
+      "docs/project_docs/scope-and-requirements.md §1",
+      "Caso propuesto|Perfil actualizado|Postulación anterior"
+    ],
+    [
+      "Arquitectura desacoplada",
+      "La interfaz pide una operación; el servicio decide y SQL Server conserva el resultado.",
+      "React 18 · Apollo · Vite 8|.NET 8 · HotChocolate 14|EF Core 8 · SQL Server 2022",
+      "Diagrama editable cliente → API → datos; indicar HTTP, WebSocket y transferencia de archivos.",
+      "Seguir una consulta de oferta de izquierda a derecha y volver con la respuesta. Vite arma el cliente; no es el backend.",
+      "docs/project_docs/architecture-and-design.md; API Graphql/OneITB/Startup.cs",
+      "Cliente web|API /graphql|SQL Server"
+    ],
+    [
+      "Reglas de dominio",
+      "Cada calificación pertenece a una inscripción concreta.",
+      "Comisión y período|Inscripción del alumno|Nota y versión",
+      "Relación de tres entidades con la clave de la inscripción destacada.",
+      "Explicar cómo colaboran validación en servicio y FK en base; reservar el conflicto para la demo.",
+      "API Graphql/Data/OneItbContext.cs · SectionGrade",
+      "Comisión|Inscripción|Calificación"
+    ],
+    [
+      "Identidad y autorización",
+      "El rol y la relación con el objeto determinan la operación permitida.",
+      "Cuenta local · BCrypt y JWT|Microsoft Entra · código y PKCE|Control de rol y pertenencia",
+      "Dos entradas de identidad que llegan a la sesión local. Roles agrupados por tarea.",
+      "Nombrar los seis roles; dar el ejemplo de dos empleadores. No iniciar un login dependiente del tenant durante la exposición.",
+      "API Graphql/Services/Auth/BcryptPasswordHasher.cs; MicrosoftEntraTokenValidator.cs; docs/audit/RUNBOOK_DEV.md §Entra",
+      "Administrador · Moderador|Profesor · Estudiante|Egresado · Empleador"
+    ],
+    [
+      "El límite del catálogo público",
+      "Una relación de EF puede existir y quedar fuera del esquema público.",
+      "Career.userCareers excluido|Subject.sections excluido|Padrón por operación autenticada",
+      "Comparación visual de una selección de catálogo permitida con una selección excluida.",
+      "Señalar la corrección específica del corte. No ampliar la afirmación a todas las rutas del grafo.",
+      "API Graphql/OneITB/Startup.cs · descriptores Career y Subject",
+      "subjects { id name }|subjects { sections { id } }|Selección excluida"
+    ],
+    [
+      "CV entregado a una oferta",
+      "El empleador vuelve a leer el contenido confirmado al postular.",
+      "Vista previa ATS|Versión de la proyección|JobApplicationCv por candidatura",
+      "Ejemplo de dos textos de resumen profesional identificados como datos de demo.",
+      "Mostrar la vista previa, la candidatura y una edición posterior preparada. Si falla la UI, usar el ejemplo y el test de snapshot.",
+      "API Graphql/Services/Jobs/JobService.ApplicationCv.cs; CapturedApplicationCv.cs",
+      "Perfil al postular: SQL|CV entregado: SQL|Perfil posterior: SQL y C#"
+    ],
+    [
+      "Mensajes y adjuntos privados",
+      "Un evento avisa al destinatario; el endpoint autoriza cada descarga.",
+      "WebSocket por identidad|Archivo fuera de wwwroot|Range autorizado · HTTP 206",
+      "Cabeceras y tres bytes de un ejemplo sintético; la URL no contiene la ruta de disco.",
+      "Mostrar dos sesiones. Si el cliente no valida la operación, pasar a la prueba MVC y describir con precisión lo ejecutado.",
+      "API Graphql/OneITB/Controllers/MessageAttachmentsController.cs; FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js",
+      "Range: bytes=2-4|206 · bytes 2-4/10|Cuerpo: 234"
+    ],
+    [
+      "Reporte de un comentario",
+      "La base exige que el comentario pertenezca a la publicación indicada.",
+      "El cliente envía commentId|El servidor resuelve inquiryId|Un pendiente por denunciante y destino",
+      "Diagrama de comentario, publicación y reporte con FK compuesta.",
+      "Mostrar dos envíos al mismo comentario; distinguir el estado pendiente y los dos tipos de destino.",
+      "API Graphql/Services/Social/SocialService.cs · ReportCommentAsync; 20261109001432_AddCommentReportingAndFilteredIndexes.cs",
+      "Comentario C|Publicación P|Reporte (C, P)"
+    ],
+    [
+      "Comisiones y regularidad",
+      "La nota necesita versión; la constancia necesita acreditación vigente.",
+      "Cátedra y matrícula verificadas|RowVersion para editar|Vigencia institucional al emitir",
+      "Dos editores parten de v1; el primero crea v2, el otro recibe conflicto.",
+      "Usar operaciones GraphQL preparadas si falta la vista de comisiones. Contrastar nota de materia y regularidad en carrera.",
+      "API Graphql/Services/Academic/AcademicService.cs · SaveSectionGradeAsync, IssueRegularStudentCertificateAsync",
+      "Ambos leen v1|A guarda → v2|B envía v1 → conflicto"
+    ],
+    [
+      "Evidencia del corte",
+      "Las cifras pertenecen a suites y comprobaciones diferentes.",
+      "281/281 Vitest|264/264 xUnit|0 cambios de modelo pendientes",
+      "Tres cifras grandes con sus unidades y el SHA de referencia.",
+      "Mostrar el caso UpdatingExistingGradeWithoutExpectedVersionThrowsConcurrencyConflict y explicar su resultado esperado.",
+      "docs/audit/DEVELOPMENT_LOG.md · entrada 2026-11-09; AcademicSectionGradeTests.cs",
+      "281 / 281|264 / 264|0"
+    ],
+    [
+      "Auditoría y estabilización",
+      "Cada hallazgo debe llegar a una comprobación ejecutable.",
+      "Auditar el contrato y el código|Probar casos negativos|Validar en el corte identificado",
+      "Flujo del hallazgo a la regresión y al preflight local.",
+      "Explicar la función de los canales de arquitectura, pruebas e implementación; el entorno local integra y registra.",
+      "docs/project_docs/MULTI_AGENT_FRAMEWORK.md; .agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1",
+      "Auditoría|Regresión|Preflight"
+    ],
+    [
+      "Lecciones de ingeniería",
+      "La identidad del actor, la versión y el tiempo forman parte del dato.",
+      "Quién puede leerlo|Qué aceptó en ese momento|Con qué versión se editó",
+      "Tres ejemplos breves que remiten a la demo, sin abrir nuevas pantallas.",
+      "Volver al caso inicial y explicar qué decisión cambió a partir de una prueba adversarial.",
+      "API Graphql/Services/Jobs/JobService.ApplicationCv.cs; API Graphql/Services/Academic/AcademicService.cs",
+      "CV entregado|Adjunto privado|Nota versionada"
+    ],
+    [
+      "Balance del proyecto",
+      "117 de 117 ítems de alcance funcional contabilizados.",
+      "Cuatro recorridos institucionales|Evidencia asociada a 62338cb|Aceptación externa por entorno",
+      "Cierre tipográfico con el indicador de alcance y el nombre institucional.",
+      "Concluir en el minuto 23. Mantener visible esta lámina para las preguntas.",
+      "docs/project_docs/ROADMAP.md §1 y §6",
+      ""
+    ]
+  ],
+  "qa": [
+    [
+      "¿Qué pasa si el socket se corta justo después de enviar?",
+      "La recepción de un evento y la escritura en SQL son hechos distintos. Al reconectar, Apollo debe reconciliar la conversación persistida y las identidades del mensaje para evitar duplicados. El cliente WS usa conexión perezosa, parámetros de identidad al conectar y hasta ocho reintentos. Verificaría el caso con dos perfiles, una desconexión y el historial después de recargar.",
+      "FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js; API Graphql/Services/Messaging/MessagingService.cs"
+    ],
+    [
+      "¿Cómo evita Apollo que la siguiente cuenta vea la caché de la anterior?",
+      "El cierre de sesión debe detener los transportes y las suscripciones asociados a esa identidad y purgar el estado de Apollo. El cliente mantiene una época de sesión para distinguir operaciones rezagadas. Probaría logout en una pestaña, reemplazo de cuenta en otra y llegada tardía de un evento antiguo. En el servidor también debe comprobarse a qué usuario corresponde el tópico.",
+      "FrontEnd/OneItb-FE/src/data/graphql/GraphqlProvider.js; src/context/sessionTabs.adversarial.test.jsx"
+    ],
+    [
+      "¿Por qué eligieron HotChocolate si GraphQL amplía la superficie de ataque?",
+      "Nos dio esquema tipado, integración con servicios .NET y suscripciones en el mismo contrato. La flexibilidad exige decidir qué campos publicar y limitar profundidad, costo y paginación. Una autorización en sectionRoster no protegía automáticamente una navegación desde subjects. El corte excluye esa navegación del tipo público. Probaría la consulta positiva del catálogo y la selección anónima indebida contra el esquema efectivo.",
+      "API Graphql/OneITB/Startup.cs; API Graphql/OneITB/GraphQL/Query.cs"
+    ],
+    [
+      "¿Qué impide que alguien cambie el usuario en el cuerpo de la petición?",
+      "El actor de las operaciones protegidas se toma del claim del JWT validado. El ID de un alumno o una oferta puede ser un destino legítimo, pero el servicio debe comprobar la relación con el actor. Daría como ejemplo un profesor auténtico que intenta calificar una comisión ajena: su rol es correcto y la asignación es incorrecta. Espero denegación y que no cambie la fila.",
+      "API Graphql/OneITB/GraphQL/Mutation.cs; AcademicService.cs; AcademicSectionGradeTests.cs"
+    ],
+    [
+      "Si edito mi CV o la plantilla mañana, ¿qué verá el empleador?",
+      "La proyección visible se serializa como JSON con versión de esquema. Al confirmar se contrasta el hash de la vista previa y se guarda una captura asociada a la candidatura. El empleador autorizado lee esa captura, de modo que una edición posterior del perfil no cambia sus datos. Preservamos contenido, no un PDF idéntico píxel por píxel. Una postulación histórica sin captura mantiene ese estado.",
+      "API Graphql/Services/Jobs/CapturedApplicationCv.cs; JobService.ApplicationCv.cs; JobApplicationCvTests.cs"
+    ],
+    [
+      "¿Qué significan DeleteBehavior.Restrict y el borrado lógico?",
+      "Restrict impide borrar una fila principal mientras existan referencias que la necesitan; por ejemplo, conservar una nota exige conservar la inscripción a la que pertenece. El borrado lógico cumple otra función: retira contenido de las consultas normales manteniendo su fila para trazabilidad. Aplicar uno no sustituye al otro. Las claves foráneas deben ser explícitas para poder inspeccionarlas en la migración.",
+      "API Graphql/Data/OneItbContext.cs; 20261109005522_AddAcademicSectionsAndRegularity.cs"
+    ],
+    [
+      "¿Por qué dos índices filtrados para las denuncias?",
+      "Un reporte de publicación tiene CommentId nulo y uno de comentario lo tiene definido. Cada índice exige unicidad por denunciante y por su propio destino mientras el estado sea Pending. La FK adicional (CommentId, InquiryId) exige que la pareja exista en Comments. El filtro controla duplicados; la FK controla coherencia. Para probar la carrera de verdad abriría dos contextos sobre SQL Server.",
+      "API Graphql/Data/Migrations/20261109001432_AddCommentReportingAndFilteredIndexes.cs; SocialService.cs"
+    ],
+    [
+      "¿Para qué sirve ExpectedVersion si SQL Server ya genera RowVersion?",
+      "El motor conoce la versión de la fila. Solo el cliente sabe qué versión vio el docente antes de editar. En un alta todavía no hay versión previa. En una actualización el servicio exige esa versión, compara con la actual y EF protege la escritura concurrente. Si cambió, corresponde releer y decidir; reintentar automáticamente podría borrar la corrección del otro docente.",
+      "API Graphql/Services/Academic/AcademicService.cs; AcademicSectionGradeTests.cs"
+    ],
+    [
+      "¿Una cursada aprobada acredita regularidad en la institución?",
+      "No. La nota identifica una materia y una inscripción por período. Para emitir regularidad se consulta EnrollmentStanding del estudiante y carrera, con estado, inicio, fin y revocación. La fuente institucional y sus reglas deben aceptarse antes de operar con padrones reales. Una declaración de carrera o datos sintéticos permiten probar flujos, pero no emitir una constancia institucional real.",
+      "API Graphql/Services/Academic/AcademicService.cs · IssueRegularStudentCertificateAsync; AcademicSectionGradeTests.cs"
+    ],
+    [
+      "¿Qué verifica Entra y qué verifica OneITB23?",
+      "Entra autentica la cuenta institucional. MSAL usa código de autorización con PKCE y la ruta /auth/microsoft/callback. El backend verifica firma, emisor, audiencia y vigencia del token externo; usa identificadores institucionales para vincular la identidad y emite la sesión de la aplicación. OneITB23 decide el rol y la autorización sobre datos. Las pruebas del validador son reproducibles sin proyectar secretos; el tenant real necesita aceptación externa.",
+      "API Graphql/Services/Auth/MicrosoftEntraTokenValidator.cs; MicrosoftEntraTokenValidatorTests.cs; docs/audit/RUNBOOK_DEV.md"
+    ],
+    [
+      "¿Qué demuestra un 206 y qué pasa si un tercero conoce la URL?",
+      "206 indica que el servidor entregó solo el intervalo válido de una representación. La seguridad proviene de validar la identidad y comprobar que el solicitante sea remitente o destinatario antes de abrir el archivo. Un tercero identificado recibe 403 para un adjunto existente y una ausencia produce 404. Cache-Control limita almacenamiento por cachés; un participante autorizado aún puede guardar los bytes que recibe.",
+      "API Graphql/OneITB/Controllers/MessageAttachmentsController.cs; PrivateMessageAttachmentTests.cs"
+    ],
+    [
+      "¿Los tests verdes y cero migraciones pendientes certifican producción?",
+      "Las suites respaldan las aserciones que ejecutan. La verificación de drift compara el modelo EF con su snapshot. Para saber si una base específica está al día hay que consultar sus migraciones aplicadas. A esto se suman pruebas con SQL Server, dos sesiones, aceptación del tenant e infraestructura del destino. El SHA identifica el conjunto de código del que estamos hablando.",
+      "docs/audit/DEVELOPMENT_LOG.md · 09/11; docs/project_docs/ROADMAP.md · CF-03 a CF-06 y PR-*"
+    ],
+    [
+      "¿Qué aportó el proceso multiagente sin delegar el juicio técnico?",
+      "Arquitectura propuso una forma de atacar las consultas públicas, hardening definió pruebas negativas y la integración local contrastó código y resultados. El valor está en la evidencia que otro puede repetir. El preflight rechaza como certificación una ejecución simulada; un commit y un push requieren decisión del titular. Un dictamen sobre gobernanza no certifica por sí mismo cada flujo del producto.",
+      "docs/project_docs/MULTI_AGENT_FRAMEWORK.md; .agents/skills/speckit-stabilize/SKILL.md"
+    ],
+    [
+      "¿Qué haría antes de habilitar un piloto abierto?",
+      "Validaría en el entorno de destino el tenant Microsoft, permisos de archivos, TLS, observabilidad y tratamiento de malware. Repetiría la demo con dos identidades aisladas y dejaría evidencia de los errores y del cierre de sesión. Para uso académico controlado se delimitan datos y participantes; para operación institucional permanente hace falta acordar responsables, monitoreo y recuperación.",
+      "docs/project_docs/ROADMAP.md · PR-*; docs/audit/FINAL_AUDIT_REPORT.md; docs/audit/RUNBOOK_DEV.md"
+    ]
+  ]
+}

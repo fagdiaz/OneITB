@@ -1,0 +1,64 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    Comment {
+        guid Id PK "AK Id,InquiryId"
+    }
+    CommunityReport {
+        guid Id PK
+    }
+    Inquiry {
+        guid Id PK
+    }
+    User {
+        guid Id PK,FK
+    }
+    UserInteraction {
+        guid Id PK
+        datetime CreatedAt
+        guid ObserverId FK "UQ ObserverId,TargetId,Type"
+        guid TargetId FK
+        string Type
+    }
+    Notification {
+        guid Id PK
+        string ActionUrl "NULL"
+        int AggregateCount
+        datetime CreatedAt
+        string GroupKey "NULL"
+        bool IsRead
+        string Message
+        guid RelatedInquiryId FK "NULL"
+        bytes RowVersion "SQL rowversion"
+        string Type
+        datetime UpdatedAt "NULL"
+        guid UserId FK "UQ UserId,GroupKey"
+    }
+    NotificationPreference {
+        guid Id PK
+        bool IsEnabled
+        string Type
+        datetime UpdatedAt
+        guid UserId FK "UQ UserId,Type"
+    }
+    ModerationAudit {
+        guid Id PK
+        string Action
+        guid ActorUserId FK
+        datetime CreatedAt
+        string Summary
+        guid TargetCommentId FK "NULL"
+        guid TargetInquiryId FK "NULL"
+        guid TargetReportId FK "NULL"
+        guid TargetUserId FK "NULL"
+    }
+
+    User ||..o{ UserInteraction : "ObserverId"
+    User ||..o{ UserInteraction : "TargetId"
+    Inquiry o|..o{ Notification : "RelatedInquiryId"
+    User ||..o{ Notification : "UserId"
+    User ||..o{ NotificationPreference : "UserId"
+    User ||..o{ ModerationAudit : "ActorUserId"
+    Comment o|..o{ ModerationAudit : "TargetCommentId"
+    Inquiry o|..o{ ModerationAudit : "TargetInquiryId"
+    CommunityReport o|..o{ ModerationAudit : "TargetReportId"
+    User o|..o{ ModerationAudit : "TargetUserId"

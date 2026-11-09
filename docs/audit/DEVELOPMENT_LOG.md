@@ -19,6 +19,31 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-09] - Integration of UI/UX Deliverables, Updated ERDs and Print Media Hardening (GOB-20261109-11) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Integración oficial de los entregables del Agente UI/UX y Editorial (6.1 Sol). Incorporación de los diagramas DER Crow's Foot actualizados en formato Mermaid (`.mmd`), vectoriales (`.svg`) y rasterizados (`.png`) con las 39 entidades y 67 relaciones post-Spec 220, nuevo diagrama de aislamiento de arquitectura GraphQL, y endurecimiento de las hojas de estilo de impresión `@media print` A4 para CV ATS y constancias académicas.
+
+### Tareas y Artefactos Integrados
+
+1. **Modelado y Diagramación DER Crow's Foot (DF-03 & DF-04):**
+   - Actualización de los tres subdominios en `docs/academic/diagrams/`:
+     * DER 3 (Identidad, Perfil y Catálogo): con sub-vistas `03a` y `03b`.
+     * DER 4 (Social, Mensajería y Moderación): incorporación de `PrivateUpload`, `MessageAttachment` y `CommunityReport` (con clave foránea compuesta `(CommentId, InquiryId)`).
+     * DER 5 (Académico, Empleo y Auditoría): incorporación de `JobApplicationCv` (1:1), `CourseSection`, `SectionInstructor`, `SectionEnrollment`, `SectionGrade` (con `RowVersion`), `EnrollmentStanding` y `RegularStudentCertificate`.
+   - Inclusión del Diagrama 14 (`14-aislamiento-graphql`) documentando la barrera de seguridad de HotChocolate `.Ignore()`.
+
+2. **Endurecimiento de Impresión A4 Editorial y Corrección Chrome (DF-05):**
+   - Parche `GOB-20261109-11-print.patch` integrado:
+     * `index.css` y `useCvAtsPrint.ts`: soporte monocromo ATS, eliminación de padding redundante respecto al margen `@page { margin: 12mm; }`, y reglas `break-inside: avoid !important`.
+     * `CertificateExport.jsx`: solución al fallo de Chrome con `noopener,noreferrer` que devolvía `null` (reemplazado por `window.open('about:blank', '_blank')` y `opener = null`), captura de evento `afterprint` para cierre seguro y alerta de ventanas emergentes bloqueadas.
+
+3. **Métricas de Validación:**
+   - Frontend Vitest: 281/281 PASS en 65 suites (0 fallos).
+   - Backend xUnit: 264/264 PASS (0 fallos).
+   - Frontend Linter: 0 errores y 0 advertencias en 211 archivos.
+   - Handoff Ledger: `ACCEPTED_AND_APPLIED` registrado en `docs/audit/handoff_ledger.json`.
+
+---
 ## [2026-11-09] - Post-Spec 220 Security Hardening & Concurrency Remediation - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Remediación inmediata y blindaje post-auditoría adversarial (GOB-20261108-10) sobre el corte Spec 220. Aislamiento de proyecciones GraphQL en HotChocolate 14 para impedir fuga de datos en consultas públicas (`subjects`, `careers`, `inquiries`), e imposición estricta de concurrencia optimista (`RowVersion`) en calificaciones de comisiones.

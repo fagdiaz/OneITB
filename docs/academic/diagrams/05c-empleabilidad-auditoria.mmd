@@ -1,0 +1,80 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    User {
+        guid Id PK,FK
+    }
+    JobOffer {
+        guid Id PK
+        string Company
+        datetime CreatedAt
+        string Description
+        guid EmployerId FK
+        bool IsActive
+        string Location
+        string Title
+    }
+    JobApplication {
+        guid Id PK
+        guid ApplicantId FK
+        datetime AppliedAt
+        guid JobOfferId FK "UQ JobOfferId,ApplicantId"
+        string Status
+    }
+    JobApplicationCv {
+        guid ApplicationId PK,FK
+        datetime CapturedAtUtc
+        string PayloadJson
+        int SchemaVersion
+    }
+    EmployerRequest {
+        guid Id PK
+        string Comments "NULL"
+        string CompanyName
+        string ContactName
+        datetime CreatedAt
+        string Email UK "UQ filtrada"
+        int EmailDeliveryAttempts
+        string EmailDeliveryStatus
+        datetime LastEmailAttemptAt "NULL"
+        string Phone
+        datetime PrivacyConsentAt
+        datetime ProcessedAt "NULL"
+        guid ProcessedByAdminId FK "NULL"
+        guid ProvisionedUserId FK "NULL"
+        string RejectionReason "NULL"
+        bytes RowVersion "SQL rowversion"
+        string Status
+        string TaxId UK "UQ filtrada"
+    }
+    EmployerOnboardingOutboxMessage {
+        guid Id PK
+        int Attempts
+        datetime CreatedAt
+        guid EmployerRequestId FK,UK
+        string LastErrorCode "NULL"
+        datetime LeaseExpiresAt "NULL"
+        datetime NextAttemptAt
+        datetime ProcessedAt "NULL"
+        bytes RowVersion "SQL rowversion"
+        string Status
+    }
+    AuditLog {
+        guid Id PK
+        string Action
+        guid ActorUserId FK "NULL"
+        string CorrelationId "NULL"
+        datetime CreatedAt
+        string EntityId
+        string EntityName
+        string NewValuesJson "NULL"
+        string OldValuesJson "NULL"
+    }
+
+    User ||..o{ JobOffer : "EmployerId"
+    User ||..o{ JobApplication : "ApplicantId"
+    JobOffer ||..o{ JobApplication : "JobOfferId"
+    JobApplication ||--o| JobApplicationCv : "ApplicationId"
+    User o|..o{ EmployerRequest : "ProcessedByAdminId"
+    User o|..o{ EmployerRequest : "ProvisionedUserId"
+    EmployerRequest ||..o| EmployerOnboardingOutboxMessage : "EmployerRequestId"
+    User o|..o{ AuditLog : "ActorUserId"

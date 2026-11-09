@@ -1,0 +1,82 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    Subject {
+        int Id PK
+    }
+    User {
+        guid Id PK,FK
+    }
+    Inquiry {
+        guid Id PK
+        string Content
+        string FileUrl "NULL"
+        bool IsActive
+        bool IsHiddenByModerator
+        bool PreferAttachmentCover
+        datetime PublishDate
+        int SubjectId FK
+        string Title
+        datetime UpdatedAt "NULL"
+        guid UserId FK
+    }
+    Comment {
+        guid Id PK "AK Id,InquiryId"
+        string Content
+        datetime CreatedAt
+        string FileUrl "NULL"
+        guid InquiryId FK
+        bool IsActive
+        bool IsHiddenByModerator
+        guid ParentCommentId FK "NULL"
+        guid ReplyToUserId FK "NULL"
+        datetime UpdatedAt "NULL"
+        guid UserId FK
+    }
+    CommunityReport {
+        guid Id PK
+        guid CommentId FK "NULL; FK CommentId,InquiryId"
+        datetime CreatedAt
+        guid InquiryId FK "FK CommentId,InquiryId"
+        string Reason
+        guid ReporterId FK "UQ ReporterId,CommentId; UQ ReporterId,InquiryId"
+        string Status
+    }
+    Reaction {
+        guid Id PK
+        datetime CreatedAt
+        guid InquiryId FK "UQ InquiryId,UserId"
+        guid UserId FK
+    }
+    CommentReaction {
+        guid Id PK
+        guid CommentId FK "UQ CommentId,UserId"
+        datetime CreatedAt
+        guid UserId FK
+    }
+    SocialAttachment {
+        guid Id PK
+        guid CommentId FK "NULL"
+        string ContentType
+        datetime CreatedAt
+        string FileUrl
+        guid InquiryId FK "NULL"
+        string OriginalFileName
+        long Size
+        int SortOrder
+    }
+
+    Subject ||..o{ Inquiry : "SubjectId"
+    User ||..o{ Inquiry : "UserId"
+    Inquiry ||..o{ Comment : "InquiryId"
+    Comment o|..o{ Comment : "ParentCommentId"
+    User o|..o{ Comment : "ReplyToUserId"
+    User ||..o{ Comment : "UserId"
+    Inquiry ||..o{ CommunityReport : "InquiryId"
+    User ||..o{ CommunityReport : "ReporterId"
+    Comment o|..o{ CommunityReport : "CommentId,InquiryId"
+    Inquiry ||..o{ Reaction : "InquiryId"
+    User ||..o{ Reaction : "UserId"
+    Comment ||..o{ CommentReaction : "CommentId"
+    User ||..o{ CommentReaction : "UserId"
+    Comment o|..o{ SocialAttachment : "CommentId"
+    Inquiry o|..o{ SocialAttachment : "InquiryId"

@@ -1,0 +1,45 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"16px","primaryColor":"#ffffff","primaryTextColor":"#000000","primaryBorderColor":"#000000","lineColor":"#000000","secondaryColor":"#ffffff","tertiaryColor":"#ffffff"},"er":{"layoutDirection":"TB","minEntityWidth":100,"entityPadding":12}}}%%
+erDiagram
+    Subject {
+        int Id PK
+    }
+    User {
+        guid Id PK,FK
+    }
+    CourseSection {
+        guid Id PK
+        string Code
+        datetime CreatedAtUtc
+        int SubjectId FK "UQ SubjectId,Term,Code"
+        string Term
+    }
+    SectionInstructor {
+        guid SectionId PK,FK
+        guid ProfessorId PK,FK
+        datetime AssignedAtUtc
+    }
+    SectionEnrollment {
+        guid SectionId PK,FK
+        guid StudentId PK,FK
+        datetime EnrolledAtUtc
+    }
+    SectionGrade {
+        guid Id PK
+        guid AssignedById FK
+        bytes RowVersion "SQL rowversion"
+        decimal Score "NULL; decimal(5,2)"
+        guid SectionId FK "FK SectionId,StudentId; UQ SectionId,StudentId"
+        string Status
+        guid StudentId FK "FK SectionId,StudentId"
+        datetime UpdatedAtUtc
+    }
+
+    Subject ||..o{ CourseSection : "SubjectId"
+    User ||--o{ SectionInstructor : "ProfessorId"
+    CourseSection ||--o{ SectionInstructor : "SectionId"
+    CourseSection ||--o{ SectionEnrollment : "SectionId"
+    User ||--o{ SectionEnrollment : "StudentId"
+    User ||..o{ SectionGrade : "AssignedById"
+    CourseSection ||..o{ SectionGrade : "SectionId"
+    User ||..o{ SectionGrade : "StudentId"
+    SectionEnrollment ||..o| SectionGrade : "SectionId,StudentId"
