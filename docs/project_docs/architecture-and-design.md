@@ -42,7 +42,7 @@ integridad relacional, operación local reproducible y adaptadores reemplazables
 
 1. Frontend y backend son aplicaciones separadas.
 2. GraphQL `/graphql` es el contrato de negocio por HTTP y WebSocket.
-3. `POST /api/upload` es la única excepción REST aprobada para binarios.
+3. La transferencia binaria comprende la carga autenticada `POST /api/upload` y la entrega autorizada de adjuntos de mensajes por `GET /api/message-attachments/{attachmentId}` (Constitución §I).
 4. Las reglas no triviales pertenecen a servicios; React no es frontera de autorización.
 5. Passwords, tokens y secretos no se registran ni versionan.
 6. Las FKs son explícitas y el dominio usa `Restrict`, salvo excepción documentada.
@@ -106,7 +106,7 @@ flowchart TB
     subgraph Api["ASP.NET Core .NET 8"]
         Pipeline["CORS + Rate Limit + Auth + Headers"]
         GQL["HotChocolate Query / Mutation / Subscription"]
-        Upload["UploadController REST"]
+        Upload["Carga y descarga binaria autenticadas"]
         Services["Servicios de aplicación y dominio"]
         Workers["Hosted Services / Outbox / Cleanup"]
         Adapters["SMTP / Storage / SIU / Redis"]
@@ -114,7 +114,7 @@ flowchart TB
     subgraph Data["Persistencia"]
         EF["EF Core DbContext + Interceptors"]
         SQL["SQL Server"]
-        Files["Uploads / Cloudinary"]
+        Files["Storage de medios / private_uploads"]
         Cache["Redis opcional"]
     end
     UI --> Router
@@ -161,7 +161,7 @@ flowchart TB
 | Diseño | Tailwind CSS 4 y FontAwesome 6.6 | Clean Tech y Tech Noir |
 | Tiempo real | GraphQL Subscriptions | In-memory o Redis por configuración |
 | Identidad | JWT, BCrypt y Microsoft Entra/MSAL | Authorization Code + PKCE y JWT local |
-| Archivos | REST upload + `IFileStorageService` | Disco local o Cloudinary |
+| Archivos | Carga y entrega HTTP | Medios por `IFileStorageService`; chat privado en disco fuera de `wwwroot` |
 | Correo | `IEmailSender` | SMTP o pickup local en Development |
 | Infraestructura | Docker Compose y Nginx | Plantilla productiva implementada, destino no aceptado |
 | Mobile | React Native/Expo planificado | Sin código mobile versionado |
@@ -223,7 +223,9 @@ docs/
 Son configurables. Los valores altos de parser/costo permiten operaciones reales complejas;
 antes de exposición pública deben calibrarse con telemetría y pruebas de carga.
 
-### 5.3 Upload REST desacoplado
+### 5.3 Transferencia binaria
+
+**Medios de perfil y publicaciones**
 
 1. React envía `multipart/form-data` con JWT a `POST /api/upload`; el request acepta
    cancelación para que un cambio de sesión o desmontaje no complete trabajo obsoleto.
@@ -237,7 +239,7 @@ antes de exposición pública deben calibrarse con telemetría y pruebas de carg
    externos, y se mapean a HTTP 503 con `UPLOAD_STORAGE_UNAVAILABLE`, modo,
    `correlationId` y capacidad de reintento manual.
 
-La estrategia se selecciona exclusivamente mediante `FileStorage:Provider`. Development
+Para estos medios, la estrategia se selecciona exclusivamente mediante `FileStorage:Provider`. Development
 declara `Local`; Production declara `Cloudinary`, exige URL válida y timeout acotado y
 falla al iniciar si la configuración es incompleta. No se infiere el provider por presencia
 de secretos ni se degrada silenciosamente de cloud a disco.
@@ -250,6 +252,22 @@ persistido se conserva hasta que upload, `updateProfile` y refetch confirman la 
 
 `/uploads/{file}` entrega objetos locales como estáticos. Simplifica demo y rich media,
 pero no autoriza por objeto; este límite se registra como `GAP-FILE-01`.
+
+**Adjuntos de mensajes privados.** `POST /api/upload` con propósito `private`
+almacena el archivo con nombre generado fuera de `wwwroot`, en `private_uploads`,
+y devuelve un `uploadId`. La operación de envío lo asocia al mensaje. El identificador
+de la descarga es el de `MessageAttachment`, distinto del identificador de carga.
+
+`GET /api/message-attachments/{attachmentId:guid}` exige autenticación. El controlador
+obtiene el usuario de `ClaimTypes.NameIdentifier` y compara su ID con `SenderId` y
+`ReceiverId` del mensaje asociado antes de abrir el archivo. Una identidad ausente o
+con claim inválido recibe 401; un tercero autenticado recibe 403 si el adjunto existe.
+Un ID inexistente, o un archivo ausente para un participante, produce 404.
+Para un participante, el archivo completo responde 200. Una petición de rango válido
+puede responder 206 con `Content-Range`; un rango insatisfacible produce 416.
+La respuesta de archivo usa `Cache-Control: private, no-store, no-cache`.
+El control por participante se aplica a este GET. La entrega estática anterior
+conserva `GAP-FILE-01`.
 
 ### 5.4 CORS, headers y proxy
 
@@ -649,7 +667,7 @@ Los fallbacks facilitan desarrollo; no equivalen a verificación productiva.
 flowchart TB
     Browser["Browser"] --> Nginx["Nginx / React"]
     Nginx -->|"/graphql HTTP + WS"| API["API .NET 8"]
-    Nginx -->|"/api/upload + /uploads"| API
+    Nginx -->|"/api/ + /uploads"| API
     API --> SQL["SQL Server 2022"]
     API --> Redis["Redis"]
     API --> SMTP["SMTP"]
@@ -687,6 +705,7 @@ health probes y observabilidad central.
 |---|---|---|---|
 | Browser -> GraphQL | Suplantación/DoS | JWT, roles, ownership, rate/cost/depth | Calibrar con carga |
 | Browser -> upload | Archivo hostil | Auth, tipo, magic bytes, estructura y tamaño | Antivirus/CDR |
+| Adjunto privado de chat | ID copiado por un tercero | GET autenticado y control remitente/destinatario | Verificar 403 sin bytes y rangos para participantes |
 | Lectura `/uploads` | Acceso directo | Nombre GUID y masking de metadatos | Sin autorización por objeto |
 | Password | Fuerza bruta | BCrypt, lockout y error genérico | Benchmark destino |
 | Magic Link | Enumeración/replay | Genérico, digest, single-use y limiter | SMTP real |
@@ -717,7 +736,7 @@ health probes y observabilidad central.
 
 | Decisión | Consecuencia |
 |---|---|
-| GraphQL de negocio; REST solo upload | Contratos centralizados y binarios desacoplados |
+| GraphQL de negocio; HTTP para carga y entrega binaria | Contratos centralizados y binarios desacoplados |
 | JWT local canónico | Password, Magic Link y Entra convergen |
 | `DeleteBehavior.Restrict` (AD-004) | Evita cascadas; exige soft delete/eliminación explícita |
 | SQL Docker local | Evita Windows Auth/LocalDB |

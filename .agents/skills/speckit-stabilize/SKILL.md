@@ -75,8 +75,8 @@ Perform an exhaustive, multi-tier QA audit, documentary normalization, safe tran
    - **Gate 2: `secret-leak-and-untracked-configs`**: Zero secrets or environment files staged.
    - **Gate 3: `backend-dotnet-build`**: .NET 8 Release build with 0 errors (`dotnet build 'API Graphql/OneITB/GraphQL.csproj' -c Release`).
    - **Gate 4: `frontend-vite-build`**: React 18 production build (`npm run build` in `FrontEnd/OneItb-FE`).
-   - **Gate 5: `backend-regression-suite`**: 100% PASS on xUnit/Services tests (234 tests, compiled with `--no-restore`).
-   - **Gate 6: `frontend-regression-suite`**: 100% PASS on Vitest frontend tests (258 tests).
+   - **Gate 5: `backend-regression-suite`**: All required xUnit tests run and pass on this SHA. Record ordinary regression and SQL concurrency separately (runbook §3.3).
+   - **Gate 6: `frontend-regression-suite`**: All Vitest tests run and pass on this SHA. Record the observed total.
    - **Gate 7: `frontend-oxlint-check`**: Zero errors and zero warnings across frontend files.
    - **Gate 8: `ef-pending-model-changes`**: Verifies no unmigrated EF Core entity changes exist.
    - **Gate 9: `speckit-dod-compliance`**: Validates feature directory exists, 0 open tasks in `tasks.md`, and entry in `DEVELOPMENT_LOG.md`.
@@ -119,6 +119,6 @@ Proceed through Phases 3 to 5:
 
 Update `prompt.txt` with:
 - Timestamp and certified spec.
-- Full test metrics (Backend 234/234 PASS, Frontend 258/258 PASS, 0 oxlint warnings).
+- Observed test and lint results, with discovered, passed, failed and skipped counts for each suite. Reconcile the suite inventory against the roadmap and the candidate manifest before certifying.
 - Current checked-out Git branch and commit SHA.
 - Recommended model and reasoning level for the next session.

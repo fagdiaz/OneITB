@@ -3,7 +3,7 @@
 **Fecha de Ratificación:** 2026-11-08
 **Estado:** RATIFICADO (Aprobado sin reservas por Canal 1 - 6 Astra en GOB-20261108-07)
 **Repositorio:** `https://github.com/fagdiaz/OneITB.git`
-**Doctrina Constitucional:** Principio X (Versión 1.7.0)
+**Doctrina Constitucional:** Principios IX y X (Constitución 1.8.0)
 **Dictamen de Peer Review:** Ratificado formalmente en GOB-20261108-07 (`docs/audit/PEER_REVIEW_MULTI_AGENTE_2026-11-07.md`)
 
 ---
@@ -28,9 +28,9 @@ flowchart TD
 
     subgraph External["CANALES EXTERNOS: Codex / ChatGPT Plus (Consultoría Especializada)"]
         direction TB
-        CH1["Canal 1: '[OneITB] Auditoría & Arquitectura'\nModelo: 6.0 Astra | Razonamiento: Muy Alto / Alto\n(agent-auditor-architect)"]
+        CH1["Canal 1: '[OneITB] Auditoría & Arquitectura'\nModelo: 6 Astra | Razonamiento: Muy Alto / Alto\n(agent-auditor-architect)"]
         CH2["Canal 2: '[OneITB] Hardening & Testing'\nModelo: 6.1 Sol | Razonamiento: Alto / Muy Alto\n(agent-hardening-tester)"]
-        CH3["Canal 3: '[OneITB] Implementador Core'\nModelo: 6.1 Sol | Razonamiento: Alto / Muy Alto\n(core-implementer)"]
+        CH3["Canal 3: '[OneITB] Implementador Core'\nModelo: 6.1 Sol | Razonamiento: Alto / Muy Alto\n(rol de implementación)"]
     end
 
     ORCH ==>|"Handoff Quirúrgico (ID + SHA + Contexto Saneado)"| External
@@ -41,14 +41,16 @@ flowchart TD
 
 ## 2. Catálogo Oficial de Agentes y Skills
 
-Cada agente cuenta con un skill formalmente registrado en `.agents/skills/` que define sus límites, responsabilidades y reglas operativas para **evitar el olvido de rol o deriva cognitiva en el chat**:
+Los archivos de rol se encuentran en `.agents/skills/`. El Canal 3 es un rol
+de implementación de la spec activa; no tiene una skill registrada con el nombre
+`core-implementer`. Sus propuestas se integran por Local AGY según §5.
 
-| Identificador de Skill | Nombre del Agente | Entorno / Motor | Nivel de Razonamiento | Responsabilidad Principal |
+| Skill registrada o rol | Nombre del Agente | Entorno / Motor | Nivel de Razonamiento | Responsabilidad Principal |
 | :--- | :--- | :--- | :--- | :--- |
-| **`agent-orchestrator`** | **Orquestador & Integrador** | Antigravity Local<br>`Gemini 3.8 Flash High` | Nativo | Único escritor en disco, Docker, Kestrel, Vite, 281 FE + 263 BE tests, speckit-stabilize y gobernanza Git. |
-| **`agent-auditor-architect`** | **Auditor de Seguridad & Arquitectura** | Canal 1 Codex<br>`6.0 Astra` | **`Muy Alto`** *(o `Alto`)* | Threat modeling, autorización GraphQL (`GAP-AUTH`, `GAP-PRIV`, `GAP-FILE`), Entra ID (PKCE) y decisiones mayores. |
+| **`agent-orchestrator`** | **Orquestador & Integrador** | Antigravity Local<br>`Gemini 3.8 Flash High` | Nativo | Único escritor en disco, Docker, Kestrel, Vite, suites completas del manifiesto del SHA, speckit-stabilize y gobernanza Git. |
+| **`agent-auditor-architect`** | **Auditor de Seguridad & Arquitectura** | Canal 1 Codex<br>`6 Astra` | **`Muy Alto`** *(o `Alto`)* | Threat modeling, autorización GraphQL (`GAP-AUTH`, `GAP-PRIV`, `GAP-FILE`), Entra ID (PKCE) y decisiones mayores. |
 | **`agent-hardening-tester`** | **Hardening & Testing** | Canal 2 Codex<br>`6.1 Sol` | **`Alto`** *(o `Muy Alto`)* | Baterías de pruebas extremas en Vitest/xUnit, concurrencia de WebSockets y sincronización de Apollo Cache. |
-| **`core-implementer`** | **Implementador Core** | Canal 3 Codex<br>`6.1 Sol` | **`Alto`** *(o `Muy Alto`)* | Implementación de contratos de dominio, resolvers, componentes React y parches falsables. |
+| **Implementación (sin skill propia)** | **Implementador Core** | Canal 3 Codex<br>`6.1 Sol` | **`Alto`** *(o `Muy Alto`)* | Implementación de contratos de dominio, resolvers, componentes React y parches falsables. |
 | **`agent-debugger`** | **Debugger Forense & Reconciliación** | Antigravity / Codex<br>`Claude Sonnet 4.6` / `6.1 Sol` | **`Alto`** | Diagnóstico en consola DevTools de UUIDs en runtime, solución de ReferenceErrors y reconciliación contra `cv-builder`. |
 | **`agent-ui-ux`** | **UI/UX & Maquetación Editorial** | Antigravity / Canal 2<br>`Gemini 3.8 Flash` / `6.1 Sol` | Nativo / Medio | Reglas `@media print` A4, maquetación CSS, contraste WCAG AA, soporte Dark Mode y diagramas SVG/Mermaid. |
 | **`agent-notebook-sync`** | **Desarrollo & Sync Notebook** | Terminal Laptop<br>`Gemini` / `Codex` | Nativo / Alto | Configuración de memoria (.wslconfig a 6GB), inspección de estado Git sin pushes automáticos y validaciones pre-flight. |
@@ -99,7 +101,7 @@ Para evitar divergencias de ramas, falsos estados y filtraciones de información
    - Debe estructurarse como propuesta, hipótesis refutada o parche quirúrgico falsable.
 3. **Integración Local y Ledger Persistente:**
    - La estación local (Orquestador) es el **único escritor autorizado** en el repositorio.
-   - Aplica el parche, corre las suites de regresión completas (258 frontend + 234 backend) y ejecuta `oxlint`.
+   - Aplica el parche, ejecuta las suites oficiales según Constitución §IX y el runbook, registra resultados por suite en el manifiesto del SHA y ejecuta `oxlint`.
    - **Idempotencia y Exclusión Mutua Atómica:** Todo despacho aceptado se registra en el ledger persistente en disco (`docs/audit/handoff_ledger.json`) mediante un bloqueo de archivo exclusivo (`.lock`). La operación de consultar, reservar y persistir el ID es estrictamente atómica e indivisible frente a procesos concurrentes. Dos o más instancias que compitan por el mismo ID resultan en exactamente una sola aceptación y el rechazo inmediato del resto (`REJECTED_DUPLICATE`).
    - **Resiliencia ante Corrupción:** Si el archivo histórico del ledger es ilegible o está corrupto, la recepción se bloquea de forma inmediata y el archivo original se conserva intacto para análisis forense, impidiendo sobrescrituras destructivas o vaciados accidentales.
    - **Invariante de Simulaciones:** Las salidas simuladas o mocks en el certificador (`preflight_stabilize.ps1`) tienen prohibido terminantemente otorgar certificación (`Certified=true`). Las simulaciones únicamente pueden producir resultados de prueba informativos en modo inspección (`-Certify` en falso). La certificación oficial de release candidate exige la ejecución real en vivo de los ejecutores xUnit y Vitest.
@@ -116,9 +118,9 @@ Al final de **CADA** respuesta que emita cualquier agente del sistema, debe inco
 ```markdown
 ---
 ### 📌 Protocolo de Continuidad Operativa
-* **Canal:** `[Local AGY | Canal 1 [OneITB] Auditoría & Arquitectura | Canal 2 [OneITB] Hardening & Testing]`
+* **Canal:** `[Local AGY | Canal 1 [OneITB] Auditoría & Arquitectura | Canal 2 [OneITB] Hardening & Testing | Canal 3 [OneITB] Implementador Core]`
 * **Modelo Sugerido:** `[Gemini 3.8 Flash High | 6 Astra | 6.1 Sol]`
-* **Nivel de Razonamiento:** `[Nativo | Medio | Alto | Muy Alto]`
+* **Nivel de Razonamiento:** `[Nativo | Medio | Alto | Muy Alto | Ultra (crisis, §3)]`
 * **Objetivo Inmediato:** `<Descripción concisa de la acción>`
 ---
 ```

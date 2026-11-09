@@ -1,16 +1,13 @@
 <!--
-SYNC IMPACT REPORT
-- Version change: 1.6.0 -> 1.7.0
-- Amendment type: MINOR; formalizes Model Delegation Doctrine, Dedicated Channel Architecture (6 Astra & 6.1 Sol),
-  Reasoning Effort Mapping, and Mandatory Console Notification Block.
-- Modified principles:
-  * X. Model Workload & Scaled Delegation Doctrine (Codex 6 Astra & 6.1 Sol Dedicated Channels)
-- Modified governance:
-  * Prohibits sub-optimal models (Terra, Luna, 5.6) and Low reasoning effort.
-  * Establishes mandatory end-of-turn console model notification.
-- Dependent artifacts reviewed:
-  * AGENTS.md - aligned with Dedicated Channels and Reasoning Effort levels
-  * prompt.txt - aligned with Channel templates
+SYNC IMPACT REPORT · GOB-20261109-14 · 2026-11-09
+Version 1.7.0 -> 1.8.0 (MINOR). IX expands the closeout evidence requirements;
+X distinguishes the two review channels from the existing implementation channel.
+Original ratification date retained. Principles I-VIII unchanged.
+Synchronized: AGENTS.md, roadmap, branch guide, runbook, architecture, defense index,
+academic diagrams, multi-agent framework, orchestrator and stabilization guidance.
+Reviewed plan/spec/tasks templates and GUIA_SPECKIT.md: no numeric closeout baseline
+or new template section required. The preflight's numeric floors remain diagnostic;
+Local AGY must reconcile all required suites with the candidate manifest.
 -->
 
 # OneITB23 Constitution
@@ -163,7 +160,16 @@ At any given moment, **AT MOST ONE SPEC MAY BE ACTIVELY IMPLEMENTED OR MODIFIED 
 2. **No Spec Cross-Contamination**: Agents and models MUST NOT mix, merge, or implement changes belonging to multiple specs within the same turn or branch. The Git branch name MUST stay aligned with the active specification in `.specify/feature.json`.
 3. **Full Spec Closeout Gate**: Before activating a new spec for code modification in `.specify/feature.json`, the preceding active spec MUST complete its entire lifecycle:
    - 100% of tasks checked in `tasks.md`.
-   - Comprehensive test validation (234 backend xUnit tests + 252 frontend Vitest tests PASS, 0 failures, 0 regressions).
+   - Every official suite required by the roadmap for this candidate MUST run in full
+     on the same identified commit, with zero failures and zero omitted tests.
+     Record the full SHA, tree state, environment, exact commands and filters, tool
+     versions and discovered/passed/failed/skipped counts in the candidate manifest.
+     Use the evidence fields in `docs/audit/RUNBOOK_DEV.md` §14.1.
+     Reconcile the counts with the versioned test inventory and the baseline in
+     `docs/project_docs/ROADMAP.md`; explain additions or removals before closeout.
+     Record ordinary xUnit regression, opt-in SQL Server concurrency and frontend
+     Vitest separately. An absent dependency is BLOCKED and prevents certification.
+     A historic count, a preflight minimum or a simulated run cannot satisfy this gate.
    - Preflight verification and documentary normalization via `speckit-stabilize`.
    - Recording in `docs/audit/DEVELOPMENT_LOG.md`.
    - Feature-scoped commit.
@@ -173,7 +179,7 @@ At any given moment, **AT MOST ONE SPEC MAY BE ACTIVELY IMPLEMENTED OR MODIFIED 
 
 Gemini 3.8 Flash High (or Gemini 3.7 Flash High) MUST be prioritized as the primary engine for all local tasks within its reasoning and context capacity: code reading, architecture analysis, pure domain logic, data contracts, schemas, comprehensive test suites (xUnit, Vitest, integration, benchmarks), documentation, SpecKit tracking, and bounded feature implementations. Tasks MUST be executed in iterative, bounded turns without asking for unbounded multi-file refactors in a single turn.
 
-Higher-reasoning models MUST be invoked on-demand using two dedicated long-standing external channels (Codex / ChatGPT Plus) strictly adhering to their specialization and reasoning effort levels:
+Two dedicated external review channels handle the following specialties:
 1. **Canal 1: `[OneITB] Auditoría & Arquitectura` (Modelo: `6 Astra`)**:
    - *Razonamiento `Muy Alto`*: Auditoría de seguridad profunda de tokens/roles, análisis adversarial de vectores de ataque en GraphQL y autorización institucional.
    - *Razonamiento `Alto`*: Diseño arquitectónico mayor o arbitraje de contratos y migraciones complejas.
@@ -181,6 +187,11 @@ Higher-reasoning models MUST be invoked on-demand using two dedicated long-stand
 2. **Canal 2: `[OneITB] Hardening & Testing` (Modelo: `6.1 Sol`)**:
    - *Razonamiento `Alto`*: Concurrencia en tiempo real, WebSockets, sincronización multi-pestaña de Apollo Cache y fallos de estado por desconexión.
    - *Razonamiento `Medio`*: Generación de suites de pruebas unitarias exhaustivas, mocks y casos de borde de dominio.
+
+Canal 3, `[OneITB] Implementador Core`, prepares bounded implementation proposals
+for Local AGY under the single-spec rule. Local AGY integrates, runs the gates and
+records evidence. The operational role/skill mapping is maintained in
+`docs/project_docs/MULTI_AGENT_FRAMEWORK.md`.
 
 **Prohibiciones Constitucionales**:
 - El uso de modelos sub-óptimos o económicos (`6 Luna`, `6.1 Terra` y toda la serie `5.6`) queda TERMINANTEMENTE PROHIBIDO: representan un downgrade respecto a Gemini 3.8 Flash High o un gasto ineficiente de cuota.
@@ -232,4 +243,4 @@ Direct commits to `main` or `master` are forbidden. Integration uses a feature b
 review. Existing gaps do not weaken a principle: they remain visible until remediated,
 accepted with compensating controls, or removed from the deployment scope.
 
-**Version**: 1.7.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-10-27
+**Version**: 1.8.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-11-09

@@ -155,9 +155,14 @@ críticos. Redis, Cloudinary y SMTP se seleccionan por ambiente.
 
 ## 4.4 Modelo de dominio relacional
 
-El `OneItbContext` vigente expone **30 conjuntos persistidos**. Para preservar legibilidad
-se presentan tres vistas complementarias. Una entidad puede repetirse como referencia
-entre vistas, pero el inventario lógico se cuenta una sola vez.
+En el corte post-Spec 220, `OneItbContext` expone **39 DbSet** y el inventario
+GOB-11 registra **67 relaciones FK**. Para maquetar la versión actual usar los
+DER de [identidad, perfil y catálogo](diagrams/03-der-identidad-perfil-catalogo.mmd),
+[muro, mensajería y moderación](diagrams/04-der-social-mensajeria-moderacion.mmd)
+y [académico, empleo y auditoría](diagrams/05-der-academico-empleo-auditoria.mmd).
+El [inventario GOB-11](diagrams/GOB-20261109-11-entrega.md) distingue entidades
+propias de referencias repetidas. Las figuras 3 a 5 reproducidas abajo documentan
+el modelo anterior de 30 conjuntos; para imprimir se toman las fuentes enlazadas.
 
 ### Figura 3 - DER de identidad, perfil y catálogo académico
 
@@ -868,7 +873,7 @@ segunda ejecución.
 | Vista | Fuentes de contraste |
 |---|---|
 | Contexto y componentes | `Startup.cs`, frontend providers, arquitectura secciones 2-5 |
-| DER | `OneItbContext.cs`, 30 `DbSet`, modelos y migraciones vigentes |
+| DER | `OneItbContext.cs`, 39 `DbSet`, 67 FK del inventario GOB-11 y migraciones post-Spec 220 |
 | Entra | `MicrosoftEntraOptions`, validator, auth service y callback React |
 | Multimedia | `UploadController`, storage service, social service y Media Grid |
 | SIU | `ISiuIntegrationService`, mock y `AcademicService` |

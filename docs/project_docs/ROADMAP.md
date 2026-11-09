@@ -1,6 +1,6 @@
 # Roadmap único de OneITB23
 
-**Ultima revision**: 2026-08-08
+**Última revisión documental**: 2026-11-09 (GOB-14; se conservan los cortes históricos identificados).
 
 ## 1. Estado ejecutivo y criterio de medición
 
@@ -9,7 +9,7 @@
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
-| Backend automatizado más reciente | **368/368** | GOB-13 incorporó la matriz de autorización por roles (104 casos); 368 pruebas unitarias y de integración en PASS (0 omitidas) |
+| Backend automatizado más reciente | **368/368** | GOB-13 incorporó la matriz de autorización por roles (104 casos); 368 pruebas de regresión en PASS (0 omitidas). La categoría GOB12SqlConcurrency tiene diez casos adicionales y se informa por separado en el manifiesto |
 | Frontend automatizado más reciente | **357/357** | GOB-13 amplió la suite Vitest a 67 suites completas (70 casos de matriz de navegación); 357 pruebas en PASS (0 fallos) |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente; la mesa del 07/08 no se realizó |
 
@@ -647,7 +647,7 @@ contradecir la memoria impresa.
 |---|---|---|---:|---|---|
 | `CF-01` | Consolidar y publicar el corte de Specs 198-201; revisar e integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota y SHA candidato identificados, sin perder código ni evidencia de las cuatro specs |
 | `CF-02` | Completar la auditoría de archivos auxiliares de raíz y secretos ignorados; el prompt histórico `prompt_modulo1.txt` fue retirado el 2026-08-03 | `[ ] [P]` | 15-30 min | Decisión explícita de conservar, mover, ignorar o eliminar cada artefacto restante | `git status` limpio; ningún secreto, fixture personal o archivo de trabajo entra al corte |
-| `CF-03` | Ejecutar gates integrales, infraestructura local y base demo sobre el SHA candidato | `[ ] [P]` | 75-105 min | Docker operativo | Backend 234/234 o mayor, frontend 252/252 o mayor, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS o con desviación documentada |
+| `CF-03` | Ejecutar gates integrales, infraestructura local y base demo sobre el SHA candidato | `[ ] [P]` | 75-105 min | Docker operativo | Regresión backend y frontend completas, categoría SQL concurrente informada aparte, conteos reconciliados con el manifiesto del SHA, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS o con desviación documentada |
 | `CF-04` | Regresion manual guiada por roles: Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador | `[ ] [P]` | 3-4 h | `CF-03` | Checklist firmado, consola limpia y capturas de los flujos principales |
 | `CF-05` | Validar chat/notificaciones con dos navegadores o perfiles aislados | `[ ] [P]` | 60-90 min | API y frontend temporales, dos identidades | Handshake WebSocket, aislamiento de topic, badges y lectura comprobados |
 | `CF-06` | Consolidar evidencia, congelar el corte y, si se autoriza, etiquetar el candidato final | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, métricas, resultados y limitaciones coinciden en repositorio, auditoría y documentación; no existe aún commit presentado |
@@ -686,8 +686,8 @@ después de excluir de forma específica, sin borrarlo, el prompt local de Agy. 
 | `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | DER doble página A4 facing integrado; 3 gráficos de gestión anexos |
 | `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[x] [I]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable v2.0 (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx`), estilos APA, 10 mockups, tablas bordeadas con padding |
 | `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[x] [I]` | 2-3 h | `DF-05` | PDF oficial generado vía Word COM (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf`), 45 páginas, TOC y campos actualizados |
-| `DF-07` | Diseñar presentación de defensa en PPTX/PDF con narrativa problema-solución-arquitectura-demo-evidencia | `[ ] [P]` | 2 h 30 min-4 h | `DF-03`, `DF-04` y evidencia de `CF-03` | Presentación legible, visual, con demo guiada, métricas verificables y límites honestos; sin copiar páginas completas de la memoria |
-| `DF-08` | Preparar guion, contingencias y ejecutar al menos dos ensayos cronometrados | `[ ] [P]` | 3-4 h | `CF-06`, `DF-06` y `DF-07` | Exposición base de 22-25 min dentro del rango oficial de 20-30 min, transiciones ensayadas y respuestas preparadas sobre seguridad, arquitectura y límites |
+| `DF-07` | Diseñar presentación de defensa en PPTX/PDF con narrativa problema-solución-arquitectura-demo-evidencia | `[x] [I]` | 2 h 30 min-4 h | `DF-03`, `DF-04` y evidencia de `CF-03` | Presentación legible, visual, con demo guiada, métricas verificables y límites honestos; inventario y huellas en DOCUMENTATION_STATUS.md §4 |
+| `DF-08` | Preparar guion, contingencias y ejecutar al menos dos ensayos cronometrados | `[ ] [P]` | 3-4 h | `CF-06`, `DF-06` y `DF-07` | Guion de 23 min y contingencias disponibles. Pendientes los dos ensayos cronometrados y el registro real de sus tiempos (objetivo 22-25 min; rango oficial 20-30 min) |
 
 **Inventario documental al 08/08/2026:** existen fuentes extraídas para 10 figuras de la
 memoria y 13 vistas técnicas. Los 13 bloques de `docs/academic/04-design-diagrams.md`

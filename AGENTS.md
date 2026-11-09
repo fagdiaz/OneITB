@@ -54,9 +54,9 @@ Checked tasks or historical log entries do not prove runtime behavior. Never pro
 - Roles persisted by the application are Spanish: `Administrador`, `Moderador`,
   `Profesor`, `Estudiante`, `Egresado`, and `Empleador`.
 
-The latest recorded automated baselines are backend 234/234 and frontend 252/252.
-They ran together in the mutable Spec 218 worktree and MUST be rerun or bound together on
-the final candidate SHA before being represented as release evidence.
+Use `docs/project_docs/ROADMAP.md` for the latest recorded suite counts. For
+certification, apply Constitution §IX and record the results for the candidate SHA
+in its manifest. Report SQL Server concurrency separately from ordinary regression.
 
 ## Single-Spec Execution Invariant & Deep Analysis Rule
 
@@ -74,14 +74,15 @@ the final candidate SHA before being represented as release evidence.
    - **Canal 2: `[OneITB] Hardening & Testing` (Modelo: `6.1 Sol`)**:
      - *Razonamiento `Alto`*: Concurrencia en tiempo real, WebSockets, sincronización multi-pestaña de Apollo Cache y fallos de estado por desconexión.
      - *Razonamiento `Medio`*: Generación de suites de pruebas unitarias exhaustivas, mocks y casos de borde de dominio.
+   - **Canal 3: `[OneITB] Implementador Core`** (6.1 Sol, Alto o Muy Alto): prepara propuestas de implementación acotadas; Local AGY integra y valida en disco.
 3. **Model & Effort Prohibitions**:
    - The use of sub-optimal models (`6 Luna`, `6.1 Terra`, and all `5.6` models) is strictly PROHIBITED: they are either inferior to Gemini 3.8 Flash High or budget compromises.
    - The reasoning level `Bajo` is strictly PROHIBITED: never degrade reasoning effort to save minor token quantities.
 4. **Handoff Prompt Protocol (`prompt.txt`)**: Every model at the end of its session MUST leave an updated, ready-to-run prompt in `prompt.txt` configured with the exact directives for the targeted channel.
 5. **Mandatory Console Notification Block**: At the end of EVERY response, the agent MUST explicitly inform the user:
-   - Canal de destino (`Local AGY`, `Canal 1 [OneITB] Auditoría & Arquitectura`, o `Canal 2 [OneITB] Hardening & Testing`).
+   - Canal de destino (`Local AGY`, `Canal 1 [OneITB] Auditoría & Arquitectura`, `Canal 2 [OneITB] Hardening & Testing` o `Canal 3 [OneITB] Implementador Core`).
    - Modelo a seleccionar (`Gemini 3.8 Flash High`, `6 Astra`, o `6.1 Sol`).
-   - Nivel de Razonamiento requerido (`Nativo`, `Medio`, `Alto`, o `Muy Alto`).
+   - Nivel de razonamiento requerido (`Nativo`, `Medio`, `Alto`, `Muy Alto` o `Ultra` solo bajo la condición de crisis del Canal 1).
 
 ## 3. Active Priorities And Code Freeze
 
@@ -205,7 +206,7 @@ Every implemented spec must:
 9. State what was not run and why. Do not use “complete”, “verified”, “production-ready”,
    or “zero debt” beyond the evidence actually obtained.
 10. Leave the worktree understandable without reverting unrelated user changes.
-11. Execute `speckit-stabilize` as the authoritative quality, dual-stack compilation (.NET 8 Release + Vite React 18), test regression (234 backend + 252 frontend), and safe release closeout gate before final commit/push. If any gate fails, address findings before proceeding.
+11. Execute `speckit-stabilize` as the authoritative quality, dual-stack compilation (.NET 8 Release + Vite React 18), full test regression bound to the candidate SHA under Constitution §IX, and safe release closeout gate before final commit/push. If any gate fails, address findings before proceeding.
 
 ## 8. Git And Documentation Hygiene
 

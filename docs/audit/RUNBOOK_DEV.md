@@ -219,6 +219,55 @@ Pop-Location
 
 Los gates usan `--no-restore`; esta preparación debe completarse primero.
 
+#### Regresión ordinaria y concurrencia SQL GOB-12
+
+Desde la raíz, después del restore, ejecutar la regresión ordinaria con el complemento
+de la categoría SQL. En `d8e45c2`, Local AGY informa 368/368 xUnit de regresión y
+357/357 Vitest en 67 archivos. La categoría SQL comprende diez casos adicionales:
+cinco de adjuntos privados y cinco de notas. No sumar pruebas descubiertas a pruebas
+aprobadas ni trasladar resultados de otra corrida.
+
+```powershell
+dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore --filter "Category!=GOB12SqlConcurrency"
+```
+
+Para la categoría SQL, provisionar una instancia SQL Server 2022 descartable y una
+identidad con permisos para crear y eliminar las bases de la fixture. Inyectar desde
+el almacén de secretos la conexión administrativa en la variable de proceso
+`ONEITB_GOB12_SQL_ADMIN`. No imprimir su valor ni usar la base demo como destino.
+La fixture requiere el opt-in literal `true`; si faltan el opt-in o la conexión,
+la inicialización falla explícitamente. En una sesión PowerShell dedicada:
+
+```powershell
+if ([string]::IsNullOrWhiteSpace($env:ONEITB_GOB12_SQL_ADMIN)) {
+    throw 'Falta la conexión de la instancia SQL descartable.'
+}
+$project = "API Graphql/Tests/Services.Tests/Services.Tests.csproj"
+try {
+    $env:ONEITB_RUN_GOB12_SQL = 'true'
+    dotnet test $project -c Release --no-restore --filter "Category=GOB12SqlConcurrency"
+    if ($LASTEXITCODE -ne 0) { throw "Falló la suite SQL (salida $LASTEXITCODE)." }
+} finally {
+    Remove-Item Env:ONEITB_RUN_GOB12_SQL, Env:ONEITB_GOB12_SQL_ADMIN -ErrorAction SilentlyContinue
+}
+```
+
+`Gob12SqlFixture` conecta a `master`, crea `OneITB_GOB12_<GUID sin guiones>` y
+ejecuta `EnsureCreatedAsync` sobre esa base. En `DisposeAsync` comprueba el nombre
+generado, toma la base en modo de usuario único y la elimina. También intenta limpiarla
+si falla la inicialización después de crearla. Tras una interrupción, contrastar en
+la instancia descartable los nombres presentes antes y después; registrar cualquier
+base residual y tratarla por su nombre exacto. No borrar por prefijo.
+Esta suite comprueba el modelo sobre SQL Server. La aplicación de la cadena de
+migraciones se verifica aparte.
+
+Registrar en el manifiesto una fila por ejecución con SHA, filtro, entorno sin secretos,
+totales, fallos, omisiones, salida y limpieza. Para certificar los diez casos deben
+pasar sin omisiones. Si la instancia no está disponible, registrar `BLOCKED` y
+mantener pendiente ese gate. El preflight invoca xUnit sin filtro: al ejecutarlo
+con la categoría incluida necesita la misma instancia y variables. Un resultado
+combinado no se suma otra vez al informe desglosado.
+
 ### 3.4 Aplicar migraciones
 
 ```powershell
@@ -231,8 +280,7 @@ dotnet ef database update `
   --startup-project "API Graphql/OneITB/GraphQL.csproj"
 ```
 
-El modelo vigente contiene 34 migraciones, hasta `AddEmployerOnboardingWorkflow`. El
-número sirve como control de orientación y debe actualizarse si se crea una migración.
+Contrastar la lista anterior con el historial de la base de destino. En el corte de GOB-14 la última migración versionada es `20261109005522_AddAcademicSectionsAndRegularity`.
 
 ### 3.5 Certificado HTTPS
 
@@ -269,7 +317,8 @@ Es bloqueante. Mantener esa terminal abierta y detener con `Ctrl+C`. Endpoints d
 - Readiness SQL: `https://localhost:44397/health/ready`
 - GraphQL HTTP/WS: `https://localhost:44397/graphql`
 - Upload: `https://localhost:44397/api/upload`
-- Archivos locales: `https://localhost:44397/uploads/{file}`
+- Estáticos locales públicos: `https://localhost:44397/uploads/{file}` (GAP-FILE-01).
+- Adjuntos privados: GET autenticado `https://localhost:44397/api/message-attachments/{attachmentId}`; solo los dos participantes del mensaje. Véase arquitectura §5.3.
 
 ### 4.2 Terminal 2 - Frontend
 

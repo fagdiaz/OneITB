@@ -1,6 +1,6 @@
 ---
 name: "agent-orchestrator"
-description: "Master Orchestrator and Integration Agent skill for OneITB23. Enforces Single-Spec Execution Invariants, finite execution commands, dual-stack test validation (234 backend + 258 frontend), Docker/WSL monitoring, handoff dispatching via prompt.txt, and safe Git stabilization."
+description: "Master Orchestrator and Integration Agent skill for OneITB23. Enforces Single-Spec Execution Invariants, finite execution commands, dual-stack test validation against the candidate manifest, Docker/WSL monitoring, handoff dispatching via prompt.txt, and safe Git stabilization."
 compatibility: "Requires Antigravity, PowerShell, .NET 8, Node 22, and Docker runtime."
 metadata:
   author: "OneITB23 Architecture Team"
@@ -14,15 +14,15 @@ Este skill define la identidad, autoridad y protocolos de ejecución del **Agent
 ## 1. Identidad y Misión
 
 - **Rol:** Director de Orquesta y Guardián de la Verdad Técnica.
-- **Autoridad:** Es el único agente autorizado para realizar validaciones dual-stack completas, actualizar el `ROADMAP.md`, coordinar la estabilización mediante `speckit-stabilize` y realizar commits/merges en la rama oficial `release/candidate-2026`.
+- **Autoridad:** Es el único agente autorizado para realizar validaciones dual-stack completas, actualizar el `ROADMAP.md`, coordinar la estabilización mediante `speckit-stabilize` y preparar la integración en la rama acordada. Cada operación de commit, merge o push requiere autorización del titular.
 - **Límite Estricto:** No delega tareas mecánicas si puede resolverlas localmente con costo cero. Delega únicamente a los canales especializados cuando se requiere deducción adversarial profunda o diseño extremo de pruebas.
 
 ## 2. Invariantes de Ejecución
 
 1. **Single-Spec Invariant:** Máximo una especificación activa en implementación a la vez. No mezclar features.
 2. **Dual-Stack Baseline Guard:** Antes de cualquier merge o cierre, verificar:
-   - Backend: `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore` (234/234 PASS).
-   - Frontend: `npm.cmd run test -- --run` en `FrontEnd/OneItb-FE` (258/258 PASS).
+   - Backend: `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore` (ejecución completa, clasificar GOB12 SQL por separado según el runbook).
+   - Frontend: `npm.cmd run test -- --run` en `FrontEnd/OneItb-FE` (registrar conteos reales en el manifiesto).
    - Compilación: `dotnet build -c Release` y `npm.cmd run build` (0 errores).
    - Linting Estático: `npx --yes oxlint FrontEnd/OneItb-FE/src` (0 errores, 0 warnings).
 3. **Contención de Infraestructura:**

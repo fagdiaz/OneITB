@@ -6,15 +6,27 @@
 
 ---
 
-## 1. Rama Principal Activa ("Semi-Main" / Release Candidate)
+## 1. Referencias para reproducir el corte
 
-| Rama Canónica | Equivalente Técnico | Propósito |
-| :--- | :--- | :--- |
-| **`release/candidate-2026`** | Rama Oficial de Release | **Punto de entrada oficial y visible en GitHub.** Contiene todo el código estabilizado, probado y verificado (234 tests backend + 258 frontend). |
-| **`codex/199-ux-b2b-academic-onboarding`** | Rama de Integración Interna | Rama técnica utilizada para las integraciones continuas y sincronización entre agentes. Es idéntica en contenido a `release/candidate-2026`. |
+| Referencia observada el 2026-11-09 | SHA completo | Uso |
+| --- | --- | --- |
+| `origin/feature/2026-11-01-debugger-cv-builder` | `d8e45c2c49da801a076fab1d6e3a6245ce086be3` | Rama de integración; contiene GOB-12 y la matriz GOB-13. Base auditada de GOB-14. |
+| `origin/release/candidate-2026` | `2292985dab194e1beab4da283ca1d5d901e7b517` | Referencia nominal de RC. La rama local histórica `codex/199-ux-b2b-academic-onboarding` apunta al mismo commit en este inventario. |
+| Corte de autoría del paquete de defensa | `62338cbd60766cf5cbe48b505cf06f57daa32a5e` | Identifica las métricas impresas en la presentación y el guion (§4 de DOCUMENTATION_STATUS.md). |
+| SHA definitivo para la mesa | Pendiente de CF-06 | Registrar el SHA completo y la evidencia del corte integrado cuando se cumplan los gates del roadmap. |
 
-> [!IMPORTANT]
-> La rama histórica `main` quedó desactualizada respecto a las últimas 15 especificaciones. La verdadera rama de producción académica para clonar o inspeccionar es **`release/candidate-2026`** (o `codex/199-ux-b2b-academic-onboarding`).
+Para inspeccionar GOB-14 desde una **copia nueva**:
+
+```powershell
+git clone --no-checkout https://github.com/fagdiaz/OneITB.git OneITB23-revision
+git -C OneITB23-revision switch --detach d8e45c2c49da801a076fab1d6e3a6245ce086be3
+git -C OneITB23-revision rev-parse HEAD
+```
+
+La última salida debe coincidir con el SHA completo de la primera fila. Para una
+defensa posterior se sustituye ese valor por el SHA del manifiesto CF-06.
+Las ramas pueden avanzar. La mesa prevista para el 07/08/2026 no se realizó y no
+hay fecha de reemplazo documentada.
 
 ---
 
@@ -49,5 +61,5 @@ feature/<año>-<mes>-<dia>-<modulo>
 ```
 *Ejemplo:* `feature/2026-11-01-debugger-cv-builder`
 
-1. **Base de despegue:** Se crea siempre a partir de `release/candidate-2026` o `codex/199-ux-b2b-academic-onboarding`.
+1. **Base de despegue:** Partir del SHA de integración acordado para la spec y verificarlo con `git rev-parse` antes de crear la rama.
 2. **Ciclo de vida:** Tras ser aprobada y mergeada sin conflictos, la rama remota se elimina para mantener limpio el árbol de GitHub.

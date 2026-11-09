@@ -19,6 +19,33 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-09] - Resolution of Critical Documentary Findings, Constitution v1.8.0 and Technical Alignment (GOB-20261109-14) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Integración oficial de las siete mejoras documentales prioritarias antes de la defensa académica dictaminadas por el Agente Auditor y Arquitecto Principal (6.0 Astra). Se formaliza la enmienda v1.8.0 a la Constitución del proyecto (§IX), se alinea el contrato arquitectónico de descarga de adjuntos privados vía REST, se documenta la ejecución aislada de las pruebas SQL de concurrencia en el Runbook, y se sincroniza el inventario del modelo de datos a 39 DbSet y 67 claves foráneas post-Spec 220.
+
+### Tareas y Artefactos Integrados
+
+1. **Enmienda Constitucional v1.8.0 (.specify/memory/constitution.md §IX):**
+   - Se reemplaza la fijación rígida de conteos históricos por la obligación de ejecutar la totalidad de las suites automatizadas oficiales sin omisiones no autorizadas.
+   - Los conteos numéricos observados se derivan de la evidencia y el manifiesto trazable al SHA candidato, preservando el preflight de certificación sin model drift ni errores de linter.
+
+2. **Runbook Operativo de Concurrencia SQL (docs/audit/RUNBOOK_DEV.md):**
+   - Documentado el procedimiento exacto para activar y ejecutar los diez casos GOB12SqlConcurrency mediante ONEITB_RUN_GOB12_SQL=true y ONEITB_GOB12_SQL_ADMIN, especificando el aislamiento sobre bases SQL descartables, el ciclo de limpieza y la distinción formal respecto a la suite estándar de 368 casos.
+
+3. **Arquitectura y Contratos de Binarios (docs/project_docs/architecture-and-design.md):**
+   - Incorporación formal del endpoint GET /api/message-attachments/{id} (MessageAttachmentsController.cs), documentando la autorización por participante en el hilo, control de acceso 401/403/404, soporte de streaming parcial HTTP 206 y política de no almacenamiento en caché.
+   - Se mantiene explícita la brecha GAP-FILE-01 para el acceso estático sin autorización en /uploads.
+
+4. **Sincronización de Ramas, Modelado y Defensa:**
+   - BRANCHING_STRUCTURE.md: Clarificación de la jerarquía entre la RC nominal 2292985, la integración de trabajo d8e45c2 y el corte de autoría de diapositivas 62338cb, reservando la congelación final a CF-06.
+   - 04-design-diagrams.md: Actualización del inventario de entidades a 39 DbSet y 67 FKs.
+   - DOCUMENTATION_STATUS.md: Registro formal de los artefactos de defensa en docs/academic/defense/ con sus respectivos hashes SHA-256.
+
+5. **Métricas y Estado:**
+   - Suites intactas: Backend 368/368 xUnit en PASS; Frontend 357/357 Vitest en PASS.
+   - Handoff Ledger: ACCEPTED_AND_APPLIED registrado en docs/audit/handoff_ledger.json (GOB-20261109-14).
+
+---
 ## [2026-11-09] - Integration of Six-Role Authorization Matrix and Protected Routing Suites (GOB-20261109-13) - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Integración oficial de la matriz exhaustiva de autorización multi-rol y navegación protegida entregada por el Agente de Hardening & Testing (6.1 Sol). Incorporación de 104 pruebas en xUnit para el backend (.NET 8) y 70 pruebas en Vitest para el frontend (React 18), cubriendo la totalidad de los 6 roles del sistema (Administrador, Moderador, Profesor, Estudiante, Egresado, Empleador), controles anónimos, aislamiento de pertenencia a comisiones docentes y barrera de acceso en la gestión de postulaciones laborales.

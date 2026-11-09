@@ -2,7 +2,7 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Última revisión de este índice** | 2026-08-08 |
+| **Última revisión de este índice** | 2026-11-09 (actualización puntual del paquete de defensa en §4; se conserva el corte de las revisiones históricas) |
 | **Estado funcional de referencia** | 117/117 ítems: 46 verificados `[V]` y 71 implementados `[I]`; Specs 202-218 son gates de calidad fuera del denominador |
 | **Clasificación del producto** | Release Candidate académico, core Feature Complete y Code Freeze operativo local |
 | **Situación de mesa** | La defensa planificada para el 7 de agosto de 2026 a las 09:00 no se realizó; no hay nueva fecha documentada |
@@ -105,8 +105,28 @@ histórica. No se modifica el código para hacerlo coincidir con una narrativa o
 | Copia de maquetación (`DOCUMENTO_MAQUETACION.md`) | Copia de trabajo transitoria generada desde el documento base para reemplazo de figuras e inyección Pandoc | **Artefacto efímero de compilación**: no compite con la fuente maestra; se genera bajo demanda a partir de `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` (`DF-05`) | Mantener excluido de Git; regenerar determinísticamente al compilar el DOCX definitivo |
 | DOCX APA 7 | Editable institucional con índice, estilos, tablas con bordes y figuras | **Generado y normalizado**: `OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` (3.72 MB) compilado determinísticamente con portada oficial 2026, 10 mockups, casos de uso desacoplados por actor, DER doble página y Diagrama de Clases | Entregable editable v2.0 disponible en `docs/entrega_final/salida/` (`DF-05`) |
 | PDF definitivo | Copia digital e insumo de impresión | **Generado mediante Word COM**: `OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf` (45 páginas, 2.76 MB, TOC y campos actualizados, tablas bordeadas, diagramas de alta resolución) | Listo para revisión final e impresión física (`DF-06`) |
-| Presentación PPTX/PDF | Narrativa de defensa y guía de demostración | **No creada como entrega final**; existe un DOCX parcial P03 ignorado | Problema, solución, arquitectura, demo, evidencia, límites y cierre en 22-25 minutos (`DF-07`) |
+| Presentación PPTX/PDF | Exposición ante la mesa | **DF-07 generado:** 14 diapositivas con notas y PDF de proyección disponibles localmente; corte de autoría `62338cb` | Conservar con su fuente y verificar el ejemplar de distribución. |
+| Guion y banco de preguntas | Texto cronometrado, contingencias y hoja de ensayos | **Material de DF-08 disponible:** objetivo de 23 minutos | Restan los dos ensayos cronometrados con el expositor y el registro de sus tiempos reales. |
 | Copia física | Entrega para la mesa | **Pendiente** | Una copia preferentemente a color, anillada o encuadernada (`LG-01`) |
+
+#### Inventario de defensa DF-07 y DF-08
+
+Directorio local: `docs/academic/defense/`. Identidad del material utilizado al
+preparar el guion: `62338cbd60766cf5cbe48b505cf06f57daa32a5e` (281 frontend,
+264 backend). La base de esta revisión documental es `d8e45c2`. Para actualizar
+las cifras proyectadas, revisar el contenido y exportar nuevos archivos con nuevas
+huellas. El cierre logístico y el SHA de defensa se gobiernan en el roadmap.
+
+| Archivo | Disponibilidad | SHA-256 del ejemplar local revisado |
+| --- | --- | --- |
+| `OneITB23-Defensa.pptx` | Entrega local, ignorada por Git | `70e8f5f6b4e195697e80b396ca1d29e8c6b80a0dad38c8992709775007319acf` |
+| `OneITB23-Diapositivas.pdf` | Entrega local, ignorada por Git | `cd42be9ccf71a7fd387dcd783e9e1f0e2bc7d353c764baadf84720fbb2eefbc6` |
+| `OneITB23-Paquete-maestro.pdf` | Entrega local, ignorada por Git | `c1c34069d859ee7f43f22ab149ec3b70059bb01e28d162de2cedf158d9c935be` |
+| `defense-content.json` | Fuente versionada | `26a5189b0ba3659614bd053a6e9b7efb3c36c506b5be985ddf48b1b67cf407a2` |
+
+En otra máquina, recuperar los tres binarios de la copia de entrega de Local AGY,
+colocarlos en ese directorio y contrastar sus huellas con `Get-FileHash -Algorithm SHA256`.
+Un clon de Git contiene la fuente JSON; los binarios se distribuyen por separado.
 
 El Manual de Usuario permanece integrado en la sección 6 de la memoria y, según la
 confirmación del presidente de mesa, no se entrega como documento separado.
@@ -169,7 +189,7 @@ vista resumida claramente identificada y de mantenimiento razonable.
 
 | Bloque | Estado | Trabajo pendiente | Estimación canónica |
 |---|---|---|---:|
-| `DF-01`, `DF-03` a `DF-08` | `[ ] [P]` | Portada, 10 Mermaid, 4 recreaciones manuales, DOCX, PDF, presentación y dos ensayos | 16 h 50 min a 24 h 30 min |
+| `DF-01`, `DF-03` a `DF-08` | Estado por gate en el roadmap | Inventario al 09/11: presentación y guion disponibles (§4); faltan los dos ensayos de DF-08 | Consultar las estimaciones por gate |
 | `LG-01` a `LG-05` | `[ ] [P]` | Impresión, notebook/HDMI, pendrive, snapshot offline y llegada anticipada | Se solapa con `DF-05` a `DF-08` |
 | Cierre técnico + académico | `[ ] [P]` | Paquete reproducible completo | 23 h 35 min a 34 h efectivas |
 
