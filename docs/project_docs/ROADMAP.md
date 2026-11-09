@@ -9,8 +9,8 @@
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
-| Backend automatizado más reciente | **264/264** | Spec 220 y hardening post-auditoría ejecutaron la suite completa junto al frontend; 264 pruebas unitarias y de integración en PASS (0 omitidas) |
-| Frontend automatizado más reciente | **287/287** | GOB-12 amplió la suite Vitest a 66 suites completas; 287 pruebas en PASS (0 fallos) |
+| Backend automatizado más reciente | **368/368** | GOB-13 incorporó la matriz de autorización por roles (104 casos); 368 pruebas unitarias y de integración en PASS (0 omitidas) |
+| Frontend automatizado más reciente | **357/357** | GOB-13 amplió la suite Vitest a 67 suites completas (70 casos de matriz de navegación); 357 pruebas en PASS (0 fallos) |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente; la mesa del 07/08 no se realizó |
 
 El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de

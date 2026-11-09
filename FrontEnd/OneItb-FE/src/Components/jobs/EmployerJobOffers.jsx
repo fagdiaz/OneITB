@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_MY_JOB_OFFERS, UPDATE_APPLICATION_STATUS, GET_EMPLOYMENT_APPLICATION } from '../../data/graphql/jobs';
+import useAuth from '../../hooks/useAuth';
 
 import { CandidateCvDialog } from './ApplicationCvDialog';
 
@@ -73,6 +74,8 @@ const AtsSkeleton = () => (
 );
 
 export const EmployerJobOffers = () => {
+  const { auth } = useAuth();
+  const isAuthorized = auth?.role === 'Empleador' || auth?.role === 'Administrador';
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [searchParams] = useSearchParams();
@@ -88,6 +91,7 @@ export const EmployerJobOffers = () => {
 
   const { data, loading, error } = useQuery(GET_MY_JOB_OFFERS, {
     variables: { first: 50 },
+    skip: !isAuthorized,
     fetchPolicy: 'cache-and-network',
   });
   const [updateApplicationStatus, { loading: updatingStatus }] = useMutation(UPDATE_APPLICATION_STATUS);
@@ -125,6 +129,23 @@ export const EmployerJobOffers = () => {
       setFeedback({ type: 'error', message: err?.message || 'No se pudo actualizar el estado.' });
     }
   };
+
+  if (!isAuthorized) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-white">
+        <section className="mx-auto max-w-6xl">
+          <div className="flex h-[calc(100vh-8rem)] items-center justify-center p-4">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-400/20 dark:bg-red-500/10">
+              <h1 className="text-lg font-bold text-red-700 dark:text-red-300">Acceso restringido</h1>
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                No tienes permisos para acceder a la gestión de ofertas laborales.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-white">

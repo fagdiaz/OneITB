@@ -117,6 +117,12 @@
     },
     {
       "id": "MOD-09",
+      "latest_scoped_review": {
+        "date": "2026-11-09",
+        "commit": "f5b6cd817362ff457ceee4346717abc94a7d59e5",
+        "scope": "Constitución, gobernanza, contratos binarios, evidencia y documentación de defensa",
+        "result": "Mejoras documentales identificadas; sin certificación de release"
+      },
       "name": "Alineación de Documentación y Verificación de la Verdad en Código",
       "status": "COMPLETED",
       "report_file": "docs/audit/full_audit/MODULE_09_DOCUMENTATION_ALIGNMENT.md",

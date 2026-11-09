@@ -19,6 +19,37 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-09] - Integration of Six-Role Authorization Matrix and Protected Routing Suites (GOB-20261109-13) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Integración oficial de la matriz exhaustiva de autorización multi-rol y navegación protegida entregada por el Agente de Hardening & Testing (6.1 Sol). Incorporación de 104 pruebas en xUnit para el backend (.NET 8) y 70 pruebas en Vitest para el frontend (React 18), cubriendo la totalidad de los 6 roles del sistema (Administrador, Moderador, Profesor, Estudiante, Egresado, Empleador), controles anónimos, aislamiento de pertenencia a comisiones docentes y barrera de acceso en la gestión de postulaciones laborales.
+
+### Tareas y Artefactos Integrados
+
+1. **Matriz Backend de Autorización por Roles (xUnit):**
+   - Incorporación de RoleAuthorizationMatrixTests.cs en API Graphql/Tests/Services.Tests/Security/:
+     * Matriz de 6 roles × 11 operaciones GraphQL (GraphQL_SixRolesCrossElevenOperations): verificación paramétrica de rechazos con AUTH_NOT_AUTHORIZED y códigos de denegación HotChocolate.
+     * Casos anónimos (Anonymous_CannotReachAnyProtectedOperation): rechazo con AUTH_NOT_AUTHENTICATED y 0 operaciones protegidas expuestas.
+     * Verificación de servicios y propiedad (JobService_IndependentlyEnforcesRolesAndOwnership y B2B_AcceptedRoleCannotChangeAnotherOwnersApplication): aislamiento de postulaciones laborales por empleador propietario, impidiendo que roles no autorizados o empleadores ajenos alteren estados.
+     * Asignación docente específica (Professor_MustBeAssignedToTheExactSection): validación de que un docente solo puede calificar comisiones donde se encuentra efectivamente asignado en SectionInstructor.
+
+2. **Matriz Frontend de Navegación Protegida por Rol (Vitest):**
+   - Incorporación de roleRoutingMatrix.test.jsx en FrontEnd/OneItb-FE/src/router/:
+     * Matriz de 6 roles × 4 rutas críticas (/admin, /admin/users, /empleos/mis-ofertas, /academic).
+     * Invariante de onboarding académico: aislamiento de roles sin carrera asignada forzando redirección controlada exclusivamente para Estudiante.
+     * Protección de perfiles ajenos: bloqueo de navegación ante discordancia entre sesión autenticada y perfil de usuario.
+     * Hidratación asíncrona de sesión: protección contra renderizado prematuro durante isLoading.
+     * Reemplazo en vivo de sesión: recalculo dinámico e instantáneo de barreras ante cambio de rol en runtime.
+   - Endurecimiento en EmployerJobOffers.jsx: incorporación de guard de autorización (auth.role === 'Empleador' || auth.role === 'Administrador') con vista de acceso restringido y supresión de queries no autorizadas (skip: !isAuthorized).
+
+3. **Métricas de Validación:**
+   - Frontend Vitest: 357/357 PASS en 67 suites (incremento de +70 pruebas, 0 fallos).
+   - Backend xUnit: 368/368 PASS en la suite de regresión (incremento de +104 pruebas, 0 fallos, 0 advertencias).
+   - Dual-stack Build: .NET 8 Release compilado limpiamente (0 errores, 0 advertencias), Vite empaquetado en 573 ms.
+   - Frontend Linter: 0 errores y 0 advertencias de oxlint en 216 archivos.
+   - EF Core Model Drift: 0 cambios pendientes de modelo (has-pending-model-changes: PASS).
+   - Handoff Ledger: ACCEPTED_AND_APPLIED registrado en docs/audit/handoff_ledger.json (GOB-20261109-13).
+
+---
 ## [2026-11-09] - Integration of Concurrency, Multi-tab Session Recovery and WebSocket Adversarial Suites (GOB-20261109-12) - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Integración oficial de las suites adversariales y casos de estrés de concurrencia entregados por el Agente de Hardening & Testing (6.1 Sol). Incorporación de pruebas SQL concurrentes en xUnit para carreras en adjuntos privados y calificaciones docentes, así como tests en Vitest para recuperación de conexión WebSocket (corte 1006), inversión de orden HTTP/replay, reconciliación de optimistic updates y reemplazo remoto de sesión A a B con aislamiento de epoch.

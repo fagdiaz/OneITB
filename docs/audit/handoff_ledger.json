@@ -88,5 +88,14 @@
         "ActionApplied": true,
         "Message": "Handoff ID 'GOB-20261109-12' accepted and applied cleanly (10 xUnit SQL Concurrency cases and 6 Vitest WebSocket/Session recovery tests reconciled).",
         "Timestamp": "2026-11-09 15:27:54"
+    },
+    {
+        "HandoffId": "GOB-20261109-13",
+        "SourceChannel": "Canal 2 (6.1 Sol)",
+        "PayloadHash": "44af02dc6a3d917a81d5a690437f5d853a063aec29fddc2ebc4cabd150e5965d",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Handoff ID 'GOB-20261109-13' accepted and applied cleanly (104 xUnit Role Authorization Matrix tests and 70 Vitest Role Routing Matrix tests reconciled).",
+        "Timestamp": "2026-11-09 16:31:38"
     }
 ]
