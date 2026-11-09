@@ -115,5 +115,14 @@
         "ActionApplied": true,
         "Message": "Handoff ID 'GOB-20261109-15' accepted and applied cleanly (PR-05 BCrypt Work Factor benchmark suite, hardware calibration under CPU starvation, timing attack ratios and dual-compatible finite runner script).",
         "Timestamp": "2026-11-09 17:18:00"
+    },
+    {
+        "HandoffId": "GOB-20261109-16",
+        "SourceChannel": "Canal 2 (6.1 Sol)",
+        "PayloadHash": "97b4d30a5453b70c1484868db69a04c264ffeb85dad5d65c2128b8caab92232f",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Handoff ID 'GOB-20261109-16' accepted and applied cleanly (GraphQL AST Hardening, Depth Limiting, Field/Node parser limits, and Error Sanitization test suite with 19 passed cases and 1 GHSA canary).",
+        "Timestamp": "2026-11-09 17:50:00"
     }
 ]

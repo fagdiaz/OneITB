@@ -9,7 +9,7 @@
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
-| Backend automatizado más reciente | **368/368** | GOB-13 incorporó la matriz de autorización por roles (104 casos); 368 pruebas de regresión en PASS (0 omitidas). La categoría GOB12SqlConcurrency tiene diez casos adicionales y se informa por separado en el manifiesto |
+| Backend automatizado más reciente | **387/387** | GOB-16 incorporó la suite de endurecimiento GraphQL (19 casos); 387 pruebas de regresión en PASS (0 omitidas). Las categorías opt-in GOB12SqlConcurrency (10 casos), GOB15BcryptBenchmark (1 caso) y VendorAdvisoryGHSA (1 caso canario) se informan por separado en el manifiesto |
 | Frontend automatizado más reciente | **357/357** | GOB-13 amplió la suite Vitest a 67 suites completas (70 casos de matriz de navegación); 357 pruebas en PASS (0 fallos) |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente; la mesa del 07/08 no se realizó |
 

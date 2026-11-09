@@ -19,6 +19,26 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-09] - Integration of GraphQL AST Hardening, Depth Limiting and Error Sanitization Suite (GOB-20261109-16) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Entrega e integración de la suite de pruebas adversariales sobre HotChocolate 14 para la mitigación del OWASP GraphQL Security Top 10 (`GraphQLSecurityHardeningTests.cs`), generada por el Agente de Hardening & Testing (Canal 2 - 6.1 Sol) y ejecutada bajo Local AGY.
+
+### Tareas y Artefactos Integrados
+
+1. **Suite de Seguridad GraphQL (`GraphQLSecurityHardeningTests.cs`):**
+   - Validación de límite de profundidad (`MaxExecutionDepth = 15`): rechazo de consultas anidadas y fragmentos a profundidad 16 antes de resolver o acceder a DB.
+   - Mitigación de DoS por multiplicación de alias y campos: comprobación de rechazo por costos (`MaxFieldCost`, `MaxTypeCost`) y límites del parser (`MaxAllowedFields`).
+   - Bloqueo en fase de parseo por saturación de nodos y tokens (`MaxAllowedNodes`, `MaxAllowedTokens`).
+   - Sanitización estricta de errores con `GraphQLErrorFilter`: eliminación total de excepciones, nombres de entidades EF, queries SQL y stack traces ante fallos internos no controlados.
+   - Resiliencia y recuperación del executor ante sintaxis corrupta y campos desconocidos.
+   - Detección de aviso de seguridad de terceros (`GHSA-qr3m-xw4c-jqw3`) como prueba canaria categorizada (`VendorAdvisoryGHSA`).
+
+2. **Métricas de Ejecución y Regresión:**
+   - Suite GraphQL Security ejecutada en 1 s (19/19 superadas en suite regular, 1 canaria de proveedor).
+   - Regresión backend: **387/387 PASS** (0 fallos, 0 omitidos).
+   - Regresión frontend: **357/357 PASS** en 67 suites (0 fallos).
+
+---
 ## [2026-11-09] - Integration and Real Hardware Execution of BCrypt WorkFactor Benchmark PR-05 (GOB-20261109-15) - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Entrega e integración de la suite opt-in de benchmarking y resistencia a condiciones de carrera/saturación criptográfica sobre `BcryptPasswordHasher` (`PR-05`), generada por el Agente de Hardening & Testing (Canal 2 - 6.1 Sol) y ejecutada en hardware real bajo Local AGY.
