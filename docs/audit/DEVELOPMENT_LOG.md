@@ -19,6 +19,29 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-09] - Defense Readiness Verifier and 20-Question Code-Backed QA Suite (GOB-20261109-17) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Cierre de contingencia y herramientas de validación de entorno previas a la defensa oral (`DF-08`), con sincronización de métricas al corte candidato inmutable (`a16cbf9`), expansión del banco de preguntas difíciles de la mesa a 20 casos respaldados por código, y diseño del script de verificación ultra-rápido `Test-DefenseDemoReadiness.ps1`.
+
+### Tareas y Artefactos Integrados
+
+1. **Sincronización del Contenido de Defensa (`defense-content.json`):**
+   - SHA candidato de la presentación actualizado al corte certificado `a16cbf9`.
+   - Cifras métricas sincronizadas a **744 pruebas automatizadas** (387 backend + 357 frontend).
+   - Incorporación de 6 preguntas adicionales de la mesa examinadora cubriendo:
+     * P15: Calibración BCrypt costo 12 y resistencia DoS (`PR-05` / GOB-15).
+     * P16: Límite de profundidad GraphQL (`MaxExecutionDepth=15`) y parser caps (GOB-16).
+     * P17: Justificación técnica de la Enmienda Constitucional v1.8.0 (§IX).
+     * P18: Barrera de enrutamiento y roles entre Administrador y Empleador en B2B (`EmployerJobOffers.jsx` / GOB-13).
+     * P19: Sincronización multi-pestaña y recuperación de sesiones WebSocket en Apollo Client (GOB-12).
+     * P20: Plan de contingencia in situ ante fallas de red, proyector HDMI o conexión a Internet.
+
+2. **Script de Verificación en Tiempo Real (`Test-DefenseDemoReadiness.ps1`):**
+   - Ejecución determinística en 276 ms.
+   - Validación de runtimes (.NET 8 SDK y Node.js), binarios Release y bundle de Vite.
+   - Auditoría estática de los 4 pilares de la demostración (Identidad, CV inmutable, Concurrencia de notas con `RowVersion` y Descarga privada con rango HTTP 206).
+
+---
 ## [2026-11-09] - Integration of GraphQL AST Hardening, Depth Limiting and Error Sanitization Suite (GOB-20261109-16) - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Entrega e integración de la suite de pruebas adversariales sobre HotChocolate 14 para la mitigación del OWASP GraphQL Security Top 10 (`GraphQLSecurityHardeningTests.cs`), generada por el Agente de Hardening & Testing (Canal 2 - 6.1 Sol) y ejecutada bajo Local AGY.

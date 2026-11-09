@@ -687,7 +687,7 @@ después de excluir de forma específica, sin borrarlo, el prompt local de Agy. 
 | `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[x] [I]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable v2.0 (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx`), estilos APA, 10 mockups, tablas bordeadas con padding |
 | `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[x] [I]` | 2-3 h | `DF-05` | PDF oficial generado vía Word COM (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf`), 45 páginas, TOC y campos actualizados |
 | `DF-07` | Diseñar presentación de defensa en PPTX/PDF con narrativa problema-solución-arquitectura-demo-evidencia | `[x] [I]` | 2 h 30 min-4 h | `DF-03`, `DF-04` y evidencia de `CF-03` | Presentación legible, visual, con demo guiada, métricas verificables y límites honestos; inventario y huellas en DOCUMENTATION_STATUS.md §4 |
-| `DF-08` | Preparar guion, contingencias y ejecutar al menos dos ensayos cronometrados | `[ ] [P]` | 3-4 h | `CF-06`, `DF-06` y `DF-07` | Guion de 23 min y contingencias disponibles. Pendientes los dos ensayos cronometrados y el registro real de sus tiempos (objetivo 22-25 min; rango oficial 20-30 min) |
+| `DF-08` | Preparar guion, contingencias y ejecutar al menos dos ensayos cronometrados | `[ ] [P]` | 1-2 h | `CF-06`, `DF-06` y `DF-07` | Guion maestro de 23 min, banco de 20 preguntas con respuestas basadas en código y script de verificación previa (`Test-DefenseDemoReadiness.ps1`) completados en GOB-17. Resta únicamente realizar los dos ensayos orales cronometrados (objetivo 22-25 min) |
 
 **Inventario documental al 08/08/2026:** existen fuentes extraídas para 10 figuras de la
 memoria y 13 vistas técnicas. Los 13 bloques de `docs/academic/04-design-diagrams.md`

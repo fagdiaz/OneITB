@@ -325,7 +325,7 @@
     ],
     [
       "¿Los tests verdes y cero migraciones pendientes certifican producción?",
-      "Las suites respaldan las aserciones que ejecutan. La verificación de drift compara el modelo EF con su snapshot. Para saber si una base específica está al día hay que consultar sus migraciones aplicadas. A esto se suman pruebas con SQL Server, dos sesiones, aceptación del tenant e infraestructura del destino. El SHA identifica el conjunto de código del que estamos hablando.",
+      "Las suites respaldan 744 pruebas automatizadas ejecutadas en verde (387 backend y 357 frontend), más 10 pruebas de concurrencia SQL pura y el benchmark de BCrypt. La verificación de drift compara el modelo EF con su snapshot sin cambios pendientes. Para saber si una base específica está al día hay que consultar sus migraciones aplicadas. A esto se suman pruebas con SQL Server real, dos sesiones aisladas y la aceptación de infraestructura del destino. El SHA a16cbf9 identifica el conjunto exacto de código congelado de la presentación.",
       "docs/audit/DEVELOPMENT_LOG.md · 09/11; docs/project_docs/ROADMAP.md · CF-03 a CF-06 y PR-*"
     ],
     [
@@ -337,6 +337,36 @@
       "¿Qué haría antes de habilitar un piloto abierto?",
       "Validaría en el entorno de destino el tenant Microsoft, permisos de archivos, TLS, observabilidad y tratamiento de malware. Repetiría la demo con dos identidades aisladas y dejaría evidencia de los errores y del cierre de sesión. Para uso académico controlado se delimitan datos y participantes; para operación institucional permanente hace falta acordar responsables, monitoreo y recuperación.",
       "docs/project_docs/ROADMAP.md · PR-*; docs/audit/FINAL_AUDIT_REPORT.md; docs/audit/RUNBOOK_DEV.md"
+    ],
+    [
+      "¿Cómo calibraron el costo 12 de BCrypt y qué evidencia técnica tienen de que resiste ataques de denegación de servicio (DoS) por agotamiento de hilos?",
+      "En el gate PR-05 (GOB-15) ejecutamos una suite de benchmarking bajo xUnit midiendo percentiles p50/p95, utilización de CPU acumulada del proceso y scheduler probes. El costo 12 arrojó un p50 de ~242 ms por hash/verificación, cumpliendo el piso institucional de 100 ms y manteniéndose holgadamente bajo el guardrail serial de 500 ms. Además, sometimos el hasher a ráfagas concurrentes de 8 y 16 operaciones mixtas sin que se degradara la capacidad de respuesta (p95 extremo a extremo < 800 ms vs guardrail de 5000 ms, y scheduler probes < 300 ms vs guardrail de 1000 ms). Los ratios temporales contra contraseñas inválidas se mantuvieron entre 0.985 y 1.005, dentro de la banda segura de 2/3 a 1.5.",
+      "API Graphql/Tests/Services.Tests/Security/BCryptWorkFactorBenchmarkTests.cs; scripts/Invoke-BCryptWorkFactorBenchmark.ps1"
+    ],
+    [
+      "¿Qué mecanismos impiden que un atacante sature la CPU mediante consultas GraphQL recursivas o con miles de aliases?",
+      "HotChocolate 14 está configurado en Startup con tres capas defensivas coordinadas probadas en GOB-16: 1) MaxExecutionDepth fijado en 15, que aborta de inmediato cualquier consulta anidada a profundidad 16 (incluso mediante fragmentos) antes de invocar resolvers o tocar la base de datos; 2) Reglas de complejidad y costo (MaxFieldCost y MaxTypeCost = 200.000 con EnforceCostLimits = true), que rechazan ataques de multiplicación por alias; y 3) ParserOptions con límites rígidos (MaxAllowedFields=20.000, MaxAllowedNodes=50.000, MaxAllowedTokens=100.000), bloqueando documentos anómalos en fase léxica antes de asignar memoria de ejecución.",
+      "API Graphql/OneITB/Startup.cs; API Graphql/Tests/Services.Tests/GraphQL/GraphQLSecurityHardeningTests.cs"
+    ],
+    [
+      "¿Por qué se enmendó la Constitución del proyecto a la versión 1.8.0 (§IX) en lugar de mantener las cifras fijas de 234/252 tests?",
+      "La enmienda v1.8.0 desvinculó el principio de certificación de los números históricos del corte inicial de la Spec 218. Fijar números estáticos creaba contradicciones cuando el trabajo de hardening incorporaba legítimamente nuevas matrices de prueba. La nueva redacción establece el principio sustantivo: la totalidad de las suites oficiales existentes deben ejecutarse sobre el mismo SHA candidato, sin fallos ni omisiones no autorizadas, y las cifras exactas observadas (actualmente 387 backend y 357 frontend) deben registrarse y firmarse en el manifiesto de la Release Candidate.",
+      ".specify/memory/constitution.md §IX; docs/audit/RUNBOOK_DEV.md §14.1"
+    ],
+    [
+      "¿Cómo garantizan en el enrutamiento de React que un Estudiante o Profesor no pueda acceder indebidamente a las vistas y mutaciones de reclutamiento laboral de Empleador?",
+      "En el frontend, EmployerJobOffers.jsx verifica el rol del usuario mediante useAuth() y aplica una barrera estricta que autoriza únicamente a Empleador y Administrador. Si accede un Estudiante, Profesor, Egresado o Moderador, se renderiza una vista de 'Acceso restringido' y se suspende la consulta GraphQL (skip: !isAuthorized). En el backend, las mutaciones CreateJobOffer y CloseJobOffer imponen la misma regla de autorización por rol, asegurando que el frontend nunca actúe como único límite de seguridad.",
+      "FrontEnd/OneItb-FE/src/Components/jobs/EmployerJobOffers.jsx; API Graphql/Services/Jobs/JobService.cs; roleRoutingMatrix.test.jsx"
+    ],
+    [
+      "¿Cómo resuelve la aplicación la sincronización de sesiones en múltiples pestañas y qué ocurre si un usuario cierra sesión remotamente mientras un WebSocket está activo?",
+      "Apollo Client está envuelto por sessionBoundaryLink y un gestor de época de sesión (sessionEpoch). Cuando se dispara un evento de logout en cualquier pestaña (BroadcastChannel), la suscripción WebSocket activa se descarta de inmediato, se limpian los transportes y se purga tanto la memoria caché de Apollo como el almacenamiento local. Si otra cuenta inicia sesión en la misma ventana, useChatSubscription memoiza el documento por el ID del nuevo usuario, forzando la reconexión en la nueva época e impidiendo que queden mensajes o notificaciones cruzadas.",
+      "FrontEnd/OneItb-FE/src/Components/chat/useChatSubscription.js; src/data/graphql/GraphqlProvider.js; privateChatRecovery.gob12.test.jsx"
+    ],
+    [
+      "Plan de contingencia in situ: ¿Qué harían si en plena defensa falla la conexión de red del aula o el proyector HDMI tiene problemas de resolución?",
+      "Contamos con tres niveles de contingencia probados (DF-08 / LG-03): 1) Entorno 100% autónomo offline: Docker SQL Server local, Kestrel .NET 8 y frontend servido localmente sin dependencias externas de Internet; 2) Proyección alternativa: si el cliente web o el socket sufrieran alguna interrupción, disponemos de la suite interactiva de comandos cURL/PowerShell para demostrar la autorización de descarga y la respuesta HTTP 206 en vivo por consola; 3) Proyección de láminas: si el proyector HDMI falla con PowerPoint, disponemos del paquete maestro en PDF de alta fidelidad (OneITB23-Diapositivas.pdf) y una copia impresa a color anillada para entregar a la mesa examinadora.",
+      "scripts/Test-DefenseDemoReadiness.ps1; docs/academic/defense/OneITB23-Diapositivas.pdf; docs/audit/RUNBOOK_DEV.md"
     ]
   ]
 }
