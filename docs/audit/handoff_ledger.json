@@ -106,5 +106,14 @@
         "ActionApplied": true,
         "Message": "Handoff ID 'GOB-20261109-14' accepted and applied cleanly (Critical documentary alignment, Constitution v1.8.0 §IX, SQL Concurrency runbook, branch guide, binary REST contract and 39 DbSet inventory).",
         "Timestamp": "2026-11-09 16:52:44"
+    },
+    {
+        "HandoffId": "GOB-20261109-15",
+        "SourceChannel": "Canal 2 (6.1 Sol)",
+        "PayloadHash": "f0c746150cc65ba963e6e1de2ed706e70e2fb3ad397d889dd24d4eb4bb4e6c6c",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Handoff ID 'GOB-20261109-15' accepted and applied cleanly (PR-05 BCrypt Work Factor benchmark suite, hardware calibration under CPU starvation, timing attack ratios and dual-compatible finite runner script).",
+        "Timestamp": "2026-11-09 17:18:00"
     }
 ]

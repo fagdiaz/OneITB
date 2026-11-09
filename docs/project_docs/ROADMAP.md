@@ -741,7 +741,7 @@ hasta ejecutarse en el ambiente de destino.
 | `PR-02` | Smoke con Redis administrado | `[ ] [B]` | 1-3 h | Endpoint TLS, credenciales y red permitida |
 | `PR-03` | Smoke de Cloudinary y ciclo upload/delete | `[ ] [B]` | 1-3 h | Cuenta, URL firmada y cuota aprobada |
 | `PR-04` | Aceptacion Microsoft Entra en tenant institucional | `[ ] [P]` | 20-45 min restantes | Éxito real hasta onboarding/muro verificado el 2026-08-04; resta cancelación/error, logout y aislamiento con segunda cuenta |
-| `PR-05` | Benchmark BCrypt en hardware objetivo | `[ ] [B]` | 1-2 h | Host productivo representativo |
+| `PR-05` | Benchmark BCrypt en hardware objetivo | `[x] [V]` | 0 h | Suite opt-in GOB-15 ejecutada en hardware de defensa (8 núcleos, .NET 8). Costo 12 p50=242ms, guardrails seriales (<=500ms) y ráfagas 8/16 aprobados; candidato calibración 11 |
 | `PR-06` | Alertas operativas y politica de I/O persistente | `[ ] [B]` | 2-4 h | Plataforma de monitoreo seleccionada |
 | `PR-07` | Antivirus/CDR externo para uploads | `[ ] [B]` | 8-16 h | Seleccion de proveedor, API, presupuesto y privacidad |
 

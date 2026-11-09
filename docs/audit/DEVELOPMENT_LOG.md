@@ -19,6 +19,35 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-09] - Integration and Real Hardware Execution of BCrypt WorkFactor Benchmark PR-05 (GOB-20261109-15) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Entrega e integración de la suite opt-in de benchmarking y resistencia a condiciones de carrera/saturación criptográfica sobre `BcryptPasswordHasher` (`PR-05`), generada por el Agente de Hardening & Testing (Canal 2 - 6.1 Sol) y ejecutada en hardware real bajo Local AGY.
+
+### Tareas y Artefactos Integrados
+
+1. **Suite de Benchmarking Criptográfico (`BCryptWorkFactorBenchmarkTests.cs`):**
+   - Calibración y muestreo estadístico de costos BCrypt 10, 11 y 12 (mínimo, p50, p95).
+   - Verificación de piso institucional (>=100 ms para costo efectivo) y guardrails seriales (p95 <=500 ms).
+   - Análisis temporal diferencial (rotación balanceada con 5 cohortes de contraseñas válidas e inválidas, ratios emparejados medianos entre 0.985 y 1.005, dentro de la banda de guardrail 2/3 a 1.5).
+   - Matriz 3×3 de compatibilidad cruzada entre hashes preexistentes y hashes activos, certificando actualización/rehash estricto y prohibición de degradación (no downgrade).
+   - Ráfagas concurrentes de 8 y 16 operaciones mixtas (hash + verify) liberadas simultáneamente en ThreadPool, midiendo latencia de cola, servicio, extremo a extremo y scheduler probes (saturación benigna <=1000 ms).
+
+2. **Ejecutor Finito Dual PowerShell 5.1 / 7+ (`Invoke-BCryptWorkFactorBenchmark.ps1`):**
+   - Compilación Release previa con `-warnaserror` y timeout de 120 s.
+   - Ejecución de proceso acotada con deadline rígido de 20 s y limpieza forzosa de árbol de procesos (`taskkill` o `Process.Kill(true)`).
+   - Generación atómica de evidencia externa (`execution.json`, `bcrypt-report.json`, `benchmark.trx`, logs).
+
+3. **Métricas Reales Observadas (Hardware de Defensa / Local AGY):**
+   - Entorno: Intel64 Family 6 Model 151 Stepping 5 (8 procesadores lógicos), Windows 11 build 26200, .NET 8.0.27 Release.
+   - Duración de ejecución del benchmark: 14.71 s de pared (dentro del presupuesto de 17 s y límite de 20 s).
+   - Factor 10: Hash p50 = 61.32 ms, Verify p50 = 61.09 ms (por debajo del piso institucional de 100 ms).
+   - Factor 11: Hash p50 = 120.25 ms, Verify p50 = 121.26 ms (candidato óptimo de calibración).
+   - Factor 12 (productivo configurado): Hash p50 = 241.97 ms, Verify p50 = 241.24 ms (cumple piso >=100 ms y se mantiene holgadamente bajo el límite de 500 ms).
+   - Ráfaga 8: 14.56 req/s, EndToEnd p95 = 549.52 ms (guardrail <=5000 ms), scheduler probes cargadas = 281.60 ms (guardrail <=1000 ms).
+   - Ráfaga 16: 20.05 req/s, EndToEnd p95 = 798.07 ms (guardrail <=5000 ms), scheduler probes cargadas = 0.01 ms.
+   - Regresión general: 368/368 backend xUnit PASS, 357/357 frontend Vitest PASS, 0 fallos, 0 omitidos.
+
+---
 ## [2026-11-09] - Resolution of Critical Documentary Findings, Constitution v1.8.0 and Technical Alignment (GOB-20261109-14) - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Integración oficial de las siete mejoras documentales prioritarias antes de la defensa académica dictaminadas por el Agente Auditor y Arquitecto Principal (6.0 Astra). Se formaliza la enmienda v1.8.0 a la Constitución del proyecto (§IX), se alinea el contrato arquitectónico de descarga de adjuntos privados vía REST, se documenta la ejecución aislada de las pruebas SQL de concurrencia en el Runbook, y se sincroniza el inventario del modelo de datos a 39 DbSet y 67 claves foráneas post-Spec 220.
