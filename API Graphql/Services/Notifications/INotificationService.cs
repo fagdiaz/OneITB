@@ -16,6 +16,7 @@ namespace Services.Notifications
             string message,
             string? actionUrl,
             CancellationToken cancellationToken = default);
+        Task PublishCommittedAsync(Guid notificationId, CancellationToken cancellationToken);
         Task<Notification?> UpsertGroupedNotificationAsync(
             Guid userId,
             NotificationType type,
@@ -29,6 +30,7 @@ namespace Services.Notifications
             Guid userId,
             int unreadCount,
             DateTime latestUnreadMessageAt,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            Guid? peerId = null);
     }
 }

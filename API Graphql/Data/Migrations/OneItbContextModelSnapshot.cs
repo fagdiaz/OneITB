@@ -461,6 +461,9 @@ namespace Data.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CommentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -484,17 +487,56 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CommentId");
+
                     b.HasIndex("InquiryId");
 
                     b.HasIndex("ReporterId");
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("InquiryId", "ReporterId", "Status")
+                    b.HasIndex("CommentId", "InquiryId");
+
+                    b.HasIndex("ReporterId", "CommentId")
                         .IsUnique()
-                        .HasFilter("[Status] = 'Pending'");
+                        .HasFilter("[Status] = 'Pending' AND [CommentId] IS NOT NULL");
+
+                    b.HasIndex("ReporterId", "InquiryId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Pending' AND [CommentId] IS NULL");
 
                     b.ToTable("CommunityReports", "dbo");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.CourseSection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Term")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectId", "Term", "Code")
+                        .IsUnique();
+
+                    b.ToTable("CourseSections", "dbo");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.EmployerOnboardingOutboxMessage", b =>
@@ -661,6 +703,60 @@ namespace Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("OneItb.Entities.Models.EnrollmentStanding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CareerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SourceReference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Term")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("ValidFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ValidUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CareerId");
+
+                    b.HasIndex("StudentId", "CareerId", "Term");
+
+                    b.ToTable("EnrollmentStandings", "dbo");
+                });
+
             modelBuilder.Entity("OneItb.Entities.Models.Inquiry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -792,6 +888,29 @@ namespace Data.Migrations
                     b.ToTable("JobApplications", "dbo");
                 });
 
+            modelBuilder.Entity("OneItb.Entities.Models.JobApplicationCv", b =>
+                {
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CapturedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("int");
+
+                    b.HasKey("ApplicationId");
+
+                    b.ToTable("JobApplicationCvs", "dbo", t =>
+                        {
+                            t.HasCheckConstraint("CK_JobApplicationCvs_PayloadJson", "ISJSON([PayloadJson]) = 1");
+                        });
+                });
+
             modelBuilder.Entity("OneItb.Entities.Models.JobOffer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -894,8 +1013,10 @@ namespace Data.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ClientMessageId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
@@ -917,6 +1038,10 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SenderId", "ClientMessageId")
+                        .IsUnique()
+                        .HasFilter("[ClientMessageId] IS NOT NULL");
+
                     b.HasIndex("ReceiverId", "IsRead", "SentAt");
 
                     b.HasIndex("ReceiverId", "SenderId", "SentAt", "Id");
@@ -924,6 +1049,43 @@ namespace Data.Migrations
                     b.HasIndex("SenderId", "ReceiverId", "SentAt", "Id");
 
                     b.ToTable("Messages", "dbo");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.MessageAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UploadId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("UploadId")
+                        .IsUnique();
+
+                    b.ToTable("MessageAttachments", "dbo");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.ModerationAudit", b =>
@@ -1115,6 +1277,54 @@ namespace Data.Migrations
                     b.ToTable("NotificationPreferences", "dbo");
                 });
 
+            modelBuilder.Entity("OneItb.Entities.Models.PrivateUpload", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsConsumed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "IsConsumed", "ExpiresAtUtc");
+
+                    b.ToTable("PrivateUploads", "dbo");
+                });
+
             modelBuilder.Entity("OneItb.Entities.Models.Reaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1139,6 +1349,133 @@ namespace Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Reactions", "dbo");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.RegularStudentCertificate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CareerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("StandingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Term")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("ValidUntil")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StandingId");
+
+                    b.ToTable("RegularStudentCertificates", "dbo");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.SectionEnrollment", b =>
+                {
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EnrolledAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.HasKey("SectionId", "StudentId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("SectionEnrollments", "dbo");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.SectionGrade", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssignedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<decimal?>("Score")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedById");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("SectionId", "StudentId")
+                        .IsUnique();
+
+                    b.ToTable("SectionGrades", "dbo", t =>
+                        {
+                            t.HasCheckConstraint("CK_SectionGrades_Score", "[Score] IS NULL OR ([Score] >= 0 AND [Score] <= 10)");
+                        });
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.SectionInstructor", b =>
+                {
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProfessorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.HasKey("SectionId", "ProfessorId");
+
+                    b.HasIndex("ProfessorId");
+
+                    b.ToTable("SectionInstructors", "dbo");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.SocialAttachment", b =>
@@ -1834,9 +2171,28 @@ namespace Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("OneItb.Entities.Models.Comment", "Comment")
+                        .WithMany("Reports")
+                        .HasForeignKey("CommentId", "InquiryId")
+                        .HasPrincipalKey("Id", "InquiryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Comment");
+
                     b.Navigation("Inquiry");
 
                     b.Navigation("Reporter");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.CourseSection", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.Subject", "Subject")
+                        .WithMany("Sections")
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Subject");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.EmployerOnboardingOutboxMessage", b =>
@@ -1865,6 +2221,25 @@ namespace Data.Migrations
                     b.Navigation("ProcessedByAdmin");
 
                     b.Navigation("ProvisionedUser");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.EnrollmentStanding", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.Career", "Career")
+                        .WithMany()
+                        .HasForeignKey("CareerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Career");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.Inquiry", b =>
@@ -1903,6 +2278,15 @@ namespace Data.Migrations
                     b.Navigation("Applicant");
 
                     b.Navigation("JobOffer");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.JobApplicationCv", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.JobApplication", null)
+                        .WithOne()
+                        .HasForeignKey("OneItb.Entities.Models.JobApplicationCv", "ApplicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.JobOffer", b =>
@@ -1944,6 +2328,25 @@ namespace Data.Migrations
                     b.Navigation("Receiver");
 
                     b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.MessageAttachment", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.Message", "Message")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.PrivateUpload", "Upload")
+                        .WithMany()
+                        .HasForeignKey("UploadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("Upload");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.ModerationAudit", b =>
@@ -2014,6 +2417,17 @@ namespace Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("OneItb.Entities.Models.PrivateUpload", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("OneItb.Entities.Models.Reaction", b =>
                 {
                     b.HasOne("OneItb.Entities.Models.Inquiry", "Inquiry")
@@ -2031,6 +2445,90 @@ namespace Data.Migrations
                     b.Navigation("Inquiry");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.RegularStudentCertificate", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.EnrollmentStanding", "Standing")
+                        .WithMany("Certificates")
+                        .HasForeignKey("StandingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Standing");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.SectionEnrollment", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.CourseSection", "Section")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Section");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.SectionGrade", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.User", "AssignedBy")
+                        .WithMany()
+                        .HasForeignKey("AssignedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.CourseSection", "Section")
+                        .WithMany("Grades")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.SectionEnrollment", "Enrollment")
+                        .WithOne("Grade")
+                        .HasForeignKey("OneItb.Entities.Models.SectionGrade", "SectionId", "StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedBy");
+
+                    b.Navigation("Enrollment");
+
+                    b.Navigation("Section");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.SectionInstructor", b =>
+                {
+                    b.HasOne("OneItb.Entities.Models.User", "Professor")
+                        .WithMany()
+                        .HasForeignKey("ProfessorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OneItb.Entities.Models.CourseSection", "Section")
+                        .WithMany("Instructors")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Professor");
+
+                    b.Navigation("Section");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.SocialAttachment", b =>
@@ -2204,11 +2702,27 @@ namespace Data.Migrations
                     b.Navigation("Reactions");
 
                     b.Navigation("Replies");
+
+                    b.Navigation("Reports");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.CourseSection", b =>
+                {
+                    b.Navigation("Enrollments");
+
+                    b.Navigation("Grades");
+
+                    b.Navigation("Instructors");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.EmployerRequest", b =>
                 {
                     b.Navigation("OutboxMessage");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.EnrollmentStanding", b =>
+                {
+                    b.Navigation("Certificates");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.Inquiry", b =>
@@ -2227,6 +2741,16 @@ namespace Data.Migrations
                     b.Navigation("Applications");
                 });
 
+            modelBuilder.Entity("OneItb.Entities.Models.Message", b =>
+                {
+                    b.Navigation("Attachments");
+                });
+
+            modelBuilder.Entity("OneItb.Entities.Models.SectionEnrollment", b =>
+                {
+                    b.Navigation("Grade");
+                });
+
             modelBuilder.Entity("OneItb.Entities.Models.Subject", b =>
                 {
                     b.Navigation("AcademicProgressRecords");
@@ -2234,6 +2758,8 @@ namespace Data.Migrations
                     b.Navigation("AcademicResources");
 
                     b.Navigation("Inquiries");
+
+                    b.Navigation("Sections");
                 });
 
             modelBuilder.Entity("OneItb.Entities.Models.User", b =>

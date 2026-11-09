@@ -164,51 +164,9 @@ namespace Services.Notifications
             string? actionUrl,
             CancellationToken cancellationToken = default)
         {
-            string normalizedMessage = RequireText(message, 500, "El mensaje de notificacion");
-            string? normalizedActionUrl = NormalizeActionUrl(actionUrl);
-
-            Guid[] distinctUserIds = userIds
-                .Where(id => id != Guid.Empty)
-                .Distinct()
-                .ToArray();
-
-            if (distinctUserIds.Length == 0)
-                return Array.Empty<Notification>();
-
-            Guid[] activeUserIds = await _context.Users
-                .AsNoTracking()
-                .Where(user => distinctUserIds.Contains(user.Id) && user.IsActive)
-                .Select(user => user.Id)
-                .ToArrayAsync(cancellationToken);
-
-            if (activeUserIds.Length == 0)
-                return Array.Empty<Notification>();
-
-            Guid[] disabledUserIds = await _context.NotificationPreferences
-                .AsNoTracking()
-                .Where(preference =>
-                    activeUserIds.Contains(preference.UserId) &&
-                    preference.Type == type &&
-                    !preference.IsEnabled)
-                .Select(preference => preference.UserId)
-                .ToArrayAsync(cancellationToken);
-
-            var notifications = activeUserIds
-                .Where(userId => !disabledUserIds.Contains(userId))
-                .Select(userId => new Notification
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    Type = type,
-                    Message = normalizedMessage,
-                    ActionUrl = normalizedActionUrl,
-                    IsRead = false,
-                    CreatedAt = DateTime.UtcNow
-                })
-                .ToList();
-
+            var notifications = await PrepareNotificationsAsync(_context, userIds, type, message, actionUrl, cancellationToken);
             if (notifications.Count == 0)
-                return Array.Empty<Notification>();
+                return notifications;
 
             _context.Notifications.AddRange(notifications);
             await _context.SaveChangesAsync(cancellationToken);
@@ -242,6 +200,74 @@ namespace Services.Notifications
             }
 
             return persisted;
+        }
+
+        internal static async Task<IReadOnlyList<Notification>> PrepareNotificationsAsync(
+            OneItbContext context, IReadOnlyCollection<Guid> userIds, NotificationType type,
+            string message, string? actionUrl, CancellationToken cancellationToken)
+        {
+            string normalizedMessage = RequireText(message, 500, "El mensaje de notificacion");
+            string? normalizedActionUrl = NormalizeActionUrl(actionUrl);
+
+            Guid[] distinctUserIds = userIds
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToArray();
+
+            if (distinctUserIds.Length == 0)
+                return Array.Empty<Notification>();
+
+            Guid[] activeUserIds = await context.Users
+                .AsNoTracking()
+                .Where(user => distinctUserIds.Contains(user.Id) && user.IsActive)
+                .Select(user => user.Id)
+                .ToArrayAsync(cancellationToken);
+
+            if (activeUserIds.Length == 0)
+                return Array.Empty<Notification>();
+
+            Guid[] disabledUserIds = await context.NotificationPreferences
+                .AsNoTracking()
+                .Where(preference =>
+                    activeUserIds.Contains(preference.UserId) &&
+                    preference.Type == type &&
+                    !preference.IsEnabled)
+                .Select(preference => preference.UserId)
+                .ToArrayAsync(cancellationToken);
+
+            var notifications = activeUserIds
+                .Where(userId => !disabledUserIds.Contains(userId))
+                .Select(userId => new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Type = type,
+                    Message = normalizedMessage,
+                    ActionUrl = normalizedActionUrl,
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                })
+                .ToList();
+
+            return notifications;
+
+        }
+
+        public async Task PublishCommittedAsync(Guid notificationId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var notification = await NotificationGraph().SingleAsync(n => n.Id == notificationId, cancellationToken);
+                await PublishAsync(notification, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not dispatch committed notification {NotificationId}.", notificationId);
+            }
         }
 
         public async Task<Notification?> UpsertGroupedNotificationAsync(
@@ -353,7 +379,8 @@ namespace Services.Notifications
             Guid userId,
             int unreadCount,
             DateTime latestUnreadMessageAt,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            Guid? peerId = null)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("El destinatario es obligatorio.");
@@ -377,7 +404,13 @@ namespace Services.Notifications
             if (disabled)
                 return null;
 
-            string groupKey = $"private-message-reminder:{userId:D}";
+            string groupKey = peerId.HasValue
+                ? $"private-message-reminder:{userId:D}:{peerId.Value:D}"
+                : $"private-message-reminder:{userId:D}";
+            string actionUrl = peerId.HasValue
+                ? $"/chat?peerId={peerId.Value:D}"
+                : "/chat";
+
             for (int attempt = 0; attempt < 3; attempt++)
             {
                 Notification? notification = await _context.Notifications
@@ -403,7 +436,7 @@ namespace Services.Notifications
                         UserId = userId,
                         Type = NotificationType.PrivateMessage,
                         Message = message,
-                        ActionUrl = "/chat",
+                        ActionUrl = actionUrl,
                         IsRead = false,
                         CreatedAt = now,
                         UpdatedAt = now,
@@ -415,7 +448,7 @@ namespace Services.Notifications
                 else
                 {
                     notification!.Message = message;
-                    notification.ActionUrl = "/chat";
+                    notification.ActionUrl = actionUrl;
                     notification.IsRead = false;
                     notification.UpdatedAt = now;
                     notification.AggregateCount = unreadCount;

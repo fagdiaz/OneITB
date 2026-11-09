@@ -87,7 +87,7 @@ public sealed class AcademicServiceTests
                 It.IsAny<IReadOnlyCollection<Guid>>(),
                 NotificationType.AcademicResource,
                 It.Is<string>(message => message.Contains("Guia de laboratorio", StringComparison.Ordinal)),
-                "/academic?subjectId=101",
+                It.Is<string>(url => url.StartsWith("/academic?subjectId=101", StringComparison.Ordinal)),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -438,7 +438,7 @@ public sealed class AcademicServiceTests
                 It.Is<IReadOnlyCollection<Guid>>(ids => ids.SequenceEqual(new[] { ServiceTestData.StudentUserId })),
                 NotificationType.AcademicProgress,
                 It.Is<string>(message => message.Contains("Programacion I", StringComparison.Ordinal)),
-                "/academic",
+                It.Is<string>(url => url.StartsWith("/academic", StringComparison.Ordinal)),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

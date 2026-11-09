@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { useForm } from '../../hooks/useForm';
@@ -7,8 +8,13 @@ import {
   GET_MESSAGING_CONTACTS,
   GET_ACTIVE_CONVERSATIONS,
   SEARCH_MY_MESSAGES,
-  SEND_MESSAGE,
+
+  SEND_PRIVATE_MESSAGE,
+  GET_MESSAGING_PEER,
 } from '../../data/graphql/chat';
+import { uploadPrivateAttachment } from '../../utils/uploadFile';
+import { PrivateAttachmentView } from './PrivateAttachmentView';
+import { PrivateAttachmentDraft, PrivateAttachmentPreviewList } from './PrivateAttachmentDraft';
 import {
   appendMessageToConversation,
   formatTime,
@@ -50,9 +56,20 @@ const AvatarBadge = ({ person, className = 'h-10 w-10', fallbackClassName = '' }
 
 export const PrivateChat = () => {
   const { auth } = useAuth();
+  const location = useLocation();
   const { form, changed, setForm } = useForm({ content: '' });
   const [selectedContactId, setSelectedContactId] = useState(null);
+  const [draftFiles, setDraftFiles] = useState([]);
+  const [attachmentError, setAttachmentError] = useState('');
   const [feedback, setFeedback] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const peerId = params.get('peerId');
+    if (peerId) {
+      setSelectedContactId(peerId);
+    }
+  }, [location.search]);
   const mountedRef = useRef(true);
   const messageEndRef = useRef(null);
 
@@ -97,7 +114,11 @@ export const PrivateChat = () => {
     fetchPolicy: 'cache-and-network',
   });
 
-  const [sendMessage, { loading: sending }] = useMutation(SEND_MESSAGE);
+  const [sendPrivateMessage, { loading: sending }] = useMutation(SEND_PRIVATE_MESSAGE);
+  const { data: peerData } = useQuery(GET_MESSAGING_PEER, {
+    variables: { id: selectedContactId },
+    skip: !selectedContactId,
+  });
   
   const allContacts = useMemo(
     () => contactsData?.messagingContacts?.nodes || [],
@@ -131,10 +152,19 @@ export const PrivateChat = () => {
     [searchMessagesData],
   );
 
+  const peerContact = peerData?.messagingPeer ? {
+    userId: peerData.messagingPeer.id,
+    firstName: peerData.messagingPeer.firstName,
+    lastName: peerData.messagingPeer.lastName,
+    role: '',
+    avatarUrl: peerData.messagingPeer.avatarUrl,
+  } : null;
+
   const selectedContact = useMemo(
     () => allContacts.find((contact) => contact.userId === selectedContactId)
-      || activeContacts.find((contact) => contact.userId === selectedContactId),
-    [allContacts, activeContacts, selectedContactId],
+      || activeContacts.find((contact) => contact.userId === selectedContactId)
+      || peerContact,
+    [allContacts, activeContacts, selectedContactId, peerContact],
   );
 
   const messages = useMemo(
@@ -166,10 +196,18 @@ export const PrivateChat = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const content = form.content?.trim();
-    if (!selectedContactId || !content || sending) return;
+    const content = form.content?.trim() || '';
+    if (!selectedContactId || (!content && draftFiles.length === 0) || sending) return;
 
-    const optimisticId = `optimistic-${crypto.randomUUID()}`;
+    const token = auth?.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null);
+    const filesToUpload = [...draftFiles];
+    setDraftFiles([]);
+    setForm({ content: '' });
+    setFeedback('');
+    setAttachmentError('');
+
+    const clientMessageId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-000000000001';
+    const optimisticId = `optimistic-${clientMessageId}`;
     const optimisticMessage = {
       __typename: 'Message',
       id: optimisticId,
@@ -178,6 +216,13 @@ export const PrivateChat = () => {
       content,
       sentAt: new Date().toISOString(),
       isRead: false,
+      attachments: filesToUpload.map((f, i) => ({
+        __typename: 'PrivateMessageAttachment',
+        id: `optimistic-att-${i}`,
+        name: f.name,
+        contentType: f.type,
+        size: f.size,
+      })),
       sender: {
         __typename: 'User',
         id: auth.id,
@@ -194,18 +239,28 @@ export const PrivateChat = () => {
       } : null,
     };
 
-    setForm({ content: '' });
-    setFeedback('');
-
     try {
-      await sendMessage({
-        variables: { receiverId: selectedContactId, content },
+      const uploadIds = [];
+      for (const file of filesToUpload) {
+        const res = await uploadPrivateAttachment(file, token);
+        uploadIds.push(res.uploadId);
+      }
+
+      await sendPrivateMessage({
+        variables: {
+          input: {
+            receiverId: selectedContactId,
+            clientMessageId,
+            content: content || null,
+            uploadIds,
+          },
+        },
         optimisticResponse: {
           __typename: 'Mutation',
-          sendMessage: optimisticMessage,
+          sendPrivateMessage: optimisticMessage,
         },
         update: (cache, { data }) => {
-          const message = data?.sendMessage;
+          const message = data?.sendPrivateMessage;
           if (!message) return;
           appendMessageToConversation(
             cache,
@@ -223,6 +278,7 @@ export const PrivateChat = () => {
       }
     } catch (error) {
       if (mountedRef.current) {
+        setDraftFiles(filesToUpload);
         setForm({ content });
         setFeedback(error.message || 'No se pudo enviar el mensaje.');
       }
@@ -412,10 +468,23 @@ export const PrivateChat = () => {
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-500/10 text-2xl text-blue-200 shadow-[0_16px_40px_rgba(37,99,235,0.16)]">
                 <i className="fa-regular fa-comment-dots" />
               </div>
-              <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">Elegí una conversación</h2>
+              <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
+                {selectedContactId ? 'El usuario no está disponible' : 'Elegí una conversación'}
+              </h2>
               <p className="mt-2 max-w-sm text-sm text-slate-400">
-                Seleccioná un usuario para consultar el historial y enviar mensajes privados.
+                {selectedContactId
+                  ? 'No se pudo encontrar al interlocutor solicitado o no se encuentra activo.'
+                  : 'Seleccioná un usuario para consultar el historial y enviar mensajes privados.'}
               </p>
+              {selectedContactId && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedContactId(null)}
+                  className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+                >
+                  Volver a conversaciones
+                </button>
+              )}
             </div>
           ) : (
             <>
@@ -468,7 +537,17 @@ export const PrivateChat = () => {
                           />
                         )}
                         <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-lg sm:max-w-[70%] ${isOwn ? 'rounded-br-md bg-blue-600 text-white shadow-blue-950/20' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100'} ${isOptimistic ? 'opacity-70' : ''}`}>
+                          {message.content && (
                           <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p>
+                        )}
+                        {message.attachments?.map((attachment) => (
+                          <PrivateAttachmentView
+                            key={attachment.id}
+                            attachment={attachment}
+                            token={auth?.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null)}
+                            isOwn={isOwn}
+                          />
+                        ))}
                           <p className={`mt-1 text-right text-[11px] ${isOwn ? 'text-blue-100' : 'text-slate-500'}`}>
                             {formatTime(message.sentAt)}{isOptimistic ? ' · Enviando' : ''}
                           </p>
@@ -480,13 +559,23 @@ export const PrivateChat = () => {
                 </div>
               </div>
 
-              {(feedback || subscriptionError) && (
+              {(feedback || subscriptionError || attachmentError) && (
                 <p className="border-t border-red-400/20 bg-red-500/10 px-5 py-2 text-sm text-red-200" role="alert">
-                  {feedback || 'La conexión en tiempo real tuvo un problema. Se intentará reconectar.'}
+                  {attachmentError || feedback || 'La conexión en tiempo real tuvo un problema. Se intentará reconectar.'}
                 </p>
               )}
 
+              <PrivateAttachmentPreviewList
+                draftFiles={draftFiles}
+                onRemove={(idx) => setDraftFiles((prev) => prev.filter((_, i) => i !== idx))}
+              />
               <form onSubmit={handleSubmit} className="flex items-end gap-3 border-t border-slate-200 bg-white/90 p-3 dark:border-white/10 dark:bg-slate-950/80 sm:p-4">
+                <PrivateAttachmentDraft
+                  draftFiles={draftFiles}
+                  setDraftFiles={setDraftFiles}
+                  onError={setAttachmentError}
+                  disabled={sending}
+                />
                 <textarea
                   name="content"
                   value={form.content}
@@ -504,7 +593,7 @@ export const PrivateChat = () => {
                 />
                 <button
                   type="submit"
-                  disabled={!form.content?.trim() || sending}
+                  disabled={(!form.content?.trim() && draftFiles.length === 0) || sending}
                   className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-950/20 transition hover:-translate-y-0.5 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Enviar mensaje"
                 >

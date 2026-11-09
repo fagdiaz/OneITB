@@ -29,8 +29,11 @@ namespace OneItb.Data
         public DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<JobOffer> JobOffers { get; set; } = null!;
+        public DbSet<JobApplicationCv> JobApplicationCvs => Set<JobApplicationCv>();
         public DbSet<JobApplication> JobApplications { get; set; } = null!;
         public DbSet<Message> Messages { get; set; } = null!;
+        public DbSet<PrivateUpload> PrivateUploads { get; set; } = null!;
+        public DbSet<MessageAttachment> MessageAttachments { get; set; } = null!;
         public DbSet<MagicLink> MagicLinks { get; set; } = null!;
         public DbSet<EmployerRequest> EmployerRequests { get; set; } = null!;
         public DbSet<EmployerOnboardingOutboxMessage> EmployerOnboardingOutboxMessages { get; set; } = null!;
@@ -39,6 +42,12 @@ namespace OneItb.Data
         public DbSet<UserCvProject> UserCvProjects { get; set; } = null!;
         public DbSet<UserCvSkill> UserCvSkills { get; set; } = null!;
         public DbSet<UserCvLanguage> UserCvLanguages { get; set; } = null!;
+        public DbSet<CourseSection> CourseSections { get; set; } = null!;
+        public DbSet<SectionInstructor> SectionInstructors { get; set; } = null!;
+        public DbSet<SectionEnrollment> SectionEnrollments { get; set; } = null!;
+        public DbSet<SectionGrade> SectionGrades { get; set; } = null!;
+        public DbSet<EnrollmentStanding> EnrollmentStandings { get; set; } = null!;
+        public DbSet<RegularStudentCertificate> RegularStudentCertificates { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -521,6 +530,18 @@ namespace OneItb.Data
             // ==========================================
             // MAPEO: TABLA JOB_APPLICATIONS
             // ==========================================
+            modelBuilder.Entity<JobApplicationCv>(entity =>
+            {
+                entity.ToTable("JobApplicationCvs", "dbo", table =>
+                    table.HasCheckConstraint("CK_JobApplicationCvs_PayloadJson", "ISJSON([PayloadJson]) = 1"));
+                entity.HasKey(cv => cv.ApplicationId);
+                entity.Property(cv => cv.ApplicationId).ValueGeneratedNever();
+                entity.Property(cv => cv.PayloadJson).IsRequired();
+                entity.HasOne<JobApplication>().WithOne()
+                    .HasForeignKey<JobApplicationCv>(cv => cv.ApplicationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
             modelBuilder.Entity<JobApplication>(entity =>
             {
                 entity.ToTable("JobApplications", "dbo");
@@ -723,6 +744,7 @@ namespace OneItb.Data
                 entity.HasIndex(e => e.ParentCommentId);
                 entity.HasIndex(e => e.ReplyToUserId);
                 entity.HasIndex(e => new { e.InquiryId, e.IsActive, e.IsHiddenByModerator });
+                entity.HasAlternateKey(e => new { e.Id, e.InquiryId });
 
                 entity.HasOne(e => e.Inquiry)
                     .WithMany(i => i.Comments)
@@ -851,15 +873,25 @@ namespace OneItb.Data
 
                 entity.HasQueryFilter(e => e.Inquiry.IsActive);
                 entity.HasIndex(e => e.InquiryId);
+                entity.HasIndex(e => e.CommentId);
                 entity.HasIndex(e => e.ReporterId);
                 entity.HasIndex(e => e.Status);
-                entity.HasIndex(e => new { e.InquiryId, e.ReporterId, e.Status })
+                entity.HasIndex(e => new { e.ReporterId, e.InquiryId })
                     .IsUnique()
-                    .HasFilter("[Status] = 'Pending'");
+                    .HasFilter("[Status] = 'Pending' AND [CommentId] IS NULL");
+                entity.HasIndex(e => new { e.ReporterId, e.CommentId })
+                    .IsUnique()
+                    .HasFilter("[Status] = 'Pending' AND [CommentId] IS NOT NULL");
 
                 entity.HasOne(e => e.Inquiry)
                     .WithMany(i => i.Reports)
                     .HasForeignKey(e => e.InquiryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Comment)
+                    .WithMany(c => c.Reports)
+                    .HasForeignKey(e => new { e.CommentId, e.InquiryId })
+                    .HasPrincipalKey(c => new { c.Id, c.InquiryId })
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.Reporter)
@@ -923,13 +955,17 @@ namespace OneItb.Data
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
-                entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.ClientMessageId);
+                entity.Property(e => e.Content).IsRequired(false).HasMaxLength(2000);
                 entity.Property(e => e.SentAt)
                     .IsRequired()
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("SYSUTCDATETIME()");
                 entity.Property(e => e.IsRead).IsRequired().HasDefaultValue(false);
 
+                entity.HasIndex(e => new { e.SenderId, e.ClientMessageId })
+                    .IsUnique()
+                    .HasFilter("[ClientMessageId] IS NOT NULL");
                 entity.HasIndex(e => new { e.SenderId, e.ReceiverId, e.SentAt, e.Id });
                 entity.HasIndex(e => new { e.ReceiverId, e.SenderId, e.SentAt, e.Id });
                 entity.HasIndex(e => new { e.ReceiverId, e.IsRead, e.SentAt });
@@ -942,6 +978,65 @@ namespace OneItb.Data
                 entity.HasOne(e => e.Receiver)
                     .WithMany(u => u.ReceivedMessages)
                     .HasForeignKey(e => e.ReceiverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(e => e.Attachments)
+                    .WithOne(a => a.Message)
+                    .HasForeignKey(a => a.MessageId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA PRIVATE_UPLOADS
+            // ==========================================
+            modelBuilder.Entity<PrivateUpload>(entity =>
+            {
+                entity.ToTable("PrivateUploads", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.StorageKey).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.ByteSize).IsRequired();
+                entity.Property(e => e.ExpiresAtUtc).IsRequired().HasColumnType("datetime2");
+                entity.Property(e => e.IsConsumed).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.CreatedAtUtc).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => e.OwnerId);
+                entity.HasIndex(e => new { e.OwnerId, e.IsConsumed, e.ExpiresAtUtc });
+
+                entity.HasOne(e => e.Owner)
+                    .WithMany()
+                    .HasForeignKey(e => e.OwnerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLA MESSAGE_ATTACHMENTS
+            // ==========================================
+            modelBuilder.Entity<MessageAttachment>(entity =>
+            {
+                entity.ToTable("MessageAttachments", "dbo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.ByteSize).IsRequired();
+                entity.Property(e => e.OrderIndex).IsRequired();
+
+                entity.HasIndex(e => e.UploadId).IsUnique();
+                entity.HasIndex(e => e.MessageId);
+
+                entity.HasOne(e => e.Message)
+                    .WithMany(m => m.Attachments)
+                    .HasForeignKey(e => e.MessageId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Upload)
+                    .WithMany()
+                    .HasForeignKey(e => e.UploadId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -1049,6 +1144,143 @@ namespace OneItb.Data
                 entity.HasOne(e => e.EmployerRequest)
                     .WithOne(e => e.OutboxMessage)
                     .HasForeignKey<EmployerOnboardingOutboxMessage>(e => e.EmployerRequestId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ==========================================
+            // MAPEO: TABLAS DE COMISIONES Y REGULARIDAD (SPEC 220 · T06)
+            // ==========================================
+            modelBuilder.Entity<CourseSection>(entity =>
+            {
+                entity.ToTable("CourseSections", "dbo");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Term).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(30);
+                entity.Property(e => e.CreatedAtUtc).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => new { e.SubjectId, e.Term, e.Code }).IsUnique();
+
+                entity.HasOne(e => e.Subject)
+                    .WithMany(s => s.Sections)
+                    .HasForeignKey(e => e.SubjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<SectionInstructor>(entity =>
+            {
+                entity.ToTable("SectionInstructors", "dbo");
+                entity.HasKey(e => new { e.SectionId, e.ProfessorId });
+                entity.Property(e => e.AssignedAtUtc).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasOne(e => e.Section)
+                    .WithMany(s => s.Instructors)
+                    .HasForeignKey(e => e.SectionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Professor)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProfessorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<SectionEnrollment>(entity =>
+            {
+                entity.ToTable("SectionEnrollments", "dbo");
+                entity.HasKey(e => new { e.SectionId, e.StudentId });
+                entity.Property(e => e.EnrolledAtUtc).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasOne(e => e.Section)
+                    .WithMany(s => s.Enrollments)
+                    .HasForeignKey(e => e.SectionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Student)
+                    .WithMany()
+                    .HasForeignKey(e => e.StudentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<SectionGrade>(entity =>
+            {
+                entity.ToTable("SectionGrades", "dbo", table =>
+                    table.HasCheckConstraint(
+                        "CK_SectionGrades_Score",
+                        "[Score] IS NULL OR ([Score] >= 0 AND [Score] <= 10)"));
+
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Score).HasColumnType("decimal(5,2)");
+                entity.Property(e => e.Status).IsRequired().HasConversion<string>().HasMaxLength(20).IsUnicode(false);
+                entity.Property(e => e.UpdatedAtUtc).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.RowVersion).IsRowVersion();
+
+                entity.HasIndex(e => new { e.SectionId, e.StudentId }).IsUnique();
+
+                entity.HasOne(e => e.Section)
+                    .WithMany(s => s.Grades)
+                    .HasForeignKey(e => e.SectionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Enrollment)
+                    .WithOne(enrollment => enrollment.Grade)
+                    .HasForeignKey<SectionGrade>(e => new { e.SectionId, e.StudentId })
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Student)
+                    .WithMany()
+                    .HasForeignKey(e => e.StudentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.AssignedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.AssignedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<EnrollmentStanding>(entity =>
+            {
+                entity.ToTable("EnrollmentStandings", "dbo");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Term).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Source).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.SourceReference).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(30);
+                entity.Property(e => e.ValidFromUtc).IsRequired().HasColumnType("datetime2");
+                entity.Property(e => e.ValidUntilUtc).IsRequired().HasColumnType("datetime2");
+                entity.Property(e => e.RevokedAtUtc).HasColumnType("datetime2");
+                entity.Property(e => e.CreatedAtUtc).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+
+                entity.HasIndex(e => new { e.StudentId, e.CareerId, e.Term });
+
+                entity.HasOne(e => e.Student)
+                    .WithMany()
+                    .HasForeignKey(e => e.StudentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Career)
+                    .WithMany()
+                    .HasForeignKey(e => e.CareerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<RegularStudentCertificate>(entity =>
+            {
+                entity.ToTable("RegularStudentCertificates", "dbo");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.FullName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.CareerName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Term).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.IssuedAt).IsRequired().HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.ValidUntil).IsRequired().HasColumnType("datetime2");
+
+                entity.HasIndex(e => e.StandingId);
+
+                entity.HasOne(e => e.Standing)
+                    .WithMany(s => s.Certificates)
+                    .HasForeignKey(e => e.StandingId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }

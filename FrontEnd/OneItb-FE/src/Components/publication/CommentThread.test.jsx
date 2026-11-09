@@ -73,4 +73,13 @@ describe('CommentThread', () => {
     const target = document.getElementById(`comment-${replyId}`);
     expect(target).toHaveClass('ring-2');
   });
+
+  it('triggers onReport with comment ID, kind and inquiry ID when flag button is clicked', () => {
+    const onReport = vi.fn();
+    renderThread({ onReport });
+    const reportButtons = screen.getAllByTitle('Reportar comentario');
+    expect(reportButtons.length).toBe(2);
+    fireEvent.click(reportButtons[0]);
+    expect(onReport).toHaveBeenCalledWith(rootId, 'comment', '20000000-0000-0000-0000-000000000001');
+  });
 });

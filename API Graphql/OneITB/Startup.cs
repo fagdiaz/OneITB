@@ -28,6 +28,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using OneITB.GraphQL.Messaging;
 using Microsoft.IdentityModel.Tokens;
 using OneItb.Data;
 using OneItb.Entities.Models;
@@ -205,6 +206,54 @@ namespace OneItb.GraphQL
                     descriptor.Field(account => account.HasExternalIdentity).Ignore();
                     descriptor.Field(account => account.MagicLinkEnabled).Ignore();
                 }))
+                .AddType(new ObjectType<Message>(descriptor =>
+                {
+                    descriptor.Field(m => m.Attachments).Ignore();
+                    descriptor.Field("attachments")
+                        .Type<NonNullType<ListType<NonNullType<ObjectType<PrivateMessageAttachment>>>>>()
+                        .Resolve(ctx =>
+                        {
+                            var msg = ctx.Parent<Message>();
+                            if (msg.Attachments == null || msg.Attachments.Count == 0)
+                                return (IReadOnlyList<PrivateMessageAttachment>)Array.Empty<PrivateMessageAttachment>();
+
+                            return msg.Attachments
+                                .OrderBy(a => a.OrderIndex)
+                                .Select(a => new PrivateMessageAttachment
+                                {
+                                    Id = a.Id,
+                                    Name = a.FileName,
+                                    ContentType = a.ContentType,
+                                    Size = a.ByteSize
+                                })
+                                .ToList();
+                        });
+                }))
+                .AddType(new ObjectType<PrivateMessageAttachment>(descriptor =>
+                {
+                    descriptor.Field(a => a.Id).Type<NonNullType<UuidType>>();
+                    descriptor.Field(a => a.Name).Type<NonNullType<StringType>>();
+                    descriptor.Field(a => a.ContentType).Type<NonNullType<StringType>>();
+                    descriptor.Field(a => a.Size).Type<NonNullType<LongType>>();
+                }))
+                .AddType(new ObjectType<MessagingPeer>(descriptor =>
+                {
+                    descriptor.Field(p => p.Id).Type<NonNullType<UuidType>>();
+                    descriptor.Field(p => p.FirstName).Type<NonNullType<StringType>>();
+                    descriptor.Field(p => p.LastName).Type<NonNullType<StringType>>();
+                    descriptor.Field(p => p.AvatarUrl).Type<StringType>();
+                }))
+                .AddType(new ObjectType<JobApplication>(descriptor =>
+                {
+                    descriptor.Field(a => a.Applicant).Resolve(ctx =>
+                    {
+                        var person = ctx.Parent<JobApplication>().Applicant;
+                        return new User
+                        {
+                            Id = person.Id, FirstName = person.FirstName, LastName = person.LastName, Role = person.Role
+                        };
+                    });
+                }))
                 .AddType(new ObjectType<User>(descriptor =>
                 {
                     descriptor.Field(f => f.Id).Name("id");
@@ -325,7 +374,18 @@ namespace OneItb.GraphQL
                 {
                     descriptor.Field("reportCount")
                         .Type<NonNullType<IntType>>()
-                        .Resolve(_ => 0);
+                        .Resolve(ctx =>
+                        {
+                            Comment comment = ctx.Parent<Comment>();
+                            return ctx.DataLoader<CommentReportCountDataLoader>()
+                                .LoadAsync(comment.Id, ctx.RequestAborted);
+                        });
+                }))
+                .AddType(new ObjectType<CommentReportReceipt>(descriptor =>
+                {
+                    descriptor.Field(f => f.Id).Name("id");
+                    descriptor.Field(f => f.InquiryId).Name("inquiryId");
+                    descriptor.Field(f => f.CommentId).Name("commentId");
                 }))
                 .AddType(new ObjectType<SocialAttachment>(descriptor =>
                 {
@@ -354,6 +414,41 @@ namespace OneItb.GraphQL
                 {
                     descriptor.Field(message => message.RowVersion).Ignore();
                     descriptor.Field(message => message.EmployerRequest).Ignore();
+                }))
+                .AddType(new ObjectType<SectionGrade>(descriptor =>
+                {
+                    descriptor.Field(g => g.Id).Type<NonNullType<UuidType>>();
+                    descriptor.Field(g => g.Score).Type<DecimalType>();
+                    descriptor.Field(g => g.Status).Type<NonNullType<EnumType<AcademicProgressStatus>>>();
+                    descriptor.Field("version")
+                        .Type<NonNullType<StringType>>()
+                        .Resolve(ctx =>
+                        {
+                            var grade = ctx.Parent<SectionGrade>();
+                            return grade.RowVersion != null && grade.RowVersion.Length > 0
+                                ? Convert.ToBase64String(grade.RowVersion)
+                                : string.Empty;
+                        });
+                    descriptor.Field(g => g.RowVersion).Ignore();
+                    descriptor.Field(g => g.Section).Ignore();
+                    descriptor.Field(g => g.Enrollment).Ignore();
+                    descriptor.Field(g => g.Student).Ignore();
+                    descriptor.Field(g => g.AssignedBy).Ignore();
+                    descriptor.Field(g => g.SectionId).Ignore();
+                    descriptor.Field(g => g.StudentId).Ignore();
+                    descriptor.Field(g => g.AssignedById).Ignore();
+                    descriptor.Field(g => g.UpdatedAtUtc).Ignore();
+                }))
+                .AddType(new ObjectType<RegularStudentCertificate>(descriptor =>
+                {
+                    descriptor.Field(c => c.Id).Type<NonNullType<UuidType>>();
+                    descriptor.Field(c => c.FullName).Type<NonNullType<StringType>>();
+                    descriptor.Field(c => c.CareerName).Type<NonNullType<StringType>>();
+                    descriptor.Field(c => c.Term).Type<NonNullType<StringType>>();
+                    descriptor.Field(c => c.IssuedAt).Type<NonNullType<DateTimeType>>();
+                    descriptor.Field(c => c.ValidUntil).Type<NonNullType<DateTimeType>>();
+                    descriptor.Field(c => c.Standing).Ignore();
+                    descriptor.Field(c => c.StandingId).Ignore();
                 }));
 
             services.AddScoped<IUnitOfWork, global::Services.Repositories.UnitOfWork>();

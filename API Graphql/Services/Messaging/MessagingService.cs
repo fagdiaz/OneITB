@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using OneItb.Data;
 using OneItb.Entities.Models;
@@ -54,11 +57,11 @@ namespace Services.Messaging
                         .Max(),
                     LastMessageContent = user.SentMessages
                         .Where(message => message.ReceiverId == currentUserId)
-                        .Select(m => new { m.SentAt, m.Content })
+                        .Select(m => new { m.SentAt, Content = (m.Content != null && m.Content.Length > 0) ? m.Content : (m.Attachments.Any() ? "Adjunto" : string.Empty) })
                         .Concat(
                             user.ReceivedMessages
                                 .Where(message => message.SenderId == currentUserId)
-                                .Select(m => new { m.SentAt, m.Content }))
+                                .Select(m => new { m.SentAt, Content = (m.Content != null && m.Content.Length > 0) ? m.Content : (m.Attachments.Any() ? "Adjunto" : string.Empty) }))
                         .OrderByDescending(m => m.SentAt)
                         .Select(m => m.Content)
                         .FirstOrDefault() ?? string.Empty,
@@ -82,11 +85,11 @@ namespace Services.Messaging
                     Contact = user,
                     LastMessage = user.SentMessages
                         .Where(message => message.ReceiverId == currentUserId)
-                        .Select(m => new { m.SentAt, m.Content })
+                        .Select(m => new { m.SentAt, Content = (m.Content != null && m.Content.Length > 0) ? m.Content : (m.Attachments.Any() ? "Adjunto" : string.Empty) })
                         .Concat(
                             user.ReceivedMessages
                                 .Where(message => message.SenderId == currentUserId)
-                                .Select(m => new { m.SentAt, m.Content }))
+                                .Select(m => new { m.SentAt, Content = (m.Content != null && m.Content.Length > 0) ? m.Content : (m.Attachments.Any() ? "Adjunto" : string.Empty) }))
                         .OrderByDescending(m => m.SentAt)
                         .Select(m => m.Content)
                         .FirstOrDefault() ?? string.Empty
@@ -105,9 +108,10 @@ namespace Services.Messaging
 
             string term = searchTerm.Trim();
             return _context.Messages
+                .Include(message => message.Attachments)
                 .AsNoTracking()
                 .Where(m => (m.SenderId == currentUserId || m.ReceiverId == currentUserId) &&
-                            m.Content.Contains(term))
+                            m.Content != null && m.Content.Contains(term))
                 .OrderByDescending(m => m.SentAt)
                 .ThenByDescending(m => m.Id);
         }
@@ -116,7 +120,9 @@ namespace Services.Messaging
         {
             EnsureParticipantPair(currentUserId, otherUserId);
 
-            return _unitOfWork.Messages.Query()
+            return _context.Messages
+                .Include(message => message.Attachments)
+                .AsNoTracking()
                 .Where(message =>
                     (message.SenderId == currentUserId && message.ReceiverId == otherUserId) ||
                     (message.SenderId == otherUserId && message.ReceiverId == currentUserId))
@@ -167,6 +173,178 @@ namespace Services.Messaging
             return message;
         }
 
+        public async Task<Message> SendPrivateMessageAsync(
+            Guid senderId,
+            Guid receiverId,
+            Guid clientMessageId,
+            string? content,
+            IReadOnlyList<Guid> uploadIds,
+            CancellationToken cancellationToken = default)
+        {
+            await EnsureParticipantPairAsync(senderId, receiverId, cancellationToken);
+
+            if (clientMessageId == Guid.Empty)
+                throw new ArgumentException("El identificador de mensaje de cliente es obligatorio.", nameof(clientMessageId));
+
+            string normalizedContent = content?.Trim() ?? string.Empty;
+            if (normalizedContent.Length > MaxContentLength)
+                throw new ArgumentException($"El mensaje no puede superar los {MaxContentLength} caracteres.", nameof(content));
+
+            uploadIds ??= Array.Empty<Guid>();
+            if (uploadIds.Count > 4)
+                throw new ArgumentException("Cada mensaje admite como máximo 4 archivos adjuntos.", nameof(uploadIds));
+
+            if (normalizedContent.Length == 0 && uploadIds.Count == 0)
+                throw new ArgumentException("El mensaje no puede estar vacío.", nameof(content));
+
+            if (uploadIds.Distinct().Count() != uploadIds.Count)
+                throw new ArgumentException("No se pueden repetir archivos adjuntos en el mismo mensaje.", nameof(uploadIds));
+
+            // Idempotencia: consultar primero por (SenderId, ClientMessageId)
+            var existingMessage = await _context.Messages
+                .Include(m => m.Attachments)
+                .Include(m => m.Sender)
+                .Include(m => m.Receiver)
+                .FirstOrDefaultAsync(
+                    m => m.SenderId == senderId && m.ClientMessageId == clientMessageId,
+                    cancellationToken);
+
+            if (existingMessage != null)
+            {
+                if (existingMessage.ReceiverId != receiverId)
+                    throw new InvalidOperationException("El mensaje ya fue enviado a otro destinatario con el mismo ID de cliente.");
+
+                _logger.LogInformation("Idempotent private message hit for ClientMessageId {ClientMessageId}.", clientMessageId);
+                return existingMessage;
+            }
+
+            // Validar uploads en memoria y existencia en DB
+            List<PrivateUpload> uploads = new();
+            if (uploadIds.Count > 0)
+            {
+                uploads = await _context.PrivateUploads
+                    .Where(u => uploadIds.Contains(u.Id))
+                    .ToListAsync(cancellationToken);
+
+                if (uploads.Count != uploadIds.Count)
+                    throw new ArgumentException("Uno o más archivos adjuntos no existen.");
+
+                long totalBytes = 0;
+                DateTime now = DateTime.UtcNow;
+
+                foreach (var uploadId in uploadIds)
+                {
+                    var upload = uploads.First(u => u.Id == uploadId);
+                    if (upload.OwnerId != senderId)
+                        throw new ArgumentException("El archivo adjunto no pertenece al usuario remitente.");
+
+                    if (upload.IsConsumed)
+                        throw new ArgumentException("El archivo adjunto ya ha sido utilizado.");
+
+                    if (upload.ExpiresAtUtc <= now)
+                        throw new ArgumentException("El archivo adjunto ha caducado.");
+
+                    totalBytes += upload.ByteSize;
+                }
+
+                if (totalBytes > 15 * 1024 * 1024)
+                    throw new ArgumentException("El tamaño total agregado de los adjuntos supera los 15 MB.");
+            }
+
+            var isRelational = _context.Database.IsRelational();
+            IDbContextTransaction? transaction = isRelational
+                ? await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken)
+                : null;
+
+            try
+            {
+                // Re-verificar idempotencia dentro de la transacción
+                var rechecked = await _context.Messages
+                    .Include(m => m.Attachments)
+                    .Include(m => m.Sender)
+                    .Include(m => m.Receiver)
+                    .FirstOrDefaultAsync(
+                        m => m.SenderId == senderId && m.ClientMessageId == clientMessageId,
+                        cancellationToken);
+
+                if (rechecked != null)
+                {
+                    if (transaction != null)
+                        await transaction.RollbackAsync(cancellationToken);
+                    return rechecked;
+                }
+
+                // Marcar uploads como consumidos
+                if (uploads.Count > 0)
+                {
+                    var freshUploads = await _context.PrivateUploads
+                        .Where(u => uploadIds.Contains(u.Id))
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var upload in freshUploads)
+                    {
+                        if (upload.IsConsumed)
+                            throw new ArgumentException("El archivo adjunto ya ha sido utilizado.");
+
+                        upload.IsConsumed = true;
+                    }
+                }
+
+                var message = new Message
+                {
+                    Id = Guid.NewGuid(),
+                    ClientMessageId = clientMessageId,
+                    SenderId = senderId,
+                    ReceiverId = receiverId,
+                    Content = normalizedContent,
+                    SentAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+
+                int orderIndex = 0;
+                foreach (var uploadId in uploadIds)
+                {
+                    var upload = uploads.First(u => u.Id == uploadId);
+                    message.Attachments.Add(new MessageAttachment
+                    {
+                        Id = Guid.NewGuid(),
+                        MessageId = message.Id,
+                        UploadId = upload.Id,
+                        OrderIndex = orderIndex++,
+                        FileName = upload.FileName,
+                        ContentType = upload.ContentType,
+                        ByteSize = upload.ByteSize
+                    });
+                }
+
+                await _context.Messages.AddAsync(message, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                if (transaction != null)
+                    await transaction.CommitAsync(cancellationToken);
+
+                message.Sender = await _context.Users.AsNoTracking().SingleAsync(
+                    user => user.Id == senderId,
+                    cancellationToken);
+                message.Receiver = await _context.Users.AsNoTracking().SingleAsync(
+                    user => user.Id == receiverId,
+                    cancellationToken);
+
+                _logger.LogInformation(
+                    "Private message {MessageId} (ClientMessageId {ClientMessageId}) persisted with {AttachmentCount} attachments.",
+                    message.Id,
+                    clientMessageId,
+                    message.Attachments.Count);
+
+                return message;
+            }
+            finally
+            {
+                if (transaction != null)
+                    await transaction.DisposeAsync();
+            }
+        }
+
         public async Task<MarkConversationReadPayload> MarkConversationReadAsync(
             Guid currentUserId,
             Guid otherUserId,
@@ -206,7 +384,7 @@ namespace Services.Messaging
             CancellationToken cancellationToken)
         {
             if (currentUserId == otherUserId)
-                throw new ArgumentException("No podes iniciar una conversacion con tu propio usuario.");
+                throw new ArgumentException("No podés iniciar una conversación con tu propio usuario.");
 
             bool[] activeStates = await _context.Users
                 .AsNoTracking()
@@ -217,9 +395,9 @@ namespace Services.Messaging
                 .ToArrayAsync(cancellationToken);
 
             if (!activeStates.Contains(true))
-                throw new ArgumentException("El usuario autenticado no existe o esta inactivo.");
+                throw new ArgumentException("El usuario autenticado no existe o está inactivo.");
             if (activeStates.Length < 2)
-                throw new ArgumentException("El usuario destinatario no existe o esta inactivo.");
+                throw new ArgumentException("El usuario destinatario no existe o está inactivo.");
         }
 
         private void EnsureActiveUser(Guid userId)

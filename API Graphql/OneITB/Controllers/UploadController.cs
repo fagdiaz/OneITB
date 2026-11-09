@@ -1,12 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OneItb.GraphQL.Services.Storage;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using OneItb.Data;
+using OneItb.Entities.Models;
 using OneItb.GraphQL.Infrastructure;
 
 namespace OneItb.Controllers
@@ -40,9 +46,21 @@ namespace OneItb.Controllers
             [".webm"] = Types("video/webm")
         };
 
+        private static readonly IReadOnlyDictionary<string, HashSet<string>> PrivateAllowedContentTypes =
+            new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            [".pdf"] = Types("application/pdf"),
+            [".png"] = Types("image/png"),
+            [".jpg"] = Types("image/jpeg"),
+            [".jpeg"] = Types("image/jpeg"),
+            [".webp"] = Types("image/webp")
+        };
+
         private readonly IFileStorageService _storageService;
         private readonly IFileContentInspector _contentInspector;
         private readonly FileStorageRuntimeInfo _storageRuntimeInfo;
+        private readonly IWebHostEnvironment? _environment;
+        private readonly OneItbContext? _context;
         private readonly ILogger<UploadController> _logger;
 
         public UploadController(
@@ -50,18 +68,40 @@ namespace OneItb.Controllers
             IFileContentInspector contentInspector,
             FileStorageRuntimeInfo storageRuntimeInfo,
             ILogger<UploadController> logger)
+            : this(storageService, contentInspector, storageRuntimeInfo, null, null, logger)
+        {
+        }
+
+        public UploadController(
+            IFileStorageService storageService,
+            IFileContentInspector contentInspector,
+            FileStorageRuntimeInfo storageRuntimeInfo,
+            IWebHostEnvironment? environment,
+            OneItbContext? context,
+            ILogger<UploadController> logger)
         {
             _storageService = storageService;
             _contentInspector = contentInspector;
             _storageRuntimeInfo = storageRuntimeInfo;
+            _environment = environment;
+            _context = context;
             _logger = logger;
+        }
+
+        [NonAction]
+        public Task<IActionResult> Upload(IFormFile file, CancellationToken cancellationToken)
+        {
+            return Upload(file, null, cancellationToken);
         }
 
         [HttpPost]
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(MaxRequestSize)]
         [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestSize)]
-        public async Task<IActionResult> Upload([FromForm] IFormFile file, CancellationToken cancellationToken)
+        public async Task<IActionResult> Upload(
+            [FromForm] IFormFile file,
+            [FromQuery] string? purpose = null,
+            CancellationToken cancellationToken = default)
         {
             if (file is null || file.Length == 0)
                 return BadRequest(new { message = "No se proporciono ningun archivo." });
@@ -69,8 +109,11 @@ namespace OneItb.Controllers
             if (file.Length > MaxFileSize)
                 return BadRequest(new { message = "El archivo supera el limite de 15 MB." });
 
+            bool isPrivate = string.Equals(purpose, "private", StringComparison.OrdinalIgnoreCase);
+            var contentTypesMap = isPrivate ? PrivateAllowedContentTypes : AllowedContentTypes;
+
             string extension = System.IO.Path.GetExtension(file.FileName)!.ToLowerInvariant();
-            if (!AllowedContentTypes.TryGetValue(extension, out HashSet<string>? allowedTypes))
+            if (!contentTypesMap.TryGetValue(extension, out HashSet<string>? allowedTypes))
                 return BadRequest(new { message = "El tipo de archivo no esta permitido." });
 
             string contentType = file.ContentType?.Trim().ToLowerInvariant() ?? string.Empty;
@@ -95,6 +138,73 @@ namespace OneItb.Controllers
                 {
                     message = "El contenido real del archivo no coincide con un formato permitido.",
                     code = "UPLOAD_CONTENT_INVALID"
+                });
+            }
+
+            if (isPrivate)
+            {
+                string? userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(userIdStr, out Guid ownerId))
+                    return Unauthorized(new { message = "No se pudo identificar al usuario autenticado." });
+
+                string contentRoot = _environment?.ContentRootPath ?? AppContext.BaseDirectory;
+                string privateDirectory = System.IO.Path.Combine(contentRoot, "private_uploads");
+                Directory.CreateDirectory(privateDirectory);
+
+                string storedFileName = $"{Guid.NewGuid():N}{extension}";
+                string physicalPath = System.IO.Path.Combine(privateDirectory, storedFileName);
+
+                try
+                {
+                    await using FileStream stream = new(
+                        physicalPath,
+                        FileMode.CreateNew,
+                        FileAccess.Write,
+                        FileShare.None,
+                        bufferSize: 81920,
+                        useAsync: true);
+                    await file.CopyToAsync(stream, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    if (System.IO.File.Exists(physicalPath))
+                    {
+                        try { System.IO.File.Delete(physicalPath); } catch { /* ignore */ }
+                    }
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    if (System.IO.File.Exists(physicalPath))
+                    {
+                        try { System.IO.File.Delete(physicalPath); } catch { /* ignore */ }
+                    }
+                    _logger.LogError(exception, "Private upload failed to save to disk.");
+                    return StorageUnavailable();
+                }
+
+                var privateUpload = new PrivateUpload
+                {
+                    Id = Guid.NewGuid(),
+                    OwnerId = ownerId,
+                    StorageKey = physicalPath,
+                    FileName = originalFileName,
+                    ContentType = contentType,
+                    ByteSize = file.Length,
+                    ExpiresAtUtc = DateTime.UtcNow.AddHours(24),
+                    IsConsumed = false,
+                    CreatedAtUtc = DateTime.UtcNow
+                };
+
+                if (_context != null)
+                {
+                    _context.PrivateUploads.Add(privateUpload);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+
+                return Ok(new
+                {
+                    uploadId = privateUpload.Id
                 });
             }
 

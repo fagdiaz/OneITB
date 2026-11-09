@@ -85,7 +85,26 @@ export const ModerationManagement = () => {
               {(view === 'pending' ? pendingReports : historyReports).map((report) => (
                 <tr key={report.id}>
                   <td className="px-5 py-4">
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">{report.inquiry?.title}</p>
+                    {report.comment ? (
+                      <div>
+                        <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                          Comentario
+                        </span>
+                        <p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">
+                          &ldquo;{report.comment.content}&rdquo;
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          en: {report.inquiry?.title || 'Publicación'} · autor: {report.comment.user?.firstName} {report.comment.user?.lastName}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                          Publicación
+                        </span>
+                        <p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{report.inquiry?.title}</p>
+                      </div>
+                    )}
                   </td>
                   <td className="px-5 py-4">
                     <p className="text-sm text-slate-700 dark:text-slate-300">{report.reason}</p>

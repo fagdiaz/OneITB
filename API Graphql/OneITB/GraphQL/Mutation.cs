@@ -25,6 +25,7 @@ using Services.Jobs;
 using Services.Auth;
 using OneItb.GraphQL.Infrastructure;
 using OneItb.GraphQL.Services.Security;
+using OneITB.GraphQL.Messaging;
 
 namespace OneITB.GraphQL.Mutations
 {
@@ -391,6 +392,21 @@ namespace OneITB.GraphQL.Mutations
             return await moderationService.ReportInquiryAsync(
                 GetAuthenticatedUserId(httpContextAccessor),
                 inquiryId,
+                reason,
+                cancellationToken);
+        }
+
+        [Authorize]
+        public async Task<CommentReportReceipt> ReportComment(
+            Guid commentId,
+            string reason,
+            [Service] ISocialService socialService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            return await socialService.ReportCommentAsync(
+                GetAuthenticatedUserId(httpContextAccessor),
+                commentId,
                 reason,
                 cancellationToken);
         }
@@ -1093,6 +1109,61 @@ namespace OneITB.GraphQL.Mutations
             }
         }
 
+        [Authorize(Roles = new[] { GraphQlRoles.Administrator, GraphQlRoles.Professor })]
+        [GraphQLName("saveSectionGrade")]
+        public async Task<SectionGrade> SaveSectionGrade(
+            SectionGradeInput input,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await academicService.SaveSectionGradeAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    input,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new GraphQLException(ErrorBuilder.New().SetMessage("Conflicto de concurrencia: la nota fue modificada por otro usuario.").SetCode("CONCURRENCY_CONFLICT").Build());
+            }
+        }
+
+        [Authorize(Roles = new[] { GraphQlRoles.Student })]
+        [GraphQLName("issueRegularStudentCertificate")]
+        public async Task<RegularStudentCertificate> IssueRegularStudentCertificate(
+            int careerId,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await academicService.IssueRegularStudentCertificateAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    careerId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
         [Authorize]
         public async Task<Notification> MarkNotificationRead(
             Guid notificationId,
@@ -1218,6 +1289,26 @@ namespace OneITB.GraphQL.Mutations
         }
 
         [Authorize(Roles = new[] { GraphQlRoles.Student, GraphQlRoles.Graduate })]
+        public async Task<ApplicationSummary> ApplyWithCv(
+            Guid jobOfferId, string expectedCvVersion, [Service] IJobService jobs,
+            [Service] INotificationService notifications, [Service] IHttpContextAccessor http,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await jobs.ApplyWithCvAsync(GetAuthenticatedUserId(http), GetAuthenticatedRole(http),
+                    jobOfferId, expectedCvVersion, cancellationToken);
+                if (result.NotificationId is Guid notificationId)
+                    await notifications.PublishCommittedAsync(notificationId, cancellationToken);
+                return result.Application;
+            }
+            catch (ApplicationCvException ex)
+            {
+                throw new GraphQLException(ErrorBuilder.New().SetMessage(ex.Message).SetCode(ex.Code).Build());
+            }
+        }
+
+        [Authorize(Roles = new[] { GraphQlRoles.Student, GraphQlRoles.Graduate })]
         public async Task<JobApplication> ApplyToJob(
             Guid jobOfferId,
             [Service] IJobService jobService,
@@ -1238,7 +1329,7 @@ namespace OneITB.GraphQL.Mutations
                     new[] { application.JobOffer.EmployerId },
                     NotificationType.JobApplication,
                     $"{application.Applicant.FirstName} {application.Applicant.LastName} se postulo a {application.JobOffer.Title}.",
-                    "/empleos/mis-ofertas",
+                    $"/empleos/mis-ofertas?applicationId={application.Id:D}&offerId={jobOfferId:D}",
                     cancellationToken);
 
                 return application;
@@ -1285,7 +1376,7 @@ namespace OneITB.GraphQL.Mutations
                     new[] { application.ApplicantId },
                     NotificationType.JobApplication,
                     $"Tu postulacion a {application.JobOffer.Title} fue {statusLabel}.",
-                    $"/empleos?jobOfferId={application.JobOfferId:D}",
+                    $"/empleos?applicationId={application.Id:D}&jobOfferId={application.JobOfferId:D}",
                     cancellationToken);
 
                 if (status is JobApplicationStatus.Reviewed or JobApplicationStatus.Rejected)
@@ -1337,6 +1428,57 @@ namespace OneITB.GraphQL.Mutations
                         cancellationToken);
                     await eventSender.SendAsync(
                         PrivateMessageTopics.ForUser(receiverId),
+                        message,
+                        cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(
+                        ex,
+                        "Message {MessageId} persisted but real-time publication failed.",
+                        message.Id);
+                }
+
+                return message;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize]
+        public async Task<Message> SendPrivateMessage(
+            PrivateMessageInput input,
+            [Service] IMessagingService messagingService,
+            [Service] ITopicEventSender eventSender,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ILogger<Mutation> logger,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                Guid senderId = GetAuthenticatedUserId(httpContextAccessor);
+                Message message = await messagingService.SendPrivateMessageAsync(
+                    senderId,
+                    input.ReceiverId,
+                    input.ClientMessageId,
+                    input.Content,
+                    input.UploadIds,
+                    cancellationToken);
+
+                try
+                {
+                    await eventSender.SendAsync(
+                        PrivateMessageTopics.ForUser(senderId),
+                        message,
+                        cancellationToken);
+                    await eventSender.SendAsync(
+                        PrivateMessageTopics.ForUser(input.ReceiverId),
                         message,
                         cancellationToken);
                 }

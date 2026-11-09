@@ -315,7 +315,7 @@ const createApolloClient = () => new ApolloClient({
             merge: replaceIncoming,
           },
           jobOffers: {
-            keyArgs: ['onlyActive'],
+            keyArgs: ['onlyActive', 'where'],
             merge: replaceIncoming,
           },
           myJobOffers: {

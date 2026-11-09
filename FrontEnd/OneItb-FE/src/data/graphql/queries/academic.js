@@ -139,3 +139,14 @@ export const GET_ACADEMIC_STUDENTS = gql`
     }
   }
 `;
+
+export const GET_ACADEMIC_TARGET = gql`
+  query GetAcademicTarget($subjectId: Int!, $resourceId: UUID, $progressId: UUID) {
+    academicTarget(subjectId: $subjectId, resourceId: $resourceId, progressId: $progressId) {
+      careerId
+      subjectId
+      resourceId
+      progressId
+    }
+  }
+`;

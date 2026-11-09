@@ -20,6 +20,7 @@ using Services.Social;
 using Services.Academic;
 using Services.Notifications;
 using Services.Jobs;
+using OneITB.GraphQL.Messaging;
 
 namespace GraphQL.GraphQL
 {
@@ -557,6 +558,80 @@ namespace GraphQL.GraphQL
         }
 
         [Authorize(Roles = new[] { "Administrador", "Profesor" })]
+        [GraphQLName("myCourseSections")]
+        public async Task<IReadOnlyList<CourseSectionSummary>> GetMyCourseSections(
+            int subjectId,
+            string term,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await academicService.GetMyCourseSectionsAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    subjectId,
+                    term,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Administrador", "Moderador", "Profesor" })]
+        [GraphQLName("sectionRoster")]
+        public async Task<SectionRosterPage> GetSectionRoster(
+            Guid sectionId,
+            int first,
+            string? after,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await academicService.GetSectionRosterPageAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    GetAuthenticatedRole(httpContextAccessor),
+                    sectionId,
+                    first,
+                    after,
+                    cancellationToken);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new GraphQLException(ErrorBuilder.New().SetMessage(ex.Message).SetCode("FORBIDDEN").Build());
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Estudiante" })]
+        [GraphQLName("myRegularStudentCertificate")]
+        public async Task<RegularStudentCertificate?> GetMyRegularStudentCertificate(
+            int careerId,
+            [Service] IAcademicService academicService,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await academicService.GetMyRegularStudentCertificateAsync(
+                    GetAuthenticatedUserId(httpContextAccessor),
+                    careerId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new GraphQLException(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = new[] { "Administrador", "Profesor" })]
         public async Task<AcademicStudentPage> GetAcademicStudents(
             int subjectId,
             int first,
@@ -579,6 +654,51 @@ namespace GraphQL.GraphQL
             {
                 throw new GraphQLException(ex.Message);
             }
+        }
+
+        [Authorize]
+        [GraphQLName("academicTarget")]
+        public async Task<AcademicTarget?> GetAcademicTarget(
+            int subjectId,
+            Guid? resourceId,
+            Guid? progressId,
+            [Service] OneItbContext context,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            Guid callerId = GetAuthenticatedUserId(httpContextAccessor);
+            string? callerRole = GetAuthenticatedRole(httpContextAccessor);
+
+            var subject = await context.Subjects
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == subjectId && s.IsActive, cancellationToken);
+
+            if (subject is null) return null;
+
+            bool isPrivileged = callerRole is "Administrador" or "Moderador";
+            if (!isPrivileged)
+            {
+                bool hasCareer = await context.UserCareers
+                    .AnyAsync(uc => uc.UserId == callerId && uc.CareerId == subject.CareerId, cancellationToken);
+                if (!hasCareer) return null;
+            }
+
+            if (resourceId.HasValue)
+            {
+                bool resourceExists = await context.AcademicResources
+                    .AnyAsync(r => r.Id == resourceId.Value && r.SubjectId == subjectId, cancellationToken);
+                if (!resourceExists) return null;
+            }
+
+            if (progressId.HasValue)
+            {
+                bool progressExists = await context.AcademicProgressRecords
+                    .AnyAsync(p => p.Id == progressId.Value && p.SubjectId == subjectId &&
+                        (isPrivileged || callerRole == "Profesor" || p.UserId == callerId), cancellationToken);
+                if (!progressExists) return null;
+            }
+
+            return new AcademicTarget(subject.CareerId, subjectId, resourceId, progressId);
         }
 
         [Authorize]
@@ -605,6 +725,99 @@ namespace GraphQL.GraphQL
             return jobService.GetMyJobOffers(
                 GetAuthenticatedUserId(httpContextAccessor),
                 GetAuthenticatedRole(httpContextAccessor));
+        }
+
+        [Authorize(Roles = new[] { "Estudiante", "Egresado" })]
+        [GraphQLName("myApplicationCvPreview")]
+        public async Task<ApplicationCvPreview> GetMyApplicationCvPreview(
+            [Service] IJobService jobs,
+            [Service] IHttpContextAccessor http,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await jobs.GetMyApplicationCvPreviewAsync(
+                    GetAuthenticatedUserId(http),
+                    GetAuthenticatedRole(http),
+                    cancellationToken);
+            }
+            catch (ApplicationCvException ex)
+            {
+                throw new GraphQLException(ErrorBuilder.New().SetMessage(ex.Message).SetCode(ex.Code).Build());
+            }
+        }
+
+        [Authorize]
+        [GraphQLName("applicationCv")]
+        public async Task<ApplicationCv?> GetApplicationCv(
+            Guid applicationId,
+            [Service] IJobService jobs,
+            [Service] IHttpContextAccessor http,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await jobs.GetApplicationCvAsync(
+                    GetAuthenticatedUserId(http),
+                    applicationId,
+                    cancellationToken);
+            }
+            catch (ApplicationCvException ex)
+            {
+                throw new GraphQLException(ErrorBuilder.New().SetMessage(ex.Message).SetCode(ex.Code).Build());
+            }
+        }
+
+        [Authorize]
+        [GraphQLName("employmentApplication")]
+        public async Task<ApplicationSummary?> GetEmploymentApplication(
+            Guid applicationId,
+            [Service] OneItbContext context,
+            [Service] IHttpContextAccessor httpContextAccessor,
+            CancellationToken cancellationToken)
+        {
+            Guid callerId = GetAuthenticatedUserId(httpContextAccessor);
+            string? callerRole = GetAuthenticatedRole(httpContextAccessor);
+
+            var application = await context.JobApplications
+                .AsNoTracking()
+                .Include(a => a.JobOffer)
+                .FirstOrDefaultAsync(a => a.Id == applicationId, cancellationToken);
+
+            if (application is null) return null;
+
+            bool isOwner = application.ApplicantId == callerId;
+            bool isEmployer = application.JobOffer.EmployerId == callerId;
+            bool isAdmin = callerRole == "Administrador";
+
+            if (!isOwner && !isEmployer && !isAdmin)
+            {
+                return null;
+            }
+
+            return new ApplicationSummary(application.Id, application.JobOfferId, application.Status, application.AppliedAt);
+        }
+
+        [Authorize]
+        [GraphQLName("messagingPeer")]
+        public async Task<MessagingPeer?> GetMessagingPeer(
+            Guid id,
+            [Service] OneItbContext context,
+            CancellationToken cancellationToken)
+        {
+            var user = await context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id && u.IsActive, cancellationToken);
+
+            if (user is null) return null;
+
+            return new MessagingPeer
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                AvatarUrl = user.AvatarUrl
+            };
         }
 
         [Authorize]

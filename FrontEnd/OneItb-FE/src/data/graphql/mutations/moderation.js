@@ -12,6 +12,16 @@ export const REPORT_INQUIRY = gql`
   }
 `;
 
+export const REPORT_COMMENT = gql`
+  mutation ReportComment($commentId: UUID!, $reason: String!) {
+    reportComment(commentId: $commentId, reason: $reason) {
+      id
+      inquiryId
+      commentId
+    }
+  }
+`;
+
 export const UPDATE_REPORT_STATUS = gql`
   mutation UpdateReportStatus($reportId: UUID!, $status: String!) {
     updateReportStatus(reportId: $reportId, status: $status) {

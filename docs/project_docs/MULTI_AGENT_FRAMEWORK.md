@@ -28,8 +28,9 @@ flowchart TD
 
     subgraph External["CANALES EXTERNOS: Codex / ChatGPT Plus (Consultoría Especializada)"]
         direction TB
-        CH1["Canal 1: '[OneITB] Auditoría & Arquitectura'\nModelo: 6 Astra | Razonamiento: Muy Alto\n(agent-auditor-architect)"]
-        CH2["Canal 2: '[OneITB] Hardening & Testing'\nModelo: 6.1 Sol | Razonamiento: Alto\n(agent-hardening-tester)"]
+        CH1["Canal 1: '[OneITB] Auditoría & Arquitectura'\nModelo: 6.0 Astra | Razonamiento: Muy Alto / Alto\n(agent-auditor-architect)"]
+        CH2["Canal 2: '[OneITB] Hardening & Testing'\nModelo: 6.1 Sol | Razonamiento: Alto / Muy Alto\n(agent-hardening-tester)"]
+        CH3["Canal 3: '[OneITB] Implementador Core'\nModelo: 6.1 Sol | Razonamiento: Alto / Muy Alto\n(core-implementer)"]
     end
 
     ORCH ==>|"Handoff Quirúrgico (ID + SHA + Contexto Saneado)"| External
@@ -44,9 +45,10 @@ Cada agente cuenta con un skill formalmente registrado en `.agents/skills/` que 
 
 | Identificador de Skill | Nombre del Agente | Entorno / Motor | Nivel de Razonamiento | Responsabilidad Principal |
 | :--- | :--- | :--- | :--- | :--- |
-| **`agent-orchestrator`** | **Orquestador & Integrador** | Antigravity Local<br>`Gemini 3.8 Flash High` | Nativo | Único escritor en disco, Docker, Kestrel, Vite, 258 FE + 234 BE tests, speckit-stabilize y gobernanza Git. |
-| **`agent-auditor-architect`** | **Auditor de Seguridad & Arquitectura** | Canal 1 Codex<br>`6 Astra` | **`Muy Alto`** *(o `Alto`)* | Threat modeling, autorización GraphQL (`GAP-AUTH`, `GAP-PRIV`, `GAP-FILE`), Entra ID (PKCE) y decisiones mayores. |
-| **`agent-hardening-tester`** | **Hardening & Testing** | Canal 2 Codex<br>`6.1 Sol` | **`Alto`** *(o `Medio`)* | Baterías de pruebas extremas en Vitest/xUnit, concurrencia de WebSockets y sincronización de Apollo Cache. |
+| **`agent-orchestrator`** | **Orquestador & Integrador** | Antigravity Local<br>`Gemini 3.8 Flash High` | Nativo | Único escritor en disco, Docker, Kestrel, Vite, 281 FE + 263 BE tests, speckit-stabilize y gobernanza Git. |
+| **`agent-auditor-architect`** | **Auditor de Seguridad & Arquitectura** | Canal 1 Codex<br>`6.0 Astra` | **`Muy Alto`** *(o `Alto`)* | Threat modeling, autorización GraphQL (`GAP-AUTH`, `GAP-PRIV`, `GAP-FILE`), Entra ID (PKCE) y decisiones mayores. |
+| **`agent-hardening-tester`** | **Hardening & Testing** | Canal 2 Codex<br>`6.1 Sol` | **`Alto`** *(o `Muy Alto`)* | Baterías de pruebas extremas en Vitest/xUnit, concurrencia de WebSockets y sincronización de Apollo Cache. |
+| **`core-implementer`** | **Implementador Core** | Canal 3 Codex<br>`6.1 Sol` | **`Alto`** *(o `Muy Alto`)* | Implementación de contratos de dominio, resolvers, componentes React y parches falsables. |
 | **`agent-debugger`** | **Debugger Forense & Reconciliación** | Antigravity / Codex<br>`Claude Sonnet 4.6` / `6.1 Sol` | **`Alto`** | Diagnóstico en consola DevTools de UUIDs en runtime, solución de ReferenceErrors y reconciliación contra `cv-builder`. |
 | **`agent-ui-ux`** | **UI/UX & Maquetación Editorial** | Antigravity / Canal 2<br>`Gemini 3.8 Flash` / `6.1 Sol` | Nativo / Medio | Reglas `@media print` A4, maquetación CSS, contraste WCAG AA, soporte Dark Mode y diagramas SVG/Mermaid. |
 | **`agent-notebook-sync`** | **Desarrollo & Sync Notebook** | Terminal Laptop<br>`Gemini` / `Codex` | Nativo / Alto | Configuración de memoria (.wslconfig a 6GB), inspección de estado Git sin pushes automáticos y validaciones pre-flight. |

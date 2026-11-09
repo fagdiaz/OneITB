@@ -31,6 +31,12 @@ export const GET_CONVERSATION = gql`
         content
         sentAt
         isRead
+        attachments {
+          id
+          name
+          contentType
+          size
+        }
         sender {
           id
           firstName
@@ -61,6 +67,43 @@ export const SEND_MESSAGE = gql`
       content
       sentAt
       isRead
+      attachments {
+        id
+        name
+        contentType
+        size
+      }
+      sender {
+        id
+        firstName
+        lastName
+        avatarUrl
+      }
+      receiver {
+        id
+        firstName
+        lastName
+        avatarUrl
+      }
+    }
+  }
+`;
+
+export const SEND_PRIVATE_MESSAGE = gql`
+  mutation SendPrivateMessage($input: PrivateMessageInput!) {
+    sendPrivateMessage(input: $input) {
+      id
+      senderId
+      receiverId
+      content
+      sentAt
+      isRead
+      attachments {
+        id
+        name
+        contentType
+        size
+      }
       sender {
         id
         firstName
@@ -95,6 +138,12 @@ export const MESSAGE_RECEIVED = gql`
       content
       sentAt
       isRead
+      attachments {
+        id
+        name
+        contentType
+        size
+      }
       sender {
         id
         firstName
@@ -141,6 +190,12 @@ export const SEARCH_MY_MESSAGES = gql`
         receiverId
         content
         sentAt
+        attachments {
+          id
+          name
+          contentType
+          size
+        }
         sender {
           id
           firstName
@@ -158,6 +213,17 @@ export const SEARCH_MY_MESSAGES = gql`
         hasNextPage
         endCursor
       }
+    }
+  }
+`;
+
+export const GET_MESSAGING_PEER = gql`
+  query MessagingPeer($id: UUID!) {
+    messagingPeer(id: $id) {
+      id
+      firstName
+      lastName
+      avatarUrl
     }
   }
 `;

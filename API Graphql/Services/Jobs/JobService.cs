@@ -4,7 +4,7 @@ using OneItb.Entities.Models;
 
 namespace Services.Jobs
 {
-    public sealed class JobService : IJobService
+    public sealed partial class JobService : IJobService
     {
         private const int MaxTitleLength = 180;
         private const int MaxCompanyLength = 160;
@@ -13,9 +13,12 @@ namespace Services.Jobs
 
         private readonly OneItbContext _context;
 
-        public JobService(OneItbContext context)
+        private readonly IDbContextFactory<OneItbContext>? _contextFactory;
+
+        public JobService(OneItbContext context, IDbContextFactory<OneItbContext>? contextFactory = null)
         {
             _context = context;
+            _contextFactory = contextFactory;
         }
 
         public IQueryable<JobOffer> GetJobOffers(bool onlyActive, Guid? currentUserId)
@@ -190,15 +193,6 @@ namespace Services.Jobs
                 .ThenInclude(employer => employer.Account)
                 .Include(application => application.Applicant)
                 .ThenInclude(applicant => applicant.Account)
-                .Include(application => application.Applicant)
-                .ThenInclude(applicant => applicant.UserCareers)
-                .ThenInclude(link => link.Career)
-                .Include(application => application.Applicant)
-                .ThenInclude(applicant => applicant.CvExperiences)
-                .Include(application => application.Applicant)
-                .ThenInclude(applicant => applicant.CvEducations)
-                .Include(application => application.Applicant)
-                .ThenInclude(applicant => applicant.CvSkills)
                 .AsSplitQuery();
         }
 

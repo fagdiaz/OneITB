@@ -4,8 +4,7 @@ export const buildPostShareUrl = (inquiryId, locationLike = window.location) => 
   }
 
   const origin = locationLike.origin || `${locationLike.protocol}//${locationLike.host}`;
-  const url = new URL('/feed', origin);
-  url.searchParams.set('inquiryId', inquiryId);
+  const url = new URL(`/post/${encodeURIComponent(inquiryId)}`, origin);
   return url.toString();
 };
 

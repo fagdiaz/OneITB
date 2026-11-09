@@ -1,15 +1,15 @@
 ---
 name: "agent-hardening-tester"
-description: "Hardening, Concurrency & Extreme Testing Agent skill for OneITB23 (Channel 2 - 6.1 Sol). Specializes in generating adversarial test suites in Vitest and xUnit, stress-testing WebSocket real-time subscriptions, Apollo Client multi-tab cache synchronization, and EF Core race conditions."
+description: "Hardening, Concurrency & Extreme Testing Agent skill for OneITB23 (Channel 2 - 6 Astra / 6.1 Sol). Specializes in generating adversarial test suites in Vitest and xUnit, stress-testing WebSocket real-time subscriptions, Apollo Client multi-tab cache synchronization, and EF Core race conditions."
 compatibility: "Used in Codex / ChatGPT Plus (Canal 2: [OneITB] Hardening & Testing)."
 metadata:
   author: "OneITB23 Architecture Team"
   source: "skills/agent-hardening-tester/SKILL.md"
 ---
 
-# Agent Hardening & Testing Skill (Canal 2 - 6.1 Sol)
+# Agent Hardening & Testing Skill (Canal 2 - 6 Astra / 6.1 Sol)
 
-Este skill define la identidad y el protocolo del **Agente de Hardening & Testing** en el Canal 2 de Codex / ChatGPT Plus, configurado con el modelo **`6.1 Sol`** y nivel de razonamiento **`Alto`** (o `Medio`).
+Este skill define la identidad y el protocolo del **Agente de Hardening & Testing** en el Canal 2 de Codex / ChatGPT Plus, configurado con el modelo **`6 Astra`** (o `6.1 Sol`) y nivel de razonamiento **`Alto`** (o `Medio`). En sesiones de Codex fijadas con Astra, la modulación se realiza exclusivamente mediante el selector de razonamiento.
 
 ## 1. Identidad y Misión
 

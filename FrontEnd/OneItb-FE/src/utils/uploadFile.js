@@ -132,3 +132,65 @@ export const uploadAttachments = async (files, token) => {
 
   return uploaded;
 };
+
+export const uploadPrivateAttachment = async (file, token, options = {}) => {
+  if (!file) return null;
+  if (!token) throw new Error('Tu sesion no esta disponible para subir archivos.');
+
+  const allowedPrivateTypes = new Set([
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+  ]);
+  if (!allowedPrivateTypes.has(file.type)) {
+    throw new Error(`El tipo de archivo de ${file.name} no esta permitido para mensajes privados.`);
+  }
+  if (file.size > MAX_UPLOAD_SIZE) {
+    throw new Error('El archivo supera el limite de 15 MB.');
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${apiBaseUrl}/api/upload?purpose=private`, {
+    method: 'POST',
+    body: formData,
+    headers: { Authorization: `Bearer ${token}` },
+    signal: options.signal,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new UploadRequestError(
+      payload.message || 'No se pudo subir el archivo privado. Reintenta manualmente.',
+      {
+        code: payload.code,
+        status: response.status,
+      },
+    );
+  }
+
+  if (!payload.uploadId) {
+    throw new UploadRequestError('El servidor no confirmo el identificador de carga.');
+  }
+
+  return {
+    uploadId: payload.uploadId,
+    name: file.name,
+    contentType: file.type,
+    size: file.size,
+  };
+};
+
+export const fetchPrivateAttachmentBlobUrl = async (attachmentId, token, signal) => {
+  const response = await fetch(`${apiBaseUrl}/api/message-attachments/${attachmentId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error('No se pudo descargar el archivo adjunto.');
+  }
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+};

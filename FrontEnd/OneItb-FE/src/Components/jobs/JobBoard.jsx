@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useSubscription } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
-import { APPLY_TO_JOB, CREATE_JOB_OFFER, GET_JOB_OFFERS, JOB_OFFER_CREATED } from '../../data/graphql/jobs';
+import { ApplyCvDialog } from './ApplicationCvDialog';
+import { APPLY_WITH_CV, CREATE_JOB_OFFER, GET_JOB_OFFERS, JOB_OFFER_CREATED } from '../../data/graphql/jobs';
 
 const initialForm = {
   title: '',
@@ -152,7 +153,8 @@ export const JobBoard = () => {
 
   const { data: subscriptionData } = useSubscription(JOB_OFFER_CREATED);
   const [createJobOffer, { loading: saving }] = useMutation(CREATE_JOB_OFFER);
-  const [applyToJob] = useMutation(APPLY_TO_JOB);
+  const [applyWithCv] = useMutation(APPLY_WITH_CV);
+  const [previewOffer, setPreviewOffer] = useState(null);
 
   useEffect(() => {
     const offer = subscriptionData?.jobOfferCreated;
@@ -225,15 +227,16 @@ export const JobBoard = () => {
     };
   }, [isModalOpen, saving]);
 
-  const handleApply = async (jobOfferId) => {
+  const handleApply = async (jobOfferId, expectedCvVersion) => {
     setFeedback(null);
     setApplyingOfferId(jobOfferId);
 
     try {
-      const { data: result } = await applyToJob({
-        variables: { jobOfferId },
+      const { data: result } = await applyWithCv({
+        variables: { jobOfferId, expectedCvVersion },
         update: (cache, { data: mutationData }) => {
-          const application = mutationData?.applyToJob;
+          const summary = mutationData?.applyWithCv;
+          const application = summary && { ...summary, __typename: 'JobApplication' };
           if (!application) return;
 
           cache.updateQuery(
@@ -256,15 +259,15 @@ export const JobBoard = () => {
         },
       });
 
-      const application = result?.applyToJob;
+      const summary = result?.applyWithCv;
+      const application = summary && { ...summary, __typename: 'JobApplication' };
       if (application) {
         setLiveOffers((current) => current.map((offer) => (
           offer.id === jobOfferId ? { ...offer, applications: [application] } : offer
         )));
-        setFeedback({ type: 'success', message: 'Postulacion registrada correctamente.' });
+        setPreviewOffer(null);
+        setFeedback({ type: 'success', message: 'Postulación registrada correctamente.' });
       }
-    } catch (err) {
-      setFeedback({ type: 'error', message: err?.message || 'No se pudo registrar la postulacion.' });
     } finally {
       setApplyingOfferId(null);
     }
@@ -361,7 +364,23 @@ export const JobBoard = () => {
           </div>
         </div>
 
-        {feedback && (
+{targetOfferId && !loading && !offers.some((offer) => offer.id === targetOfferId) && (
+          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-400/20 dark:bg-red-500/10 dark:text-red-300 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <i className="fa-solid fa-triangle-exclamation text-base" />
+              <span>La oferta laboral solicitada no está disponible o ha expirado.</span>
+            </div>
+            <Link
+              to="/empleos"
+              replace
+              className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 dark:bg-red-500/30 dark:hover:bg-red-500/50"
+            >
+              Volver
+            </Link>
+          </div>
+        )}
+
+                {feedback && (
           <div className={`mt-5 rounded-2xl border px-4 py-3 text-sm font-semibold ${
             feedback.type === 'success'
               ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-400/10 dark:text-emerald-200'
@@ -416,13 +435,18 @@ export const JobBoard = () => {
               offer={offer}
               canApply={canApply}
               applyingOfferId={applyingOfferId}
-              onApply={handleApply}
+              onApply={() => setPreviewOffer({ offer, actorId: auth.id })}
               isTarget={highlightedOfferId === offer.id}
               targetRef={targetOfferRef}
             />
           ))}
         </div>
       </section>
+
+      {canApply && previewOffer?.actorId === auth.id && previewOffer && (
+        <ApplyCvDialog offer={previewOffer.offer} onClose={() => setPreviewOffer(null)}
+          onConfirm={handleApply} busy={Boolean(applyingOfferId)} />
+      )}
 
       {isModalOpen && (
         <div

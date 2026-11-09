@@ -27,7 +27,10 @@ namespace OneITB.Core.Services.Interfaces
         Task<Inquiry> ToggleInquiryStatusAsync(Guid userId, Guid inquiryId, CancellationToken cancellationToken = default);
         Task<Comment> EditCommentAsync(Guid userId, Guid commentId, string newContent, IReadOnlyList<SocialAttachmentInput>? attachments = null, CancellationToken cancellationToken = default);
         Task<Comment> ToggleCommentStatusAsync(Guid userId, Guid commentId, CancellationToken cancellationToken = default);
+        Task<CommentReportReceipt> ReportCommentAsync(Guid reporterId, Guid commentId, string reason, CancellationToken cancellationToken = default);
     }
+
+    public sealed record CommentReportReceipt(Guid Id, Guid InquiryId, Guid CommentId);
 
     public sealed record SocialAttachmentInput(
         string FileUrl,

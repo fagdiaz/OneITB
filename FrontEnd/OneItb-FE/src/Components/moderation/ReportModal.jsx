@@ -1,10 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client';
-import { REPORT_INQUIRY } from '../../data/graphql/mutations/moderation';
+import { REPORT_INQUIRY, REPORT_COMMENT } from '../../data/graphql/mutations/moderation';
 
-export const ReportModal = ({ isOpen, onClose, inquiryId, onReported }) => {
+export const ReportModal = ({
+  isOpen,
+  onClose,
+  inquiryId,
+  commentId,
+  targetKind = commentId ? 'comment' : 'inquiry',
+  onReported,
+}) => {
   const [reason, setReason] = useState('');
-  const [reportInquiry, { loading, error }] = useMutation(REPORT_INQUIRY);
+  const [reportInquiry, { loading: loadingInquiry, error: errorInquiry }] = useMutation(REPORT_INQUIRY);
+  const [reportComment, { loading: loadingComment, error: errorComment }] = useMutation(REPORT_COMMENT);
+
+  const loading = loadingInquiry || loadingComment;
+  const error = errorInquiry || errorComment;
+  const isComment = targetKind === 'comment' || Boolean(commentId);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -17,14 +29,27 @@ export const ReportModal = ({ isOpen, onClose, inquiryId, onReported }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!reason.trim() || !inquiryId) return;
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) return;
 
-    await reportInquiry({
-      variables: {
-        inquiryId,
-        reason: reason.trim()
-      }
-    });
+    if (isComment && commentId) {
+      await reportComment({
+        variables: {
+          commentId,
+          reason: trimmedReason,
+        },
+      });
+    } else if (inquiryId) {
+      await reportInquiry({
+        variables: {
+          inquiryId,
+          reason: trimmedReason,
+        },
+      });
+    } else {
+      return;
+    }
+
     setReason('');
     onClose();
     onReported?.();
@@ -44,9 +69,13 @@ export const ReportModal = ({ isOpen, onClose, inquiryId, onReported }) => {
       <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:shadow-[0_24px_80px_rgba(2,6,23,0.55)] dark:[&_h2]:text-white dark:[&_p]:text-slate-400">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Reportar publicación</h2>
+            <h2 className="text-lg font-bold text-slate-900">
+              {isComment ? 'Reportar comentario' : 'Reportar publicación'}
+            </h2>
             <p className="mt-1 text-sm text-slate-500">
-              El equipo de moderación revisará el motivo y la publicación.
+              {isComment
+                ? 'El equipo de moderación revisará el motivo y el comentario.'
+                : 'El equipo de moderación revisará el motivo y la publicación.'}
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 dark:hover:text-slate-100">

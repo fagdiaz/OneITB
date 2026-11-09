@@ -9,8 +9,8 @@
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
-| Backend automatizado más reciente | **234/234** | Spec 218 repitió la suite junto al frontend sobre el mismo worktree; todavía no equivale a evidencia sobre SHA candidato |
-| Frontend automatizado más reciente | **252/252** | Spec 218 agregó la regresión del errorLink Apollo y repitió la suite completa; el gate integral sigue pendiente de cierre sobre el SHA definitivo |
+| Backend automatizado más reciente | **263/263** | Spec 220 repitió la suite completa junto al frontend sobre el mismo worktree; 263 pruebas unitarias y de integración en PASS (0 omitidas) |
+| Frontend automatizado más reciente | **281/281** | Spec 220 amplió la suite Vitest a 65 suites completas; 281 pruebas en PASS (0 fallos) |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente; la mesa del 07/08 no se realizó |
 
 El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de

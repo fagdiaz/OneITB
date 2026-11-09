@@ -23,6 +23,10 @@ namespace Services.Jobs
             Guid jobOfferId,
             CancellationToken cancellationToken = default);
 
+        Task<ApplicationCvPreview> GetMyApplicationCvPreviewAsync(Guid actorId, string? role, CancellationToken cancellationToken);
+        Task<(ApplicationSummary Application, Guid? NotificationId)> ApplyWithCvAsync(Guid actorId, string? role, Guid jobOfferId, string expectedCvVersion, CancellationToken cancellationToken);
+        Task<ApplicationCv?> GetApplicationCvAsync(Guid actorId, Guid applicationId, CancellationToken cancellationToken);
+
         Task<JobApplication> UpdateApplicationStatusAsync(
             Guid actorId,
             string? actorRole,

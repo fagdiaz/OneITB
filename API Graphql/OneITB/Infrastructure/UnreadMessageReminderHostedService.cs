@@ -75,24 +75,26 @@ namespace OneItb.GraphQL.Infrastructure
                         !message.IsRead &&
                         message.SentAt <= cutoff &&
                         message.Receiver.IsActive)
-                    .GroupBy(message => message.ReceiverId)
+                    .GroupBy(message => new { message.ReceiverId, message.SenderId })
                     .Select(group => new
                     {
-                        UserId = group.Key,
+                        ReceiverId = group.Key.ReceiverId,
+                        SenderId = group.Key.SenderId,
                         Count = group.Count(),
                         LatestMessageAt = group.Max(message => message.SentAt)
                     })
-                    .OrderBy(item => item.UserId)
+                    .OrderBy(item => item.ReceiverId)
                     .Take(MaxRecipientsPerCycle)
                     .ToListAsync(cancellationToken);
 
                 foreach (var recipient in recipients)
                 {
                     await notificationService.UpsertUnreadMessageReminderAsync(
-                        recipient.UserId,
+                        recipient.ReceiverId,
                         recipient.Count,
                         recipient.LatestMessageAt,
-                        cancellationToken);
+                        cancellationToken,
+                        recipient.SenderId);
                 }
 
                 if (recipients.Count > 0)

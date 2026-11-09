@@ -57,6 +57,7 @@ vi.mock('../../hooks/useAuth', () => ({
 vi.mock('react-router-dom', async (importOriginal) => ({
   ...(await importOriginal()),
   useNavigate: () => mocks.navigate,
+  useSearchParams: () => [new URLSearchParams()],
 }));
 
 vi.mock('@apollo/client', async (importOriginal) => ({

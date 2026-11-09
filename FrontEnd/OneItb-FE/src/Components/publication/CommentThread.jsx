@@ -175,7 +175,7 @@ const CommentNode = ({
               {new Date(comment.createdAt).toLocaleDateString('es-AR')} {' '}
               {new Date(comment.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
             </time>
-            <button type="button" onClick={() => onReport?.(comment.inquiryId)} className="text-slate-300 hover:text-red-500" title="Reportar comentario">
+            <button type="button" onClick={() => onReport?.(comment.id, 'comment', comment.inquiryId)} className="text-slate-300 hover:text-red-500" title="Reportar comentario">
               <i className="fa-solid fa-flag text-xs" />
             </button>
           </div>

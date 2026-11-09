@@ -857,6 +857,11 @@ public sealed class SocialServiceTests
     {
         await using var context = ServiceTestData.CreateContext();
         await ServiceTestData.SeedAcademicGraphAsync(context);
+        // Both students in this positive thread scenario must be able to see the post.
+        var enrollment = await context.UserCareers.SingleAsync(link => link.UserId == ServiceTestData.OtherStudentUserId);
+        context.UserCareers.Remove(enrollment);
+        context.UserCareers.Add(new UserCareer { UserId = enrollment.UserId, CareerId = ServiceTestData.CareerId });
+        await context.SaveChangesAsync();
         Mock<INotificationService> notifications = CreateNotificationMock();
         SocialService service = CreateService(context, notifications);
         Inquiry inquiry = await service.AddInquiryAsync(
@@ -1060,6 +1065,149 @@ public sealed class SocialServiceTests
         User user = Assert.Single(page.Items);
         Assert.Equal(ServiceTestData.TeacherUserId, user.Id);
         Assert.Contains("permisos", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task HiddenCareerTargetCannotBeCommentedOnOrReactedToById()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+        var comment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            InquiryId = OtherCareerInquiryId,
+            UserId = ServiceTestData.OtherStudentUserId,
+            Content = "Contenido de otra carrera",
+            IsActive = true
+        };
+        context.Comments.Add(comment);
+        await context.SaveChangesAsync();
+        var notifications = CreateNotificationMock();
+        var service = CreateService(context, notifications);
+        var actor = ServiceTestData.StudentUserId;
+        var page = await service.GetInquiriesPageAsync(actor, null, null, null, null, 1, null, OtherCareerInquiryId);
+        Assert.Empty(page.Items);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddCommentAsync(actor, OtherCareerInquiryId, "Respuesta", null));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ToggleReactionAsync(actor, OtherCareerInquiryId));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ToggleCommentReactionAsync(actor, comment.Id));
+
+        Assert.Single(context.Comments.Where(item => item.InquiryId == OtherCareerInquiryId));
+        Assert.Empty(context.Reactions);
+        Assert.Empty(context.CommentReactions);
+        notifications.VerifyNoOtherCalls();
+    }
+
+
+    [Fact]
+    public async Task ReportCommentAsync_ReportsExactCommentAndInquiry_DeduplicatesPendingReport()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+
+        var commentA = new Comment
+        {
+            Id = Guid.NewGuid(),
+            InquiryId = OwnCareerInquiryId,
+            UserId = ServiceTestData.OtherStudentUserId,
+            Content = "Comentario A",
+            IsActive = true
+        };
+        var commentB = new Comment
+        {
+            Id = Guid.NewGuid(),
+            InquiryId = OwnCareerInquiryId,
+            UserId = ServiceTestData.OtherStudentUserId,
+            Content = "Comentario B que merece reporte",
+            IsActive = true
+        };
+        context.Comments.AddRange(commentA, commentB);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+        var reporterId = ServiceTestData.StudentUserId;
+
+        // Act 1: Report comment B
+        var receipt1 = await service.ReportCommentAsync(reporterId, commentB.Id, "Spam recurrente");
+
+        Assert.NotEqual(Guid.Empty, receipt1.Id);
+        Assert.Equal(OwnCareerInquiryId, receipt1.InquiryId);
+        Assert.Equal(commentB.Id, receipt1.CommentId);
+
+        var persistedReport = await context.CommunityReports.SingleAsync();
+        Assert.Equal(receipt1.Id, persistedReport.Id);
+        Assert.Equal(reporterId, persistedReport.ReporterId);
+        Assert.Equal(OwnCareerInquiryId, persistedReport.InquiryId);
+        Assert.Equal(commentB.Id, persistedReport.CommentId);
+        Assert.Equal("Pending", persistedReport.Status);
+        Assert.Equal("Spam recurrente", persistedReport.Reason);
+
+        // Act 2: Report comment B again (deduplication)
+        var receipt2 = await service.ReportCommentAsync(reporterId, commentB.Id, "Intento duplicado");
+
+        Assert.Equal(receipt1.Id, receipt2.Id);
+        Assert.Equal(receipt1.CommentId, receipt2.CommentId);
+        Assert.Single(context.CommunityReports);
+    }
+
+    [Fact]
+    public async Task ReportCommentAsync_RejectsInvalidOrHiddenOrInaccessibleComment()
+    {
+        await using var context = ServiceTestData.CreateContext();
+        await SeedSocialGraphAsync(context);
+
+        var hiddenComment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            InquiryId = OwnCareerInquiryId,
+            UserId = ServiceTestData.OtherStudentUserId,
+            Content = "Oculto",
+            IsActive = true,
+            IsHiddenByModerator = true
+        };
+        var otherCareerComment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            InquiryId = OtherCareerInquiryId,
+            UserId = ServiceTestData.OtherStudentUserId,
+            Content = "Otra carrera",
+            IsActive = true
+        };
+        context.Comments.AddRange(hiddenComment, otherCareerComment);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+        var actor = ServiceTestData.StudentUserId;
+
+        // Hidden comment rejected
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ReportCommentAsync(actor, hiddenComment.Id, "Reportando oculto"));
+
+        // Other career comment rejected
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ReportCommentAsync(actor, otherCareerComment.Id, "Reportando inaccesible"));
+
+        // Non-existent comment rejected
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ReportCommentAsync(actor, Guid.NewGuid(), "Inexistente"));
+
+        // Empty reason rejected
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.ReportCommentAsync(actor, hiddenComment.Id, "   "));
+
+        // Inactive user rejected
+        var inactiveUser = ServiceTestData.CreateUser(Guid.NewGuid(), "Inactivo", "User", "Estudiante", false);
+        inactiveUser.IsActive = false;
+        context.Users.Add(inactiveUser);
+        await context.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ReportCommentAsync(inactiveUser.Id, otherCareerComment.Id, "Valido"));
+
+        Assert.Empty(context.CommunityReports);
     }
 
     private static SocialService CreateService(

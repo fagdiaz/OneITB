@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using OneItb.Entities.Models;
 using Services.Siu;
 
@@ -14,5 +18,11 @@ namespace Services.Academic
         Task<AcademicStudentPage> GetAcademicStudentsPageAsync(Guid actorUserId, string? actorRole, int subjectId, int first, string? after, CancellationToken cancellationToken = default);
         Task<AcademicProgress> UpsertAcademicProgressAsync(Guid actorUserId, string? actorRole, Guid userId, int subjectId, decimal? score, AcademicProgressStatus status, string? notes, CancellationToken cancellationToken = default);
         Task<SiuSyncResult> SyncSiuGradesAsync(Guid actorUserId, string? actorRole, int subjectId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<CourseSectionSummary>> GetMyCourseSectionsAsync(Guid professorId, int subjectId, string term, CancellationToken cancellationToken = default);
+        Task<SectionRosterPage> GetSectionRosterPageAsync(Guid callerId, string? callerRole, Guid sectionId, int first, string? after, CancellationToken cancellationToken = default);
+        Task<SectionGrade> SaveSectionGradeAsync(Guid professorId, string? callerRole, SectionGradeInput input, CancellationToken cancellationToken = default);
+        Task<RegularStudentCertificate> IssueRegularStudentCertificateAsync(Guid studentId, int careerId, CancellationToken cancellationToken = default);
+        Task<RegularStudentCertificate?> GetMyRegularStudentCertificateAsync(Guid studentId, int careerId, CancellationToken cancellationToken = default);
     }
 }

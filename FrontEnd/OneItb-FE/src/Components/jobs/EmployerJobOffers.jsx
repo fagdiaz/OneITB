@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
-import { GET_MY_JOB_OFFERS, UPDATE_APPLICATION_STATUS } from '../../data/graphql/jobs';
+import { GET_MY_JOB_OFFERS, UPDATE_APPLICATION_STATUS, GET_EMPLOYMENT_APPLICATION } from '../../data/graphql/jobs';
+
+import { CandidateCvDialog } from './ApplicationCvDialog';
 
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'Todos' },
@@ -37,157 +39,6 @@ const formatDate = (value) => {
   }).format(new Date(value));
 };
 
-const visibleItems = (items = []) =>
-  [...items]
-    .filter((item) => !item?.isHidden)
-    .sort((a, b) => (a?.sortOrder || 0) - (b?.sortOrder || 0));
-
-const CandidateCvModal = ({ application, onClose, onUpdateStatus, updatingStatus }) => {
-  if (!application) return null;
-
-  const applicant = application.applicant || {};
-  const careers = applicant.userCareers?.map((link) => link?.career?.name).filter(Boolean) || [];
-  const experiences = visibleItems(applicant.cvExperiences);
-  const educations = visibleItems(applicant.cvEducations);
-  const skills = visibleItems(applicant.cvSkills);
-
-  return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
-      <section className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl shadow-slate-950/25 dark:border-white/10 dark:bg-slate-950 dark:text-white">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-6 dark:border-white/10">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
-              Perfil Academico
-            </p>
-            <h2 className="mt-1 text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-              {applicant.fullName || `${applicant.firstName || ''} ${applicant.lastName || ''}`.trim() || 'Postulante'}
-            </h2>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              {applicant.email} {applicant.phone ? `- ${applicant.phone}` : ''}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
-            aria-label="Cerrar"
-          >
-            <i className="fa-solid fa-xmark" />
-          </button>
-        </div>
-
-        <div className="grid max-h-[calc(92vh-92px)] overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
-          <aside className="border-b border-slate-200 bg-slate-50 p-6 dark:border-white/10 dark:bg-slate-900/60 lg:border-b-0 lg:border-r">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <div className="flex items-center gap-4">
-                {applicant.avatarUrl ? (
-                  <img
-                    src={applicant.avatarUrl}
-                    alt="Avatar postulante"
-                    className="h-16 w-16 rounded-2xl object-cover"
-                  />
-                ) : (
-                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-xl font-black text-blue-700 dark:bg-blue-400/10 dark:text-blue-200">
-                    {(applicant.firstName?.[0] || 'P')}{(applicant.lastName?.[0] || '')}
-                  </span>
-                )}
-                <div>
-                  <p className="text-sm font-black text-slate-950 dark:text-white">{applicant.role || 'Candidato'}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{careers.join(', ') || 'Carrera no informada'}</p>
-                </div>
-              </div>
-
-              <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                {applicant.biography || 'Sin biografia cargada.'}
-              </p>
-
-              {applicant.linkedIn && (
-                <a
-                  href={applicant.linkedIn}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-blue-700 dark:text-blue-300"
-                >
-                  <i className="fa-brands fa-linkedin" />
-                  LinkedIn
-                </a>
-              )}
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={updatingStatus}
-                onClick={() => onUpdateStatus(application.id, 'REVIEWED')}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm shadow-blue-700/20 transition hover:-translate-y-0.5 hover:bg-blue-600 hover:shadow-md active:translate-y-0 active:scale-[0.98] active:bg-blue-800 disabled:pointer-events-none disabled:opacity-60"
-              >
-                <i className="fa-solid fa-eye text-xs" />
-                Marcar revisado
-              </button>
-              <button
-                type="button"
-                disabled={updatingStatus}
-                onClick={() => onUpdateStatus(application.id, 'REJECTED')}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 transition hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-md active:translate-y-0 active:scale-[0.98] active:bg-red-200 disabled:pointer-events-none disabled:opacity-60 dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-200 dark:hover:bg-red-400/20 dark:active:bg-red-400/30"
-              >
-                <i className="fa-solid fa-ban text-xs" />
-                Rechazar
-              </button>
-            </div>
-          </aside>
-
-          <div className="space-y-5 p-6">
-            <section>
-              <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                Experiencia
-              </h3>
-              <div className="mt-3 space-y-3">
-                {experiences.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Sin experiencia cargada.</p>}
-                {experiences.map((item) => (
-                  <article key={item.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
-                    <p className="font-bold text-slate-950 dark:text-white">{item.role} - {item.company}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.description}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section>
-              <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                Educacion
-              </h3>
-              <div className="mt-3 space-y-3">
-                {educations.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Sin educacion cargada.</p>}
-                {educations.map((item) => (
-                  <article key={item.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
-                    <p className="font-bold text-slate-950 dark:text-white">{item.degree}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{item.institution}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.description}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section>
-              <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                Habilidades
-              </h3>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {skills.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Sin habilidades cargadas.</p>}
-                {skills.map((item) => (
-                  <span key={item.id} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-700 dark:border-white/10 dark:text-slate-200">
-                    {item.name}{item.level ? ` - ${item.level}` : ''}
-                  </span>
-                ))}
-              </div>
-            </section>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-};
-
 const ApplicationRow = ({ application, onOpen }) => {
   const config = statusConfig[normalizeStatus(application.status)] || statusConfig.PENDING;
   const applicant = application.applicant || {};
@@ -201,7 +52,7 @@ const ApplicationRow = ({ application, onOpen }) => {
       <div>
         <p className="font-bold text-slate-950 dark:text-white">{applicant.fullName || 'Postulante'}</p>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          {applicant.email} - {formatDate(application.appliedAt)}
+          {formatDate(application.appliedAt)}
         </p>
       </div>
       <span className={`rounded-full border px-3 py-1 text-xs font-bold ${config.className}`}>
@@ -224,6 +75,15 @@ const AtsSkeleton = () => (
 export const EmployerJobOffers = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [searchParams] = useSearchParams();
+  const targetApplicationId = searchParams.get('applicationId');
+  const targetAppliedRef = React.useRef(false);
+
+  const { data: targetAppData, loading: targetAppLoading } = useQuery(GET_EMPLOYMENT_APPLICATION, {
+    variables: { applicationId: targetApplicationId },
+    skip: !targetApplicationId,
+    fetchPolicy: 'cache-and-network',
+  });
   const [feedback, setFeedback] = useState(null);
 
   const { data, loading, error } = useQuery(GET_MY_JOB_OFFERS, {
@@ -233,6 +93,19 @@ export const EmployerJobOffers = () => {
   const [updateApplicationStatus, { loading: updatingStatus }] = useMutation(UPDATE_APPLICATION_STATUS);
 
   const offers = data?.myJobOffers?.nodes || [];
+  React.useEffect(() => {
+    if (!targetApplicationId || targetAppliedRef.current) return;
+    const allApps = offers.flatMap((o) => o.applications || []);
+    const matching = allApps.find((a) => a.id === targetApplicationId);
+    if (matching) {
+      targetAppliedRef.current = true;
+      setSelectedApplication(matching);
+    } else if (targetAppData?.employmentApplication) {
+      targetAppliedRef.current = true;
+      setSelectedApplication(targetAppData.employmentApplication);
+    }
+  }, [targetApplicationId, offers, targetAppData]);
+
   const totalApplications = useMemo(
     () => offers.reduce((total, offer) => total + (offer.applications?.length || 0), 0),
     [offers]
@@ -257,7 +130,23 @@ export const EmployerJobOffers = () => {
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-white">
       <section className="mx-auto max-w-6xl">
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        {targetApplicationId && !targetAppLoading && !loading && !offers.flatMap((o) => o.applications || []).some((a) => a.id === targetApplicationId) && !targetAppData?.employmentApplication && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-400/20 dark:bg-red-500/10 dark:text-red-300 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <i className="fa-solid fa-triangle-exclamation text-base" />
+              <span>La postulación solicitada no está disponible o no tienes permisos para acceder a ella.</span>
+            </div>
+            <Link
+              to="/empleos/mis-ofertas"
+              replace
+              className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 dark:bg-red-500/30 dark:hover:bg-red-500/50"
+            >
+              Volver
+            </Link>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600 dark:text-blue-300">
                 Gestor de Postulaciones
@@ -266,7 +155,7 @@ export const EmployerJobOffers = () => {
                 Mis ofertas y postulantes
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-                Revisa candidatos, consulta su CV resumido y actualiza el estado de cada postulacion desde un flujo simple y trazable.
+                Revisa candidatos, consulta el CV enviado y actualiza el estado de cada postulacion desde un flujo simple y trazable.
               </p>
             </div>
             <Link
@@ -384,12 +273,12 @@ export const EmployerJobOffers = () => {
         </div>
       </section>
 
-      <CandidateCvModal
+      {selectedApplication && <CandidateCvDialog key={selectedApplication.id}
         application={selectedApplication}
         onClose={() => setSelectedApplication(null)}
         onUpdateStatus={handleUpdateStatus}
         updatingStatus={updatingStatus}
-      />
+      />}
     </main>
   );
 };

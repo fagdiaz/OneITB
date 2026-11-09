@@ -19,6 +19,51 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-08] - Spec 220: Core Closure and Application Hardening - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Cierre integral y endurecimiento del núcleo de OneITB23 cubriendo persistencia de CV congelado en postulaciones (`JobApplicationCv`), adjuntos privados y entrega autorizada en mensajería (`PrivateUpload`, `MessageAttachment`, controlador con streaming protegido y límites de caducidad/consumo único), moderación y reporte de comentarios con índices filtrados (`CommunityReport.CommentId`, `AK_Comments_Id_InquiryId`), cursadas académicas con comisiones y certificados de alumno regular (`CourseSection`, `SectionInstructor`, `SectionEnrollment`, `SectionGrade`, `EnrollmentStanding`, `RegularStudentCertificate`), resolución profunda de destinos de notificación y estados UI recuperables (`academicTarget`, `employmentApplication`, `messagingPeer`), e inspección de migraciones SQL idempotentes.
+
+### Tareas Completadas (Spec 220)
+
+1. **T01 (Conciliación de Rama y Traspaso 219 → 220):**
+   - Transición documental e inventario de artefactos; activación de `specs/220-core-closure-and-application-hardening` en `.specify/feature.json`.
+2. **T02 (Escritura Social, Moderación y Denegaciones):**
+   - Validación de pertenencia social en `SocialService.cs`, denegación de comentarios y reacciones en publicaciones dadas de baja o autores bloqueados/silenciados.
+3. **T03 (Captura y Congelamiento de CV en Postulaciones - CV-A & CV-B):**
+   - Entidad `JobApplicationCv` con payload JSON normalizado, ordenamiento de secciones y exclusión estricta de elementos ocultos.
+   - Vista previa con claims (`myApplicationCvPreview`), lectura autorizada (`applicationCv`), diálogo modal `ApplicationCvDialog.jsx` y supresión de elementos visuales en impresión ATS.
+4. **T04 (Adjuntos Privados y Mensajería Segura - CHAT-A, CHAT-B & CHAT-C):**
+   - Entidades `PrivateUpload` y `MessageAttachment`, control de concurrencia e idempotencia con `ClientMessageId`.
+   - Streaming autenticado en `MessageAttachmentsController` con verificación de pertenencia (emisor o receptor), rechazo de archivos caducados o consumidos, y blindaje de prefijos estáticos.
+   - Integración unificada en `PrivateChat.jsx` y `MiniChatWidget.jsx` mediante el hook `useChatSubscription.js` y componentes `PrivateAttachmentDraft` / `PrivateAttachmentView`.
+5. **T05 (Reporte y Moderación de Comentarios - WALL-A, WALL-B & WALL-C):**
+   - Extensión de `CommunityReport` con `CommentId` opcional, clave alterna `AK_Comments_Id_InquiryId` y restricción de clave foránea compuesta.
+   - Modal `ReportModal.jsx` actualizado para denunciar comentarios o publicaciones; consulta `reportedComments` en moderación administrativa con paginación y mutaciones `resolveCommentReport` / `dismissCommentReport`.
+   - Despliegue de comentario objetivo resaltado con resolución de jerarquía y paginación en `CommentThread.jsx`.
+6. **T06 (Comisiones Académicas, Calificaciones y Regularidad - AC-A & AC-B):**
+   - Entidades académicas con claves foráneas explícitas y `DeleteBehavior.Restrict`: `CourseSection`, `SectionInstructor`, `SectionEnrollment`, `SectionGrade` (con `RowVersion` concurrente y `CK_SectionGrades_Score`), `EnrollmentStanding` y `RegularStudentCertificate`.
+   - Validaciones de asignación docente, proyección atómica a resumen de materia y emisión idempotente de certificados de regularidad vinculados a acreditaciones institucionales vigentes.
+7. **T07 (Destinos de Notificación, Resolución por ID y Resiliencia UI - NT-A & NT-B):**
+   - Resolvers `academicTarget`, `employmentApplication` y `messagingPeer` en `Query.cs`.
+   - Enlaces enriquecidos con parámetros de consulta (`subjectId`, `resourceId`, `progressId`, `applicationId`, `offerId`, `peerId`).
+   - Estados de interfaz recuperables con banners informativos y botones de retorno en `AcademicDashboard.jsx`, `EmployerJobOffers.jsx`, `JobBoard.jsx` y `PrivateChat.jsx`.
+   - Aislamiento de caché en `GraphqlProvider.js` (`keyArgs: ['onlyActive', 'where']`) y agregación de recordatorios de mensajes por interlocutor.
+8. **T08 (Inspección de Migraciones SQL, Validación Dual-Stack y Estabilización):**
+   - Script SQL idempotente generado con EF Core, verificando restricciones `CK`, claves foráneas `ON DELETE NO ACTION`, índices filtrados y compatibilidad SQL Server 2022.
+   - Ejecución de preflight y validación formal de 9 gates en PASS.
+
+### Validación de Regresión Dual-Stack
+
+| Suite | Archivos | Tests | Estado |
+|---|---|---|---|
+| Backend xUnit (Services.Tests.dll - Release) | 6 suites | 263 | PASS (0 fallos, 0 omitidos) |
+| Frontend Vitest (npm run test -- --run) | 65 suites | 281 | PASS (0 fallos, 26.67s) |
+| Frontend Linter (oxlint FrontEnd/OneItb-FE/src) | 211 | - | 0 errores, 0 warnings (18ms) |
+| Frontend Production Build (vite build) | - | - | PASS (577ms, 0 errores) |
+| EF Core Model Changes Check | - | - | PASS (0 cambios pendientes) |
+| Git Hygiene (git diff --check) | - | - | PASS (0 errores de formato) |
+
+---
 ## [2026-11-08] - Marco Multi-Agente, Skills de Rol, Spec 219 y Resolucion de Peer Review GOB-20261107-02 - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Formalizacion del ecosistema multi-agente (agent-orchestrator, agent-auditor-architect, agent-hardening-tester, agent-debugger, agent-ui-ux, agent-notebook-sync), ratificacion del Principio X en la Constitucion, resolucion integral de los hallazgos G1-G4 del Peer Review de 6 Astra (docs/audit/PEER_REVIEW_MULTI_AGENTE_2026-11-07.md), y blindaje del script de estabilizacion contra falsos PASS.

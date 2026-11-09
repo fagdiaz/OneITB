@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { TOGGLE_PROFILE_PRIVACY, UPDATE_PROFILE } from '../../data/graphql/mutations/updateProfile';
 import { GET_USER_PROFILE } from '../../data/graphql/queries/getUserProfile';
@@ -129,6 +129,9 @@ const buildCvInput = (sections: CvSections) => ({
 export const CvEditorProfile = () => {
   const { auth, token, sessionVersion } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const jobOfferId = searchParams.get('jobOfferId');
+  const returnPath = jobOfferId ? `/empleos?jobOfferId=${encodeURIComponent(jobOfferId)}` : '/profile';
   const apolloClient = useApolloClient();
   const [cvSections, setCvSections] = useState<CvSections>(emptyCvSections);
   const [activeTheme, setActiveTheme] = useState<CvAccentTheme>('graphite');
@@ -481,7 +484,7 @@ export const CvEditorProfile = () => {
       setPersistedAvatarUrl(confirmedProfile.avatarUrl || '');
       setSaveStatus('saved');
       setEditorPhase('saved');
-      navigate('/profile', { replace: true });
+      navigate(returnPath, { replace: true });
     } catch {
       setSaveStatus('error');
       setEditorPhase('error');
@@ -532,7 +535,7 @@ export const CvEditorProfile = () => {
 
   const handleCancel = () => {
     uploadAbortRef.current?.abort();
-    navigate('/profile');
+    navigate(returnPath);
   };
 
   const handleRetryLoad = async () => {
@@ -567,7 +570,7 @@ export const CvEditorProfile = () => {
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Button type="button" onClick={handleRetryLoad}>Reintentar</Button>
-            <Button type="button" variant="secondary" onClick={handleCancel}>Volver al perfil</Button>
+            <Button type="button" variant="secondary" onClick={handleCancel}>{jobOfferId ? 'Volver a la oferta' : 'Volver al perfil'}</Button>
           </div>
         </section>
       </main>

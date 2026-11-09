@@ -24,6 +24,7 @@ export const GET_COMMUNITY_REPORTS = gql`
   query GetCommunityReports {
     communityReports {
       id
+      commentId
       reason
       status
       createdAt
@@ -35,6 +36,15 @@ export const GET_COMMUNITY_REPORTS = gql`
       inquiry {
         id
         title
+      }
+      comment {
+        id
+        content
+        user {
+          id
+          firstName
+          lastName
+        }
       }
     }
   }

@@ -1,5 +1,7 @@
 import React from 'react';
 import { apiBaseUrl } from '../../utils/uploadFile';
+import { PrivateAttachmentView } from './PrivateAttachmentView';
+import { PrivateAttachmentDraft, PrivateAttachmentPreviewList } from './PrivateAttachmentDraft';
 
 const formatTime = (value) => new Intl.DateTimeFormat('es-AR', {
   hour: '2-digit',
@@ -53,8 +55,14 @@ export const ChatWindow = ({
   form,
   changed,
   sending,
-  auth
+  auth,
+  draftFiles = [],
+  setDraftFiles,
+  attachmentError = '',
+  setAttachmentError,
 }) => {
+  const token = auth?.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null);
+
   return (
     <div className={`${selectedContactId ? 'flex' : 'hidden sm:flex'} relative flex-1 flex-col bg-slate-50/70 dark:bg-slate-900/50`}>
       {!selectedContact ? (
@@ -108,7 +116,17 @@ export const ChatWindow = ({
                       />
                     )}
                     <div className={`max-w-[85%] rounded-2xl px-3 py-2 shadow-lg ${isOwn ? 'rounded-br-sm bg-blue-600 text-white shadow-blue-950/20' : 'rounded-bl-sm border border-slate-200 bg-white text-slate-800 backdrop-blur dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100'} ${isOptimistic ? 'opacity-70' : ''}`}>
-                      <p className="whitespace-pre-wrap break-words text-[13px] leading-snug">{message.content}</p>
+                      {message.content && (
+                        <p className="whitespace-pre-wrap break-words text-[13px] leading-snug">{message.content}</p>
+                      )}
+                      {message.attachments?.map((attachment) => (
+                        <PrivateAttachmentView
+                          key={attachment.id}
+                          attachment={attachment}
+                          token={token}
+                          isOwn={isOwn}
+                        />
+                      ))}
                       <p className={`mt-0.5 text-right text-[9px] ${isOwn ? 'text-blue-200' : 'text-slate-500'}`}>
                         {formatTime(message.sentAt)}{isOptimistic ? ' ·' : ''}
                       </p>
@@ -120,13 +138,28 @@ export const ChatWindow = ({
             </div>
           </div>
 
-          {(feedback || subscriptionError) && (
-            <div className="shrink-0 border-t border-red-400/20 bg-red-500/10 p-2 text-center text-[10px] text-red-200">
-              {feedback || 'Error de conexión'}
+          {(feedback || subscriptionError || attachmentError) && (
+            <div className="shrink-0 border-t border-red-400/20 bg-red-500/10 p-2 text-center text-[10px] text-red-200" role="alert">
+              {attachmentError || feedback || 'Error de conexión'}
             </div>
           )}
 
+          {setDraftFiles && (
+            <PrivateAttachmentPreviewList
+              draftFiles={draftFiles}
+              onRemove={(idx) => setDraftFiles((prev) => prev.filter((_, i) => i !== idx))}
+            />
+          )}
+
           <form onSubmit={handleSubmit} className="flex shrink-0 items-end gap-2 border-t border-slate-200 bg-white/90 p-2 dark:border-white/10 dark:bg-slate-950/80">
+            {setDraftFiles && (
+              <PrivateAttachmentDraft
+                draftFiles={draftFiles}
+                setDraftFiles={setDraftFiles}
+                onError={setAttachmentError}
+                disabled={sending}
+              />
+            )}
             <textarea
               name="content"
               value={form.content}
@@ -144,8 +177,9 @@ export const ChatWindow = ({
             />
             <button
               type="submit"
-              disabled={!form.content?.trim() || sending}
+              disabled={(!form.content?.trim() && draftFiles.length === 0) || sending}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-950/20 transition hover:-translate-y-0.5 hover:bg-blue-500 disabled:opacity-50"
+              aria-label="Enviar mensaje"
             >
               <i className="fa-solid fa-paper-plane text-xs" />
             </button>

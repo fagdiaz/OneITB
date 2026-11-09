@@ -53,9 +53,22 @@ namespace Services.Social
             _logger = logger;
         }
 
+        private IQueryable<Inquiry> VisibleInquiries(IQueryable<Inquiry> inquiries, Guid observerId)
+        {
+            var globalObservers = _context.Users.Where(user => user.Id == observerId &&
+                (user.Role == "Administrador" || user.Role == "Moderador"));
+            var careers = _context.UserCareers.Where(link => link.UserId == observerId && link.Career.IsActive)
+                .Select(link => link.CareerId);
+            var excludedAuthors = _context.UserInteractions.Where(link => link.ObserverId == observerId &&
+                (link.Type == InteractionType.Mute || link.Type == InteractionType.Block))
+                .Select(link => link.TargetId);
+
+            return inquiries.Where(inquiry => (globalObservers.Any() || careers.Contains(inquiry.Subject.CareerId)) &&
+                !excludedAuthors.Contains(inquiry.UserId));
+        }
+
         private IQueryable<Inquiry> BuildInquiriesQuery(
             Guid? currentUserId,
-            bool hasGlobalCareerVisibility,
             string? searchTerm,
             int? careerId,
             int[]? careerIds,
@@ -142,29 +155,13 @@ namespace Services.Social
             }
 
             Guid observerId = currentUserId.Value;
-            if (!hasGlobalCareerVisibility)
-            {
-                IQueryable<int> observerCareerIds = _context.UserCareers
-                    .Where(link => link.UserId == observerId && link.Career.IsActive)
-                    .Select(link => link.CareerId);
-
-                query = query.Where(inquiry => observerCareerIds.Contains(inquiry.Subject.CareerId));
-            }
-
-            IQueryable<Guid> excludedUsers = _context.UserInteractions
-                .Where(interaction =>
-                    interaction.ObserverId == observerId &&
-                    (interaction.Type == InteractionType.Mute || interaction.Type == InteractionType.Block))
-                .Select(interaction => interaction.TargetId);
-
             IQueryable<Guid> followedUsers = _context.UserInteractions
                 .Where(interaction =>
                     interaction.ObserverId == observerId &&
                     interaction.Type == InteractionType.Follow)
                 .Select(interaction => interaction.TargetId);
 
-            IQueryable<Inquiry> visibleQuery = query
-                .Where(inquiry => !excludedUsers.Contains(inquiry.UserId));
+            IQueryable<Inquiry> visibleQuery = VisibleInquiries(query, observerId);
 
             if (normalizedSearch.Length > 0)
             {
@@ -195,18 +192,8 @@ namespace Services.Social
             int offset = OffsetCursor.Decode(after);
             cancellationToken.ThrowIfCancellationRequested();
 
-            bool hasGlobalCareerVisibility = currentUserId.HasValue &&
-                await _context.Users
-                    .AsNoTracking()
-                    .AnyAsync(
-                        user =>
-                            user.Id == currentUserId.Value &&
-                            (user.Role == "Administrador" || user.Role == "Moderador"),
-                        cancellationToken);
-
             IQueryable<Inquiry> query = BuildInquiriesQuery(
                 currentUserId,
-                hasGlobalCareerVisibility,
                 searchTerm,
                 careerId,
                 careerIds,
@@ -597,8 +584,7 @@ namespace Services.Social
             await EnsureUserCanCreateContentAsync(userId, "comentar", cancellationToken);
             string normalizedContent = RequireText(content, 1000, "El comentario");
 
-            Guid? inquiryOwnerId = await _context.Inquiries
-                .AsNoTracking()
+            Guid? inquiryOwnerId = await VisibleInquiries(_context.Inquiries.AsNoTracking(), userId)
                 .Where(inquiry => inquiry.Id == inquiryId)
                 .Select(inquiry => (Guid?)inquiry.UserId)
                 .SingleOrDefaultAsync(cancellationToken);
@@ -714,8 +700,7 @@ namespace Services.Social
         {
             await EnsureUserCanCreateContentAsync(userId, "reaccionar", cancellationToken);
 
-            Guid? inquiryOwnerId = await _context.Inquiries
-                .AsNoTracking()
+            Guid? inquiryOwnerId = await VisibleInquiries(_context.Inquiries.AsNoTracking(), userId)
                 .Where(inquiry => inquiry.Id == inquiryId)
                 .Select(inquiry => (Guid?)inquiry.UserId)
                 .SingleOrDefaultAsync(cancellationToken);
@@ -776,9 +761,10 @@ namespace Services.Social
         {
             await EnsureUserCanCreateContentAsync(userId, "reaccionar", cancellationToken);
 
+            var visibleIds = VisibleInquiries(_context.Inquiries, userId).Select(inquiry => inquiry.Id);
             var target = await _context.Comments
                 .AsNoTracking()
-                .Where(comment => comment.Id == commentId)
+                .Where(comment => comment.Id == commentId && visibleIds.Contains(comment.InquiryId))
                 .Select(comment => new { comment.UserId, comment.InquiryId })
                 .SingleOrDefaultAsync(cancellationToken)
                 ?? throw new InvalidOperationException("El comentario no existe.");
@@ -966,6 +952,78 @@ namespace Services.Social
                 .ThenInclude(comment => comment.Replies)
                 .ThenInclude(reply => reply.User)
                 .SingleAsync(inquiry => inquiry.Id == inquiryId, cancellationToken);
+        }
+
+        public async Task<CommentReportReceipt> ReportCommentAsync(
+            Guid reporterId,
+            Guid commentId,
+            string reason,
+            CancellationToken cancellationToken = default)
+        {
+            string normalizedReason = reason?.Trim() ?? string.Empty;
+            if (normalizedReason.Length == 0)
+                throw new ArgumentException("El motivo del reporte no puede estar vacío.");
+            if (normalizedReason.Length > 500)
+                throw new ArgumentException("El motivo del reporte no puede superar 500 caracteres.");
+
+            if (!await _context.Users.AnyAsync(
+                    user => user.Id == reporterId && user.IsActive,
+                    cancellationToken))
+                throw new InvalidOperationException("El usuario autenticado no está disponible.");
+
+            var visibleIds = VisibleInquiries(_context.Inquiries, reporterId).Select(inquiry => inquiry.Id);
+            var comment = await _context.Comments
+                .AsNoTracking()
+                .Where(c => c.Id == commentId && visibleIds.Contains(c.InquiryId))
+                .Select(c => new { c.Id, c.InquiryId, c.IsActive, c.IsHiddenByModerator })
+                .SingleOrDefaultAsync(cancellationToken);
+
+            if (comment is null || !comment.IsActive || comment.IsHiddenByModerator)
+                throw new InvalidOperationException("El comentario no existe.");
+
+            var existingReport = await _context.CommunityReports
+                .AsNoTracking()
+                .Where(r => r.ReporterId == reporterId && r.CommentId == commentId && r.Status == "Pending")
+                .Select(r => new { r.Id, r.InquiryId, r.CommentId })
+                .SingleOrDefaultAsync(cancellationToken);
+
+            if (existingReport is not null)
+            {
+                return new CommentReportReceipt(existingReport.Id, existingReport.InquiryId, existingReport.CommentId!.Value);
+            }
+
+            var report = new CommunityReport
+            {
+                Id = Guid.NewGuid(),
+                ReporterId = reporterId,
+                InquiryId = comment.InquiryId,
+                CommentId = comment.Id,
+                Reason = normalizedReason,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                _context.CommunityReports.Add(report);
+                await _context.SaveChangesAsync(cancellationToken);
+                return new CommentReportReceipt(report.Id, report.InquiryId, report.CommentId.Value);
+            }
+            catch (DbUpdateException)
+            {
+                var raceReport = await _context.CommunityReports
+                    .AsNoTracking()
+                    .Where(r => r.ReporterId == reporterId && r.CommentId == commentId && r.Status == "Pending")
+                    .Select(r => new { r.Id, r.InquiryId, r.CommentId })
+                    .SingleOrDefaultAsync(cancellationToken);
+
+                if (raceReport is not null)
+                {
+                    return new CommentReportReceipt(raceReport.Id, raceReport.InquiryId, raceReport.CommentId!.Value);
+                }
+
+                throw;
+            }
         }
 
         private async Task<Comment> LoadCommentGraphAsync(

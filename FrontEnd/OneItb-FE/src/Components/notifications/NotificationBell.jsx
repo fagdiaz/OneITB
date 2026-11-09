@@ -92,7 +92,11 @@ export const NotificationBell = () => {
   }, [subscriptionData, refetchNotifications, refetchUnreadCount]);
 
   const refresh = async () => {
-    await Promise.all([refetchNotifications(), refetchUnreadCount()]);
+    try {
+      await Promise.all([refetchNotifications(), refetchUnreadCount()]);
+    } catch {
+      // Keep optimistic/cached state on network failure
+    }
   };
 
   const handleOpen = () => {

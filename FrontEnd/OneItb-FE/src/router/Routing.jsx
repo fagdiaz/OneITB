@@ -25,11 +25,6 @@ import { AcademicOnboarding } from '../Components/onboarding/AcademicOnboarding'
 import { MicrosoftRedirectCallback } from '../Components/auth/MicrosoftRedirectCallback'
 import { MicrosoftRedirectBoundary } from '../Components/auth/MicrosoftRedirectBoundary'
 
-const PostRedirect = () => {
-  const { id } = useParams()
-  return <Navigate to={id ? `/feed?inquiryId=${encodeURIComponent(id)}` : '/feed'} replace />
-}
-
 const ProfileRedirect = () => {
   const { id } = useParams()
   return <Navigate to={id ? `/profile/${encodeURIComponent(id)}` : '/profile'} replace />
@@ -60,7 +55,7 @@ export const Routing = () => {
         <Route element={<RequireAcademicOnboarding />}>
           <Route path='/' element={<PrivateLayout />}>
             <Route path='feed' element={<Feed />} />
-            <Route path='post/:id' element={<PostRedirect />} />
+            <Route path='post/:id' element={<Feed />} />
             <Route path='profile' element={<UserProfile />} />
             <Route path='profile/:id' element={<UserProfile />} />
             <Route path='perfil' element={<Navigate to="/profile" replace />} />

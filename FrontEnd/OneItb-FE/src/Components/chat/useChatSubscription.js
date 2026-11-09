@@ -36,6 +36,7 @@ export const useChatSubscription = ({
   const client = useApolloClient();
   const [socketStatus, setSocketStatus] = useState('disconnected');
   const previousSocketStatus = useRef('disconnected');
+  const pendingRefetchActiveRef = useRef(null);
   const mountedRef = useRef(true);
 
   const [markConversationRead] = useMutation(MARK_CONVERSATION_READ);
@@ -59,7 +60,7 @@ export const useChatSubscription = ({
 
   // 2. Reconnection refetch handling
   useEffect(() => {
-    const wasUnavailable = ['disconnected', 'error'].includes(previousSocketStatus.current);
+    const wasUnavailable = ['disconnected', 'error', 'connecting'].includes(previousSocketStatus.current);
     if (socketStatus === 'connected' && wasUnavailable) {
       if (typeof refetchContacts === 'function') {
         try { refetchContacts()?.catch?.(() => {}); } catch {}
@@ -108,17 +109,25 @@ export const useChatSubscription = ({
       const otherUserId = message.senderId === auth.id ? message.receiverId : message.senderId;
       const isSelected = selectedContactId === otherUserId && isOpen;
 
-      appendMessageToConversation(client.cache, otherUserId, message);
-      updateContactCache(client.cache, otherUserId, message, auth.id, isSelected);
+      const isNewMessage = appendMessageToConversation(client.cache, otherUserId, message);
+      if (typeof isNewMessage === 'boolean') {
+        updateContactCache(client.cache, otherUserId, message, auth.id, isSelected, isNewMessage);
+      } else {
+        updateContactCache(client.cache, otherUserId, message, auth.id, isSelected);
+      }
 
       const activeList = activeData?.activeConversations?.nodes || [];
       const isActive = activeList.some((u) => (u.contact?.id || u.userId) === otherUserId);
-      if (isOpen && !isActive && typeof refetchActive === 'function') {
-        refetchActive().catch(() => {
-          if (mountedRef.current && typeof onFeedback === 'function') {
-            onFeedback('No se pudo actualizar la lista de conversaciones.');
-          }
-        });
+      if (isOpen && !isActive && typeof refetchActive === 'function' && !pendingRefetchActiveRef.current) {
+        pendingRefetchActiveRef.current = Promise.resolve(refetchActive())
+          .catch(() => {
+            if (mountedRef.current && typeof onFeedback === 'function') {
+              onFeedback('No se pudo actualizar la lista de conversaciones.');
+            }
+          })
+          .finally(() => {
+            pendingRefetchActiveRef.current = null;
+          });
       }
 
       if (isSelected && message.receiverId === auth.id) {

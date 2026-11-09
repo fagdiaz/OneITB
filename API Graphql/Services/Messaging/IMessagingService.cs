@@ -37,6 +37,13 @@ namespace OneITB.Core.Services.Interfaces
             Guid receiverId,
             string content,
             CancellationToken cancellationToken = default);
+        Task<Message> SendPrivateMessageAsync(
+            Guid senderId,
+            Guid receiverId,
+            Guid clientMessageId,
+            string? content,
+            System.Collections.Generic.IReadOnlyList<Guid> uploadIds,
+            CancellationToken cancellationToken = default);
         Task<MarkConversationReadPayload> MarkConversationReadAsync(
             Guid currentUserId,
             Guid otherUserId,

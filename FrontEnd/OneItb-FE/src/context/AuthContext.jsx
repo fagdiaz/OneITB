@@ -58,19 +58,40 @@ export const AuthProvider = ({ children }) => {
   const terminateLocalSession = useCallback(async (reason = 'manual') => {
     const preserveMicrosoftTransition = reason === 'expired'
       && isMicrosoftRedirectFlowPending();
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    GraphQLProvider.resetToken();
-    GraphQLProvider.resetUser();
+    const isReplacement = reason === 'remote-replacement';
 
-    setToken(null);
-    setAuth({});
-    setIsAuthenticated(false);
+    if (!isReplacement) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      GraphQLProvider.resetToken();
+      GraphQLProvider.resetUser();
+
+      setToken(null);
+      setAuth({});
+      setIsAuthenticated(false);
+    }
     setSessionVersion((current) => current + 1);
 
     await GraphQLProvider.invalidateSessionTransport();
     if (!preserveMicrosoftTransition) {
       await clearMicrosoftIdentitySession();
+    }
+
+    if (isReplacement) {
+      const persisted = readPersistedSession();
+      if (persisted) {
+        GraphQLProvider.setToken(persisted.token);
+        GraphQLProvider.setUser(persisted.user);
+        setToken(persisted.token);
+        setAuth(persisted.user);
+        setIsAuthenticated(true);
+      } else {
+        GraphQLProvider.resetToken();
+        GraphQLProvider.resetUser();
+        setToken(null);
+        setAuth({});
+        setIsAuthenticated(false);
+      }
     }
 
     if (reason === 'expired' && !preserveMicrosoftTransition) {
@@ -87,11 +108,21 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const handleStorageChange = (event) => {
-      const isRemoteLogout = event.key === 'token'
-        && event.oldValue
-        && event.newValue === null;
-      if (isRemoteLogout) {
-        void GraphQLProvider.requestSessionTermination('remote');
+      if (event.key === 'token') {
+        const currentToken = localStorage.getItem('token');
+        const isRemoteLogout = event.oldValue && event.newValue === null;
+        if (isRemoteLogout) {
+          if (currentToken && currentToken !== event.oldValue) {
+            return;
+          }
+          void GraphQLProvider.requestSessionTermination('remote');
+          return;
+        }
+
+        const isRemoteReplacement = event.newValue && event.newValue !== event.oldValue;
+        if (isRemoteReplacement) {
+          void GraphQLProvider.requestSessionTermination('remote-replacement');
+        }
       }
     };
 

@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildPostShareUrl, copyPostShareUrl } from './sharePostLink';
 
 describe('sharePostLink', () => {
-  it('builds a stable feed deep link', () => {
+  it('builds a stable publication deep link', () => {
     const url = buildPostShareUrl('abc-123', { origin: 'http://localhost:5173' });
 
-    expect(url).toBe('http://localhost:5173/feed?inquiryId=abc-123');
+    expect(url).toBe('http://localhost:5173/post/abc-123');
   });
 
   it('copies the generated link through the clipboard', async () => {
@@ -16,7 +16,7 @@ describe('sharePostLink', () => {
       locationLike: { origin: 'https://oneitb.test' },
     });
 
-    expect(url).toBe('https://oneitb.test/feed?inquiryId=post-1');
+    expect(url).toBe('https://oneitb.test/post/post-1');
     expect(clipboard.writeText).toHaveBeenCalledWith(url);
   });
 

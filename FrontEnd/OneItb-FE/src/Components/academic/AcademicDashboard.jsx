@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { NetworkStatus, useMutation, useQuery } from '@apollo/client';
 import useAuth from '../../hooks/useAuth';
 import { useForm } from '../../hooks/useForm';
@@ -8,6 +9,7 @@ import {
   GET_ACADEMIC_PROGRESS_FOR_USER,
   GET_ACADEMIC_RESOURCES,
   GET_ACADEMIC_STUDENTS,
+  GET_ACADEMIC_TARGET,
   GET_MY_ACADEMIC_PROGRESS,
 } from '../../data/graphql/queries/academic';
 import {
@@ -98,6 +100,26 @@ export const AcademicDashboard = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [activeTab, setActiveTab] = useState('resources');
   const [feedback, setFeedback] = useState(null);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlSubjectId = searchParams.get('subjectId');
+  const urlResourceId = searchParams.get('resourceId');
+  const urlProgressId = searchParams.get('progressId');
+  const hasUrlTarget = Boolean(urlSubjectId);
+  const targetAppliedRef = useRef(false);
+  const bypassSubjectResetRef = useRef(false);
+
+  const { data: targetData, loading: targetLoading, error: targetError } = useQuery(GET_ACADEMIC_TARGET, {
+    variables: {
+      subjectId: urlSubjectId ? Number(urlSubjectId) : 0,
+      resourceId: urlResourceId || null,
+      progressId: urlProgressId || null,
+    },
+    skip: !hasUrlTarget,
+    fetchPolicy: 'cache-and-network',
+  });
+  const academicTarget = targetData?.academicTarget;
+
   const [siuSyncResult, setSiuSyncResult] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -224,6 +246,29 @@ export const AcademicDashboard = () => {
   }, [careers, selectedCareerId]);
 
   useEffect(() => {
+    if (academicTarget && !targetAppliedRef.current) {
+      targetAppliedRef.current = true;
+      const willChangeCareer = academicTarget.careerId && String(academicTarget.careerId) !== String(selectedCareerId);
+      if (willChangeCareer) {
+        bypassSubjectResetRef.current = true;
+        setSelectedCareerId(String(academicTarget.careerId));
+      }
+      if (academicTarget.subjectId) {
+        setSelectedSubjectId(String(academicTarget.subjectId));
+      }
+      if (academicTarget.progressId) {
+        setActiveTab('progress');
+      } else if (academicTarget.resourceId) {
+        setActiveTab('resources');
+      }
+    }
+  }, [academicTarget, selectedCareerId]);
+
+  useEffect(() => {
+    if (bypassSubjectResetRef.current) {
+      bypassSubjectResetRef.current = false;
+      return;
+    }
     setSelectedSubjectId('');
     setProgressForm((current) => ({ ...current, userId: '' }));
   }, [selectedCareerId]);
@@ -434,6 +479,22 @@ export const AcademicDashboard = () => {
           }`}
         >
           {feedback.message}
+        </div>
+      )}
+
+      {hasUrlTarget && !targetLoading && (!academicTarget || targetError) && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-400/20 dark:bg-red-500/10 dark:text-red-300 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <i className="fa-solid fa-triangle-exclamation text-base" />
+            <span>El recurso académico solicitado no está disponible o no tienes permisos para acceder a él.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/academic', { replace: true })}
+            className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 dark:bg-red-500/30 dark:hover:bg-red-500/50"
+          >
+            Volver
+          </button>
         </div>
       )}
 

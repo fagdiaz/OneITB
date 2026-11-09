@@ -1,7 +1,7 @@
 # PROTOCOLO DE DELEGACIÓN Y HANDOFF — OneITB23 (Release Candidate 117/117)
-# Baseline verificada en local: 258/258 frontend (Vitest), 234/234 backend (xUnit), 0 advertencias oxlint.
-# Rama activa en checkout: feature/2026-11-01-debugger-cv-builder (HEAD: 2292985, tracking release/candidate-2026).
-# Puntero activo: specs/219-editorial-visual-v2-master.
+# Baseline verificada en local: 281/281 frontend (Vitest), 263/263 backend (xUnit), 0 advertencias oxlint. speckit-stabilize 9/9 GATES PASS (Certified: true).
+# Rama activa en checkout: feature/2026-11-01-debugger-cv-builder (HEAD: f22766d, tracking release/candidate-2026).
+# Puntero activo: specs/220-core-closure-and-application-hardening.
 # Gobernanza Completa: docs/project_docs/MULTI_AGENT_FRAMEWORK.md
 
 ---
@@ -96,13 +96,61 @@ Local AGY · Gemini 3.8 Flash High · Nativo. Cierre de GOB-20261108-07. Integra
 
 ---
 
+### Acuse y Devolución a Canal 2 · GOB-20261108-08 · 8 de noviembre de 2026
+
+**Emisor:** Local AGY (Gemini 3.8 Flash High · Nativo)
+**Destinatario:** Canal 2: `[OneITB] Hardening & Testing` (`6 Astra` / `Astra Testing` · Razonamiento: `Alto`)
+**Checkout evaluado:** `feature/2026-11-01-debugger-cv-builder`
+**Git HEAD:** `f22766df0ee3f981f074489b59a6fca4ec30c63d`
+**Parche Integrado:** `GOB-20261108-08.patch` (SHA-256: `4987af66abd5dd146fcbedd4014373bb5b6f299a68ec24ab03729a6da94638e7`)
+**Registro en Ledger:** `ACCEPTED_AND_APPLIED` en `docs/audit/handoff_ledger.json`.
+**Estado de Remediación:** Code Freeze levantado formalmente por el titular. Los 6 escenarios adversariales (8 fallos) fueron completamente remediados en producción (`AuthContext.jsx`, `useChatSubscription.js`, `chatCache.js`).
+
+```text
+Local AGY · Gemini 3.8 Flash High · Nativo
+Cierre y verificación integral de GOB-20261108-08 tras remediación de código:
+1. Backend xUnit: 237/237 PASS (3/3 adversariales + 234 baseline).
+2. Frontend Vitest: 271/271 PASS (13/13 adversariales + 258 baseline).
+3. oxlint: 0 errores y 0 advertencias en 204 archivos.
+4. Todos los escenarios MT-02, MT-03, RT-01 (3 variantes), RT-02, RT-03 y RT-04 se encuentran 100% en VERDE.
+```
+
+---
+
+### Acuse y Devolución a Canal 3 · GOB-20261108-09 · 8 de noviembre de 2026
+
+**Emisor:** Local AGY (Gemini 3.8 Flash High · Nativo)
+**Destinatario:** Canal 3: `[OneITB] Core Implementer` (`F - ASTRA - Implementer` · `6 Astra` · Razonamiento: `Muy Alto`)
+**Checkout evaluado:** `feature/2026-11-01-debugger-cv-builder`
+**Git HEAD:** `f22766df0ee3f981f074489b59a6fca4ec30c63d`
+**Puntero de Spec Activado:** `specs/220-core-closure-and-application-hardening`
+**Parche Integrado:** `GOB-20261108-09.patch` (SHA-256: `bc089d424445af52c09acedba712d14e4789418ce539f6fa00f92fc9baec661b`)
+**Archivos de Dominio Añadidos:** `CapturedApplicationCv.cs` y `CapturedApplicationCvTests.cs`
+**Registro en Ledger:** `ACCEPTED_AND_APPLIED` en `docs/audit/handoff_ledger.json`.
+
+```text
+Local AGY · Gemini 3.8 Flash High · Nativo
+Integración y verificación exitosa de GOB-20261108-09:
+1. Backend xUnit: 239/239 PASS (237 previos + HiddenCareerTargetCannot... + CapturedApplicationCvTests).
+2. Frontend Vitest: 272/272 PASS en 62 suites (271 previos + PostDetail.test.jsx).
+3. Vite Build: 564 módulos transformados exitosamente en 620ms.
+4. oxlint: 0 errores y 0 advertencias en 205 archivos.
+5. Higiene Git: 0 advertencias en 'git diff --check'.
+6. Estado Spec 220: Tareas T01 y T02 formalmente cerradas con evidencia física.
+```
+
+---
+
 ## 1. MATRIZ DE CANALES Y SKILLS OFICIALES
 
 | Canal | Modelo Oficial | Esfuerzo de Razonamiento | Skill Asociado en el Repo |
 | :--- | :--- | :--- | :--- |
 | **Canal 1: `[OneITB] Auditoría & Arquitectura`** | **`6 Astra`** | **`Muy Alto`** *(o `Alto`)* | `.agents/skills/agent-auditor-architect/SKILL.md` |
-| **Canal 2: `[OneITB] Hardening & Testing`** | **`6.1 Sol`** | **`Alto`** *(o `Medio`)* | `.agents/skills/agent-hardening-tester/SKILL.md` |
+| **Canal 2: `[OneITB] Hardening & Testing`** | **`6 Astra`** *(o `6.1 Sol`)* | **`Alto`** *(o `Medio`)* | `.agents/skills/agent-hardening-tester/SKILL.md` |
+| **Canal 3: `[OneITB] Deep Code Audit & Core Implementer`** | **`6 Astra`** | **`Muy Alto`** | `.agents/skills/speckit-code-audit/SKILL.md` |
 | **Local Antigravity** | **`Gemini 3.8 Flash High`** | Nativo | `.agents/skills/agent-orchestrator/SKILL.md` |
+
+*Nota Operativa en Codex:* En OpenAI Codex / ChatGPT Plus, una vez inicializado el chat/agente con `6 Astra`, el modelo base queda anclado a la sesión. La modulación dinámica se realiza exclusivamente a través del selector de **Esfuerzo de Razonamiento** (`Medio`, `Alto`, `Muy Alto`).
 
 *Modelos Prohibidos:* `6 Luna`, `6.1 Terra` y serie `5.6`.
 *Nivel de Razonamiento Prohibido:* `Bajo`.
@@ -126,8 +174,8 @@ Tu objetivo en esta sesión es realizar una AUDITORÍA DE SEGURIDAD Y RESILIENCI
 
 ---
 
-## 3. PLANTILLA LISTA PARA COPIAR: CANAL 2 (6.1 SOL - HARDENING & PRUEBAS CONCURRENTES)
-*Configuración:* Modelo: **`6.1 Sol`** | Razonamiento: **`Alto`** *(o `Medio` para tests unitarios)*
+## 3. PLANTILLA LISTA PARA COPIAR: CANAL 2 (6 ASTRA / TESTING - HARDENING & PRUEBAS CONCURRENTES)
+*Configuración en Codex:* Modelo: **`6 Astra`** *(o `6.1 Sol`)* | Razonamiento: **`Alto`** *(o `Medio` para tests unitarios)*
 
 ```text
 Actúa como Agente de Hardening, Concurrencia y Pruebas Extremas para OneITB23 (.NET 8 + HotChocolate + React 18 + Apollo Client).
@@ -138,4 +186,85 @@ Tu objetivo en esta sesión es diseñar y ejecutar PRUEBAS DE ESTRÉS Y ENDURECI
 1. Diseña casos de borde adversariales para la sincronización multi-pestaña de Apollo Cache tras mutaciones y deslogueo.
 2. Evalúa la resiliencia de suscripciones WebSocket en HotChocolate ante reconexiones intermitentes o desconexiones forzadas.
 3. Genera suites de prueba adicionales en xUnit o Vitest con aserciones estrictas, listas para ser integradas por la estación local.
+```
+
+---
+
+## 4. PLANTILLA LISTA PARA COPIAR: CANAL 3 (6 ASTRA - DEEP CODE AUDIT & CORE IMPLEMENTER)
+*Configuración en Codex:* Modelo: **`6 Astra`** | Razonamiento: **`Muy Alto`**
+
+```text
+Actúa como Agente de Auditoría Profunda e Implementador de Código Core para OneITB23 (.NET 8 + HotChocolate 14 + React 18 + Apollo Client 3.7 + SQL Server 2022).
+Lee atentamente tu rol y reglas en 'docs/project_docs/MULTI_AGENT_FRAMEWORK.md' y '.agents/skills/speckit-code-audit/SKILL.md'.
+Estado del proyecto: El Code Freeze ha sido levantado formalmente por el titular para completar componentes y funcionalidades "core" y "no negociables" del sistema. La baseline actual está en 271/271 pruebas frontend en Vitest y 237/237 pruebas backend en xUnit (100% pasando en verde, 0 advertencias oxlint).
+
+Tu objetivo en esta sesión es realizar una AUDITORÍA EXHAUSTIVA DE FLUJOS Y DISEÑO DE LA SPEC 220:
+1. Triangula los flujos de usuario de punta a punta: [Componente JSX / Botones] ➔ [Hooks Apollo / GraphQL] ➔ [Resolvers C#] ➔ [Servicios EF Core y DB].
+2. Identifica cualquier componente con botones sin acción, flujos a medio conectar o vacíos de producto en las áreas críticas:
+   - CV Builder ↔ Bolsa de Trabajo (Job Board): Vinculación de postulación laboral con el CV ATS generado en la plataforma.
+   - Chat en tiempo real: Soporte de adjuntos/imágenes vs texto puro en mensajería privada 1 a 1.
+   - Muro Social: Visualización de publicaciones individuales (/post/:id), comentarios anidados e interacciones.
+   - Académico: Consistencia de comisiones, notas y certificados de alumno regular.
+   - Notificaciones: Redirección precisa al recurso de origen desde la campana.
+3. Propón el paquete de especificación para la Spec 220:
+   - Contratos GraphQL (queries/mutations/types).
+   - Entidades C# y cambios en DbContext si hicieran falta.
+   - Componentes React y tests falsables de frontend y backend.
+4. Genera parches quirúrgicos o código hermético listo para ser integrado y probado por Local AGY.
+```
+
+---
+
+## 5. SPEC 220 CERTIFICADA AL 100% (speckit-stabilize: CERTIFIED)
+*Estado Spec 220:* CERRADA Y CERTIFICADA [x] (8/8 tareas completadas, 9/9 gates en PASS, Certified=true)
+*Destinatario:* `Local AGY` / `Operador Humano` (Chat dedicado en Antigravity IDE)
+*Rol:* Orquestador y Agente de Cierre de Release Candidate
+*Puntero Activo:* `specs/220-core-closure-and-application-hardening`
+*Modelo Recomendado:* `Gemini 3.8 Flash High` · Razonamiento: `Nativo`
+*Objetivo:* Cierre formal, certificación y presentación para autorización de commit feature-scoped por parte del usuario.
+
+```text
+================================================================================
+CERTIFICACIÓN OFICIAL DE CIERRE · SPEC 220 (CORE CLOSURE & HARDENING)
+================================================================================
+El Orquestador Local AGY certifica que la especificación 220 ha completado
+su ciclo completo de desarrollo, verificación y estabilización con éxito:
+
+1. ALCANCE DE TAREAS VERIFICADAS (8/8 en tasks.md):
+   - [x] T01. Conciliación de rama y traspaso 219 -> 220.
+   - [x] T02. Alcance de escritura social, denegaciones y moderación.
+   - [x] T03. Captura y congelamiento de CV en postulaciones (JobApplicationCv).
+   - [x] T04. Adjuntos privados, streaming autenticado y límites en mensajería (PrivateUpload).
+   - [x] T05. Reporte y moderación de comentarios con índices filtrados (CommunityReport).
+   - [x] T06. Comisiones académicas, calificaciones y regularidad institucional (CourseSection).
+   - [x] T07. Destinos de campana, resolución por ID y estados UI recuperables (academicTarget).
+   - [x] T08. Migraciones SQL idempotentes, validación dual-stack y estabilización integral.
+
+2. DICTAMEN DE ESTABILIZACIÓN (preflight_stabilize.ps1 -Certify):
+   - Status: PASS | Certified: true | IsSimulated: false
+   - Timestamp: 2026-11-08 23:09:42
+   - Git Commit SHA Base: f22766df0ee3f981f074489b59a6fca4ec30c63d
+   - Git Branch: feature/2026-11-01-debugger-cv-builder
+   - Total Gates Evaluados: 9 / Aprobados: 9 / Fallados: 0 / Omitidos: 0
+     * Gate 1: git-diff-check -> PASS (0 advertencias de formato)
+     * Gate 2: secret-leak-and-untracked-configs -> PASS (0 credenciales expuestas)
+     * Gate 3: backend-dotnet-build -> PASS (0 errores, 0 advertencias)
+     * Gate 4: frontend-vite-build -> PASS (built en 601ms)
+     * Gate 5: backend-regression-suite -> PASS (263/263 tests xUnit)
+     * Gate 6: frontend-regression-suite -> PASS (281/281 tests Vitest)
+     * Gate 7: frontend-oxlint-check -> PASS (0 errores, 0 warnings en 211 archivos)
+     * Gate 8: ef-pending-model-changes -> PASS (0 cambios pendientes)
+     * Gate 9: speckit-dod-compliance -> PASS (0 tareas abiertas, pointer verificado)
+
+3. GOBERNANZA Y DOCUMENTACIÓN ACTUALIZADA:
+   - 'docs/audit/DEVELOPMENT_LOG.md': Entrada canónica de la Spec 220 registrada.
+   - 'docs/project_docs/ROADMAP.md': Baselines de backend (263/263) y frontend (281/281) actualizadas.
+   - 'specs/220-core-closure-and-application-hardening/tasks.md': 8/8 tareas marcadas como [x].
+   - Limpieza de artefactos transitorios completada (.vite cache depurado).
+
+4. AUTORIZACIÓN DE COMMIT Y PUSH:
+   - Conforme al Principio IX y la directiva de Gobernanza, los commits y pushes a ramas
+     remotas están bajo control exclusivo del usuario operador.
+   - Se presenta el trabajo para revisión y autorización de commit feature-scoped.
+================================================================================
 ```

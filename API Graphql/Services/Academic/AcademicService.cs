@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OneItb.Data;
 using OneItb.Entities.Models;
@@ -112,7 +117,7 @@ namespace Services.Academic
                 recipients,
                 NotificationType.AcademicResource,
                 $"Nuevo recurso en {subject.Name}: {persisted.Title}",
-                $"/academic?subjectId={subject.Id}",
+                $"/academic?subjectId={subject.Id}&resourceId={persisted.Id:D}",
                 cancellationToken);
 
             return persisted;
@@ -320,7 +325,7 @@ namespace Services.Academic
 
             await _context.SaveChangesAsync(cancellationToken);
             AcademicProgress persisted = await LoadProgressGraphAsync(progress.Id, cancellationToken);
-            await NotifyAcademicProgressAsync(userId, persisted.Subject.Name, cancellationToken);
+            await NotifyAcademicProgressAsync(userId, persisted.SubjectId, persisted.Subject.Name, persisted.Id, cancellationToken);
             return persisted;
         }
 
@@ -464,6 +469,324 @@ namespace Services.Academic
 
             string message = $"Sincronizacion SIU finalizada: {created} altas, {updated} actualizaciones, {skippedItems.Count} omitidos.";
             return new SiuSyncResult(subjectId, records.Count, created, updated, skippedItems.Count, message, skippedItems);
+        }
+
+        public async Task<IReadOnlyList<CourseSectionSummary>> GetMyCourseSectionsAsync(
+            Guid professorId,
+            int subjectId,
+            string term,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await EnsureActiveUserAsync(professorId, cancellationToken);
+
+            IQueryable<CourseSection> query = _context.CourseSections
+                .AsNoTracking()
+                .Where(cs => cs.Instructors.Any(si => si.ProfessorId == professorId && si.Professor.IsActive));
+
+            if (subjectId > 0)
+            {
+                query = query.Where(cs => cs.SubjectId == subjectId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                string normTerm = term.Trim();
+                query = query.Where(cs => cs.Term == normTerm);
+            }
+
+            return await query
+                .OrderBy(cs => cs.Subject.Name)
+                .ThenBy(cs => cs.Term)
+                .ThenBy(cs => cs.Code)
+                .Select(cs => new CourseSectionSummary(
+                    cs.Id,
+                    cs.SubjectId,
+                    cs.Term,
+                    cs.Code))
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<SectionRosterPage> GetSectionRosterPageAsync(
+            Guid callerId,
+            string? callerRole,
+            Guid sectionId,
+            int first,
+            string? after,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await EnsureActiveUserAsync(callerId, cancellationToken);
+
+            CourseSection? section = await _context.CourseSections
+                .AsNoTracking()
+                .FirstOrDefaultAsync(cs => cs.Id == sectionId, cancellationToken);
+
+            if (section is null)
+            {
+                throw new InvalidOperationException("La comisión no existe.");
+            }
+
+            bool isPrivileged = string.Equals(callerRole, "Administrador", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(callerRole, "Moderador", StringComparison.OrdinalIgnoreCase);
+
+            if (!isPrivileged)
+            {
+                bool isInstructor = await _context.SectionInstructors
+                    .AnyAsync(si => si.SectionId == sectionId && si.ProfessorId == callerId && si.Professor.IsActive, cancellationToken);
+
+                if (!isInstructor)
+                {
+                    throw new UnauthorizedAccessException("No tienes permisos para consultar la lista de esta comisión.");
+                }
+            }
+
+            int pageSize = Math.Clamp(first, 1, 50);
+            int offset = OffsetCursor.Decode(after);
+
+            IQueryable<SectionEnrollment> query = _context.SectionEnrollments
+                .AsNoTracking()
+                .Where(se => se.SectionId == sectionId && se.Student.IsActive)
+                .OrderBy(se => se.Student.LastName)
+                .ThenBy(se => se.Student.FirstName)
+                .ThenBy(se => se.StudentId);
+
+            List<SectionEnrollment> enrollments = await query
+                .Include(se => se.Student)
+                .Include(se => se.Grade)
+                .Skip(offset)
+                .Take(pageSize + 1)
+                .ToListAsync(cancellationToken);
+
+            bool hasNextPage = enrollments.Count > pageSize;
+            if (hasNextPage)
+            {
+                enrollments.RemoveAt(enrollments.Count - 1);
+            }
+
+            List<RosterStudent> items = enrollments.Select(se => new RosterStudent(
+                se.StudentId,
+                $"{se.Student.FirstName} {se.Student.LastName}".Trim(),
+                se.Grade)).ToList();
+
+            string? nextCursor = hasNextPage ? OffsetCursor.Encode(offset + items.Count) : null;
+            return new SectionRosterPage(items, nextCursor, hasNextPage);
+        }
+
+        public async Task<SectionGrade> SaveSectionGradeAsync(
+            Guid professorId,
+            string? callerRole,
+            SectionGradeInput input,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(input);
+            cancellationToken.ThrowIfCancellationRequested();
+            await EnsureActiveUserAsync(professorId, cancellationToken);
+
+            CourseSection? section = await _context.CourseSections
+                .Include(cs => cs.Subject)
+                .FirstOrDefaultAsync(cs => cs.Id == input.SectionId, cancellationToken);
+
+            if (section is null)
+            {
+                throw new InvalidOperationException("La comisión no existe.");
+            }
+
+            bool isPrivileged = string.Equals(callerRole, "Administrador", StringComparison.OrdinalIgnoreCase);
+            if (!isPrivileged)
+            {
+                bool isInstructor = await _context.SectionInstructors
+                    .AnyAsync(si => si.SectionId == input.SectionId && si.ProfessorId == professorId && si.Professor.IsActive, cancellationToken);
+
+                if (!isInstructor)
+                {
+                    throw new InvalidOperationException("El docente no está asignado a esta comisión.");
+                }
+            }
+
+            bool isEnrolled = await _context.SectionEnrollments
+                .AnyAsync(se => se.SectionId == input.SectionId && se.StudentId == input.StudentId, cancellationToken);
+
+            if (!isEnrolled)
+            {
+                throw new InvalidOperationException("El estudiante no está inscripto en esta comisión.");
+            }
+
+            User? student = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == input.StudentId && u.IsActive, cancellationToken);
+
+            if (student is null)
+            {
+                throw new InvalidOperationException("El estudiante no existe o no está activo.");
+            }
+
+            decimal? validatedScore = ValidateScore(input.Score);
+
+            SectionGrade? existingGrade = await _context.SectionGrades
+                .FirstOrDefaultAsync(g => g.SectionId == input.SectionId && g.StudentId == input.StudentId, cancellationToken);
+
+            if (existingGrade is not null)
+            {
+                if (!string.IsNullOrEmpty(input.ExpectedVersion))
+                {
+                    string currentVersion = existingGrade.RowVersion != null && existingGrade.RowVersion.Length > 0
+                        ? Convert.ToBase64String(existingGrade.RowVersion)
+                        : string.Empty;
+
+                    if (!string.Equals(currentVersion, input.ExpectedVersion, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException("Conflicto de concurrencia: la nota fue modificada por otro usuario.");
+                    }
+                }
+
+                existingGrade.AssignedById = professorId;
+                existingGrade.Score = validatedScore;
+                existingGrade.Status = input.Status;
+                existingGrade.UpdatedAtUtc = DateTime.UtcNow;
+                existingGrade.RowVersion = Guid.NewGuid().ToByteArray();
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(input.ExpectedVersion))
+                {
+                    throw new InvalidOperationException("Conflicto de concurrencia: la nota no existe.");
+                }
+
+                existingGrade = new SectionGrade
+                {
+                    Id = Guid.NewGuid(),
+                    SectionId = input.SectionId,
+                    StudentId = input.StudentId,
+                    AssignedById = professorId,
+                    Score = validatedScore,
+                    Status = input.Status,
+                    UpdatedAtUtc = DateTime.UtcNow,
+                    RowVersion = Guid.NewGuid().ToByteArray()
+                };
+                _context.SectionGrades.Add(existingGrade);
+            }
+
+            // Proyección atómica al progreso académico de la materia
+            AcademicProgress? progress = await _context.AcademicProgressRecords
+                .FirstOrDefaultAsync(ap => ap.UserId == input.StudentId && ap.SubjectId == section.SubjectId, cancellationToken);
+
+            if (progress is null)
+            {
+                progress = new AcademicProgress
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = input.StudentId,
+                    SubjectId = section.SubjectId,
+                    AssignedById = professorId,
+                    Score = validatedScore,
+                    Status = input.Status,
+                    Notes = $"Proyectado desde comisión {section.Code} ({section.Term})",
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.AcademicProgressRecords.Add(progress);
+            }
+            else
+            {
+                progress.AssignedById = professorId;
+                progress.Score = validatedScore;
+                progress.Status = input.Status;
+                progress.Notes = $"Actualizado desde comisión {section.Code} ({section.Term})";
+                progress.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (section.Subject is not null)
+            {
+                await NotifyAcademicProgressAsync(input.StudentId, section.SubjectId, section.Subject.Name, progress.Id, cancellationToken);
+            }
+
+            return existingGrade;
+        }
+
+        public async Task<RegularStudentCertificate> IssueRegularStudentCertificateAsync(
+            Guid studentId,
+            int careerId,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            User? student = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == studentId && u.IsActive, cancellationToken);
+
+            if (student is null)
+            {
+                throw new InvalidOperationException("El estudiante no existe o no está activo.");
+            }
+
+            Career? career = await _context.Careers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == careerId, cancellationToken);
+
+            if (career is null)
+            {
+                throw new InvalidOperationException("La carrera no existe.");
+            }
+
+            DateTime nowUtc = DateTime.UtcNow;
+            EnrollmentStanding? standing = await _context.EnrollmentStandings
+                .AsNoTracking()
+                .Where(s => s.StudentId == studentId &&
+                            s.CareerId == careerId &&
+                            s.Status == "Regular" &&
+                            s.ValidFromUtc <= nowUtc &&
+                            s.ValidUntilUtc >= nowUtc &&
+                            s.RevokedAtUtc == null)
+                .OrderByDescending(s => s.ValidUntilUtc)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (standing is null)
+            {
+                throw new InvalidOperationException("No cuenta con acreditación institucional regular vigente para esta carrera.");
+            }
+
+            RegularStudentCertificate? existingCert = await _context.RegularStudentCertificates
+                .FirstOrDefaultAsync(c => c.StandingId == standing.Id && c.ValidUntil >= nowUtc, cancellationToken);
+
+            if (existingCert is not null)
+            {
+                return existingCert;
+            }
+
+            var cert = new RegularStudentCertificate
+            {
+                Id = Guid.NewGuid(),
+                StandingId = standing.Id,
+                FullName = $"{student.FirstName} {student.LastName}".Trim(),
+                CareerName = career.Name,
+                Term = standing.Term,
+                IssuedAt = nowUtc,
+                ValidUntil = standing.ValidUntilUtc
+            };
+
+            _context.RegularStudentCertificates.Add(cert);
+            await _context.SaveChangesAsync(cancellationToken);
+            return cert;
+        }
+
+        public async Task<RegularStudentCertificate?> GetMyRegularStudentCertificateAsync(
+            Guid studentId,
+            int careerId,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await EnsureActiveUserAsync(studentId, cancellationToken);
+
+            DateTime nowUtc = DateTime.UtcNow;
+            return await _context.RegularStudentCertificates
+                .AsNoTracking()
+                .Include(c => c.Standing)
+                .Where(c => c.Standing.StudentId == studentId &&
+                            c.Standing.CareerId == careerId &&
+                            c.Standing.RevokedAtUtc == null &&
+                            c.ValidUntil >= nowUtc)
+                .OrderByDescending(c => c.IssuedAt)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         private IQueryable<AcademicResource> ResourceGraph(bool ignoreFilters = false)
@@ -610,14 +933,16 @@ namespace Services.Academic
 
         private async Task NotifyAcademicProgressAsync(
             Guid userId,
+            int subjectId,
             string subjectName,
+            Guid progressId,
             CancellationToken cancellationToken)
         {
             await _notificationService.CreateNotificationsAsync(
                 new[] { userId },
                 NotificationType.AcademicProgress,
                 $"Se actualizo tu progreso academico en {subjectName}.",
-                "/academic",
+                $"/academic?subjectId={subjectId}&progressId={progressId:D}",
                 cancellationToken);
         }
 

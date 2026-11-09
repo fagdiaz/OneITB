@@ -34,45 +34,7 @@ const JOB_APPLICATION_FIELDS = gql`
       firstName
       lastName
       fullName
-      email
       role
-      biography
-      avatarUrl
-      linkedIn
-      phone
-      userCareers {
-        career {
-          id
-          name
-        }
-      }
-      cvExperiences {
-        id
-        company
-        role
-        description
-        startDate
-        endDate
-        isHidden
-        sortOrder
-      }
-      cvEducations {
-        id
-        institution
-        degree
-        description
-        startDate
-        endDate
-        isHidden
-        sortOrder
-      }
-      cvSkills {
-        id
-        name
-        level
-        isHidden
-        sortOrder
-      }
     }
   }
 `;
@@ -155,6 +117,50 @@ export const JOB_OFFER_CREATED = gql`
   subscription JobOfferCreated {
     jobOfferCreated {
       ...JobOfferFields
+    }
+  }
+`;
+
+const APPLICATION_CV_FIELDS = gql`
+  fragment CapturedCvFields on ApplicationCv {
+    schemaVersion name title email phone careerNames linkedIn website summary
+    experience { company role startDate endDate location description }
+    education { institution degree startDate endDate location description }
+    projects { name role startDate endDate url description }
+    skills { name level }
+    languages { name level }
+  }
+`;
+
+export const MY_APPLICATION_CV_PREVIEW = gql`
+  ${APPLICATION_CV_FIELDS}
+  query MyApplicationCvPreview {
+    myApplicationCvPreview { version canSubmit cv { ...CapturedCvFields } }
+  }
+`;
+
+export const APPLICATION_CV = gql`
+  ${APPLICATION_CV_FIELDS}
+  query ApplicationCvById($applicationId: UUID!) {
+    applicationCv(applicationId: $applicationId) { ...CapturedCvFields }
+  }
+`;
+
+export const APPLY_WITH_CV = gql`
+  mutation ApplyWithCv($jobOfferId: UUID!, $expectedCvVersion: String!) {
+    applyWithCv(jobOfferId: $jobOfferId, expectedCvVersion: $expectedCvVersion) {
+      id jobOfferId status appliedAt
+    }
+  }
+`;
+
+export const GET_EMPLOYMENT_APPLICATION = gql`
+  query GetEmploymentApplication($applicationId: UUID!) {
+    employmentApplication(applicationId: $applicationId) {
+      id
+      jobOfferId
+      status
+      appliedAt
     }
   }
 `;

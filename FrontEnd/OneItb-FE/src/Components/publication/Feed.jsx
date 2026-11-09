@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { gql, useMutation, useQuery } from '@apollo/client';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { ReportModal } from '../moderation/ReportModal';
 import { CommentThread } from './CommentThread';
@@ -202,10 +202,11 @@ export const Feed = () => {
   const [content, setContent] = useState('');
   const [selectedCareer, setSelectedCareer] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
+  const { id: postId } = useParams();
   const [searchParams] = useSearchParams();
   const [openThreads, setOpenThreads] = useState({});
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [reportTargetId, setReportTargetId] = useState(null);
+  const [reportTarget, setReportTarget] = useState(null);
   const [reactionUsersInquiryId, setReactionUsersInquiryId] = useState(null);
   const [commentFocusRequest, setCommentFocusRequest] = useState({});
   const [feedback, setFeedback] = useState(null);
@@ -219,13 +220,13 @@ export const Feed = () => {
   const [moderationError, setModerationError] = useState(null);
   const isAdmin = auth.role === 'Administrador';
   const publicationCareerId = isAdmin && selectedCareer ? Number(selectedCareer) : null;
-  const searchTermParam = searchParams.get('q');
+  const searchTermParam = postId ? null : searchParams.get('q');
   const normalizedSearchTerm = searchTermParam?.trim() || '';
   const careerParam = searchParams.get('career');
   const careersParam = searchParams.get('careers');
   const subjectParam = searchParams.get('subject');
   const subjectsParam = searchParams.get('subjects');
-  const targetInquiryId = searchParams.get('inquiryId');
+  const targetInquiryId = postId || searchParams.get('inquiryId');
   const targetCommentId = searchParams.get('commentId');
 
   const legacyCareerId = careerParam ? Number(careerParam) : null;
@@ -242,10 +243,11 @@ export const Feed = () => {
     : Number.isInteger(legacySubjectId)
       ? [legacySubjectId]
       : [];
-  const { data: careersData } = useQuery(GET_CAREERS);
-  const { data: myCareersData } = useQuery(GET_MY_CAREERS);
+  const { data: careersData } = useQuery(GET_CAREERS, { skip: Boolean(postId) });
+  const { data: myCareersData } = useQuery(GET_MY_CAREERS, { skip: Boolean(postId) });
   const { data: subjectsData, loading: subjectsLoading } = useQuery(GET_SUBJECTS, {
     variables: { careerId: publicationCareerId },
+    skip: Boolean(postId),
   });
   const { data: searchProfilesData, loading: searchProfilesLoading } = useQuery(SEARCH_PUBLIC_PROFILES, {
     variables: { searchTerm: normalizedSearchTerm, first: 8 },
@@ -270,10 +272,10 @@ export const Feed = () => {
     refetch,
     loadMore,
   } = useInquiryPage({
-    pageSize: 15,
+    pageSize: postId ? 1 : 15,
     searchTerm: normalizedSearchTerm || null,
-    careerIds: effectiveCareerIds.length > 0 ? effectiveCareerIds : null,
-    subjectIds: effectiveSubjectIds.length > 0 ? effectiveSubjectIds : null,
+    careerIds: !postId && effectiveCareerIds.length > 0 ? effectiveCareerIds : null,
+    subjectIds: !postId && effectiveSubjectIds.length > 0 ? effectiveSubjectIds : null,
     inquiryId: targetInquiryId || null,
   });
 
@@ -650,8 +652,10 @@ export const Feed = () => {
         <div className="flex items-center gap-3">
           <div className="h-7 w-1 rounded-full bg-blue-600" />
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">Muro academico</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{posts.length} de {feedTotalCount} publicaciones activas</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">{postId ? 'Publicación' : 'Muro academico'}</h1>
+            {postId ? <Link to="/feed" className="text-sm underline">Volver al muro</Link> : (
+              <p className="text-xs text-slate-500 dark:text-slate-400">{posts.length} de {feedTotalCount} publicaciones activas</p>
+            )}
           </div>
         </div>
         <button
@@ -678,7 +682,7 @@ export const Feed = () => {
         </div>
       )}
 
-      <form onSubmit={handlePublish} className="flex w-full min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/75 dark:shadow-[0_18px_50px_rgba(15,23,42,0.24)]">
+      {!postId && <form onSubmit={handlePublish} className="flex w-full min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/75 dark:shadow-[0_18px_50px_rgba(15,23,42,0.24)]">
         <input
           type="text"
           maxLength={200}
@@ -783,7 +787,7 @@ export const Feed = () => {
             {isUploading ? 'Subiendo...' : isPublishing ? 'Publicando...' : 'Publicar'}
           </button>
         </div>
-      </form>
+      </form>}
 
       {isSearchResultsView && (
         <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_50px_rgba(2,6,23,0.24)]">
@@ -887,7 +891,10 @@ export const Feed = () => {
         </div>
       )}
 
-      {!inquiriesLoading && !inquiriesError && posts.length === 0 && (
+      {postId && !inquiriesLoading && !inquiriesError && posts.length === 0 && (
+        <p role="status">La publicación no está disponible.</p>
+      )}
+      {!postId && !inquiriesLoading && !inquiriesError && posts.length === 0 && (
         <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-14 text-center shadow-sm dark:border-white/10 dark:bg-slate-900/60">
           <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200">
             <i className="fa-solid fa-comments text-xl" />
@@ -967,7 +974,7 @@ export const Feed = () => {
                     <>
                       <button type="button" onClick={() => handleUserInteraction(post.user.id, 'MUTE')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Silenciar</button>
                       <button type="button" onClick={() => handleUserInteraction(post.user.id, 'BLOCK')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[0.05]">Bloquear</button>
-                      <button type="button" onClick={() => { setReportTargetId(post.id); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50">Reportar</button>
+                      <button type="button" onClick={() => { setReportTarget({ id: post.id, kind: 'inquiry' }); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50">Reportar</button>
                     </>
                   )}
                   {isModerator && post.user?.id !== auth.id && (
@@ -1096,7 +1103,7 @@ export const Feed = () => {
                   onComment={(parentCommentId, commentContent, commentFiles, replyTargetCommentId) =>
                     handleComment(post.id, parentCommentId, commentContent, commentFiles, replyTargetCommentId)
                   }
-                  onReport={() => setReportTargetId(post.id)}
+                  onReport={(targetId, targetKind = 'comment', inquiryId = post.id) => setReportTarget({ id: targetId, kind: targetKind, inquiryId })}
                   onToggleReaction={handleCommentReaction}
                   auth={auth}
                   isModerator={isModerator}
@@ -1115,7 +1122,7 @@ export const Feed = () => {
         );
       })}
 
-      <FeedPaginationControls
+      {!postId && <FeedPaginationControls
         hasItems={posts.length > 0}
         hasNextPage={feedHasNextPage}
         initialLoading={inquiriesLoading && posts.length === 0}
@@ -1125,7 +1132,7 @@ export const Feed = () => {
         loadMoreStatus={loadMoreStatus}
         lastAppendedCount={lastAppendedCount}
         onLoadMore={handleLoadMore}
-      />
+      />}
 
       <ReactionUsersModal
         inquiryId={reactionUsersInquiryId}
@@ -1134,10 +1141,12 @@ export const Feed = () => {
       />
 
       <ReportModal
-        isOpen={Boolean(reportTargetId)}
-        inquiryId={reportTargetId}
-        onClose={() => setReportTargetId(null)}
-        onReported={() => showFeedback('success', 'El reporte fue enviado a moderacion.')}
+        isOpen={Boolean(reportTarget)}
+        inquiryId={reportTarget?.kind === 'inquiry' ? reportTarget.id : reportTarget?.inquiryId}
+        commentId={reportTarget?.kind === 'comment' ? reportTarget.id : null}
+        targetKind={reportTarget?.kind ?? 'inquiry'}
+        onClose={() => setReportTarget(null)}
+        onReported={() => showFeedback('success', reportTarget?.kind === 'comment' ? 'El reporte del comentario fue enviado a moderacion.' : 'El reporte fue enviado a moderacion.')}
       />
 
       <ModerationReasonModal

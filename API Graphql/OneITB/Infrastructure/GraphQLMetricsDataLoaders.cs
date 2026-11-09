@@ -132,8 +132,37 @@ namespace OneItb.GraphQL.Infrastructure
             await using OneItbContext context = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
             Dictionary<Guid, int> counts = await context.CommunityReports
                 .IgnoreQueryFilters()
-                .Where(report => keys.Contains(report.InquiryId))
+                .Where(report => report.CommentId == null && keys.Contains(report.InquiryId))
                 .GroupBy(report => report.InquiryId)
+                .Select(group => new { Id = group.Key, Count = group.Count() })
+                .ToDictionaryAsync(item => item.Id, item => item.Count, cancellationToken);
+
+            return keys.ToDictionary(key => key, key => counts.TryGetValue(key, out int count) ? count : 0);
+        }
+    }
+
+    public sealed class CommentReportCountDataLoader : BatchDataLoader<Guid, int>
+    {
+        private readonly IDbContextFactory<OneItbContext> _dbContextFactory;
+
+        public CommentReportCountDataLoader(
+            IBatchScheduler batchScheduler,
+            IDbContextFactory<OneItbContext> dbContextFactory,
+            DataLoaderOptions? options = null)
+            : base(batchScheduler, options ?? new DataLoaderOptions())
+        {
+            _dbContextFactory = dbContextFactory;
+        }
+
+        protected override async Task<IReadOnlyDictionary<Guid, int>> LoadBatchAsync(
+            IReadOnlyList<Guid> keys,
+            CancellationToken cancellationToken)
+        {
+            await using OneItbContext context = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+            Dictionary<Guid, int> counts = await context.CommunityReports
+                .IgnoreQueryFilters()
+                .Where(report => report.CommentId != null && keys.Contains(report.CommentId.Value))
+                .GroupBy(report => report.CommentId!.Value)
                 .Select(group => new { Id = group.Key, Count = group.Count() })
                 .ToDictionaryAsync(item => item.Id, item => item.Count, cancellationToken);
 

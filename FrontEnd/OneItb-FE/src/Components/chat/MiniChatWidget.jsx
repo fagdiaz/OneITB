@@ -8,7 +8,8 @@ import {
   GET_MESSAGING_CONTACTS,
   GET_ACTIVE_CONVERSATIONS,
   SEARCH_MY_MESSAGES,
-  SEND_MESSAGE,
+
+  SEND_PRIVATE_MESSAGE,
 } from '../../data/graphql/chat';
 
 import { ChatSidebar } from './ChatSidebar';
@@ -18,6 +19,7 @@ import {
   updateContactCache,
 } from './chatCache';
 import { useChatSubscription } from './useChatSubscription';
+import { uploadPrivateAttachment } from '../../utils/uploadFile';
 
 export const MiniChatWidget = () => {
   const { auth } = useAuth();
@@ -27,6 +29,8 @@ export const MiniChatWidget = () => {
   
   const [isOpen, setIsOpen] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState(null);
+  const [draftFiles, setDraftFiles] = useState([]);
+  const [attachmentError, setAttachmentError] = useState('');
   
   const [feedback, setFeedback] = useState('');
   const mountedRef = useRef(true);
@@ -73,7 +77,7 @@ export const MiniChatWidget = () => {
     fetchPolicy: 'cache-and-network',
   });
 
-  const [sendMessage, { loading: sending }] = useMutation(SEND_MESSAGE);
+  const [sendPrivateMessage, { loading: sending }] = useMutation(SEND_PRIVATE_MESSAGE);
   
   const allContacts = useMemo(
     () => contactsData?.messagingContacts?.nodes || [],
@@ -183,10 +187,18 @@ export const MiniChatWidget = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const content = form.content?.trim();
-    if (!selectedContactId || !content || sending) return;
+    const content = form.content?.trim() || '';
+    if (!selectedContactId || (!content && draftFiles.length === 0) || sending) return;
 
-    const optimisticId = `optimistic-${crypto.randomUUID()}`;
+    const token = auth?.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null);
+    const filesToUpload = [...draftFiles];
+    setDraftFiles([]);
+    setForm({ content: '' });
+    setFeedback('');
+    setAttachmentError('');
+
+    const clientMessageId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-000000000001';
+    const optimisticId = `optimistic-${clientMessageId}`;
     const optimisticMessage = {
       __typename: 'Message',
       id: optimisticId,
@@ -195,6 +207,13 @@ export const MiniChatWidget = () => {
       content,
       sentAt: new Date().toISOString(),
       isRead: false,
+      attachments: filesToUpload.map((f, i) => ({
+        __typename: 'PrivateMessageAttachment',
+        id: `optimistic-att-${i}`,
+        name: f.name,
+        contentType: f.type,
+        size: f.size,
+      })),
       sender: {
         __typename: 'User',
         id: auth.id,
@@ -211,18 +230,28 @@ export const MiniChatWidget = () => {
       } : null,
     };
 
-    setForm({ content: '' });
-    setFeedback('');
-
     try {
-      await sendMessage({
-        variables: { receiverId: selectedContactId, content },
+      const uploadIds = [];
+      for (const file of filesToUpload) {
+        const res = await uploadPrivateAttachment(file, token);
+        uploadIds.push(res.uploadId);
+      }
+
+      await sendPrivateMessage({
+        variables: {
+          input: {
+            receiverId: selectedContactId,
+            clientMessageId,
+            content: content || null,
+            uploadIds,
+          },
+        },
         optimisticResponse: {
           __typename: 'Mutation',
-          sendMessage: optimisticMessage,
+          sendPrivateMessage: optimisticMessage,
         },
         update: (cache, { data }) => {
-          const message = data?.sendMessage;
+          const message = data?.sendPrivateMessage;
           if (!message) return;
           appendMessageToConversation(
             cache,
@@ -240,6 +269,7 @@ export const MiniChatWidget = () => {
       }
     } catch (error) {
       if (mountedRef.current) {
+        setDraftFiles(filesToUpload);
         setForm({ content });
         setFeedback(error.message || 'No se pudo enviar el mensaje.');
       }
@@ -325,6 +355,10 @@ export const MiniChatWidget = () => {
             changed={changed}
             sending={sending}
             auth={auth}
+            draftFiles={draftFiles}
+            setDraftFiles={setDraftFiles}
+            attachmentError={attachmentError}
+            setAttachmentError={setAttachmentError}
           />
         </div>
       )}
