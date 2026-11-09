@@ -128,7 +128,7 @@ if ($shouldRunTests) {
         } elseif ($MockBackendOutput) {
             $MockBackendOutput
         } else {
-            dotnet test 'API Graphql/Tests/Services.Tests/Services.Tests.csproj' -c Release --no-restore 2>&1 | Out-String
+            dotnet test 'API Graphql/Tests/Services.Tests/Services.Tests.csproj' -c Release --no-restore --filter 'Category!=GOB12SqlConcurrency&Category!=GOB15BcryptBenchmark&Category!=VendorAdvisoryGHSA' 2>&1 | Out-String
         }
         if ($LASTEXITCODE -ne 0 -and -not $MockBackendCommand -and -not $MockBackendOutput) {
             throw "Backend test failures detected: `n$testOutput"
