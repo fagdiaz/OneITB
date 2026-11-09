@@ -19,6 +19,32 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-09] - Integration of Concurrency, Multi-tab Session Recovery and WebSocket Adversarial Suites (GOB-20261109-12) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Integración oficial de las suites adversariales y casos de estrés de concurrencia entregados por el Agente de Hardening & Testing (6.1 Sol). Incorporación de pruebas SQL concurrentes en xUnit para carreras en adjuntos privados y calificaciones docentes, así como tests en Vitest para recuperación de conexión WebSocket (corte 1006), inversión de orden HTTP/replay, reconciliación de optimistic updates y reemplazo remoto de sesión A a B con aislamiento de epoch.
+
+### Tareas y Artefactos Integrados
+
+1. **Pruebas de Estrés Concurrente SQL Server (xUnit):**
+   - Incorporación de Gob12SqlFixture.cs, PrivateUploadSqlRaceTests.cs y SectionGradeSqlRaceTests.cs en API Graphql/Tests/Services.Tests/Hardening/Gob12/:
+     * Pruebas de colisión con un mismo uploadId y destinatarios en paralelo, verificando ganador único y rollback de filas descartadas.
+     * Pruebas de concurrencia optimista (RowVersion) con múltiples docentes y administradores compitiendo por actualizar calificaciones con versión desfasada, confirmando rechazo con CONCURRENCY_CONFLICT y 0 emisiones espurias de notificaciones.
+
+2. **Reconciliación y Recuperación de Suscripciones WebSocket y Sesión (Vitest):**
+   - Incorporación de privateChatRecovery.gob12.test.jsx con 6 casos de prueba completos:
+     * Reconciliación de optimismo de compositores en páginas (/chat) y widget minimizado ante fallos 1006.
+     * Inversión de orden replay-before-http y http-before-replay asegurando una sola burbuja y descarte de echos duplicados.
+     * Cierre remoto de sesión con purga de caché en ambas capas (normalizada y optimista).
+     * Reemplazo remoto de usuario A a B con reapertura limpia de suscripción GraphQL en el nuevo sessionEpoch, solucionando el descarte accidental de frames en useChatSubscription.js mediante resuscripción atómica en el ciclo de vida de React.
+
+3. **Métricas de Validación:**
+   - Frontend Vitest: 287/287 PASS en 66 suites (0 fallos).
+   - Backend xUnit: 264/264 PASS en la suite de regresión (+10 casos de concurrencia SQL parametrizados).
+   - Frontend Linter: 0 errores y 0 advertencias en 215 archivos.
+   - Dual-stack Build: .NET 8 Release compilado (0 advertencias, 0 errores), Vite empaquetado en 591 ms.
+   - Handoff Ledger: ACCEPTED_AND_APPLIED registrado en docs/audit/handoff_ledger.json (GOB-20261109-12).
+
+---
 ## [2026-11-09] - Integration of UI/UX Deliverables, Updated ERDs and Print Media Hardening (GOB-20261109-11) - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Integración oficial de los entregables del Agente UI/UX y Editorial (6.1 Sol). Incorporación de los diagramas DER Crow's Foot actualizados en formato Mermaid (`.mmd`), vectoriales (`.svg`) y rasterizados (`.png`) con las 39 entidades y 67 relaciones post-Spec 220, nuevo diagrama de aislamiento de arquitectura GraphQL, y endurecimiento de las hojas de estilo de impresión `@media print` A4 para CV ATS y constancias académicas.

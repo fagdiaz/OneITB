@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApolloClient, useMutation, useSubscription } from '@apollo/client';
 import { MARK_CONVERSATION_READ, MESSAGE_RECEIVED } from '../../data/graphql/chat';
 import { subscribeToGraphQLWsStatus } from '../../data/graphql/GraphqlProvider';
@@ -100,7 +100,12 @@ export const useChatSubscription = ({
   }, [selectedContactId, auth?.id, markConversationRead, isOpen, onFeedback]);
 
   // 4. GraphQL message subscription
-  const { error: subscriptionError } = useSubscription(MESSAGE_RECEIVED, {
+  const messageSubscriptionDoc = useMemo(
+    () => ({ ...MESSAGE_RECEIVED }),
+    [auth?.id],
+  );
+
+  const { error: subscriptionError } = useSubscription(messageSubscriptionDoc, {
     skip: !auth?.id,
     onData: ({ data }) => {
       const message = data?.data?.messageReceived || data?.messageReceived;

@@ -1,83 +1,92 @@
-﻿[
+[
     {
-        "HandoffId":  "GOB-20261107-01",
-        "SourceChannel":  "Canal 1 (6 Astra)",
-        "PayloadHash":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Dictamen inicial de arquitectura y gobernanza integrado en PEER_REVIEW_MULTI_AGENTE_2026-11-07.md.",
-        "Timestamp":  "2026-11-07 18:30:00"
+        "HandoffId": "GOB-20261107-01",
+        "SourceChannel": "Canal 1 (6 Astra)",
+        "PayloadHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Dictamen inicial de arquitectura y gobernanza integrado en PEER_REVIEW_MULTI_AGENTE_2026-11-07.md.",
+        "Timestamp": "2026-11-07 18:30:00"
     },
     {
-        "HandoffId":  "GOB-20261107-02",
-        "SourceChannel":  "Canal 1 (6 Astra)",
-        "PayloadHash":  "a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Auditoría de preflight inicial: rechazo de spec inexistente e integración de límites de commit/push.",
-        "Timestamp":  "2026-11-07 23:15:00"
+        "HandoffId": "GOB-20261107-02",
+        "SourceChannel": "Canal 1 (6 Astra)",
+        "PayloadHash": "a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Auditoría de preflight inicial: rechazo de spec inexistente e integración de límites de commit/push.",
+        "Timestamp": "2026-11-07 23:15:00"
     },
     {
-        "HandoffId":  "GOB-20261108-03",
-        "SourceChannel":  "Canal 1 (6 Astra)",
-        "PayloadHash":  "f0e1d2c3b4a596877869504132231405a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Cierre de 5 casos adversariales (feature.json, rama no autorizada, conteos incompletos de xUnit y Vitest).",
-        "Timestamp":  "2026-11-08 01:45:00"
+        "HandoffId": "GOB-20261108-03",
+        "SourceChannel": "Canal 1 (6 Astra)",
+        "PayloadHash": "f0e1d2c3b4a596877869504132231405a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Cierre de 5 casos adversariales (feature.json, rama no autorizada, conteos incompletos de xUnit y Vitest).",
+        "Timestamp": "2026-11-08 01:45:00"
     },
     {
-        "HandoffId":  "GOB-20261108-04",
-        "SourceChannel":  "Canal 1 (6 Astra)",
-        "PayloadHash":  "6798747a734b74d232029c8efe89731f03f7a54efcd254bdda69c8215982d8a4",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Resolución de rigor en test_governance_stabilize.ps1, validación de rama exacta e idempotencia del protocolo.",
-        "Timestamp":  "2026-11-08 03:00:00"
+        "HandoffId": "GOB-20261108-04",
+        "SourceChannel": "Canal 1 (6 Astra)",
+        "PayloadHash": "6798747a734b74d232029c8efe89731f03f7a54efcd254bdda69c8215982d8a4",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Resolución de rigor en test_governance_stabilize.ps1, validación de rama exacta e idempotencia del protocolo.",
+        "Timestamp": "2026-11-08 03:00:00"
     },
     {
-        "HandoffId":  "GOB-20261108-05",
-        "SourceChannel":  "Canal 1 (6 Astra)",
-        "PayloadHash":  "dd3e4e8f0af93de303bd87f20ad1964b081c2b245a1b2c3d4e5f678901234567",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Blindaje definitivo: simulaciones solo producen resultados de prueba (no certificación) y persistencia inter-instancia del ledger.",
-        "Timestamp":  "2026-11-08 10:30:00"
+        "HandoffId": "GOB-20261108-05",
+        "SourceChannel": "Canal 1 (6 Astra)",
+        "PayloadHash": "dd3e4e8f0af93de303bd87f20ad1964b081c2b245a1b2c3d4e5f678901234567",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Blindaje definitivo: simulaciones solo producen resultados de prueba (no certificación) y persistencia inter-instancia del ledger.",
+        "Timestamp": "2026-11-08 10:30:00"
     },
     {
-        "HandoffId":  "GOB-20261108-06",
-        "SourceChannel":  "Canal 1 (6 Astra)",
-        "PayloadHash":  "15a57cd5770645544aec314723934f45a3f7bbf5fedd7c99bcb2f3cb1924c2da",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Exclusión mutua atómica inter-proceso con bloqueo exclusivo, prueba concurrente dual y bloqueo ante ledger ilegible.",
-        "Timestamp":  "2026-11-08 14:20:00"
+        "HandoffId": "GOB-20261108-06",
+        "SourceChannel": "Canal 1 (6 Astra)",
+        "PayloadHash": "15a57cd5770645544aec314723934f45a3f7bbf5fedd7c99bcb2f3cb1924c2da",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Exclusión mutua atómica inter-proceso con bloqueo exclusivo, prueba concurrente dual y bloqueo ante ledger ilegible.",
+        "Timestamp": "2026-11-08 14:20:00"
     },
     {
-        "HandoffId":  "GOB-20261108-08",
-        "SourceChannel":  "Canal 2 (6.1 Sol)",
-        "PayloadHash":  "4987af66abd5dd146fcbedd4014373bb5b6f299a68ec24ab03729a6da94638e7",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Handoff ID \u0027GOB-20261108-08\u0027 accepted and applied cleanly.",
-        "Timestamp":  "2026-11-08 15:03:17"
+        "HandoffId": "GOB-20261108-08",
+        "SourceChannel": "Canal 2 (6.1 Sol)",
+        "PayloadHash": "4987af66abd5dd146fcbedd4014373bb5b6f299a68ec24ab03729a6da94638e7",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Handoff ID 'GOB-20261108-08' accepted and applied cleanly.",
+        "Timestamp": "2026-11-08 15:03:17"
     },
     {
-        "HandoffId":  "GOB-20261108-09",
-        "SourceChannel":  "Canal 3 (6 Astra Implementer)",
-        "PayloadHash":  "bc089d424445af52c09acedba712d14e4789418ce539f6fa00f92fc9baec661b",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Handoff ID \u0027GOB-20261108-09\u0027 accepted and applied cleanly.",
-        "Timestamp":  "2026-11-08 19:22:37"
+        "HandoffId": "GOB-20261108-09",
+        "SourceChannel": "Canal 3 (6 Astra Implementer)",
+        "PayloadHash": "bc089d424445af52c09acedba712d14e4789418ce539f6fa00f92fc9baec661b",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Handoff ID 'GOB-20261108-09' accepted and applied cleanly.",
+        "Timestamp": "2026-11-08 19:22:37"
     },
     {
-        "HandoffId":  "GOB-20261109-11",
-        "SourceChannel":  "Canal UI/UX (6.1 Sol)",
-        "PayloadHash":  "0fad5f9dc7cc6904196aee7685bc9f1ca285b9e1704e3baf82feb3c283ae9fa6",
-        "Status":  "ACCEPTED_AND_APPLIED",
-        "ActionApplied":  true,
-        "Message":  "Handoff ID \u0027GOB-20261109-11\u0027 accepted and applied cleanly.",
-        "Timestamp":  "2026-11-09 11:20:29"
+        "HandoffId": "GOB-20261109-11",
+        "SourceChannel": "Canal UI/UX (6.1 Sol)",
+        "PayloadHash": "0fad5f9dc7cc6904196aee7685bc9f1ca285b9e1704e3baf82feb3c283ae9fa6",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Handoff ID 'GOB-20261109-11' accepted and applied cleanly.",
+        "Timestamp": "2026-11-09 11:20:29"
+    },
+    {
+        "HandoffId": "GOB-20261109-12",
+        "SourceChannel": "Canal 2 (6.1 Sol)",
+        "PayloadHash": "7ce0a5b28537ceaaf27a96f23a798fd15f4315f6be50553c39a3009df52f18a1",
+        "Status": "ACCEPTED_AND_APPLIED",
+        "ActionApplied": true,
+        "Message": "Handoff ID 'GOB-20261109-12' accepted and applied cleanly (10 xUnit SQL Concurrency cases and 6 Vitest WebSocket/Session recovery tests reconciled).",
+        "Timestamp": "2026-11-09 15:27:54"
     }
 ]
