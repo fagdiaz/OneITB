@@ -527,7 +527,7 @@ export const AcademicDashboard = () => {
             <option value="">{subjectsLoading ? 'Cargando materias...' : 'Selecciona una materia'}</option>
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>
-                {subject.name} ({subject.code}){subject.year ? ` - ${subject.year} anio` : ''}
+                {subject.name} ({subject.code}){subject.year ? ` - ${subject.year}° año` : ''}
               </option>
             ))}
           </select>
@@ -618,7 +618,7 @@ export const AcademicDashboard = () => {
                       }`}
                     >
                       <span className="block font-semibold">{subject.name}</span>
-                      <span className="text-xs text-slate-400">{subject.code}{subject.year ? ` - ${subject.year} anio` : ''}</span>
+                      <span className="text-xs text-slate-400">{subject.code}{subject.year ? ` - ${subject.year}° año` : ''}</span>
                     </button>
                   ))
                 )}

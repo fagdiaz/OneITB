@@ -208,33 +208,21 @@ namespace OneItb.GraphQL
                 }))
                 .AddType(new ObjectType<Message>(descriptor =>
                 {
-                    descriptor.Field(m => m.Attachments).Ignore();
-                    descriptor.Field("attachments")
-                        .Type<NonNullType<ListType<NonNullType<ObjectType<PrivateMessageAttachment>>>>>()
-                        .Resolve(ctx =>
-                        {
-                            var msg = ctx.Parent<Message>();
-                            if (msg.Attachments == null || msg.Attachments.Count == 0)
-                                return (IReadOnlyList<PrivateMessageAttachment>)Array.Empty<PrivateMessageAttachment>();
-
-                            return msg.Attachments
-                                .OrderBy(a => a.OrderIndex)
-                                .Select(a => new PrivateMessageAttachment
-                                {
-                                    Id = a.Id,
-                                    Name = a.FileName,
-                                    ContentType = a.ContentType,
-                                    Size = a.ByteSize
-                                })
-                                .ToList();
-                        });
+                    descriptor.Field(m => m.Attachments)
+                        .Type<NonNullType<ListType<NonNullType<ObjectType<MessageAttachment>>>>>();
                 }))
-                .AddType(new ObjectType<PrivateMessageAttachment>(descriptor =>
+                .AddType(new ObjectType<MessageAttachment>(descriptor =>
                 {
+                    descriptor.Name("PrivateMessageAttachment");
                     descriptor.Field(a => a.Id).Type<NonNullType<UuidType>>();
-                    descriptor.Field(a => a.Name).Type<NonNullType<StringType>>();
+                    descriptor.Field(a => a.FileName).Name("name").Type<NonNullType<StringType>>();
                     descriptor.Field(a => a.ContentType).Type<NonNullType<StringType>>();
-                    descriptor.Field(a => a.Size).Type<NonNullType<LongType>>();
+                    descriptor.Field(a => a.ByteSize).Name("size").Type<NonNullType<LongType>>();
+                    descriptor.Field(a => a.OrderIndex).Ignore();
+                    descriptor.Field(a => a.MessageId).Ignore();
+                    descriptor.Field(a => a.UploadId).Ignore();
+                    descriptor.Field(a => a.Message).Ignore();
+                    descriptor.Field(a => a.Upload).Ignore();
                 }))
                 .AddType(new ObjectType<MessagingPeer>(descriptor =>
                 {

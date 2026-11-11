@@ -123,7 +123,7 @@ export const SubjectManagement = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">Materias</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Catalogo academico, carrera, anio y correlatividades.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Catálogo académico, carrera, año y correlatividades.</p>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={openCreate} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
@@ -219,7 +219,7 @@ export const SubjectManagement = () => {
                   </select>
                 </label>
                 <label className="space-y-1 text-xs font-semibold text-slate-600">
-                  Anio de cursada
+                  Año de cursada
                   <input
                     type="number"
                     min="1"
@@ -281,7 +281,7 @@ export const SubjectManagement = () => {
                 <th className="px-5 py-3">Codigo</th>
                 <th className="px-5 py-3">Nombre</th>
                 <th className="px-5 py-3">Carrera</th>
-                <th className="px-5 py-3">Anio</th>
+                <th className="px-5 py-3">Año</th>
                 <th className="px-5 py-3">Correlativas</th>
                 <th className="px-5 py-3 text-right">Acciones</th>
               </tr>

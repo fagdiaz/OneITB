@@ -1744,7 +1744,7 @@ namespace OneITB.GraphQL.Mutations
         private static void ValidateSubjectYear(int? year)
         {
             if (year.HasValue && (year.Value < 1 || year.Value > 6))
-                throw new GraphQLException("El anio de cursada debe estar entre 1 y 6.");
+                throw new GraphQLException("El año de cursada debe estar entre 1 y 6.");
         }
 
         private static async Task<(Career Career, List<Subject> Prerequisites)> LoadSubjectAcademicDataAsync(

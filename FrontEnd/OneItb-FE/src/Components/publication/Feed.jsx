@@ -395,7 +395,7 @@ export const Feed = () => {
           const [coverFile] = orderedFiles.splice(coverIndex, 1);
           orderedFiles.unshift(coverFile);
         }
-        attachments = await uploadAttachments(orderedFiles, token);
+        attachments = (await uploadAttachments(orderedFiles, token)).map(toAttachmentInput);
       }
       await createInquiry({
         variables: {
@@ -476,7 +476,7 @@ export const Feed = () => {
     try {
       if (selectedCommentFiles.length > 0) {
         setIsUploadingComment(true);
-        attachments = await uploadAttachments(selectedCommentFiles, token);
+        attachments = (await uploadAttachments(selectedCommentFiles, token)).map(toAttachmentInput);
       }
 
       await addComment({
@@ -912,6 +912,12 @@ export const Feed = () => {
 
       {posts.map((post) => {
         const isLiked = post.reactions.some((reaction) => reaction.userId === auth.id);
+        const postComments = post.comments ?? [];
+        const hasUserCommented = postComments.some((comment) => comment.userId === auth.id);
+        const likedComments = postComments
+          .filter((comment) => (comment.reactions ?? []).some((reaction) => reaction.userId === auth.id))
+          .sort((left, right) => new Date(left.createdAt) - new Date(right.createdAt));
+        const firstLikedComment = likedComments[0] ?? null;
         const threadOpen = Boolean(openThreads[post.id]);
         const roleStyle = getRoleStyle(post.user?.role);
         const isAdminPost = post.user?.role === 'Administrador';
@@ -1064,13 +1070,21 @@ export const Feed = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setOpenThreads((current) => ({ ...current, [post.id]: true }));
-                  setCommentFocusRequest((current) => ({ ...current, [post.id]: (current[post.id] ?? 0) + 1 }));
+                  const nextOpen = !threadOpen;
+                  setOpenThreads((current) => ({ ...current, [post.id]: nextOpen }));
+                  if (nextOpen) {
+                    setCommentFocusRequest((current) => ({ ...current, [post.id]: (current[post.id] ?? 0) + 1 }));
+                  }
                 }}
-                className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-blue-500"
+                aria-expanded={threadOpen}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                  hasUserCommented
+                    ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-300/20 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/15'
+                    : 'border-transparent text-slate-500 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-blue-300'
+                }`}
               >
-                <i className="fa-regular fa-comment" />
-                {post.comments.length} comentarios
+                <i className={`${hasUserCommented ? 'fa-solid' : 'fa-regular'} fa-comment`} />
+                {postComments.length} {postComments.length === 1 ? 'comentario' : 'comentarios'}
               </button>
               {isModerator && (
                 <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
@@ -1079,6 +1093,31 @@ export const Feed = () => {
                 </span>
               )}
             </div>
+
+            {!threadOpen && firstLikedComment && (
+              <div className="rounded-lg border border-blue-100 bg-blue-50/50 px-3 py-2 text-xs dark:border-blue-400/20 dark:bg-blue-500/[0.08]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-blue-600 dark:text-blue-300">
+                      <i className="fa-solid fa-thumbs-up" />
+                      {firstLikedComment.user?.firstName} {firstLikedComment.user?.lastName}
+                    </span>
+                    <span className="truncate text-slate-600 dark:text-slate-300">
+                      {firstLikedComment.content || ((firstLikedComment.attachments?.length ?? 0) > 0 ? '[Adjunto]' : '')}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenThreads((current) => ({ ...current, [post.id]: true }))}
+                    className="shrink-0 font-semibold text-blue-600 hover:underline dark:text-blue-300"
+                  >
+                    {likedComments.length > 1
+                      ? `+${likedComments.length - 1} más · Expandir comentarios`
+                      : 'Expandir comentarios'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {threadOpen && (
               <div className="flex flex-col gap-2">
