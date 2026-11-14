@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
     evict: vi.fn(),
     gc: vi.fn(),
     writeQuery: vi.fn(),
+    readQuery: vi.fn(),
   },
 }));
 
@@ -72,7 +73,11 @@ vi.mock('@apollo/client', async (importOriginal) => ({
       ? [mocks.updateProfile, { loading: false }]
       : [mocks.togglePrivacy, { loading: false }]
   ),
-  useApolloClient: () => ({ cache: mocks.cache }),
+  useApolloClient: () => ({
+    cache: mocks.cache,
+    readQuery: mocks.cache.readQuery,
+    writeQuery: mocks.cache.writeQuery,
+  }),
 }));
 
 vi.mock('../../utils/uploadFile', () => ({
@@ -131,6 +136,7 @@ describe('CvEditorProfile lifecycle', () => {
     mocks.cache.evict.mockReset();
     mocks.cache.gc.mockReset();
     mocks.cache.writeQuery.mockReset();
+    mocks.cache.readQuery.mockReset();
     mocks.profileResult = {
       data: undefined,
       loading: true,
@@ -349,5 +355,64 @@ describe('CvEditorProfile lifecycle', () => {
       'src',
       'http://localhost:44397/uploads/persisted.jpg',
     );
+  });
+
+  it('updates Apollo cache only when toggleProfilePrivacy succeeds', async () => {
+    mocks.profileResult = {
+      data: { me: currentProfile({ isPublicProfile: true }) },
+      loading: false,
+      error: undefined,
+      refetch: mocks.refetchProfile,
+    };
+    mocks.cache.readQuery.mockReturnValue({ me: currentProfile({ isPublicProfile: true }) });
+    mocks.togglePrivacy.mockResolvedValue({
+      data: { toggleProfilePrivacy: { id: 'user-1', success: true } },
+    });
+
+    render(<CvEditorProfile />);
+    await screen.findByDisplayValue('Perfil completo');
+
+    const toggleButton = screen.getByRole('button', { name: 'Cambiar privacidad del perfil' });
+    expect(toggleButton).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(toggleButton);
+
+    await waitFor(() => expect(mocks.togglePrivacy).toHaveBeenCalledWith({
+      variables: { isPublic: false },
+    }));
+    await waitFor(() => expect(mocks.cache.writeQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          me: expect.objectContaining({ isPublicProfile: false }),
+        },
+      }),
+    ));
+    expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('does not update Apollo cache and reverts state when toggleProfilePrivacy returns failure', async () => {
+    mocks.profileResult = {
+      data: { me: currentProfile({ isPublicProfile: true }) },
+      loading: false,
+      error: undefined,
+      refetch: mocks.refetchProfile,
+    };
+    mocks.cache.readQuery.mockReturnValue({ me: currentProfile({ isPublicProfile: true }) });
+    mocks.togglePrivacy.mockResolvedValue({
+      data: { toggleProfilePrivacy: { id: 'user-1', success: false } },
+    });
+
+    render(<CvEditorProfile />);
+    await screen.findByDisplayValue('Perfil completo');
+
+    const toggleButton = screen.getByRole('button', { name: 'Cambiar privacidad del perfil' });
+    expect(toggleButton).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(toggleButton);
+
+    await waitFor(() => expect(mocks.togglePrivacy).toHaveBeenCalled());
+    expect(mocks.cache.writeQuery).not.toHaveBeenCalled();
+    await waitFor(() => expect(toggleButton).toHaveAttribute('aria-pressed', 'true'));
+    expect(await screen.findByText('No se pudo actualizar la privacidad del perfil.')).toBeInTheDocument();
   });
 });

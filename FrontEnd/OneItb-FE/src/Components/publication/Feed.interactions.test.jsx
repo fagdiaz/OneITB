@@ -1,7 +1,7 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers';
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
@@ -348,5 +348,83 @@ describe('Feed attachment & comment interaction regressions', () => {
 
     const toggleButton = screen.getByRole('button', { name: /2 comentarios/i });
     expect(toggleButton).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('re-opens thread when targetCommentId changes on the same inquiryId and preserves closed state on same key', async () => {
+    useInquiryPageMock.mockReturnValue({
+      items: [
+        makePost({
+          id: 'post-1',
+          comments: [
+            {
+              id: 'c-1',
+              inquiryId: 'post-1',
+              userId: 'user-other',
+              parentCommentId: null,
+              content: 'Primer comentario',
+              createdAt: '2026-11-10T10:01:00Z',
+              attachments: [],
+              reactions: [],
+              user: { id: 'user-other', firstName: 'Ana', lastName: 'Alumna', role: 'Estudiante' },
+            },
+            {
+              id: 'c-2',
+              inquiryId: 'post-1',
+              userId: 'user-other-2',
+              parentCommentId: null,
+              content: 'Segundo comentario',
+              createdAt: '2026-11-10T10:02:00Z',
+              attachments: [],
+              reactions: [],
+              user: { id: 'user-other-2', firstName: 'Beto', lastName: 'Docente', role: 'Profesor' },
+            },
+          ],
+        }),
+      ],
+      totalCount: 1,
+      hasNextPage: false,
+      loading: false,
+      loadingMore: false,
+      error: null,
+      loadMoreError: null,
+      loadMoreStatus: 'idle',
+      lastAppendedCount: 0,
+      refetch: vi.fn().mockResolvedValue({}),
+      loadMore: vi.fn(),
+    });
+
+    const FeedWithNavigator = () => {
+      const navigate = useNavigate();
+      return (
+        <>
+          <button type="button" onClick={() => navigate('/?inquiryId=post-1&commentId=c-2')}>
+            Ir a c-2
+          </button>
+          <Feed />
+        </>
+      );
+    };
+
+    render(
+      <MockedProvider mocks={[]}>
+        <MemoryRouter initialEntries={['/?inquiryId=post-1&commentId=c-1']}>
+          <FeedWithNavigator />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+
+    const toggleButton = screen.getByRole('button', { name: /2 comentarios/i });
+    expect(toggleButton).toHaveAttribute('aria-expanded', 'true');
+
+    // Manually collapse thread
+    fireEvent.click(toggleButton);
+    expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
+
+    // Navigate to a new targetCommentId on the same post
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a c-2' }));
+
+    await waitFor(() => {
+      expect(toggleButton).toHaveAttribute('aria-expanded', 'true');
+    });
   });
 });

@@ -222,15 +222,55 @@ export const AvatarEditorModal = ({
     });
   }, [clampOffset, imageVersion, zoom]);
 
+  const dialogRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
   useEffect(() => {
     if (!isOpen) return undefined;
+    previousFocusRef.current = document.activeElement;
+
+    const frame = window.requestAnimationFrame(() => {
+      const focusable = dialogRef.current?.querySelector('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      if (focusable) {
+        focusable.focus();
+      } else {
+        dialogRef.current?.focus();
+      }
+    });
+
     const handleKeyDown = (event) => {
       if (event.key === 'Escape' && !saving) {
         onClose();
+        return;
+      }
+      if (event.key === 'Tab') {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const focusables = dialog.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (event.shiftKey) {
+          if (document.activeElement === first || document.activeElement === dialog) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', handleKeyDown);
+      previousFocusRef.current?.focus?.();
+    };
   }, [isOpen, onClose, saving]);
 
   if (!isOpen) return null;
@@ -300,13 +340,15 @@ export const AvatarEditorModal = ({
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label="Editor de avatar"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !saving) onClose();
       }}
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm focus:outline-none"
     >
       <div className="grid max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950 dark:text-slate-100 dark:shadow-[0_28px_90px_rgba(0,0,0,0.55)] md:grid-cols-[0.95fr_1.05fr]">
         <section className="flex flex-col border-b border-slate-200 bg-slate-100/70 p-3 dark:border-white/10 dark:bg-slate-900/70 md:border-b-0 md:border-r">

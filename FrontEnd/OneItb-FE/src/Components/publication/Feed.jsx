@@ -359,10 +359,11 @@ export const Feed = () => {
       autoOpenedInquiryRef.current = null;
       return undefined;
     }
-    if (autoOpenedInquiryRef.current === targetInquiryId) return undefined;
+    const targetKey = `${targetInquiryId}:${targetCommentId || ''}`;
+    if (autoOpenedInquiryRef.current === targetKey) return undefined;
     const targetPost = posts.find((post) => post.id === targetInquiryId);
     if (!targetPost) return undefined;
-    autoOpenedInquiryRef.current = targetInquiryId;
+    autoOpenedInquiryRef.current = targetKey;
     setOpenThreads((current) => ({ ...current, [targetInquiryId]: true }));
     const hasTargetComment = !targetCommentId || targetPost.comments?.some((comment) => comment.id === targetCommentId);
     const frame = window.requestAnimationFrame(() => {

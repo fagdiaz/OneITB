@@ -19,6 +19,39 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-14] - Remediation of Astra Audit Findings F01-F08 (Spec 220 / RC Stabilization) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Remediación integral y verificación automatizada de los hallazgos F01 a F08 del dictamen `DICTAMEN_RC_15a60c4.md` (Canal 1 - Astra), cubriendo consistencia de caché en fallos de mutación, navegación compuesta en hilos de comentarios, accesibilidad modal (foco inicial, focus trap y restauración), formalizaciones de alcance para roles y gestión académica, y alineación métrica de suites dual-stack a 754 pruebas automatizadas (389 backend / 365 frontend).
+
+### Tareas y Artefactos Integrados
+
+1. **Aislamiento y Reversión de Caché Apollo en Privacidad (F02 - `CvEditorProfile.tsx`):**
+   - Eliminación de escritura optimista previa a la validación de `response.data?.toggleProfilePrivacy?.success`.
+   - Actualización de Apollo Cache (`GET_USER_PROFILE`) ejecutada estrictamente tras confirmación de éxito.
+   - En caso de error o rechazo, reversión del estado local (`isPublicProfile: !nextPrivacy`), despliegue de alerta visual (`setSaveStatus('error')`) y preservación intacta de la caché.
+   - Prevención de concurrencia mediante `disabled={savingPrivacy || savingProfile}`.
+   - Pruebas unitarias añadidas en `CvEditorProfile.lifecycle.test.tsx` (11/11 tests en PASS).
+
+2. **Navegación Selectiva por Comentario en Hilos de Publicación (F03 - `Feed.jsx`):**
+   - Clave de apertura reactiva compuesta: `targetKey = `${targetInquiryId}:${targetCommentId || ''}``.
+   - Navegación hacia un comentario distinto en la misma publicación reabre el hilo (`openThreads[targetInquiryId] = true`); refetch o rerender con la misma clave respeta el repliegue manual del usuario.
+   - Prueba unitaria de navegación añadida en `Feed.interactions.test.jsx` (5/5 tests en PASS).
+
+3. **Accesibilidad, Trampa de Foco y Restauración (F06 - `AvatarEditorModal.jsx` y `UserProfile.tsx`):**
+   - `AvatarEditorModal`: foco inicial automático, confinamiento cíclico de foco (`Tab`/`Shift+Tab`), atajo `Escape` y backdrop (inhabilitados durante guardado) y restauración de foco al botón disparador (`previousFocusRef`). Pruebas añadidas en `AvatarEditorModal.test.jsx` (3/3 tests en PASS).
+   - `UserProfile`: modal de previsualización ATS con `printPreviewDialogRef`, `tabIndex={-1}`, `role="dialog"`, `aria-modal="true"`, foco inicial y focus trap accesible.
+
+4. **Formalizaciones de Alcance y Precisiones Documentales (F04, F05, F08 - `VISUAL_AUDIT_REPORT.md`):**
+   - F04: Formalización de que el Moderador actúa inline en `/feed` con registro en `AuditLog`, mientras `/admin` permanece restringida a `Administrador` por barrera constitucional (`roleRoutingMatrix.test.jsx:137`).
+   - F05: Formalización de que la gestión de notas opera bajo la política freeze-safe de carrera (`UserCareer` / `GAP-AUTH-02`), difiriendo comisión/RowVersion como alcance futuro.
+   - F08: Margen ATS corregido a 12 mm (`useCvAtsPrint.ts:15`), `firstLikedComment` alineado a primer comentario cronológico con like del usuario actual, identidades de `GAP-PRIV-01` explicitadas y fórmula de cumplimiento 98.5% documentada. Estado ajustado a "Release Candidate condicionado a cierre de gates".
+
+5. **Reconciliación Métrica Oficial (F01, F07 - `ROADMAP.md`):**
+   - Backend: 389/389 en PASS (0 omitidas, Release mode net8.0).
+   - Frontend: 365/365 en PASS (68 suites en Vitest).
+   - Total regresión: 754 pruebas automatizadas en PASS (0 fallos).
+
+---
 ## [2026-11-13] - E2E Interactive Verification, Modal Accessibility & Six-Role Audit Gate (Spec 219 / GOB-20261113-18) - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Auditoría forense interactiva y validación E2E sobre el 100% de los 6 roles canónicos del sistema (`Estudiante`, `Profesor`, `Egresado`, `Empleador`, `Moderador`, `Administrador`) contra el stack en vivo (React 18 + HotChocolate GraphQL en .NET 8 + Docker SQL Server), junto con remediaciones quirúrgicas de accesibilidad de teclado (`Escape`), persistencia del switch de privacidad y blindaje de hilos en `Feed.jsx`.

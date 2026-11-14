@@ -137,15 +137,57 @@ export const UserProfile = () => {
     setAvatarFailed(false);
   }, [profile?.avatarUrl, targetUserId]);
 
+  const printPreviewDialogRef = useRef<HTMLDivElement | null>(null);
+  const printPreviewPreviousFocusRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!showPrintPreview) return undefined;
+    printPreviewPreviousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    const frame = window.requestAnimationFrame(() => {
+      const focusable = printPreviewDialogRef.current?.querySelector<HTMLElement>(
+        'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable) {
+        focusable.focus();
+      } else {
+        printPreviewDialogRef.current?.focus();
+      }
+    });
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setShowPrintPreview(false);
+        return;
+      }
+      if (event.key === 'Tab') {
+        const dialog = printPreviewDialogRef.current;
+        if (!dialog) return;
+        const focusables = dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (event.shiftKey) {
+          if (document.activeElement === first || document.activeElement === dialog) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', handleKeyDown);
+      printPreviewPreviousFocusRef.current?.focus?.();
+    };
   }, [showPrintPreview]);
 
   const canViewSensitiveProfile = profile?.canViewSensitiveProfile !== false;
@@ -819,6 +861,8 @@ export const UserProfile = () => {
       </div>
       {showPrintPreview && (
         <div
+          ref={printPreviewDialogRef}
+          tabIndex={-1}
           role="dialog"
           aria-modal="true"
           aria-label="Previsualización de CV ATS"

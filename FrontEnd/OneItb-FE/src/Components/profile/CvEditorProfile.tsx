@@ -287,6 +287,7 @@ export const CvEditorProfile = () => {
   };
 
   const handlePrivacyChange = async () => {
+    if (savingPrivacy || savingProfile) return;
     const nextPrivacy = !profileForm.isPublicProfile;
     setProfileForm((current) => ({
       ...current,
@@ -296,24 +297,23 @@ export const CvEditorProfile = () => {
     try {
       const response = await toggleProfilePrivacy({
         variables: { isPublic: nextPrivacy },
-        update: (cache) => {
-          const cached = cache.readQuery<{ me: any }>({ query: GET_USER_PROFILE });
-          if (cached?.me) {
-            cache.writeQuery({
-              query: GET_USER_PROFILE,
-              data: {
-                me: {
-                  ...cached.me,
-                  isPublicProfile: nextPrivacy,
-                },
-              },
-            });
-          }
-        },
       });
 
       if (!response.data?.toggleProfilePrivacy?.success) {
         throw new Error('PROFILE_PRIVACY_REJECTED');
+      }
+
+      const cached = apolloClient.readQuery<{ me: any }>({ query: GET_USER_PROFILE });
+      if (cached?.me) {
+        apolloClient.writeQuery({
+          query: GET_USER_PROFILE,
+          data: {
+            me: {
+              ...cached.me,
+              isPublicProfile: nextPrivacy,
+            },
+          },
+        });
       }
 
       emitProfilePrivacyToast(nextPrivacy);
@@ -322,6 +322,7 @@ export const CvEditorProfile = () => {
         ...current,
         isPublicProfile: !nextPrivacy,
       }));
+      setSaveStatus('error');
       setEditorError('No se pudo actualizar la privacidad del perfil.');
     }
   };
@@ -786,7 +787,7 @@ export const CvEditorProfile = () => {
                   <button
                     type="button"
                     onClick={handlePrivacyChange}
-                    disabled={savingPrivacy}
+                    disabled={savingPrivacy || savingProfile}
                     className={[
                       'relative inline-flex h-8 w-16 shrink-0 items-center rounded-full border p-1 transition',
                       profileForm.isPublicProfile

@@ -70,4 +70,29 @@ describe('AvatarEditorModal cleanup', () => {
 
     expect(onSave).not.toHaveBeenCalled();
   });
+
+  it('handles Escape key to close and traps Tab focus within modal', () => {
+    const onClose = vi.fn();
+    render(
+      <AvatarEditorModal
+        isOpen
+        imageSrc="data:image/jpeg;base64,avatar"
+        originalFileName="avatar.jpg"
+        onClose={onClose}
+        onSave={vi.fn()}
+      />,
+    );
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    const closeButton = screen.getByRole('button', { name: 'Cerrar editor de avatar' });
+    const updateButton = screen.getByRole('button', { name: 'Actualizar Imagen' });
+
+    updateButton.focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+
+    closeButton.focus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+  });
 });

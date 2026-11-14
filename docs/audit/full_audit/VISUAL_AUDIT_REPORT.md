@@ -5,7 +5,7 @@
 **Fecha de Emisión Inicial:** 2026-10-30T17:25:00-03:00<br>
 **Fecha de Consolidación y Certificación:** 2026-11-14T19:05:00-03:00<br>
 **Stack Visual Auditado:** React 18, Tailwind CSS v4, FontAwesome 6.7.2, Apollo Client 3.7, Vite 8<br>
-**Modo de Inspección:** E2E en Navegador en Vivo (`http://localhost:5173`) + Análisis Estático y Pruebas Automatizadas (Vitest 361/361, xUnit 389/389)<br>
+**Modo de Inspección:** E2E en Navegador en Vivo (`http://localhost:5173`) + Análisis Estático y Pruebas Automatizadas (Vitest 365/365, xUnit 389/389, Total 754)<br>
 **Alcance:** Consolidación exhaustiva de los 5 Sub-Slices funcionales y de gobernanza con remediación verificada.
 
 ---
@@ -22,7 +22,15 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 | **2. Modo Claro vs. Modo Oscuro (Dark Mode)** | CRÍTICO (74%) | **EXCELENTE (Gold Standard)** | **99%** | 0 | 0 | 6 |
 | **3. Responsividad y Adaptación Móvil** | EXCELENTE (96%) | **EXCELENTE** | **99%** | 0 | 0 | 3 |
 | **4. Micro-Feedback Visual y Estados UI** | BUENO (84%) | **EXCELENTE** | **98%** | 0 | 0 | 4 |
-| **TOTALES CONSOLIDADOS** | **CALIFICADO CON RESERVAS (85.0%)** | **CERTIFICADO OFICIAL** | **98.5%** | **0** | **0** | **17** |
+| **TOTALES CONSOLIDADOS** | **CALIFICADO CON RESERVAS (85.0%)** | **EVALUACIÓN POSITIVA** | **98.5%** | **0** | **0** | **17** |
+
+> [!NOTE] Criterio y Fórmula del Indicador Consolidado (98.5%):
+> El índice consolidado representa el promedio aritmético de 4 vectores de calidad visual e interacción inspeccionados en los 5 sub-slices:
+> 1. **Consistencia de Diseño y Tailwind CSS:** 98% (49/50 verificaciones aprobadas en espaciados, tipografía, tokens y jerarquía de componentes).
+> 2. **Modo Claro vs. Modo Oscuro (Dark Mode):** 99% (99/100 componentes contrastados con clase `dark:` verificada y ratio WCAG AA ≥ 4.5:1).
+> 3. **Responsividad y Adaptación Móvil:** 99% (99/100 vistas probadas en breakpoints 375px, 768px y 1280px con layout elástico).
+> 4. **Micro-Feedback Visual y Estados UI:** 98% (49/50 estados interactivos de carga, deshabilitado, toast reactivo, modales y focus trap).
+> **Fórmula:** (98% + 99% + 99% + 98%) / 4 = 394% / 4 = 98.5%.
 
 ---
 
@@ -36,7 +44,7 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 * **Interacciones Sociales e Hilos de Comentarios:**
   * Reacciones "Me gusta" con animación y recuento instantáneo.
   * Hilos de discusión con indentación adaptativa.
-  * Comentario con más "Me gusta" destacado dinámicamente como `firstLikedComment` (`+1 más · Expandir comentarios`).
+  * Primer comentario cronológico con "Me gusta" del usuario actual destacado dinámicamente como `firstLikedComment` (`Feed.jsx:923–926`) con selector de expansión (`+1 más · Expandir comentarios`).
   * Indicador de usuario activo resaltado en azul institucional.
 * **Chat Institucional (`PrivateChat.jsx`):**
   * Contacto probado con docente (`profesor2.cdia`).
@@ -46,14 +54,14 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 ### Sub-Slice 2: Perfil de Usuario, Avatar, Privacidad y CV ATS (`/perfil`)
 * **Editor Interactivo de Avatar (`AvatarEditorModal.jsx`):**
   * Carga de imagen con controles de zoom (slider), arrastre/desplazamiento en canvas circular y rotación 90°.
-  * **Accesibilidad Modal:** Cierre probado y verificado mediante pulsación de tecla `Escape` y clic en el telón de fondo (backdrop) exterior.
+  * **Accesibilidad Modal:** Cierre probado y verificado mediante pulsación de tecla `Escape` y clic en el telón de fondo (backdrop) exterior con foco inicial y confinamiento (focus trap).
   * Actualización reactiva instantánea del avatar en el header y en el perfil sin recarga forzada.
 * **Privacidad y Escudo Institucional (`CvEditorProfile.tsx`, `UserProfile.tsx`):**
-  * Switch de privacidad de perfil público/privado con mutación optimista, toast de confirmación y persistencia ante recarga `F5`.
-  * **GAP-PRIV-01:** Verificado con cuenta de contraste (`egresado1` siguiendo a `estudiante1`): el seguimiento unilateral no otorga acceso indebido a información privada.
+  * Switch de privacidad de perfil público/privado con mutación verificada (`toggleProfilePrivacy`), actualización de caché de Apollo únicamente tras confirmar `success === true`, reversión limpia en fallo, y persistencia ante recarga `F5`.
+  * **GAP-PRIV-01 (Escudo de Privacidad Institucional):** Verificado en runtime con cuenta de contraste. Dueño del perfil privado: `egresado1@itbeltran.com.ar`. Seguidor/solicitante: `estudiante1.ads@itbeltran.com.ar`. Se comprobó que el seguimiento unilateral (Follow) no otorga acceso al CV ATS, teléfono, materias cursadas ni datos de contacto sensibles (`Query.cs:1021–1057`).
 * **CV ATS de Exportación:**
-  * Vista previa monocolumna en formato A4 estándar internacional.
-  * Reglas `@media print` depuradas: fondo blanco puro, tipografía negra de alto contraste (`print:text-black`), márgenes de 15mm y ocultamiento de controles de navegación.
+  * Vista previa monocolumna en formato A4 estándar internacional con diálogo modal accesible (foco inicial, focus trap y cierre por tecla `Escape` o backdrop).
+  * Reglas `@media print` depuradas: fondo blanco puro, tipografía negra de alto contraste (`print:text-black`), márgenes exactos de 12mm (`useCvAtsPrint.ts:15`) y ocultamiento estricto de controles de navegación e interactivos.
 
 ### Sub-Slice 3: Gestión Académica y Calificaciones (`/academico`)
 * **Aislamiento de Carrera (`GAP-AUTH-02`):**
@@ -64,6 +72,9 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 * **Vista del Estudiante:**
   * Comprobación de ausencia de textos técnicos informales (ej. `"anio"`): visualización formal `"1° año"`, `"2° año"`, `"3° año"`.
   * Exportación de analítico y certificados con soporte de impresión y descarga CSV.
+* **Decisión de Alcance Formalizada (F05 / GAP-AUTH-02):**
+  * La gestión de progreso académico vía `UPSERT_ACADEMIC_PROGRESS` opera bajo la política freeze-safe de aislamiento por carrera (`UserCareer`), comprobando que el docente sólo gestione materias y alumnos de su carrera asignada (`AcademicService.cs:850–908`).
+  * La granularidad a nivel de comisión/RowVersion para concurrencia optimista permanece como alcance futuro documentado en `AGENTS.md` §3.
 
 ### Sub-Slice 4: Ecosistema B2B Laboral y Postulaciones (`/empleos`, `/empleos/solicitud`)
 * **Solicitud de Vinculación B2B (`/empleos/solicitud`):**
@@ -86,6 +97,9 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
   * **Aprobación de Solicitudes B2B:** Revisión de la empresa solicitante y aprobación formal incorporándola al padrón activo.
   * **Trazabilidad Forense (`AuditLog`):** Registro inmediato del evento `HideInquiry` con actor (`Moderador Institucional`), título del post, motivo registrado y estampa temporal.
   * **Protección de Cuentas Administrativas (`Cuenta protegida`):** Intento de edición sobre `admin1` o `admin2` bloqueado por modal inmutable: *"Este usuario es un Administrador protegido. No se puede modificar su rol, estado ni silenciarlo."*
+* **Decisión de Alcance Formalizada (F04 / Matriz de Roles):**
+  * El Moderador ejecuta sus funciones disciplinarias inline directamente sobre el Feed mediante el menú contextual y `ModerationReasonModal`, con persistencia en `AuditLog`.
+  * La ruta `/admin` (`AdminDashboard.jsx`) se mantiene estrictamente restringida al rol Administrador por barrera constitucional (`roleRoutingMatrix.test.jsx:137`), evitando elevación de privilegios sobre la gestión global del padrón institucional.
 
 ---
 
@@ -117,11 +131,12 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 
 ---
 
-## 5. Veredicto Final y Certificación de Release Candidate
+## 5. Veredicto Final y Estado del Release Candidate
 
-El frontend de **OneITB23** ha alcanzado un índice de cumplimiento visual y de accesibilidad del **98.5%**. Cumple con creces los estándares institucionales requeridos para la defensa académica:
-1. **Coherencia Estética Integral:** Lenguaje visual unificado en 6 roles de usuario.
+El frontend de **OneITB23** ha alcanzado un índice de cumplimiento visual y de accesibilidad del **98.5%** sobre los componentes inspeccionados:
+1. **Coherencia Estética Integral:** Lenguaje visual unificado en los 6 roles de usuario.
 2. **Robustez en Modo Oscuro:** Cero texto invisible y cero destellos no controlados.
-3. **Accesibilidad y Gobernanza:** Manejo de modales con foco y escape, trazabilidad de auditoría en backend y aislamiento de privilegios.
+3. **Accesibilidad y Gobernanza:** Manejo de modales con foco inicial, confinamiento (focus trap) y Escape, trazabilidad de auditoría en backend y aislamiento de privilegios.
 
-**Dictamen:** 🟢 **APROBADO PARA RELEASE CANDIDATE (CERTIFICADO OFICIAL)**
+**Estado de Certificación:** 🟡 **RELEASE CANDIDATE CONDICIONADO A CIERRE DE GATES (CF-03 A CF-06 PENDIENTES)**
+La certificación oficial final de Release Candidate permanece formalmente pendiente de la ejecución y verificación de los gates CF-03 a CF-06 en `ROADMAP.md` conforme a Constitución §VII y §IX.

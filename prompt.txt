@@ -1,64 +1,99 @@
-# OneITB23 Handoff Prompt: Auditoría Forense y Certificación de Release Candidate (Canal 1 · 6 Astra)
+# OneITB23 Handoff Prompt: Ratificación de Correcciones F01-F08 sobre Release Candidate
 
-**Canal de Destino:** Canal 1: `[OneITB] Auditoría & Arquitectura`
-**Modelo:** `6 Astra`
-**Nivel de Razonamiento:** `Alto`
+**Canal de Destino:** Canal 1: [OneITB] Auditoría & Arquitectura
+**Modelo:** 6 Astra
+**Nivel de Razonamiento:** Alto
 **Fecha de Handoff:** 2026-11-14
-**Rama Git Activa:** `feature/2026-11-01-debugger-cv-builder`
-**Especificación:** `specs/220-core-closure-and-application-hardening`
+**Rama Git Activa:** feature/2026-11-01-debugger-cv-builder
+**Commit Base:** 15a60c4a8b582d189544cc213a7b22ec2ab9bcef (con diff verificado en worktree listo para commit)
+**Puntero Spec:** specs/220-core-closure-and-application-hardening
 
 ---
 
-## 1. Contexto de la Auditoría y Estado Consolidado
+## 1. Objetivo del Relevo
 
-Tras detectarse que la auditoría manual previa había sido declarada prematuramente sobre informes desactualizados de octubre, se implementó una estrategia de **descomposición en 5 Sub-Slices Atómicas**, ejecutadas secuencialmente en el entorno en vivo (`http://localhost:5173` y `https://localhost:44397`):
-
-1. **Sub-Slice 1: Muro Social y Chat (`Estudiante`):**
-   - Compositor con adjuntos y detector preventivo de exceso de URLs de YouTube (>2).
-   - Reacciones reactivas, apertura/repliegue de hilos de comentarios, píldora azul de participación activa y tarjeta de comentario destacado con like (`firstLikedComment`).
-   - Chat bidireccional con indicador luminoso de *"Tiempo real activo"* vía WebSocket.
-2. **Sub-Slice 2: Perfil, Avatar, Privacidad y CV ATS (`Estudiante` y `Egresado`):**
-   - `AvatarEditorModal.jsx`: controles de zoom/rotación/arrastre, cierre accesible con `Escape` y backdrop, propagación reactiva al Header.
-   - `CvEditorProfile.tsx`: switch de privacidad con actualización de Apollo Cache (`writeQuery`), estado `disabled` en vuelo, emisión de toast y persistencia tras recarga `F5`.
-   - **`GAP-PRIV-01` (Escudo de Privacidad):** Verificado en vivo que un seguimiento unilateral (`Follow`) por parte de un estudiante sobre un egresado privado **NO** expone teléfono, notas ni la descarga del CV ATS.
-   - `CVATSPrintTemplate.tsx`: maquetación editorial en A4 monocolumna con márgenes de 12 mm y reglas `@media print`.
-3. **Sub-Slice 3: Gestión Académica y Calificaciones (`Profesor` y `Estudiante`):**
-   - **`GAP-AUTH-02` (Aislamiento de Carrera):** Docente de Sistemas restringido estrictamente a su carrera (`ADS`), sin visibilidad de carreras ajenas.
-   - Carga de notas numéricas reglamentarias (0-10) con persistencia cruzada verificada en el perfil del estudiante.
-   - Erradicación global de la palabra `"anio"` en favor de la nomenclatura oficial (`1° año`, `2° año`, `3° año`).
-4. **Sub-Slice 4: Ecosistema B2B Laboral y Postulaciones (`Empleador` y `Estudiante`):**
-   - `/empleos/solicitud`: validación matemática de CUIT mediante Módulo 11 de AFIP y generación de código de seguimiento institucional.
-   - `/empleos`: publicación de vacante sin refresco forzado y visualización de postulantes en ficha ATS.
-   - Postulación de estudiante con mutación reactiva a pastilla verde deshabilitada `✓ Postulado` y aislamiento total de controles de empresa.
-5. **Sub-Slice 5: Moderación, Panel Administrador y Verificación de Temas (`Moderador` y `Admin`):**
-   - `ModerationReasonModal`: validación de motivo obligatorio, descarte por `Escape`/backdrop y remoción inmediata del post en `/feed`.
-   - `/admin`: aprobación de empresa B2B, trazabilidad inmutable del evento `HideInquiry` en `AuditLog` y protección estricta de cuentas `Administrador`.
-   - Consistencia de temas (*Clean Tech* vs. *Tech Noir*) con ratios WCAG AA/AAA (>7:1).
-   - Generación y actualización física en disco del informe consolidado: `docs/audit/full_audit/VISUAL_AUDIT_REPORT.md` (98.5% de cumplimiento).
+Someter a dictamen de ratificación final de Astra (Canal 1, Razonamiento Alto) el paquete integral de remediaciones implementadas en respuesta al dictamen `DICTAMEN_RC_15a60c4.md`, cubriendo los hallazgos F01 a F08 con pruebas automatizadas, doble compilación dual-stack, corrección de métricas y reconciliación documental.
 
 ---
 
-## 2. Métricas Técnicas y Compuertas de Estabilidad
+## 2. Matriz de Remediaciones Implementadas (F01 - F08)
 
-- **Pruebas Automatizadas:** **750 pruebas en PASS** (389 xUnit backend + 361 Vitest frontend, 0 fallos, 0 omitidas).
-- **Compilación Dual:** .NET 8 Release (0 errores, 0 advertencias) y Vite 8 React 18 (`dist` generado limpiamente).
-- **Consola DevTools en Runtime:** Cero excepciones no controladas de JavaScript y 100% de operaciones GraphQL en `200 OK`.
-- **Higiene Git:** `git diff --check` limpio (cero errores de espacios en blanco o conflictos).
+### F02 (P2) - Reversión limpia y aislamiento de caché Apollo en CvEditorProfile.tsx
+* **Defecto previo:** Callback `update` escribía `nextPrivacy` optimistamente antes del control `response.data?.toggleProfilePrivacy?.success`.
+* **Solución aplicada:**
+  1. Se eliminó la escritura optimista en `update`.
+  2. La caché de Apollo (`GET_USER_PROFILE`) se actualiza por escritura controlada únicamente tras verificar `success === true`.
+  3. En caso de fallo de red o `success === false`, se lanza excepción, se revierte el estado local (`isPublicProfile: !nextPrivacy`), se activa `setSaveStatus('error')` desplegando mensaje al usuario, y la caché de Apollo permanece inalterada con el valor real anterior.
+  4. El botón de switch se desactiva durante la mutación con `disabled={savingPrivacy || savingProfile}`.
+* **Pruebas añadidas en `CvEditorProfile.lifecycle.test.tsx` (11/11 PASS):**
+  * `updates Apollo cache only when toggleProfilePrivacy succeeds`
+  * `does not update Apollo cache and reverts state when toggleProfilePrivacy returns failure`
+
+### F03 (P2) - Apertura de hilos en Feed por clave compuesta targetInquiryId + targetCommentId
+* **Defecto previo:** `autoOpenedInquiryRef.current` guardaba sólo `targetInquiryId`, impidiendo abrir otro comentario del mismo post si el usuario lo había replegado.
+* **Solución aplicada:**
+  1. Se actualizó la guardia a clave compuesta: `targetKey = `${targetInquiryId}:${targetCommentId || ''}``.
+  2. Navegar hacia un comentario diferente del mismo post genera un `targetKey` distinto y reabre el hilo (`openThreads[targetInquiryId] = true`).
+  3. Al refetchear el feed o mutar sin cambiar el destino, la clave coincide con el ref, preservando el repliegue manual del usuario.
+* **Prueba añadida en `Feed.interactions.test.jsx` (5/5 PASS):**
+  * `re-opens thread when targetCommentId changes on the same inquiryId and preserves closed state on same key`
+
+### F04 (P1) - Formalización de Decisión de Alcance: Moderador vs. Administrador
+* **Decisión:** En concordancia con la barrera de seguridad constitucional verificada en `roleRoutingMatrix.test.jsx:137`, la ruta `/admin` (`AdminDashboard.jsx`) es exclusiva para `Administrador`.
+* **Remediación:** Se formalizó en `docs/audit/full_audit/VISUAL_AUDIT_REPORT.md` §2 (Sub-Slice 5) que las funciones de moderación (`HideInquiry`, silenciamiento) se operan inline en `/feed` mediante el menú contextual y `ModerationReasonModal`, con registro forense en `AuditLog`.
+
+### F05 (P1) - Formalización de Decisión de Alcance: Gestión Académica Freeze-Safe
+* **Decisión:** Conforme a `AGENTS.md` §3 (`GAP-AUTH-02`), la gestión académica vía `UPSERT_ACADEMIC_PROGRESS` opera bajo la política freeze-safe de validación de carrera (`UserCareer`), comprobando en `AcademicService.cs:850–908` que el docente pertenezca a la misma carrera de la materia.
+* **Remediación:** Se formalizó en `docs/audit/full_audit/VISUAL_AUDIT_REPORT.md` §2 (Sub-Slice 3) que la modelización fina por comisión y control concurrente `RowVersion` constituye alcance futuro post-freeze.
+
+### F06 (P2) - Gestión de Foco, Focus Trap y Restauración en Modales
+* **`AvatarEditorModal.jsx`:** Implementado foco inicial al abrir, trampa de foco (`Tab`/`Shift+Tab` entre primer y último elemento interactivo), descarte accesible (`Escape` y clic en backdrop, ambos bloqueados durante `saving`), y restauración del foco (`previousFocusRef`) al botón disparador al cerrar.
+  * *Prueba añadida en `AvatarEditorModal.test.jsx`:* `handles Escape key to close and traps Tab focus within modal` (3/3 PASS).
+* **`UserProfile.tsx` (CV ATS Modal):** Asociado `ref={printPreviewDialogRef}`, `tabIndex={-1}`, `role="dialog"`, `aria-modal="true"`, foco inicial automático por `requestAnimationFrame`, focus trap (`Tab`/`Shift+Tab`) y restauración de foco al elemento previo.
+
+### F07 (P2) - Reconciliación de Métricas en ROADMAP.md
+* **Backend:** 389/389 en PASS (0 omitidas) verificado en .NET 8 Release mode (`Services.Tests.csproj`). Se informan por separado las categorías opt-in (`GOB12SqlConcurrency` [10], `GOB15BcryptBenchmark` [1], `VendorAdvisoryGHSA` [1]).
+* **Frontend:** 365/365 en PASS en Vitest (68 suites completas) con las 4 nuevas pruebas de regresión F02/F03/F06.
+* **Total Regresión Automatizada:** 754 pruebas en PASS.
+* `ROADMAP.md` actualizado en líneas 12 y 13 con los valores exactos (389 backend / 365 frontend).
+
+### F08 (P2 / P1) - Correcciones Documentales de Precisión en VISUAL_AUDIT_REPORT.md
+1. **Margen ATS:** Corregido de 15 mm a 12 mm (`useCvAtsPrint.ts:15`).
+2. **`firstLikedComment`:** Corregido a "primer comentario cronológico con Me gusta del usuario actual" (`Feed.jsx:923–926`).
+3. **GAP-PRIV-01:** Identidades explicitadas: titular privado `egresado1@itbeltran.com.ar`, solicitante/seguidor `estudiante1.ads@itbeltran.com.ar`.
+4. **Fórmula del 98.5%:** Detallada como promedio aritmético de 4 vectores (98% consistencia, 99% dark mode, 99% responsive, 98% micro-feedback) = 394 / 4 = 98.5%.
+5. **Estado de Certificación:** Ajustado a "Release Candidate condicionado a cierre de gates (CF-03 a CF-06 pendientes)" sin atribuir certificación formal prematura.
 
 ---
 
-## 3. Misión para Canal 1: [OneITB] Auditoría & Arquitectura (6 Astra · Alto)
+## 3. Estado de Validación Técnica Ejecutada
 
-Como Auditor Principal y Arquitecto Consultor, realiza el arbitraje final y emite tu dictamen sobre la solución consolidada:
+1. **Backend Build (.NET 8 Release):** `0 Advertencia(s), 0 Errores`.
+2. **Backend Tests:** 389/389 PASS (`dotnet test -c Release --no-restore --filter "Category!=GOB12SqlConcurrency&Category!=GOB15BcryptBenchmark&Category!=VendorAdvisoryGHSA"`).
+3. **Frontend Tests:** 365/365 PASS (68 suites en Vitest).
+4. **Frontend Build:** `vite build` en 1.39s sin errores (`dist/` generado).
+5. **Higiene de Formato:** `git diff --check` arrojó 0 errores.
 
-1. **Revisión del Informe Consolidado:**
-   - Inspecciona `docs/audit/full_audit/VISUAL_AUDIT_REPORT.md`. ¿La matriz de madurez (98.5%), la resolución de los hallazgos `VIS-HIGH-01` a `VIS-HIGH-05` y la trazabilidad de los 6 roles son consistentes con la arquitectura del sistema?
-2. **Auditoría de Invariantes de Seguridad y Autorización:**
-   - Evalúa la solidez de las soluciones verificadas en runtime:
-     * ¿Queda blindado el riesgo de `GAP-PRIV-01` ante seguidores en Apollo Cache y en vistas públicas?
-     * ¿Se mantiene la restricción de `UserCareer` (`GAP-AUTH-02`) como política freeze-safe adecuada para la defensa académica?
-     * ¿Es robusta la protección de cuentas administrativas contra auto-bloqueo o degradación?
-3. **Análisis de los 6 Componentes Frontend Modificados:**
-   - Analiza `GlobalSearch.jsx`, `NotificationBell.jsx`, `AvatarEditorModal.jsx`, `CvEditorProfile.tsx`, `UserProfile.tsx` y `Feed.jsx`. ¿Los event listeners de teclado y clicks exteriores están libres de fugas de memoria y efectos secundarios de re-renderizado?
-4. **Dictamen Final de Certificación:**
-   - Emite tu veredicto formal indicando si el estado actual de la plataforma, tanto en código como en evidencia visual y documental, **cumple con los requisitos para ser certificado oficialmente como Release Candidate (RC)** apto para la defensa académica.
+---
+
+## 4. Archivos Modificados en Worktree Listos para Commit
+
+* `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx` (F02)
+* `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.lifecycle.test.tsx` (F02 test)
+* `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx` (F03)
+* `FrontEnd/OneItb-FE/src/Components/publication/Feed.interactions.test.jsx` (F03 test)
+* `FrontEnd/OneItb-FE/src/Components/profile/AvatarEditorModal.jsx` (F06)
+* `FrontEnd/OneItb-FE/src/Components/profile/AvatarEditorModal.test.jsx` (F06 test)
+* `FrontEnd/OneItb-FE/src/Components/profile/UserProfile.tsx` (F06 ATS dialog ref)
+* `docs/project_docs/ROADMAP.md` (F07 conteo 389/365 = 754)
+* `docs/audit/full_audit/VISUAL_AUDIT_REPORT.md` (F01, F04, F05, F08)
+* `prompt.txt` (Handoff)
+
+---
+
+## 5. Instrucciones para Astra (Canal 1)
+
+1. Revisar los diffs correspondientes a F02, F03 y F06.
+2. Ratificar la formalización documental de F04, F05 y las precisiones de F08 en `VISUAL_AUDIT_REPORT.md`.
+3. Verificar la consistencia métrica de `ROADMAP.md` (389 backend / 365 frontend).
+4. Emitir el dictamen correspondiente para proceder al commit y push de cierre de ciclo.
