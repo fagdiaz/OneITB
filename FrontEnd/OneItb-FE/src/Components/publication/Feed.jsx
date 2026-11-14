@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { gql, useMutation, useQuery } from '@apollo/client';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
@@ -205,6 +205,7 @@ export const Feed = () => {
   const { id: postId } = useParams();
   const [searchParams] = useSearchParams();
   const [openThreads, setOpenThreads] = useState({});
+  const autoOpenedInquiryRef = useRef(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [reportTarget, setReportTarget] = useState(null);
   const [reactionUsersInquiryId, setReactionUsersInquiryId] = useState(null);
@@ -354,10 +355,15 @@ export const Feed = () => {
   }, [composerVideoId, coverSelection, selectedFiles]);
 
   useEffect(() => {
-    if (!targetInquiryId) return undefined;
+    if (!targetInquiryId) {
+      autoOpenedInquiryRef.current = null;
+      return undefined;
+    }
+    if (autoOpenedInquiryRef.current === targetInquiryId) return undefined;
     const targetPost = posts.find((post) => post.id === targetInquiryId);
     if (!targetPost) return undefined;
-    setOpenThreads((current) => current[targetInquiryId] ? current : { ...current, [targetInquiryId]: true });
+    autoOpenedInquiryRef.current = targetInquiryId;
+    setOpenThreads((current) => ({ ...current, [targetInquiryId]: true }));
     const hasTargetComment = !targetCommentId || targetPost.comments?.some((comment) => comment.id === targetCommentId);
     const frame = window.requestAnimationFrame(() => {
       if (!targetCommentId || !hasTargetComment) {

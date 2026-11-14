@@ -286,12 +286,44 @@ export const CvEditorProfile = () => {
     setProfileForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handlePrivacyChange = () => {
-    markDirty();
+  const handlePrivacyChange = async () => {
+    const nextPrivacy = !profileForm.isPublicProfile;
     setProfileForm((current) => ({
       ...current,
-      isPublicProfile: !current.isPublicProfile,
+      isPublicProfile: nextPrivacy,
     }));
+
+    try {
+      const response = await toggleProfilePrivacy({
+        variables: { isPublic: nextPrivacy },
+        update: (cache) => {
+          const cached = cache.readQuery<{ me: any }>({ query: GET_USER_PROFILE });
+          if (cached?.me) {
+            cache.writeQuery({
+              query: GET_USER_PROFILE,
+              data: {
+                me: {
+                  ...cached.me,
+                  isPublicProfile: nextPrivacy,
+                },
+              },
+            });
+          }
+        },
+      });
+
+      if (!response.data?.toggleProfilePrivacy?.success) {
+        throw new Error('PROFILE_PRIVACY_REJECTED');
+      }
+
+      emitProfilePrivacyToast(nextPrivacy);
+    } catch {
+      setProfileForm((current) => ({
+        ...current,
+        isPublicProfile: !nextPrivacy,
+      }));
+      setEditorError('No se pudo actualizar la privacidad del perfil.');
+    }
   };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -754,6 +786,7 @@ export const CvEditorProfile = () => {
                   <button
                     type="button"
                     onClick={handlePrivacyChange}
+                    disabled={savingPrivacy}
                     className={[
                       'relative inline-flex h-8 w-16 shrink-0 items-center rounded-full border p-1 transition',
                       profileForm.isPublicProfile

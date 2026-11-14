@@ -19,6 +19,31 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-13] - E2E Interactive Verification, Modal Accessibility & Six-Role Audit Gate (Spec 219 / GOB-20261113-18) - branch: feature/2026-11-01-debugger-cv-builder
+
+**Alcance:** Auditoría forense interactiva y validación E2E sobre el 100% de los 6 roles canónicos del sistema (`Estudiante`, `Profesor`, `Egresado`, `Empleador`, `Moderador`, `Administrador`) contra el stack en vivo (React 18 + HotChocolate GraphQL en .NET 8 + Docker SQL Server), junto con remediaciones quirúrgicas de accesibilidad de teclado (`Escape`), persistencia del switch de privacidad y blindaje de hilos en `Feed.jsx`.
+
+### Tareas y Artefactos Integrados
+
+1. **Accesibilidad en Modales y Overlays (Cierre con Tecla `Escape` y Clic Exterior):**
+   - Incorporación de listener `keydown` (`e.key === 'Escape'`) y handler `onMouseDown` en `GlobalSearch.jsx`, `NotificationBell.jsx`, `AvatarEditorModal.jsx` y previsualización ATS de `UserProfile.tsx`.
+   - Verificación de ciclo completo de modal de recursos en `AcademicDashboard.jsx` (cierre accesible con `Escape` y botón `X`).
+
+2. **Persistencia Reactiva del Switch de Privacidad (`CvEditorProfile.tsx`):**
+   - Vinculación directa de `toggleProfilePrivacy` con actualización reactiva en Apollo Cache (`writeQuery`), emisión de toast informativo y persistencia garantizada tras recarga (`F5`).
+
+3. **Blindaje de Comentarios en Deep-Links (`Feed.jsx`):**
+   - Guardia `autoOpenedInquiryRef` para prevenir que actualizaciones de publicaciones sobreescriban el toggle manual o fuercen doble clic al cerrar hilos abiertos por deep-link (`/feed?inquiryId=...`).
+
+4. **Validación E2E de los 6 Roles Canónicos:**
+   - **Estudiante (`estudiante1.ads@itbeltran.com.ar`):** Postulación laboral en `/empleos`, mensajería `/chat` y editor de avatar.
+   - **Profesor (`profesor1.ads@itbeltran.com.ar`):** Publicación de recursos y carga de notas con restricción estricta de carrera (`UserCareer`).
+   - **Egresado (`egresado1@itbeltran.com.ar`):** Postulación y validación de privacidad (`GAP-PRIV-01`): perfiles privados no exponen notas, teléfonos ni CV a seguidores.
+   - **Empleador (`empleador1@itbeltran.com.ar`):** Formulario público B2B `/empleos/solicitud`, publicación de oferta y gestión de candidatos.
+   - **Moderador (`moderador1@itbeltran.com.ar`):** Ocultamiento con motivo obligatorio en `ModerationReasonModal`, retiro del feed, persistencia y silenciamiento temporal (`MutedUntil`).
+   - **Administrador (`admin1@itbeltran.com.ar`):** Aprobación de empresa B2B, cuentas admin protegidas, trazabilidad forense en `AuditLog` y alternancia de temas *Clean Tech* / *Tech Noir*.
+
+---
 ## [2026-11-09] - Defense Readiness Verifier and 20-Question Code-Backed QA Suite (GOB-20261109-17) - branch: feature/2026-11-01-debugger-cv-builder
 
 **Alcance:** Cierre de contingencia y herramientas de validación de entorno previas a la defensa oral (`DF-08`), con sincronización de métricas al corte candidato inmutable (`a16cbf9`), expansión del banco de preguntas difíciles de la mesa a 20 casos respaldados por código, y diseño del script de verificación ultra-rápido `Test-DefenseDemoReadiness.ps1`.

@@ -1,39 +1,64 @@
-# ==============================================================================
-# ESTADO DE ESTABILIZACIÓN Y RELEVO DE PREDEFENSA — OneITB23
-# Certificación Release Candidate: 100% PASS
-# Handoff GOB-20261109-17: Verificador de Entorno y 20 Preguntas de Defensa
-# ==============================================================================
-# Fecha y Hora: 2026-11-09 15:45:00
-# Rama Git: feature/2026-11-01-debugger-cv-builder
-# Commit SHA candidato: 31854e427771764ee324c41496a77d13b438b4d8
-# Spec Activa: specs/220-core-closure-and-application-hardening
-# ==============================================================================
-# MÉTRICAS OFICIALES CERTIFICADAS EN PREFLIGHT (speckit-stabilize -Certify):
-#   - Backend xUnit: 387/387 PASS (0 fallos, 0 omitidos) en 41 s
-#     * Opt-in live SQL concurrency: 10 casos adicionales (Category=GOB12SqlConcurrency)
-#     * Opt-in BCrypt benchmark: 1 caso (Category=GOB15BcryptBenchmark, PR-05 verificado)
-#     * Vendor advisory canary: 1 caso (Category=VendorAdvisoryGHSA, GHSA-qr3m-xw4c-jqw3)
-#   - Frontend Vitest: 357/357 PASS en 67 suites (0 fallos) en 29.7 s
-#   - Total Pruebas Automatizadas: 744 / 744 PASS (100%)
-#   - Dual-Stack Build:
-#     * .NET 8 Release: 0 errores, 0 advertencias (GraphQL.csproj)
-#     * React 18 / Vite: empaquetado limpio en 670 ms
-#   - Linter Frontend (oxlint): 0 errores, 0 advertencias
-#   - EF Core Model Drift: 0 cambios pendientes (has-pending-model-changes: PASS)
-#   - Verificador de Defensa (Test-DefenseDemoReadiness.ps1): 10/10 PASS en 252 ms
-#   - Banco de Preguntas y Respuestas: 20 de 20 preguntas con respaldo en código (defense-content.json)
-# ==============================================================================
-# ESTADO DE GATES DE PREDEFENSA:
-#   [x] CF-01: Cierre de alcance funcional 117/117
-#   [x] CF-02: Blindaje de roles y seguridad institucional (GOB-13)
-#   [x] CF-03: Concurrencia y sesiones tiempo real (GOB-12)
-#   [x] CF-04: Resiliencia criptográfica BCrypt (GOB-15 / PR-05)
-#   [x] CF-05: Endurecimiento GraphQL DoS / AST Depth & Error Sanitization (GOB-16)
-#   [x] CF-06: Verificador de entorno in situ y banco de 20 preguntas (GOB-17)
-#   [ ] DF-08: Ensayos cronometrados de 23 minutos con presentación (OneITB23-Defensa.pptx)
-# ==============================================================================
-# Continuidad Operativa:
-#   - Canal: Local AGY
-#   - Modelo: Gemini 3.8 Flash High
-#   - Razonamiento: Nativo
-#   - Próximo objetivo: Primer ensayo oral cronometrado de defensa (DF-08) o descanso hasta el reinicio de cuota de Codex (18:24 hs).
+# OneITB23 Handoff Prompt: Auditoría Forense y Certificación de Release Candidate (Canal 1 · 6 Astra)
+
+**Canal de Destino:** Canal 1: `[OneITB] Auditoría & Arquitectura`
+**Modelo:** `6 Astra`
+**Nivel de Razonamiento:** `Alto`
+**Fecha de Handoff:** 2026-11-14
+**Rama Git Activa:** `feature/2026-11-01-debugger-cv-builder`
+**Especificación:** `specs/220-core-closure-and-application-hardening`
+
+---
+
+## 1. Contexto de la Auditoría y Estado Consolidado
+
+Tras detectarse que la auditoría manual previa había sido declarada prematuramente sobre informes desactualizados de octubre, se implementó una estrategia de **descomposición en 5 Sub-Slices Atómicas**, ejecutadas secuencialmente en el entorno en vivo (`http://localhost:5173` y `https://localhost:44397`):
+
+1. **Sub-Slice 1: Muro Social y Chat (`Estudiante`):**
+   - Compositor con adjuntos y detector preventivo de exceso de URLs de YouTube (>2).
+   - Reacciones reactivas, apertura/repliegue de hilos de comentarios, píldora azul de participación activa y tarjeta de comentario destacado con like (`firstLikedComment`).
+   - Chat bidireccional con indicador luminoso de *"Tiempo real activo"* vía WebSocket.
+2. **Sub-Slice 2: Perfil, Avatar, Privacidad y CV ATS (`Estudiante` y `Egresado`):**
+   - `AvatarEditorModal.jsx`: controles de zoom/rotación/arrastre, cierre accesible con `Escape` y backdrop, propagación reactiva al Header.
+   - `CvEditorProfile.tsx`: switch de privacidad con actualización de Apollo Cache (`writeQuery`), estado `disabled` en vuelo, emisión de toast y persistencia tras recarga `F5`.
+   - **`GAP-PRIV-01` (Escudo de Privacidad):** Verificado en vivo que un seguimiento unilateral (`Follow`) por parte de un estudiante sobre un egresado privado **NO** expone teléfono, notas ni la descarga del CV ATS.
+   - `CVATSPrintTemplate.tsx`: maquetación editorial en A4 monocolumna con márgenes de 12 mm y reglas `@media print`.
+3. **Sub-Slice 3: Gestión Académica y Calificaciones (`Profesor` y `Estudiante`):**
+   - **`GAP-AUTH-02` (Aislamiento de Carrera):** Docente de Sistemas restringido estrictamente a su carrera (`ADS`), sin visibilidad de carreras ajenas.
+   - Carga de notas numéricas reglamentarias (0-10) con persistencia cruzada verificada en el perfil del estudiante.
+   - Erradicación global de la palabra `"anio"` en favor de la nomenclatura oficial (`1° año`, `2° año`, `3° año`).
+4. **Sub-Slice 4: Ecosistema B2B Laboral y Postulaciones (`Empleador` y `Estudiante`):**
+   - `/empleos/solicitud`: validación matemática de CUIT mediante Módulo 11 de AFIP y generación de código de seguimiento institucional.
+   - `/empleos`: publicación de vacante sin refresco forzado y visualización de postulantes en ficha ATS.
+   - Postulación de estudiante con mutación reactiva a pastilla verde deshabilitada `✓ Postulado` y aislamiento total de controles de empresa.
+5. **Sub-Slice 5: Moderación, Panel Administrador y Verificación de Temas (`Moderador` y `Admin`):**
+   - `ModerationReasonModal`: validación de motivo obligatorio, descarte por `Escape`/backdrop y remoción inmediata del post en `/feed`.
+   - `/admin`: aprobación de empresa B2B, trazabilidad inmutable del evento `HideInquiry` en `AuditLog` y protección estricta de cuentas `Administrador`.
+   - Consistencia de temas (*Clean Tech* vs. *Tech Noir*) con ratios WCAG AA/AAA (>7:1).
+   - Generación y actualización física en disco del informe consolidado: `docs/audit/full_audit/VISUAL_AUDIT_REPORT.md` (98.5% de cumplimiento).
+
+---
+
+## 2. Métricas Técnicas y Compuertas de Estabilidad
+
+- **Pruebas Automatizadas:** **750 pruebas en PASS** (389 xUnit backend + 361 Vitest frontend, 0 fallos, 0 omitidas).
+- **Compilación Dual:** .NET 8 Release (0 errores, 0 advertencias) y Vite 8 React 18 (`dist` generado limpiamente).
+- **Consola DevTools en Runtime:** Cero excepciones no controladas de JavaScript y 100% de operaciones GraphQL en `200 OK`.
+- **Higiene Git:** `git diff --check` limpio (cero errores de espacios en blanco o conflictos).
+
+---
+
+## 3. Misión para Canal 1: [OneITB] Auditoría & Arquitectura (6 Astra · Alto)
+
+Como Auditor Principal y Arquitecto Consultor, realiza el arbitraje final y emite tu dictamen sobre la solución consolidada:
+
+1. **Revisión del Informe Consolidado:**
+   - Inspecciona `docs/audit/full_audit/VISUAL_AUDIT_REPORT.md`. ¿La matriz de madurez (98.5%), la resolución de los hallazgos `VIS-HIGH-01` a `VIS-HIGH-05` y la trazabilidad de los 6 roles son consistentes con la arquitectura del sistema?
+2. **Auditoría de Invariantes de Seguridad y Autorización:**
+   - Evalúa la solidez de las soluciones verificadas en runtime:
+     * ¿Queda blindado el riesgo de `GAP-PRIV-01` ante seguidores en Apollo Cache y en vistas públicas?
+     * ¿Se mantiene la restricción de `UserCareer` (`GAP-AUTH-02`) como política freeze-safe adecuada para la defensa académica?
+     * ¿Es robusta la protección de cuentas administrativas contra auto-bloqueo o degradación?
+3. **Análisis de los 6 Componentes Frontend Modificados:**
+   - Analiza `GlobalSearch.jsx`, `NotificationBell.jsx`, `AvatarEditorModal.jsx`, `CvEditorProfile.tsx`, `UserProfile.tsx` y `Feed.jsx`. ¿Los event listeners de teclado y clicks exteriores están libres de fugas de memoria y efectos secundarios de re-renderizado?
+4. **Dictamen Final de Certificación:**
+   - Emite tu veredicto formal indicando si el estado actual de la plataforma, tanto en código como en evidencia visual y documental, **cumple con los requisitos para ser certificado oficialmente como Release Candidate (RC)** apto para la defensa académica.

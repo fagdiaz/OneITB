@@ -2,7 +2,7 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Última revisión de este índice** | 2026-11-09 (actualización puntual del paquete de defensa en §4; se conserva el corte de las revisiones históricas) |
+| **Última revisión de este índice** | 2026-11-13 (GOB-18; actualización tras verificación E2E de los 6 roles y accesibilidad en modales) |
 | **Estado funcional de referencia** | 117/117 ítems: 46 verificados `[V]` y 71 implementados `[I]`; Specs 202-218 son gates de calidad fuera del denominador |
 | **Clasificación del producto** | Release Candidate académico, core Feature Complete y Code Freeze operativo local |
 | **Situación de mesa** | La defensa planificada para el 7 de agosto de 2026 a las 09:00 no se realizó; no hay nueva fecha documentada |

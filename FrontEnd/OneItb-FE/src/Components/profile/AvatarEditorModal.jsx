@@ -222,6 +222,17 @@ export const AvatarEditorModal = ({
     });
   }, [clampOffset, imageVersion, zoom]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !saving) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, saving]);
+
   if (!isOpen) return null;
 
   const getCanvasScale = () => {
@@ -288,7 +299,15 @@ export const AvatarEditorModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Editor de avatar"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !saving) onClose();
+      }}
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
+    >
       <div className="grid max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950 dark:text-slate-100 dark:shadow-[0_28px_90px_rgba(0,0,0,0.55)] md:grid-cols-[0.95fr_1.05fr]">
         <section className="flex flex-col border-b border-slate-200 bg-slate-100/70 p-3 dark:border-white/10 dark:bg-slate-900/70 md:border-b-0 md:border-r">
           <div className="flex items-center justify-between gap-3">

@@ -137,6 +137,17 @@ export const UserProfile = () => {
     setAvatarFailed(false);
   }, [profile?.avatarUrl, targetUserId]);
 
+  useEffect(() => {
+    if (!showPrintPreview) return undefined;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowPrintPreview(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showPrintPreview]);
+
   const canViewSensitiveProfile = profile?.canViewSensitiveProfile !== false;
   const isFollowing = followOverride ?? Boolean(targetUserId && followedData?.myFollowedUserIds?.includes(targetUserId));
 
@@ -807,7 +818,15 @@ export const UserProfile = () => {
       </div>
       </div>
       {showPrintPreview && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/80 p-4 backdrop-blur-sm print:static print:inset-auto print:z-auto print:bg-white print:p-0 print:backdrop-blur-0">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Previsualización de CV ATS"
+          className="fixed inset-0 z-[100] bg-slate-950/80 p-4 backdrop-blur-sm print:static print:inset-auto print:z-auto print:bg-white print:p-0 print:backdrop-blur-0"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowPrintPreview(false);
+          }}
+        >
           <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-100 shadow-2xl print:block print:h-auto print:max-w-none print:overflow-visible print:rounded-none print:border-0 print:bg-white print:shadow-none">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 print:hidden">
               <div>
