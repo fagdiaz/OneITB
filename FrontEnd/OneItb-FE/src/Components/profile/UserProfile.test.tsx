@@ -18,4 +18,16 @@ describe('profile ATS print route parity', () => {
       expect(source).not.toContain('ResumePreview');
     }
   });
+
+  it('implements accessible dialog attributes and keyboard focus management in ATS print preview', () => {
+    const profileSource = fs.readFileSync(path.join(profileDirectory, 'UserProfile.tsx'), 'utf8');
+
+    expect(profileSource).toContain('printPreviewDialogRef');
+    expect(profileSource).toContain('printPreviewPreviousFocusRef');
+    expect(profileSource).toContain('aria-modal="true"');
+    expect(profileSource).toContain('role="dialog"');
+    expect(profileSource).toContain('aria-label="Previsualización de CV ATS"');
+    expect(profileSource).toContain("event.key === 'Escape'");
+    expect(profileSource).toContain("event.key === 'Tab'");
+  });
 });

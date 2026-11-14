@@ -21,7 +21,7 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
 ---
 ## [2026-11-14] - Remediation of Astra Audit Findings F01-F08 (Spec 220 / RC Stabilization) - branch: feature/2026-11-01-debugger-cv-builder
 
-**Alcance:** Remediación integral y verificación automatizada de los hallazgos F01 a F08 del dictamen `DICTAMEN_RC_15a60c4.md` (Canal 1 - Astra), cubriendo consistencia de caché en fallos de mutación, navegación compuesta en hilos de comentarios, accesibilidad modal (foco inicial, focus trap y restauración), formalizaciones de alcance para roles y gestión académica, y alineación métrica de suites dual-stack a 754 pruebas automatizadas (389 backend / 365 frontend).
+**Alcance:** Remediación integral y verificación automatizada de los hallazgos F01 a F08 de los dictámenes de Astra (`DICTAMEN_RC_15a60c4.md` y `RATIFICACION_499e402.md`), cubriendo consistencia de caché en fallos de mutación, navegación compuesta en hilos de comentarios, silenciamiento disciplinario inline para Moderador en Feed, ciclo desacoplado de foco modal (foco inicial, focus trap, preservación en rerender y restauración), formalizaciones y precisiones de alcance para roles y gestión académica AC-1/AC-2, y alineación métrica de suites dual-stack a 756 pruebas automatizadas (389 backend / 367 frontend).
 
 ### Tareas y Artefactos Integrados
 
@@ -32,24 +32,30 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
    - Prevención de concurrencia mediante `disabled={savingPrivacy || savingProfile}`.
    - Pruebas unitarias añadidas en `CvEditorProfile.lifecycle.test.tsx` (11/11 tests en PASS).
 
-2. **Navegación Selectiva por Comentario en Hilos de Publicación (F03 - `Feed.jsx`):**
+2. **Navegación Selectiva por Comentario y Preservación de Cierre en Feed (F03 - `Feed.jsx`):**
    - Clave de apertura reactiva compuesta: `targetKey = `${targetInquiryId}:${targetCommentId || ''}``.
-   - Navegación hacia un comentario distinto en la misma publicación reabre el hilo (`openThreads[targetInquiryId] = true`); refetch o rerender con la misma clave respeta el repliegue manual del usuario.
-   - Prueba unitaria de navegación añadida en `Feed.interactions.test.jsx` (5/5 tests en PASS).
+   - Navegación hacia un comentario distinto en la misma publicación reabre el hilo (`openThreads[targetInquiryId] = true`); refetch o navegación con la misma clave respeta estrictamente el repliegue manual del usuario.
+   - Pruebas unitarias añadidas y ampliadas en `Feed.interactions.test.jsx` demostrando apertura selectiva y preservación de cierre ante refetch (6/6 tests en PASS).
 
-3. **Accesibilidad, Trampa de Foco y Restauración (F06 - `AvatarEditorModal.jsx` y `UserProfile.tsx`):**
-   - `AvatarEditorModal`: foco inicial automático, confinamiento cíclico de foco (`Tab`/`Shift+Tab`), atajo `Escape` y backdrop (inhabilitados durante guardado) y restauración de foco al botón disparador (`previousFocusRef`). Pruebas añadidas en `AvatarEditorModal.test.jsx` (3/3 tests en PASS).
-   - `UserProfile`: modal de previsualización ATS con `printPreviewDialogRef`, `tabIndex={-1}`, `role="dialog"`, `aria-modal="true"`, foco inicial y focus trap accesible.
+3. **Silenciamiento Disciplinario Inline para Moderador en Feed (F04 - `Feed.jsx`):**
+   - Incorporación directa de la mutación `SILENCE_USER` en `Feed.jsx` accesible para roles `Moderador` y `Administrador`.
+   - Modal disciplinario interactivo para sancionar autores de publicaciones (24 hs, 72 hs, 168 hs) con registro inmutable en `AuditLog`, respetando la barrera constitucional que preserva `/admin` como exclusivo de Administrador.
+   - Prueba unitaria añadida en `Feed.interactions.test.jsx` verificando el flujo completo de silenciamiento por Moderador.
 
-4. **Formalizaciones de Alcance y Precisiones Documentales (F04, F05, F08 - `VISUAL_AUDIT_REPORT.md`):**
-   - F04: Formalización de que el Moderador actúa inline en `/feed` con registro en `AuditLog`, mientras `/admin` permanece restringida a `Administrador` por barrera constitucional (`roleRoutingMatrix.test.jsx:137`).
-   - F05: Formalización de que la gestión de notas opera bajo la política freeze-safe de carrera (`UserCareer` / `GAP-AUTH-02`), difiriendo comisión/RowVersion como alcance futuro.
-   - F08: Margen ATS corregido a 12 mm (`useCvAtsPrint.ts:15`), `firstLikedComment` alineado a primer comentario cronológico con like del usuario actual, identidades de `GAP-PRIV-01` explicitadas y fórmula de cumplimiento 98.5% documentada. Estado ajustado a "Release Candidate condicionado a cierre de gates".
+4. **Desacoplamiento de Foco y Accesibilidad Modal Robusta (F06 - `AvatarEditorModal.jsx` y `UserProfile.tsx`):**
+   - `AvatarEditorModal`: desacoplamiento del ciclo de apertura/cierre respecto a dependencias volátiles (`onClose`, `saving`) mediante `handlersRef`. El foco anterior y foco inicial se programan únicamente en transiciones de `isOpen`.
+   - Preservación comprobada de foco activo ante re-renderizados del componente padre.
+   - Confinamiento estricto de foco (`Tab` del último al primero, `Shift+Tab` del primero al último) con aserciones activas (`expect(...).toHaveFocus()`), bloqueo de `Escape` durante `saving`, y restauración limpia de foco al botón disparador al cerrar.
+   - Pruebas exhaustivas verificadas en `AvatarEditorModal.test.jsx` (3/3 tests en PASS) y en `UserProfile.test.tsx` (2/2 tests en PASS).
 
-5. **Reconciliación Métrica Oficial (F01, F07 - `ROADMAP.md`):**
+5. **Formalizaciones de Alcance, Desglose 296/300 y AC-1/AC-2 (F01, F05, F08 - `VISUAL_AUDIT_REPORT.md` / `spec.md`):**
+   - F05 / AC-1 y AC-2: Documentación precisa del estado de implementación: 100% implementado y probado en backend (`SaveSectionGradeAsync`, `GetMyCourseSectionsAsync`, `IssueRegularStudentCertificateAsync`, comisiones, concurrencia optimista `RowVersion` y `ConcurrencyConflict`). En frontend, la pantalla actual opera bajo la política freeze-safe de carrera (`UserCareer`), delimitando los selectores de comisión como integración UI pendiente.
+   - F08: Desglose explícito de los 296/300 ítems (98.5%) identificando las 4 verificaciones no aprobadas correspondientes a las fronteras documentadas del release candidate. Margen ATS 12 mm e identidades `GAP-PRIV-01` ratificadas.
+
+6. **Reconciliación Métrica Oficial (F07 - `ROADMAP.md`):**
    - Backend: 389/389 en PASS (0 omitidas, Release mode net8.0).
-   - Frontend: 365/365 en PASS (68 suites en Vitest).
-   - Total regresión: 754 pruebas automatizadas en PASS (0 fallos).
+   - Frontend: 367/367 en PASS (68 suites en Vitest).
+   - Total regresión automatizada: 756 pruebas en PASS (0 fallos).
 
 ---
 ## [2026-11-13] - E2E Interactive Verification, Modal Accessibility & Six-Role Audit Gate (Spec 219 / GOB-20261113-18) - branch: feature/2026-11-01-debugger-cv-builder

@@ -224,6 +224,11 @@ export const AvatarEditorModal = ({
 
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const handlersRef = useRef({ onClose, saving });
+
+  useEffect(() => {
+    handlersRef.current = { onClose, saving };
+  }, [onClose, saving]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -239,8 +244,9 @@ export const AvatarEditorModal = ({
     });
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && !saving) {
-        onClose();
+      const currentHandlers = handlersRef.current;
+      if (event.key === 'Escape' && !currentHandlers.saving) {
+        currentHandlers.onClose?.();
         return;
       }
       if (event.key === 'Tab') {
@@ -271,7 +277,7 @@ export const AvatarEditorModal = ({
       document.removeEventListener('keydown', handleKeyDown);
       previousFocusRef.current?.focus?.();
     };
-  }, [isOpen, onClose, saving]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -7,24 +7,29 @@ import { GET_CAREERS, GET_MY_CAREERS } from '../../data/graphql/queries/careers'
 import { GET_SUBJECTS } from '../../data/graphql/queries/subjects';
 import { GET_MY_FOLLOWED_USER_IDS } from '../../data/graphql/social';
 import { ADD_COMMENT, CREATE_INQUIRY } from '../../data/graphql/mutations/inquiries';
+import { SILENCE_USER } from '../../data/graphql/mutations/admin';
 
 const {
   useInquiryPageMock,
   uploadAttachmentsMock,
   createInquiryMock,
   addCommentMock,
+  silenceUserMock,
+  authConfig,
 } = vi.hoisted(() => ({
   useInquiryPageMock: vi.fn(),
   uploadAttachmentsMock: vi.fn(),
   createInquiryMock: vi.fn(),
   addCommentMock: vi.fn(),
+  silenceUserMock: vi.fn(),
+  authConfig: { role: 'Estudiante' },
 }));
 
 vi.mock('../../hooks/useAuth', () => ({
   default: () => ({
     auth: {
       id: 'user-1',
-      role: 'Estudiante',
+      role: authConfig.role,
       firstName: 'Estu',
       lastName: 'Uno',
     },
@@ -76,6 +81,7 @@ vi.mock('@apollo/client', async (importOriginal) => {
     useMutation: (doc) => {
       if (doc === CREATE_INQUIRY) return [createInquiryMock, { loading: false }];
       if (doc === ADD_COMMENT) return [addCommentMock, { loading: false }];
+      if (doc === SILENCE_USER) return [silenceUserMock, { loading: false }];
       return [vi.fn().mockResolvedValue({ data: {} }), { loading: false }];
     },
   };
@@ -136,9 +142,11 @@ describe('Feed attachment & comment interaction regressions', () => {
   });
 
   beforeEach(() => {
+    authConfig.role = 'Estudiante';
     uploadAttachmentsMock.mockReset();
     createInquiryMock.mockReset();
     addCommentMock.mockReset();
+    silenceUserMock.mockReset();
 
     uploadAttachmentsMock.mockResolvedValue([{
       fileUrl: '/uploads/evidencia.png',
@@ -426,5 +434,80 @@ describe('Feed attachment & comment interaction regressions', () => {
     await waitFor(() => {
       expect(toggleButton).toHaveAttribute('aria-expanded', 'true');
     });
+
+    // Manually collapse thread again while on targetCommentId=c-2
+    fireEvent.click(toggleButton);
+    expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
+
+    // Simulate navigation/refetch with the same targetKey ('post-1:c-2')
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a c-2' }));
+
+    // Closed state is strictly preserved because targetKey has not changed
+    expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('allows a Moderator to trigger disciplinary silence on an inquiry author directly from the feed', async () => {
+    authConfig.role = 'Moderador';
+    silenceUserMock.mockResolvedValue({
+      data: {
+        silenceUser: {
+          id: 'user-other',
+          success: true,
+          message: 'Usuario silenciado por 24 horas.',
+        },
+      },
+    });
+
+    useInquiryPageMock.mockReturnValue({
+      items: [
+        makePost({
+          id: 'post-mod',
+          user: {
+            id: 'user-other',
+            firstName: 'Infractor',
+            lastName: 'Social',
+            role: 'Estudiante',
+          },
+        }),
+      ],
+      totalCount: 1,
+      hasNextPage: false,
+      loading: false,
+      loadingMore: false,
+      error: null,
+      loadMoreError: null,
+      loadMoreStatus: 'idle',
+      lastAppendedCount: 0,
+      refetch: vi.fn().mockResolvedValue({}),
+      loadMore: vi.fn(),
+    });
+
+    renderFeed();
+
+    // Open post menu
+    const menuButton = screen.getByRole('button', { name: 'Abrir acciones de publicacion' });
+    fireEvent.click(menuButton);
+
+    // Click silence button for moderator
+    const silenceAction = screen.getByRole('button', { name: 'Silenciar autor (Moderacion)' });
+    fireEvent.click(silenceAction);
+
+    // Dialog appears with author information
+    const dialog = screen.getByRole('dialog', { name: /Silenciar usuario por moderación/i });
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveTextContent('Infractor Social');
+
+    // Confirm silence
+    const confirmButton = screen.getByRole('button', { name: /Confirmar silencio/i });
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(silenceUserMock).toHaveBeenCalledWith({
+        variables: { userId: 'user-other', hours: 24 },
+      });
+    });
+
+    expect(await screen.findByText('Usuario silenciado por 24 horas.')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /Silenciar usuario por moderación/i })).not.toBeInTheDocument();
   });
 });

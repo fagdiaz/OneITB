@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AvatarEditorModal } from './AvatarEditorModal';
 
@@ -71,28 +71,83 @@ describe('AvatarEditorModal cleanup', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('handles Escape key to close and traps Tab focus within modal', () => {
-    const onClose = vi.fn();
-    render(
-      <AvatarEditorModal
-        isOpen
-        imageSrc="data:image/jpeg;base64,avatar"
-        originalFileName="avatar.jpg"
-        onClose={onClose}
-        onSave={vi.fn()}
-      />,
-    );
+  it('manages full focus lifecycle: initial focus, Tab/Shift+Tab trapping, focus preservation on rerender, Escape blocked while saving, and restoration upon close', async () => {
+    const TestParent = () => {
+      const [isOpen, setIsOpen] = React.useState(false);
+      const [saving, setSaving] = React.useState(false);
+      const [renderCount, setRenderCount] = React.useState(0);
 
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(onClose).toHaveBeenCalledTimes(1);
+      return (
+        <div>
+          <button type="button" onClick={() => setIsOpen(true)}>
+            Abrir Avatar
+          </button>
+          <button type="button" onClick={() => setSaving((s) => !s)}>
+            Toggle Saving ({saving ? 'saving' : 'idle'})
+          </button>
+          <button type="button" onClick={() => setRenderCount((c) => c + 1)}>
+            Rerender ({renderCount})
+          </button>
+          <AvatarEditorModal
+            isOpen={isOpen}
+            imageSrc="data:image/jpeg;base64,avatar"
+            originalFileName="avatar.jpg"
+            saving={saving}
+            onClose={() => setIsOpen(false)}
+            onSave={vi.fn()}
+          />
+        </div>
+      );
+    };
 
-    const closeButton = screen.getByRole('button', { name: 'Cerrar editor de avatar' });
-    const updateButton = screen.getByRole('button', { name: 'Actualizar Imagen' });
+    render(<TestParent />);
 
-    updateButton.focus();
+    const openerButton = screen.getByRole('button', { name: 'Abrir Avatar' });
+    openerButton.focus();
+    expect(openerButton).toHaveFocus();
+
+    // Open modal
+    fireEvent.click(openerButton);
+
+    // Initial focus enters modal (close button or first focusable)
+    const closeButton = await screen.findByRole('button', { name: 'Cerrar editor de avatar' });
+    await waitFor(() => {
+      expect(closeButton).toHaveFocus();
+    });
+
+    const resetButton = screen.getByRole('button', { name: 'Restablecer ajustes' });
+    const rotateLeftButton = screen.getByRole('button', { name: /Rotar izq/i });
+
+    // Focus an intermediate control
+    rotateLeftButton.focus();
+    expect(rotateLeftButton).toHaveFocus();
+
+    // Rerender parent - focus must NOT be reset or stolen back to opener or closeButton!
+    fireEvent.click(screen.getByRole('button', { name: /Rerender/ }));
+    expect(rotateLeftButton).toHaveFocus();
+
+    // Tab trap: from last focusable (resetButton) pressing Tab wraps to first focusable (closeButton)
+    resetButton.focus();
+    expect(resetButton).toHaveFocus();
     fireEvent.keyDown(document, { key: 'Tab' });
+    expect(closeButton).toHaveFocus();
 
-    closeButton.focus();
+    // Shift+Tab trap: from first focusable (closeButton) pressing Shift+Tab wraps to last focusable (resetButton)
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(resetButton).toHaveFocus();
+
+    // Toggle saving = true: Escape must be blocked
+    fireEvent.click(screen.getByRole('button', { name: /Toggle Saving/ }));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Toggle saving = false: Escape closes and restores focus to openerButton
+    fireEvent.click(screen.getByRole('button', { name: /Toggle Saving/ }));
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(openerButton).toHaveFocus();
+    });
   });
 });

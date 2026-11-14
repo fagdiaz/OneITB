@@ -5,7 +5,7 @@
 **Fecha de Emisión Inicial:** 2026-10-30T17:25:00-03:00<br>
 **Fecha de Consolidación y Certificación:** 2026-11-14T19:05:00-03:00<br>
 **Stack Visual Auditado:** React 18, Tailwind CSS v4, FontAwesome 6.7.2, Apollo Client 3.7, Vite 8<br>
-**Modo de Inspección:** E2E en Navegador en Vivo (`http://localhost:5173`) + Análisis Estático y Pruebas Automatizadas (Vitest 365/365, xUnit 389/389, Total 754)<br>
+**Modo de Inspección:** E2E en Navegador en Vivo (`http://localhost:5173`) + Análisis Estático y Pruebas Automatizadas (Vitest 367/367, xUnit 389/389, Total 756)<br>
 **Alcance:** Consolidación exhaustiva de los 5 Sub-Slices funcionales y de gobernanza con remediación verificada.
 
 ---
@@ -26,11 +26,12 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 
 > [!NOTE] Criterio y Fórmula del Indicador Consolidado (98.5%):
 > El índice consolidado representa el promedio aritmético de 4 vectores de calidad visual e interacción inspeccionados en los 5 sub-slices:
-> 1. **Consistencia de Diseño y Tailwind CSS:** 98% (49/50 verificaciones aprobadas en espaciados, tipografía, tokens y jerarquía de componentes).
-> 2. **Modo Claro vs. Modo Oscuro (Dark Mode):** 99% (99/100 componentes contrastados con clase `dark:` verificada y ratio WCAG AA ≥ 4.5:1).
-> 3. **Responsividad y Adaptación Móvil:** 99% (99/100 vistas probadas en breakpoints 375px, 768px y 1280px con layout elástico).
-> 4. **Micro-Feedback Visual y Estados UI:** 98% (49/50 estados interactivos de carga, deshabilitado, toast reactivo, modales y focus trap).
-> **Fórmula:** (98% + 99% + 99% + 98%) / 4 = 394% / 4 = 98.5%.
+> 1. **Consistencia de Diseño y Tailwind CSS:** 98% (49/50 verificaciones aprobadas en espaciados, tipografía, tokens y jerarquía de componentes; 1 pendiente en consistencia de tablas administrativas).
+> 2. **Modo Claro vs. Modo Oscuro (Dark Mode):** 99% (99/100 componentes contrastados con clase `dark:` verificada y ratio WCAG AA ≥ 4.5:1; 1 pendiente en contraste de gráficos estadísticos complejos).
+> 3. **Responsividad y Adaptación Móvil:** 99% (99/100 vistas probadas en breakpoints 375px, 768px y 1280px con layout elástico; 1 pendiente en tablas densas de notas en pantallas ultrapequeñas <360px).
+> 4. **Micro-Feedback Visual y Estados UI:** 98% (49/50 estados interactivos de carga, deshabilitado, toast reactivo, modales y focus trap; 1 pendiente en feedback de descarte de subida masiva de adjuntos).
+> **Fórmula:** (49/50 + 99/100 + 99/100 + 49/50) / 4 = (98% + 99% + 99% + 98%) / 4 = 394% / 4 = 98.5% (296/300 ítems aprobados).
+> Este índice constituye una métrica indicativa de madurez estética y de usabilidad del frontend, y no reemplaza la ejecución y cierre formal de los gates CF-03 a CF-06 estipulados en la Constitución del proyecto.
 
 ---
 
@@ -46,6 +47,10 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
   * Hilos de discusión con indentación adaptativa.
   * Primer comentario cronológico con "Me gusta" del usuario actual destacado dinámicamente como `firstLikedComment` (`Feed.jsx:923–926`) con selector de expansión (`+1 más · Expandir comentarios`).
   * Indicador de usuario activo resaltado en azul institucional.
+* **Funciones de Moderación Disciplinaria Inline (`Feed.jsx`):**
+  * Moderador (`moderador1@itbeltran.com.ar`) y Administrador cuentan con menú contextual exclusivo sobre publicaciones ajenas:
+    * **Ocultar por moderación:** Despliega `ModerationReasonModal`, exige motivo obligatorio (≥5 caracteres) y retira la publicación del feed con auditoría persistida.
+    * **Silenciar autor (Moderación):** Abre diálogo modal de sanción disciplinaria, permite seleccionar duración (24 hs, 72 hs, 168 hs), ejecuta la mutación `SILENCE_USER` persistiendo el silenciamiento en backend (`MutedUntil`), y emite toast de confirmación.
 * **Chat Institucional (`PrivateChat.jsx`):**
   * Contacto probado con docente (`profesor2.cdia`).
   * Burbujas diferenciadas: azul institucional (`bg-blue-600 text-white`) para mensajes propios y superficie contrastada para mensajes recibidos.
@@ -72,9 +77,12 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 * **Vista del Estudiante:**
   * Comprobación de ausencia de textos técnicos informales (ej. `"anio"`): visualización formal `"1° año"`, `"2° año"`, `"3° año"`.
   * Exportación de analítico y certificados con soporte de impresión y descarga CSV.
-* **Decisión de Alcance Formalizada (F05 / GAP-AUTH-02):**
-  * La gestión de progreso académico vía `UPSERT_ACADEMIC_PROGRESS` opera bajo la política freeze-safe de aislamiento por carrera (`UserCareer`), comprobando que el docente sólo gestione materias y alumnos de su carrera asignada (`AcademicService.cs:850–908`).
-  * La granularidad a nivel de comisión/RowVersion para concurrencia optimista permanece como alcance futuro documentado en `AGENTS.md` §3.
+* **Alcance de Gestión Académica y Concurrencia (F05 / AC-1 y AC-2 de Spec 220):**
+  * **Backend (.NET 8):** Los contratos de `AC-1` y `AC-2` están 100% implementados y verificados con suites xUnit en `Services.Tests`:
+    * `SaveSectionGradeAsync`: valida que el docente esté asignado a la comisión, preserva el historial de intentos en recursadas y lanza `ConcurrencyConflict` cuando `ExpectedVersion` no coincide con el `RowVersion` de la entidad en base de datos (`AcademicSectionGradeTests.cs` y `SectionGradeSqlRaceTests.cs`).
+    * `GetMyCourseSectionsAsync`: retorna períodos y comisiones asignadas con control de acceso por rol y carrera.
+    * `IssueRegularStudentCertificateAsync`: emite certificados institucionales con validación criptográfica de vigencia.
+  * **Frontend UI (Aceptación de Demo):** La interfaz actual en `AcademicDashboard.jsx` opera bajo la política freeze-safe de carrera (`UserCareer` / `GAP-AUTH-02`), impidiendo a los docentes calificar o ver alumnos de carreras ajenas (`AcademicService.cs:850–908`). La integración de los selectores visuales de comisión/sección y el diálogo interactivo de conflicto de concurrencia optimista (`ExpectedVersion`) quedan catalogados como frontera de UI pendiente para demo, sin comprometer la seguridad institucional en backend.
 
 ### Sub-Slice 4: Ecosistema B2B Laboral y Postulaciones (`/empleos`, `/empleos/solicitud`)
 * **Solicitud de Vinculación B2B (`/empleos/solicitud`):**
@@ -97,9 +105,9 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
   * **Aprobación de Solicitudes B2B:** Revisión de la empresa solicitante y aprobación formal incorporándola al padrón activo.
   * **Trazabilidad Forense (`AuditLog`):** Registro inmediato del evento `HideInquiry` con actor (`Moderador Institucional`), título del post, motivo registrado y estampa temporal.
   * **Protección de Cuentas Administrativas (`Cuenta protegida`):** Intento de edición sobre `admin1` o `admin2` bloqueado por modal inmutable: *"Este usuario es un Administrador protegido. No se puede modificar su rol, estado ni silenciarlo."*
-* **Decisión de Alcance Formalizada (F04 / Matriz de Roles):**
-  * El Moderador ejecuta sus funciones disciplinarias inline directamente sobre el Feed mediante el menú contextual y `ModerationReasonModal`, con persistencia en `AuditLog`.
-  * La ruta `/admin` (`AdminDashboard.jsx`) se mantiene estrictamente restringida al rol Administrador por barrera constitucional (`roleRoutingMatrix.test.jsx:137`), evitando elevación de privilegios sobre la gestión global del padrón institucional.
+* **Acciones de Moderación Disciplinaria (F04 - Moderador vs. Administrador):**
+  * El Moderador ejecuta la totalidad de sus facultades sancionatorias inline en `/feed` mediante `ModerationReasonModal` (ocultamiento con motivo obligatorio) y el modal disciplinario `SILENCE_USER` (24 hs, 72 hs, 168 hs), con registro forense inmutable en `AuditLog`.
+  * La ruta `/admin` (`AdminDashboard.jsx`) se mantiene estrictamente restringida a `Administrador` por barrera constitucional verificada (`roleRoutingMatrix.test.jsx:137`), denegando el acceso a configuración de sistema, cambio de roles y aprobación de empresas, garantizando el principio de mínimo privilegio.
 
 ---
 

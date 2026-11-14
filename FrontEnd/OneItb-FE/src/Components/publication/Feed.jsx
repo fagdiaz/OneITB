@@ -38,6 +38,7 @@ import {
   TOGGLE_COMMENT_REACTION,
   TOGGLE_REACTION,
 } from '../../data/graphql/mutations/inquiries';
+import { SILENCE_USER } from '../../data/graphql/mutations/admin';
 
 const REACTION_FRAGMENT = gql`
   fragment FeedReaction on Reaction {
@@ -291,6 +292,9 @@ export const Feed = () => {
   const [interactWithUser] = useMutation(INTERACT_WITH_USER);
   const [moderateInquiryVisibility, { loading: moderatingInquiry }] = useMutation(MODERATE_INQUIRY_VISIBILITY);
   const [moderateCommentVisibility, { loading: moderatingComment }] = useMutation(MODERATE_COMMENT_VISIBILITY);
+  const [silenceUser, { loading: silencingUser }] = useMutation(SILENCE_USER);
+  const [silenceModalTarget, setSilenceModalTarget] = useState(null);
+  const [silenceHours, setSilenceHours] = useState(24);
   const [followOverrides, setFollowOverrides] = useState({});
 
   const careers = careersData?.careers ?? [];
@@ -634,6 +638,23 @@ export const Feed = () => {
       showFeedback('success', 'Contenido ocultado y decision registrada.');
     } catch (error) {
       setModerationError(error.message || 'No se pudo aplicar la moderacion.');
+    }
+  };
+
+  const handleSilenceUser = async (hours = silenceHours) => {
+    if (!silenceModalTarget?.id) return;
+    try {
+      const response = await silenceUser({
+        variables: { userId: silenceModalTarget.id, hours: Number(hours) },
+      });
+      if (response.data?.silenceUser?.success) {
+        showFeedback('success', response.data.silenceUser.message || `Usuario silenciado por ${hours} horas.`);
+        setSilenceModalTarget(null);
+      } else {
+        showFeedback('error', response.data?.silenceUser?.message || 'No se pudo silenciar al usuario.');
+      }
+    } catch (err) {
+      showFeedback('error', err.message || 'Error al aplicar silencio institucional.');
     }
   };
 
@@ -991,7 +1012,10 @@ export const Feed = () => {
                     </>
                   )}
                   {isModerator && post.user?.id !== auth.id && (
-                    <button type="button" onClick={() => { setModerationTarget({ kind: 'inquiry', id: post.id }); setModerationError(null); setOpenMenuId(null); }} className="block w-full border-t border-slate-100 px-4 py-2 text-left text-amber-700 hover:bg-amber-50">Ocultar por moderacion</button>
+                    <>
+                      <button type="button" onClick={() => { setModerationTarget({ kind: 'inquiry', id: post.id }); setModerationError(null); setOpenMenuId(null); }} className="block w-full border-t border-slate-100 px-4 py-2 text-left text-amber-700 hover:bg-amber-50">Ocultar por moderacion</button>
+                      <button type="button" onClick={() => { setSilenceModalTarget(post.user); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-amber-800 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-white/[0.05]">Silenciar autor (Moderacion)</button>
+                    </>
                   )}
                 </div>
                 )}
@@ -1204,6 +1228,81 @@ export const Feed = () => {
         }}
         onConfirm={handleModerationConfirm}
       />
+
+      {silenceModalTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Silenciar usuario por moderación"
+          className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !silencingUser) setSilenceModalTarget(null);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                Silenciar Usuario (Moderación)
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSilenceModalTarget(null)}
+                disabled={silencingUser}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Cerrar modal de silenciamiento"
+              >
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+              Aplica una sanción disciplinaria institucional a <strong>{silenceModalTarget.firstName} {silenceModalTarget.lastName}</strong> impidiéndole publicar o comentar en la plataforma durante el período seleccionado.
+            </p>
+            <div className="mt-4 space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Duración de la sanción
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: '24 hs', hours: 24 },
+                  { label: '3 días', hours: 72 },
+                  { label: '1 semana', hours: 168 },
+                ].map((opt) => (
+                  <button
+                    key={opt.hours}
+                    type="button"
+                    onClick={() => setSilenceHours(opt.hours)}
+                    className={`rounded-xl border py-2 text-xs font-bold transition ${
+                      silenceHours === opt.hours
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setSilenceModalTarget(null)}
+                disabled={silencingUser}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSilenceUser(silenceHours)}
+                disabled={silencingUser}
+                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-700 disabled:opacity-50"
+              >
+                {silencingUser ? 'Silenciando...' : `Confirmar silencio (${silenceHours} hs)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
