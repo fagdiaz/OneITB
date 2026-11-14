@@ -5,7 +5,8 @@
 **Nivel de Razonamiento:** Alto
 **Fecha de Handoff:** 2026-11-14
 **Rama Git Activa:** feature/2026-11-01-debugger-cv-builder
-**Commit Base:** 15a60c4a8b582d189544cc213a7b22ec2ab9bcef (con diff verificado en worktree listo para commit)
+**Commit Base Anterior:** 15a60c4a8b582d189544cc213a7b22ec2ab9bcef
+**Commit de Remediación:** 499e402b1d209a579ae6c9f93ac2f6fae40afdcc (pushed a origin/feature/2026-11-01-debugger-cv-builder)
 **Puntero Spec:** specs/220-core-closure-and-application-hardening
 
 ---
@@ -76,7 +77,7 @@ Someter a dictamen de ratificación final de Astra (Canal 1, Razonamiento Alto) 
 
 ---
 
-## 4. Archivos Modificados en Worktree Listos para Commit
+## 4. Archivos Modificados e Integrados en Commit 499e402
 
 * `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx` (F02)
 * `FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.lifecycle.test.tsx` (F02 test)
