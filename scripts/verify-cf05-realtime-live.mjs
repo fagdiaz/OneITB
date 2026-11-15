@@ -24,9 +24,13 @@ function assert(condition, message) {
   }
 }
 
+let watchdogCleanup = null;
 // Global safety timeout (35 seconds) to guarantee the process is finite
 const globalTimeout = setTimeout(() => {
-  console.error('\n[FATAL ERROR IN CF-05 RUNNER]: Global timeout of 35s exceeded. Process terminated.');
+  console.error('\n[FATAL ERROR IN CF-05 RUNNER]: Global timeout of 35s exceeded. Executing emergency cleanup before exit.');
+  if (watchdogCleanup) {
+    try { watchdogCleanup(); } catch (_) {}
+  }
   process.exit(1);
 }, 35000);
 globalTimeout.unref();
@@ -103,6 +107,13 @@ async function run() {
   let clientC = null;
   let unsubB = null;
   let unsubC = null;
+
+  watchdogCleanup = () => {
+    if (unsubB) { try { unsubB(); } catch (_) {} }
+    if (unsubC) { try { unsubC(); } catch (_) {} }
+    if (clientB) { try { clientB.dispose(); } catch (_) {} }
+    if (clientC) { try { clientC.dispose(); } catch (_) {} }
+  };
 
   try {
     // Step 1: Authentication of the 3 roles via Kestrel /graphql
@@ -456,15 +467,22 @@ async function run() {
       matches: true,
     });
 
-    // Step 8: RT-06 Transport Disposal & Identity Re-Authentication Check
-    logEvent('RT-06', 'Disposing Session A/B transports and asserting clean re-authentication as Session C');
+    // Re-verify Observer C at end of test window to confirm absence of late leaked frames
+    assert(!cSubscriptionError, `Observer C subscription experienced an error during test window: ${cSubscriptionError}`);
+    assert(
+      cReceivedFrames.length === 0,
+      `Late topic isolation breach: Observer C received ${cReceivedFrames.length} frames at end of test window`
+    );
+
+    // Step 8: RT-06 Transport Identity Resolution by Token (me Query)
+    logEvent('RT-06', 'Resolving identity for Session C via me query with existing Bearer token (teardown occurs in finally)');
     const meQuery = `query Me { me { id email role } }`;
     const meResultC = await httpGraphQl(meQuery, {}, sessionC.token);
     assert(meResultC?.me?.id === sessionC.id, `Re-authenticated user ID mismatch: expected ${sessionC.id}, got ${meResultC?.me?.id}`);
     assert(meResultC?.me?.id !== sessionA.id, `Transport identity leak: Session C resolved to Session A ID ${sessionA.id}`);
     assert(meResultC?.me?.role === 'Moderador', `Re-authenticated user role mismatch: expected Moderador, got ${meResultC?.me?.role}`);
 
-    logEvent('RT-06', 'VERIFIED: Transport re-authentication confirmed with exact Session C identity (Note: UI logout/cache purge is a browser UI concern)', {
+    logEvent('RT-06', 'VERIFIED: Identity resolution for Session C confirmed without identity mixture (Note: Interactive UI logout & Apollo in-memory cache purge belong to the browser UI domain)', {
       currentUserId: meResultC.me.id,
       currentUserRole: meResultC.me.role,
       matchesExpectedUserC: true,

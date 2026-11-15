@@ -91,11 +91,18 @@ try {
     # 2. Negative Control Simulations (Validating checker falsifiability: each must FAIL with exit code 1)
     Write-Host "`n[CF-05 ORCHESTRATOR] Executing Negative Control Simulations to verify checker falsifiability..." -ForegroundColor Magenta
 
-    $negativeScenarios = @("id-mismatch", "leak-to-c", "observer-error", "short-wait")
+    $negativeScenarios = @(
+        @{ Scenario = "id-mismatch"; ExpectedPattern = "Message 1 ID mismatch" },
+        @{ Scenario = "leak-to-c"; ExpectedPattern = "Topic isolation violation" },
+        @{ Scenario = "observer-error"; ExpectedPattern = "Observer C subscription experienced" },
+        @{ Scenario = "short-wait"; ExpectedPattern = "below the declared minimum threshold" }
+    )
     $negativeResults = @()
 
-    foreach ($scenario in $negativeScenarios) {
-        Write-Host "  -> Running negative control: $scenario (expected exit code 1)..." -ForegroundColor Yellow
+    foreach ($item in $negativeScenarios) {
+        $scenario = $item.Scenario
+        $expectedPattern = $item.ExpectedPattern
+        Write-Host "  -> Running negative control: $scenario (expected exit code 1 and assertion '$expectedPattern')..." -ForegroundColor Yellow
         $prevEAP = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
         $negOutput = & node $nodeScript "http://127.0.0.1:$Port" "ws://127.0.0.1:$Port/graphql" "--simulate-negative=$scenario" 2>&1
@@ -114,7 +121,11 @@ try {
             throw "Negative control '$scenario' did NOT fail as expected! Returned exit code $negExitCode instead of 1."
         }
 
-        Write-Host "     VERIFIED: Negative scenario '$scenario' correctly threw AssertionError and exited with code 1." -ForegroundColor Green
+        if (-not $failureMsg -or $failureMsg -notmatch $expectedPattern) {
+            throw "Negative control '$scenario' exited with 1 but did not match expected assertion pattern '$expectedPattern'! Captured: $failureMsg"
+        }
+
+        Write-Host "     VERIFIED: Negative scenario '$scenario' threw expected assertion ('$expectedPattern') and exited with code 1." -ForegroundColor Green
         $negativeResults += [pscustomobject]@{
             Scenario = $scenario
             ExpectedExitCode = 1

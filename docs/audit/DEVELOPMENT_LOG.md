@@ -19,6 +19,26 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-15] - Resolution of Dictamen 19c5296: Exact Assertion Pattern Enforcement, Roadmap Reconciliation & Transport Acceptance (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Cierre de Observaciones de Dictamen 19c5296 (15/11/2026)
+
+**Alcance:** Subsanación rigurosa de las observaciones finales sobre el certificador y reconciliación documental dictaminadas por Astra en `DICTAMEN_19c5296.md` (código de producción y tests `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` 100% inmutable):
+
+1. **Ajuste del Orquestador de Controles Negativos (`scripts/run-cf05-live-validation.ps1`):**
+   - El orquestador ahora exige de forma combinada el código de salida 1 Y la coincidencia regex estricta con el patrón de aserción esperado para cada escenario (`id-mismatch` -> `Message 1 ID mismatch`; `leak-to-c` -> `Topic isolation violation`; `observer-error` -> `Observer C subscription experienced`; `short-wait` -> `below the declared minimum threshold`). Cualquier salida 1 por error de red o autenticación es rechazada.
+   - Ejecutado con 100% PASS en la corrida principal (demora natural `2316 ms >= 1300 ms`, persistencia re-leída en BD `isRead = true`, 0 frames en C) y 4/4 negativos verificados con sus aserciones exactas en `docs/audit/CF05_LIVE_RUNNER_OUTPUT.md`.
+
+2. **Ajustes en Runner de Transporte (`scripts/verify-cf05-realtime-live.mjs`):**
+   - Se añadió la re-verificación de Observer C al final de la ventana de prueba (post segundo mensaje) para ratificar que no se filtraron frames tardíos (`Late topic isolation breach`).
+   - El watchdog de timeout global ejecuta la rutina de disposición de emergencia antes del `process.exit(1)`.
+   - RT-06 fue renombrado con precisión como resolución de identidad por token de Sesión C (`me`), explicitando que el teardown de transportes se efectúa posteriormente en `finally`.
+
+3. **Reconciliación Documental en Roadmap y Manifiesto:**
+   - Se corrigió el párrafo de narrativa en `docs/project_docs/ROADMAP.md:669` que declaraba el cierre global de CF-01..06, reconciliándolo con las filas de la tabla donde CF-05 permanece parcial y CF-06 abierta / no ratificada.
+   - Se corrigió el SHA completo en el handoff `prompt.txt` al valor real `19c5296c388308e3450634aed4e383bfd7831740`.
+
+---
 ## [2026-11-15] - Resolution of Arbitraje aeceeb7: Realtime Assertions, DB Re-Read Verification, Negative Controls & UI Status Declaration (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Cierre de Observaciones de Arbitraje aeceeb7 (15/11/2026)

@@ -41,32 +41,32 @@ Conforme a los dictámenes de arbitraje `ARBITRAJE_31e59a2.md` y `ARBITRAJE_aece
 Secuencia cronológica registrada en vivo ([`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md)):
 
 ```text
-[19:55:39.101Z] [INIT] Starting Live CF-05 Transport Runner against Kestrel ASP.NET Core 8
-[19:55:39.102Z] [AUTH] Authenticating test accounts against Kestrel /graphql (external credentials)
-[19:55:40.219Z] [AUTH] Session A authenticated {"email":"estudiante1.ads@itbeltran.com.ar","id":"2e9b3337-1824-339f-b73f-28b9d2cc7832","role":"Estudiante"}
-[19:55:40.485Z] [AUTH] Session B authenticated {"email":"profesor1.ads@itbeltran.com.ar","id":"35a605e9-120c-e91b-cb8d-a8326ae09a48","role":"Profesor"}
-[19:55:40.754Z] [AUTH] Session C authenticated {"email":"moderador1@itbeltran.com.ar","id":"d95fe123-ce75-fe5b-d78c-614456713c50","role":"Moderador"}
-[19:55:40.754Z] [RT-01] Initiating unmocked graphql-ws connection for Session B
-[19:55:40.814Z] [RT-01] Session B WebSocket connected & connection_ack received {"latencyMs":60}
-[19:55:40.814Z] [RT-03] Setting up active passive observer Session C (Moderador) on WebSocket
-[19:55:40.830Z] [RT-03] Session C connected to WebSocket
-[19:55:41.279Z] [RT-02] Session A emitting mutation sendMessage to Session B
-[19:55:41.436Z] [RT-02] Message 1 persisted by backend {"id":"1bf6a6e9-f3cf-413d-a95c-69f60ada6683","content":"Mensaje de prueba live CF-05 (Entrega unmocked)","httpLatencyMs":157}
-[19:55:41.442Z] [RT-02] Session B received live message frame via WebSocket {"id":"1bf6a6e9-f3cf-413d-a95c-69f60ada6683","content":"Mensaje de prueba live CF-05 (Entrega unmocked)","senderId":"2e9b3337-1824-339f-b73f-28b9d2cc7832","receiverId":"35a605e9-120c-e91b-cb8d-a8326ae09a48"}
-[19:55:41.498Z] [RT-02] VERIFIED: Message 1 delivered in real-time to Session B with exact payload match {"messageId":"1bf6a6e9-f3cf-413d-a95c-69f60ada6683","matches":true}
-[19:55:42.109Z] [RT-03] VERIFIED: Strict topic isolation confirmed. 0 frames leaked to Observer C {"framesDeliveredToC":0,"leaksDetected":0,"isolationPassed":true}
-[19:55:42.109Z] [RT-04] Session B invoking markConversationRead for Session A
-[19:55:42.204Z] [RT-04] VERIFIED: markConversationRead persisted in DB (verified via conversation re-read query) {"markedCount":1,"persistedMessageId":"1bf6a6e9-f3cf-413d-a95c-69f60ada6683","persistedIsRead":true,"verifiedViaReRead":true}
-[19:55:42.204Z] [RT-05] Forcing client termination via client.terminate() (simulating transport drop code 4499)
-[19:55:42.204Z] [SOCKET_B] Session B WebSocket closed event {"code":4499,"reason":"Terminated"}
-[19:55:45.540Z] [RT-01] Session B WebSocket connected & connection_ack received {"latencyMs":4786}
-[19:55:45.576Z] [RT-05] VERIFIED: graphql-ws natural auto-reconnection succeeded with verified wait threshold {"tDrop":1794772542204,"reconnectedAt":1794772545540,"measuredRetryWaitMs":3336,"minimumRequiredThresholdMs":1300,"exceedsMinimumExpectedWait":true}
-[19:55:45.577Z] [RT-05] Session A sending 2nd message post-reconnection to verify channel recovery
-[19:55:45.597Z] [RT-02] Session B received live message frame via WebSocket {"id":"ed477da0-e4a7-431f-83f3-a9177f9b55c2","content":"Segundo mensaje post-reconexion live (Canal recuperado)","senderId":"2e9b3337-1824-339f-b73f-28b9d2cc7832","receiverId":"35a605e9-120c-e91b-cb8d-a8326ae09a48"}
-[19:55:45.653Z] [RT-05] VERIFIED: Message 2 delivered post-reconnection on recovered channel {"messageId":"ed477da0-e4a7-431f-83f3-a9177f9b55c2","matches":true}
-[19:55:45.653Z] [RT-06] Disposing Session A/B transports and asserting clean re-authentication as Session C
-[19:55:45.715Z] [RT-06] VERIFIED: Transport re-authentication confirmed with exact Session C identity (Note: UI logout/cache purge is a browser UI concern) {"currentUserId":"d95fe123-ce75-fe5b-d78c-614456713c50","currentUserRole":"Moderador","matchesExpectedUserC":true}
-[19:55:45.715Z] [DONE] ALL TRANSPORT REALTIME DIMENSIONS PASSED WITH STRICT ASSERTIONS
+[20:09:21.243Z] [INIT] Starting Live CF-05 Transport Runner against Kestrel ASP.NET Core 8
+[20:09:21.244Z] [AUTH] Authenticating test accounts against Kestrel /graphql (external credentials)
+[20:09:22.349Z] [AUTH] Session A authenticated {"email":"estudiante1.ads@itbeltran.com.ar","id":"2e9b3337-1824-339f-b73f-28b9d2cc7832","role":"Estudiante"}
+[20:09:22.613Z] [AUTH] Session B authenticated {"email":"profesor1.ads@itbeltran.com.ar","id":"35a605e9-120c-e91b-cb8d-a8326ae09a48","role":"Profesor"}
+[20:09:22.873Z] [AUTH] Session C authenticated {"email":"moderador1@itbeltran.com.ar","id":"d95fe123-ce75-fe5b-d78c-614456713c50","role":"Moderador"}
+[20:09:22.873Z] [RT-01] Initiating unmocked graphql-ws connection for Session B
+[20:09:22.930Z] [RT-01] Session B WebSocket connected & connection_ack received {"latencyMs":57}
+[20:09:22.930Z] [RT-03] Setting up active passive observer Session C (Moderador) on WebSocket
+[20:09:22.944Z] [RT-03] Session C connected to WebSocket
+[20:09:23.397Z] [RT-02] Session A emitting mutation sendMessage to Session B
+[20:09:23.555Z] [RT-02] Message 1 persisted by backend {"id":"6a3408f2-4598-44c2-94fe-927b5bedd427","content":"Mensaje de prueba live CF-05 (Entrega unmocked)","httpLatencyMs":158}
+[20:09:23.559Z] [RT-02] Session B received live message frame via WebSocket {"id":"6a3408f2-4598-44c2-94fe-927b5bedd427","content":"Mensaje de prueba live CF-05 (Entrega unmocked)","senderId":"2e9b3337-1824-339f-b73f-28b9d2cc7832","receiverId":"35a605e9-120c-e91b-cb8d-a8326ae09a48"}
+[20:09:23.613Z] [RT-02] VERIFIED: Message 1 delivered in real-time to Session B with exact payload match {"messageId":"6a3408f2-4598-44c2-94fe-927b5bedd427","matches":true}
+[20:09:24.219Z] [RT-03] VERIFIED: Strict topic isolation confirmed. 0 frames leaked to Observer C {"framesDeliveredToC":0,"leaksDetected":0,"isolationPassed":true}
+[20:09:24.219Z] [RT-04] Session B invoking markConversationRead for Session A
+[20:09:24.325Z] [RT-04] VERIFIED: markConversationRead persisted in DB (verified via conversation re-read query) {"markedCount":1,"persistedMessageId":"6a3408f2-4598-44c2-94fe-927b5bedd427","persistedIsRead":true,"verifiedViaReRead":true}
+[20:09:24.325Z] [RT-05] Forcing client termination via client.terminate() (simulating transport drop code 4499)
+[20:09:24.325Z] [SOCKET_B] Session B WebSocket closed event {"code":4499,"reason":"Terminated"}
+[20:09:26.641Z] [RT-01] Session B WebSocket connected & connection_ack received {"latencyMs":3768}
+[20:09:26.697Z] [RT-05] VERIFIED: graphql-ws natural auto-reconnection succeeded with verified wait threshold {"tDrop":1794773364325,"reconnectedAt":1794773366641,"measuredRetryWaitMs":2316,"minimumRequiredThresholdMs":1300,"exceedsMinimumExpectedWait":true}
+[20:09:26.697Z] [RT-05] Session A sending 2nd message post-reconnection to verify channel recovery
+[20:09:26.718Z] [RT-02] Session B received live message frame via WebSocket {"id":"9d158ce8-20b3-4770-b19b-d439dd33933a","content":"Segundo mensaje post-reconexion live (Canal recuperado)","senderId":"2e9b3337-1824-339f-b73f-28b9d2cc7832","receiverId":"35a605e9-120c-e91b-cb8d-a8326ae09a48"}
+[20:09:26.775Z] [RT-05] VERIFIED: Message 2 delivered post-reconnection on recovered channel {"messageId":"9d158ce8-20b3-4770-b19b-d439dd33933a","matches":true}
+[20:09:26.776Z] [RT-06] Resolving identity for Session C via me query with existing Bearer token (teardown occurs in finally)
+[20:09:26.853Z] [RT-06] VERIFIED: Identity resolution for Session C confirmed without identity mixture (Note: Interactive UI logout & Apollo in-memory cache purge belong to the browser UI domain) {"currentUserId":"d95fe123-ce75-fe5b-d78c-614456713c50","currentUserRole":"Moderador","matchesExpectedUserC":true}
+[20:09:26.853Z] [DONE] ALL TRANSPORT REALTIME DIMENSIONS PASSED WITH STRICT ASSERTIONS
 ```
 
 ---
