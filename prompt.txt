@@ -1,6 +1,6 @@
 # Continuidad de Arbitraje RC — 15/11/2026
 Destino Canal 1: [OneITB] Auditoría & Arquitectura · 6 Astra · Alto.
-Base revisada fd403c8 (incorporando resolución RC-01 a RC-05).
+Base commit 37ed360 (sobre fd403c8).
 Rama feature/2026-11-01-debugger-cv-builder. Spec activa 220.
 
 Informe de resolución de observaciones (Dictamen ARBITRAJE_RC_fd403c8.md):
