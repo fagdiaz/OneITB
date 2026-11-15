@@ -54,7 +54,6 @@ describe('SilenceUserModal Accessibility and Keyboard Focus Contract', () => {
     expect(dialog).toBeInTheDocument();
 
     const closeBtn = screen.getByRole('button', { name: 'Cerrar modal de silenciamiento' });
-    const cancelBtn = screen.getByRole('button', { name: 'Cancelar' });
     const confirmBtn = screen.getByRole('button', { name: /Confirmar silencio/i });
 
     // Initial focus placed automatically by the component via requestAnimationFrame

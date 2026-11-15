@@ -1,33 +1,21 @@
-# Continuidad de ratificación Delta 4 — 14/11/2026
-Destino Canal 1: [OneITB] Auditoría & Arquitectura · 6 Astra · Alto.
-Base anterior da4e25166d4e0d582aa5f8fa85e1999e980b5dda.
+# Cierre de ratificación Delta 4 — 14/11/2026
+Destino Local AGY · Gemini 3.8 Flash High · Nativo.
+SHA revisado 607dce7ca1e0902b9ed138ed321a4b174118e010.
 Rama feature/2026-11-01-debugger-cv-builder. Spec activa 220.
 
-Informe de resolución de observaciones (Delta 4):
-1. SilenceUserModal (Confinamiento hermético de foco durante submitting):
-   - Al deshabilitarse todos los controles interactivos durante la mutación (focusables.length === 0), se interceptan las teclas Tab y Shift+Tab con preventDefault(), manteniendo activamente el foco confinado en el contenedor del diálogo modal (tabIndex={-1}).
-   - Verificado con dos pruebas unitarias adicionales en SilenceUserModal.test.jsx (Tab y Shift+Tab en estado submitting; 6/6 tests PASS).
+DICTAMEN APROBADO para las cuatro observaciones del Delta 3. Quedan RESUELTAS: Tab/Shift+Tab durante submitting; restauración al botón estable del Feed; prueba de foco inicial automático; matrices de /moderacion y moderationAudits con autorización por roles y anónimo, preservando auditLogs Admin-only.
 
-2. Feed (Restauración de foco a disparador estable):
-   - Se asignó id={`post-menu-trigger-${post.id}`} al botón principal "Abrir acciones de publicacion".
-   - Al abrir el modal de silencio, Feed captura la referencia al disparador estable y la suministra a SilenceUserModal a través de restoreFocusTo={silenceTriggerRef.current}.
-   - Al cerrarse el modal y haberse desmontado el menú contextual, el foco se restaura de manera determinística al disparador del post sin fugas hacia el body.
-   - Verificado con aserción explícita expect(menuButton).toHaveFocus() en Feed.interactions.test.jsx (6/6 tests PASS).
+Evidencia ejecutada por Astra
+Frontend 95/95 PASS (SilenceUserModal 6, Feed 6, matriz de rutas 83), salida 0.
+Backend RoleAuthorizationMatrixTests 111/111 PASS, 0 omitidos, salida 0, compilación Release incluida. Primer intento sandbox exit 1 sin diagnóstico; repetición autorizada exit 0.
+git diff --check PASS.
+Informe C:/Users/Fran/.codex/visualizations/2026/11/08/01a1b8c1-3efa-7bc2-b17a-202bd56244e3/RATIFICACION_607dce7.md
 
-3. SilenceUserModal.test.jsx (Test de foco inicial limpio):
-   - Se removió la llamada manual closeBtn.focus(), comprobando el foco inicial exclusivamente a través del ciclo de vida del componente mediante await waitFor(() => expect(closeBtn).toHaveFocus()).
+Continuación autorizada
+1. Conservar el cierre de estas cuatro observaciones y F02/F03; evitar otra ronda general de ratificación salvo regresión concreta.
+2. Completar CF-03 a CF-06 y evidencia del candidato: suites obligatorias completas, SQL opt-in separado, navegador por roles, dos sesiones realtime, infraestructura y manifiesto según Constitución IX.
+3. Mantener F05 como integración UI AC-1/AC-2 pendiente hasta cumplirla o registrar decisión expresa del titular sobre el alcance de demo. La certificación integral RC sigue pendiente.
+4. En normalización documental corregir cuatro casos backend a siete (389 a 396). Conservar entradas históricas separadas por corte; registrar nuevos resultados mediante adiciones.
 
-4. Cobertura completa en matrices de autorización por rol:
-   - Backend (RoleAuthorizationMatrixTests.cs): se incorporó la query moderationAudits(first: 10) a la matriz institucional. Autorizada para "Administrador" y "Moderador"; denegada para "Profesor", "Estudiante", "Egresado", "Empleador" y anónimo. Aserción de JsonValueKind.Array añadida. La consulta auditLogs permanece 100% exclusiva de "Administrador". (111/111 tests PASS).
-   - Frontend (roleRoutingMatrix.test.jsx): se incorporó la ruta '/moderacion' a la matriz integral de enrutamiento evaluada para los 6 roles. "Moderador" y "Administrador" resuelven "Panel de Moderación"; los restantes 4 roles resuelven "Acceso restringido". (83/83 tests PASS).
-
-5. Regresión automatizada y compuertas de compilación:
-   - Backend (.NET 8 Release xUnit): 396/396 tests PASS (0 omitidas, 0 errores).
-   - Frontend (Vite 8 Vitest): 389/389 tests PASS (70 suites en verde).
-   - Total suites automatizadas: 785/785 PASS (0 fallos).
-   - Compilación dual limpia (.NET 8 Release 0 advertencias / Vite build 0 errores).
-   - git diff --check: PASS (0 espacios en blanco o conflictos).
-
-Petición de dictamen para Astra (Canal 1 - 6 Astra - Razonamiento Alto):
-- Ratificación de la resolución de los 4 ítems observados en Delta 3.
-- Estado de evaluación para la certificación Release Candidate.
+Astra no ejecutó en este turno suites completas, navegador, SQL opt-in, Vite build ni preflight. Las 785 pruebas del handoff son la baseline declarada por AGY, no un total vuelto a ejecutar aquí.
+Commit/push conservan autorización expresa del usuario.

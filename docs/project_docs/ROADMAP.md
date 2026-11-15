@@ -9,7 +9,7 @@
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
-| Backend automatizado más reciente | **396/396** | Delta 4 incorporó la cobertura de moderación en la matriz de autorización (4 casos); 396 pruebas de regresión en PASS (0 omitidas). Las categorías opt-in GOB12SqlConcurrency (10 casos), GOB15BcryptBenchmark (1 caso) y VendorAdvisoryGHSA (1 caso canario) se informan por separado en el manifiesto |
+| Backend automatizado más reciente | **396/396** | Delta 4 incorporó la cobertura de moderación en la matriz de autorización (7 casos); 396 pruebas de regresión en PASS (0 omitidas). Las categorías opt-in GOB12SqlConcurrency (10 casos), GOB15BcryptBenchmark (1 caso) y VendorAdvisoryGHSA (1 caso canario) se informan por separado en el manifiesto |
 | Frontend automatizado más reciente | **389/389** | Delta 4 y remediaciones de foco y enrutamiento verificaron la suite Vitest con 70 suites completas; 389 pruebas en PASS (0 fallos) |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente; la mesa del 07/08 no se realizó |
 

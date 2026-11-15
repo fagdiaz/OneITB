@@ -19,63 +19,66 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
-## [2026-11-14] - Remediation of Astra Audit Findings F01-F08 (Spec 220 / RC Stabilization - Delta 4) - branch: feature/2026-11-01-debugger-cv-builder
+## [2026-11-14] - Remediation of Astra Audit Findings (Spec 220 / RC Stabilization) - branch: feature/2026-11-01-debugger-cv-builder
 
-**Alcance:** Remediación integral y verificación automatizada de las observaciones de Astra en Delta 3 y Delta 4 (`DICTAMEN_RC_15a60c4.md`, `RATIFICACION_499e402.md`, `RATIFICACION_d145d84.md` y `RATIFICACION_da4e251.md`), incorporando confinamiento de foco en `SilenceUserModal.jsx` durante `submitting`, retorno estable de foco al disparador del Feed (`#post-menu-trigger-${post.id}`), comprobación no manual de foco inicial en `SilenceUserModal.test.jsx`, y ampliación exhaustiva de las matrices de autorización: `RoleAuthorizationMatrixTests.cs` (111/111 PASS, incluyendo `moderationAudits`) y `roleRoutingMatrix.test.jsx` (83/83 PASS, incluyendo `/moderacion`). Suite global elevada a 785 pruebas automatizadas en PASS (396 backend / 389 frontend en 70 suites).
+### Delta 4: Foco en Silenciamiento, Apertura Estable de Feed y Matrices de Autorización (14/11/2026)
 
-### Tareas y Artefactos Integrados
+**Alcance:** Remediación y ratificación aprobada por Astra (`RATIFICACION_607dce7.md`) de las cuatro observaciones del Delta 3, incorporando confinamiento de foco en `SilenceUserModal.jsx` durante `submitting`, retorno determinístico de foco al disparador del Feed (`#post-menu-trigger-${post.id}`), comprobación automática de foco inicial en `SilenceUserModal.test.jsx`, y ampliación exhaustiva de las matrices de autorización: `RoleAuthorizationMatrixTests.cs` (111/111 PASS, 7 casos adicionales con `moderationAudits`) y `roleRoutingMatrix.test.jsx` (83/83 PASS, incluyendo `/moderacion`). Suite global elevada a 785 pruebas automatizadas en PASS (396 backend / 389 frontend en 70 suites).
 
-1. **Confinamiento de Foco en Silenciamiento y Destino Estable en Feed (Delta 4 - `SilenceUserModal.jsx` y `Feed.jsx`):**
+1. **Confinamiento de Foco en Silenciamiento y Destino Estable en Feed (`SilenceUserModal.jsx` y `Feed.jsx`):**
    - Manejo de estado inactivo durante envío (`submitting === true`): al deshabilitarse todos los botones interactivos (`focusables.length === 0`), se previene la fuga del foco con `event.preventDefault()` y se retiene el foco activo en el contenedor del diálogo (`tabIndex={-1}`). Se verificó la trampa tanto en `Tab` como en `Shift+Tab`.
    - Prop `restoreFocusTo` implementada con orden de precedencia: selector explícito/ref/elemento provisto por el invocador con fallback a `previousFocusRef.current`.
    - Identificador estable asignado en `Feed.jsx`: `id={`post-menu-trigger-${post.id}`}` para el disparador del menú contextual (`Abrir acciones de publicacion`). Al desmontarse el dropdown al abrir el modal, la referencia capturada asegura que al cerrarse el modal el foco vuelva al disparador estable sin fugas.
    - En `Feed.interactions.test.jsx`, se validó mediante aserción explícita: `expect(menuButton).toHaveFocus()` tras el cierre del modal de silenciamiento.
 
-2. **Precisión en Pruebas de Foco Inicial (Delta 4 - `SilenceUserModal.test.jsx`):**
+2. **Precisión en Pruebas de Foco Inicial (`SilenceUserModal.test.jsx`):**
    - Remoción de asignación manual de foco (`closeBtn.focus()`), reemplazada por `await waitFor(() => expect(closeBtn).toHaveFocus())` para certificar el foco automático otorgado por el ciclo de vida del componente.
    - Dos nuevas pruebas unitarias: confinamiento del foco en el contenedor durante `submitting` con botones deshabilitados, y restauración al elemento provisto en `restoreFocusTo`. Suite completa: 6/6 tests en PASS.
 
-3. **Ampliación de Matrices de Autorización por Rol (Delta 4 - `RoleAuthorizationMatrixTests.cs` y `roleRoutingMatrix.test.jsx`):**
-   - Backend `RoleAuthorizationMatrixTests.cs`: se incorporó la operación `moderationAudits` a la matriz de operaciones autorizadas (`Administrador` y `Moderador`) y denegadas (`Profesor`, `Estudiante`, `Egresado`, `Empleador` y `Anonymous`). Aserción positiva añadida: `case "moderationAudits": Assert.Equal(JsonValueKind.Array, value.ValueKind); break;`. Suite incrementada a 111/111 tests en PASS.
+3. **Ampliación de Matrices de Autorización por Rol (`RoleAuthorizationMatrixTests.cs` y `roleRoutingMatrix.test.jsx`):**
+   - Backend `RoleAuthorizationMatrixTests.cs`: se incorporó la operación `moderationAudits` a la matriz de operaciones autorizadas (`Administrador` y `Moderador`) y denegadas (`Profesor`, `Estudiante`, `Egresado`, `Empleador` y `Anonymous`). Aserción positiva añadida: `case "moderationAudits": Assert.Equal(JsonValueKind.Array, value.ValueKind); break;`. Suite incrementada a 111/111 tests en PASS (+7 casos respecto a la línea base previa).
    - Frontend `roleRoutingMatrix.test.jsx`: se incorporó `/moderacion` a las rutas evaluadas a través de los 6 roles institucionales. Verifica que `Moderador` y `Administrador` acceden al Panel de Moderación, mientras que `Profesor`, `Estudiante`, `Egresado` y `Empleador` reciben la vista de `Acceso restringido`. Suite incrementada a 83/83 tests en PASS.
 
-4. **Modal de Silenciamiento Disciplinario Accesible (F04/F06 - `SilenceUserModal.jsx` y `Feed.jsx`):**
-   - Extracción y diseño del componente modal `SilenceUserModal.jsx` con contrato exhaustivo de teclado: foco inicial automático en el botón de cierre al abrir, trampa de tabulación bidireccional (`Tab` de último a primero, `Shift+Tab` de primero a último), tecla `Escape` libre en reposo y bloqueada durante el envío de la mutación (`submitting`), y restauración garantizada de foco al botón disparador tras el cierre.
-   - Conexión directa a `SILENCE_USER` en `Feed.jsx` con selección interactiva de duración (24 hs, 72 hs, 168 hs), impacto en base de datos (`MutedUntil`) y registro forense inmutable en `AuditLog`.
+4. **Reconciliación Métrica Oficial Delta 4:**
+   - Backend: 396/396 en PASS (0 omitidas, Release mode net8.0).
+   - Frontend: 389/389 en PASS (70 suites en Vitest).
+   - Total regresión automatizada: 785 pruebas en PASS (0 fallos). Dictamen oficial Astra: **APROBADO** (`RATIFICACION_607dce7.md`).
 
-5. **Panel Institucional de Moderación y Entrada Autorizada (F04 - `ModerationDashboard.jsx` y `Query.cs`):**
-   - Creación del panel institucional `ModerationDashboard.jsx` montado en la nueva ruta protegida `/moderacion`, permitiendo acceso exclusivo a roles `Moderador` y `Administrador` y denegando a roles no autorizados (`Estudiante`, `Profesor`, etc.) con vista de `Acceso restringido`.
+---
+
+### Delta 3: Modal de Silenciamiento, Panel de Moderación y Desglose Métrico (14/11/2026)
+
+**Alcance:** Remediación integral y verificación de los hallazgos F01 a F08 tras los dictámenes de Astra (`DICTAMEN_RC_15a60c4.md`, `RATIFICACION_499e402.md` y `RATIFICACION_d145d84.md`), incorporando el componente desacoplado `SilenceUserModal.jsx` con contrato de teclado/foco, el panel institucional `/moderacion` (`ModerationDashboard.jsx`) con autorización de `GetModerationAudits` para Moderador en backend, precisión de navegación en Feed, distinción métrica de 98.50% (promedio) vs 98.67% (296/300 ítems) con 4 hallazgos 🟡 en la matriz, y suite global de 763 pruebas automatizadas en PASS (389 backend / 374 frontend en 70 suites).
+
+1. **Modal de Silenciamiento Disciplinario Accesible (F04/F06 - `SilenceUserModal.jsx` y `Feed.jsx`):**
+   - Extracción y diseño del componente modal `SilenceUserModal.jsx` con contrato de teclado: foco inicial en el botón de cierre, trampa de tabulación, tecla `Escape` libre en reposo y bloqueada durante `submitting`, y restauración de foco al botón disparador tras el cierre.
+   - Conexión directa a `SILENCE_USER` en `Feed.jsx` con selección de duración (24 hs, 72 hs, 168 hs), impacto en base de datos (`MutedUntil`) y registro forense inmutable en `AuditLog`.
+
+2. **Panel Institucional de Moderación y Entrada Autorizada (F04 - `ModerationDashboard.jsx` y `Query.cs`):**
+   - Creación del panel institucional `ModerationDashboard.jsx` montado en `/moderacion`, permitiendo acceso exclusivo a `Moderador` y `Administrador` y denegando a roles no autorizados con vista de `Acceso restringido`.
    - Incorporación de pestañas operativas: Reportes de Comunidad (`ModerationManagement`) y Auditoría Forense de Moderación (`ModerationAuditManagement`).
-   - Actualización en backend `Query.cs:358`: `GetModerationAudits` ampliado a `[Authorize(Roles = new[] { "Administrador", "Moderador" })]`, permitiendo consulta de auditoría disciplinaria sin vulnerar la protección de `/admin`, que permanece 100% exclusiva de `Administrador`.
-   - Enlace contextual de navegación en `navigationItems.js` para `Moderador` (`/moderacion`) sin alterar las secuencias de `Estudiante`, `Empleador` ni `Administrador`.
-   - Suite `ModerationDashboard.test.jsx` (3/3 tests en PASS) y test ampliado en `navigationItems.test.js`.
+   - Actualización en backend `Query.cs:358`: `GetModerationAudits` ampliado a `[Authorize(Roles = new[] { "Administrador", "Moderador" })]`, permitiendo consulta disciplinaria sin vulnerar `/admin` (estricto `Administrador`).
+   - Enlace contextual de navegación en `navigationItems.js` para `Moderador` (`/moderacion`).
 
-6. **Aislamiento y Reversión de Caché Apollo en Privacidad (F02 - `CvEditorProfile.tsx`):**
+3. **Aislamiento y Reversión de Caché Apollo en Privacidad (F02 - `CvEditorProfile.tsx`):**
    - Eliminación de escritura optimista previa a la validación de `response.data?.toggleProfilePrivacy?.success`.
    - Actualización de Apollo Cache (`GET_USER_PROFILE`) ejecutada estrictamente tras confirmación de éxito.
    - En caso de error o rechazo, reversión del estado local (`isPublicProfile: !nextPrivacy`), despliegue de alerta visual (`setSaveStatus('error')`) y preservación intacta de la caché.
-   - Prevención de concurrencia mediante `disabled={savingPrivacy || savingProfile}`.
    - Pruebas unitarias en `CvEditorProfile.lifecycle.test.tsx` (11/11 tests en PASS).
 
-7. **Navegación Selectiva por Comentario y Preservación de Cierre en Feed (F03 - `Feed.jsx`):**
+4. **Navegación Selectiva por Comentario y Preservación de Cierre en Feed (F03 - `Feed.jsx`):**
    - Clave de apertura reactiva compuesta: `targetKey = `${targetInquiryId}:${targetCommentId || ''}``.
-   - Navegación hacia un comentario distinto en la misma publicación reabre el hilo (`openThreads[targetInquiryId] = true`); re-navegación con la misma clave respeta estrictamente el repliegue manual del usuario sin forzar expansión.
-   - Pruebas unitarias en `Feed.interactions.test.jsx` demostrando apertura selectiva y preservación de cierre ante re-navegación (6/6 tests en PASS).
+   - Navegación hacia un comentario distinto reabre el hilo; re-navegación con la misma clave respeta el repliegue manual del usuario.
+   - Pruebas unitarias en `Feed.interactions.test.jsx` (6/6 tests en PASS).
 
-8. **Desacoplamiento de Foco en Avatar y ATS (F06 - `AvatarEditorModal.jsx` y `UserProfile.tsx`):**
-   - `AvatarEditorModal`: desacoplamiento del ciclo de apertura/cierre respecto a dependencias volátiles (`onClose`, `saving`) mediante `handlersRef`. El foco anterior y foco inicial se programan únicamente en transiciones de `isOpen`.
-   - Preservación comprobada de foco activo ante re-renderizados del componente padre.
-   - Confinamiento estricto de foco (`Tab`/`Shift+Tab`) con aserciones activas (`expect(...).toHaveFocus()`), bloqueo de `Escape` durante `saving`, y restauración de foco al disparador al cerrar (`AvatarEditorModal.test.jsx` 3/3 tests en PASS).
-   - Comprobación estática de contratos accesibles en previsualización ATS documentada en `UserProfile.test.tsx` (2/2 tests en PASS), reservando la interacción manual para el gate CF-06.
+5. **Desacoplamiento de Foco en Avatar y ATS (F06 - `AvatarEditorModal.jsx` y `UserProfile.tsx`):**
+   - `AvatarEditorModal`: desacoplamiento del ciclo de apertura/cierre respecto a dependencias volátiles mediante `handlersRef`.
+   - Confinamiento estricto de foco con aserciones activas (`expect(...).toHaveFocus()`), bloqueo de `Escape` durante `saving`, y restauración al disparador (`AvatarEditorModal.test.jsx` 3/3 tests en PASS).
+   - Comprobación estática de contratos accesibles en previsualización ATS documentada en `UserProfile.test.tsx` (2/2 tests en PASS).
 
-9. **Formalizaciones de Alcance, Desglose 296/300 y AC-1/AC-2 (F01, F05, F08 - `VISUAL_AUDIT_REPORT.md` / `spec.md`):**
-   - F05 / AC-1 y AC-2: Backend 100% implementado y probado en xUnit (`SaveSectionGradeAsync`, comisiones, concurrencia optimista `RowVersion` y `ConcurrencyConflict`). En frontend, la pantalla actual opera bajo la política freeze-safe de carrera (`UserCareer`), catalogando formalmente los selectores de comisión como integración UI pendiente para demo, sin inferir ausencia universal de deuda fuera de los contratos probados.
-   - F08: Desglose explícito de métricas diferenciando el promedio simple de categorías (98.50%) de la proporción directa de ítems aprobados (296/300 = 98.67%), reflejando los 4 hallazgos pendientes (bandera amarilla 🟡) en la matriz ejecutiva.
-
-10. **Reconciliación Métrica Oficial (F07 - `ROADMAP.md`):**
-   - Backend: 396/396 en PASS (0 omitidas, Release mode net8.0).
-   - Frontend: 389/389 en PASS (70 suites en Vitest).
-   - Total regresión automatizada: 785 pruebas en PASS (0 fallos).
+6. **Formalizaciones de Alcance, Desglose 296/300 y AC-1/AC-2 (F01, F05, F08 - `VISUAL_AUDIT_REPORT.md` / `spec.md`):**
+   - F05 / AC-1 y AC-2: Backend 100% implementado y probado en xUnit (`SaveSectionGradeAsync`, comisiones, concurrencia optimista `RowVersion` y `ConcurrencyConflict`). En frontend, la pantalla actual opera bajo la política freeze-safe de carrera (`UserCareer`), catalogando formalmente los selectores de comisión como integración UI pendiente para demo.
+   - F08: Desglose explícito de métricas diferenciando el promedio simple de categorías (98.50%) de la proporción directa de ítems aprobados (296/300 = 98.67%), reflejando los 4 hallazgos pendientes (🟡) en la matriz ejecutiva.
 
 ---
 ## [2026-11-13] - E2E Interactive Verification, Modal Accessibility & Six-Role Audit Gate (Spec 219 / GOB-20261113-18) - branch: feature/2026-11-01-debugger-cv-builder
