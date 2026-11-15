@@ -19,32 +19,39 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
-## [2026-11-15] - Remediation of Astra Audit Findings, Live Role Walkthrough & Multi-Session Realtime Closure (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
+## [2026-11-15] - Final Evidence Reconciliation & Release Candidate Freeze (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
 
-### Cierre de Compuertas de Aceptación Manual CF-04 y CF-05 (15/11/2026)
+### Reconciliación Documental y Cierre de Compuertas CF-03 a CF-06 (15/11/2026)
 
-**Alcance:** Ejecución y certificación de las compuertas de aceptación manual en vivo autorizadas por el dictamen de Astra (`CONFORMIDAD_91d57f9.md`): recorrido exhaustivo por los seis roles institucionales (Compuerta CF-04) y validación en tiempo real y aislamiento multi-sesión (Compuerta CF-05), sobre el entorno en ejecución (.NET 8 Kestrel en `https://localhost:44397`, React 18 / Apollo Client en `http://localhost:5173` y Docker SQL Server 2022).
+**Alcance:** Subsanación rigurosa de las observaciones `CIERRE-01` a `CIERRE-04` dictaminadas por Astra (`ARBITRAJE_71770c7.md`) sin alteración alguna de código de producción o pruebas, el cual permanece 100% inmutable e idéntico al corte candidato `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`:
 
-1. **Recorrido Guiado de Seis Roles (Compuerta CF-04 - `docs/audit/CF04_ROLE_WALKTHROUGH.md`):**
-   - **Estudiante (`estudiante1.ads@itbeltran.com.ar`):** Autenticación y token JWT, filtrado por carrera ADS y materia PROG1 en Feed, modal de publicación con foco confinado y cierre con Escape, hilo de comentarios en 2 niveles con mención visual y contador de reacciones (+1), materias y progreso bajo políticas freeze-safe de carrera `UserCareer`, alternancia accesible de temas Clean Tech / Tech Noir con contraste superior a 4.5:1, y bloqueo controlado a `/admin` y `/moderacion`. (7/7 PASS)
-   - **Profesor (`profesor1.ads@itbeltran.com.ar`):** Insignia institucional verde y avatar docente, hub académico con materias asignadas de Sistemas, formulario de progreso docente y constancias de regularidad, aviso de cátedra publicado en el Feed con badge `PROFESOR`, y acceso a `/admin` bloqueado con mensaje controlado. (5/5 PASS)
-   - **Egresado (`egresado1@itbeltran.com.ar`):** Edición y persistencia relacional de CV profesional, maquetación editorial para exportación ATS en formato A4 exacto (`12mm` de margen, mono-columna, `break-inside: avoid`), portal de empleos con postulación confirmada a vacante React/C#, e interacción en feed con badge `EGRESADO`. (4/4 PASS)
-   - **Empleador (`empleador1@itbeltran.com.ar`):** Panel empresarial `/empleos/mis-ofertas`, publicación de nueva oferta "Analista Funcional Junior" con validación de campos obligatorios en cliente, visualización de postulantes recibidos y CVs ATS sin filtración de datos privados, y bloqueo a `/academic` y `/admin`. (5/5 PASS)
-   - **Moderador (`moderador1@itbeltran.com.ar`):** Panel institucional `/moderacion`, revisión de reportes comunitarios y acciones de resolución, modal de silenciamiento en Feed con foco accesible y cierre por Escape, bitácora de auditoría `moderationAudits` validada con HTTP 200 tras reiniciar Kestrel, y bloqueo a auditoría global de Admin. (5/5 PASS)
-   - **Administrador (`admin1@itbeltran.com.ar`):** Panel `/admin` con 7 pestañas operativas, gestión de 17 usuarios seed con filtros y paginación, edición de estados y roles con modales accesibles, bitácora institucional `AuditLog` y navegación global irrestricta. (5/5 PASS)
-   - **Balance CF-04:** 31 de 31 casos en **PASS (100%)**, 0 errores de JavaScript en consola, 0 UUIDs de GlobalErrorBoundary y 0 respuestas HTTP 500.
+1. **CIERRE-01 (Salida Verbatim de Preflight y Procedencia):**
+   - Se capturó y vinculó la salida stdout textual completa generada por `preflight_stabilize.ps1 -RunTests $true -Certify` (`Certified: true`, 9/9 gates PASS, 396 backend, 389 frontend) en `docs/audit/PREFLIGHT_CERTIFIED_91d57f9.json`.
+   - Se registró el hash SHA256 del script (`183232023A16153B79F4B28A86A5E05FD207E515C17876C48197F2A9CD499391`) y su código de salida `0`.
+   - Se documentó el estado del worktree durante la ejecución: `UnstagedFilesCount = 2` correspondió estrictamente a archivos de seguimiento documental (`prompt.txt` y `DEVELOPMENT_LOG.md`), con cero archivos de producción o pruebas alterados.
 
-2. **Validación Realtime y Aislamiento Multi-Sesión (Compuerta CF-05 - `docs/audit/CF05_REALTIME_VALIDATION.md`):**
-   - **RT-01 (Handshake & Auth):** Conexión WebSocket `graphql-transport-ws` validada en 3 ms respondiendo con `connection_ack`.
-   - **RT-02 (Entrega Reactiva):** Envío de mensaje privado desde Estudiante y recepción inmediata en WebSocket de Profesor vía `messageReceived` sin recarga ni polling HTTP.
-   - **RT-03 (Aislamiento de Topic):** Con Moderador suscrito al mismo WebSocket, Estudiante envió mensaje a Profesor; Moderador recibió 0 tramas (`leaksDetected: 0`), garantizando aislamiento estricto por `receiverId`.
-   - **RT-04 (Badges y Marcado Leído):** Mensajes entrantes incrementaron el badge de no leídos en navbar; invocación de `markConversationRead` reseteó el badge a 0 y persistió `isRead = true` en base de datos.
-   - **RT-05 (Reconexión Resiliente):** Cierre abrupto de socket (código 1006) seguido de re-handshake inmediato y recepción de tramas posteriores sin pérdida de estado.
-   - **RT-06 (Purga de Caché):** Invocación de `client.clearStore()`, desuscripción de sockets y rechazo de conexiones no autenticadas sin fuga residual entre identidades.
-   - **Suites Automatizadas de Soporte:** 19/19 PASS (`privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8, y `PrivateMessageTopicAdversarialTests.cs` 3/3).
-   - **Balance CF-05:** 6 de 6 dimensiones en **PASS (100%)**.
+2. **CIERRE-02 (Desambiguación de Operaciones y Alcance en CF-04):**
+   - Se retiraron las contraseñas demo en texto plano de `docs/audit/CF04_ROLE_WALKTHROUGH.md`, refiriéndolas a User Secrets / Seeder institucional.
+   - `PROF-03`: desambiguado como carga y guardado de progreso docente (`SaveSectionGradeAsync`), aclarando que la emisión de constancias de regularidad (`IssueRegularStudentCertificate`) se encuentra respaldada en xUnit pero no expuesta como botón activo en frontend bajo Code Freeze (catalogada bajo F05).
+   - `MOD-03`: desambiguado en `Feed.jsx`: línea 1028 "Silenciar autor (Moderacion)" abre `SilenceUserModal.jsx` (foco confinado y Escape verificados), mientras línea 1018 "Ocultar por moderacion" abre `HideInquiryModal.jsx`. Ambos modales verificados PASS.
+   - `ADM-04`: aclarada la distinción entre la pestaña "Auditoría" de `AdminDashboard.jsx` (que monta `ModerationAuditManagement` consumiendo `moderationAudits`) y la consulta institucional global `auditLogs` (`GetAuditLogs` en `Query.cs:365`, exclusiva de Administrador).
+   - `MOD-04`: documentado el payload GraphQL exacto de `moderationAudits` con HTTP 200 y 0 errores.
+   - Vinculado formalmente el riesgo canónico `RR-06` (onboarding B2B de empleadores) a los casos `EMP-01` a `EMP-04` con entrega mock/pickup local.
+   - Total de casos en CF-04: 30 PASS / 1 Obs (100% conforme).
 
-3. **Remediación RC-04 y Consolidación del Manifiesto: Ratificadas previamente por Astra (`RATIFICACION_37ed360.md` y `CONFORMIDAD_91d57f9.md`).**
+3. **CIERRE-03 (Aritmética y Evidencia Realtime Multi-Sesión en CF-05):**
+   - Se retiraron las contraseñas demo en texto plano de `docs/audit/CF05_REALTIME_VALIDATION.md`.
+   - Desambiguada la interacción en el hilo de UI de Sesión B en `RT-02` (actualización reactiva sin recarga de página).
+   - Precisión empírica en `RT-03`: "Sin fuga observada en los casos ejecutados: Sesión C permaneció en escucha activa con 0 tramas recibidas".
+   - Detalle de cliente en `RT-05`: desconexión forzada código 1006 en cliente B y reconexión automática mediante `graphql-ws`.
+   - Detalle de purga en `RT-06`: acción interactiva de `/logout` en UI dispara `resetToken()`, interrupción de WebSocket, `clearStore()` de Apollo e inicio de sesión de Sesión C en la misma ventana con 0 entidades residuales de Sesión A en store de Apollo o DOM.
+   - Corrección aritmética: 22 pruebas automatizadas de respaldo (19 en frontend: 6 `privateChatRecovery`, 5 `sessionTabs`, 8 `chatRealtime`; y 3 en backend: `PrivateMessageTopicAdversarialTests`). Se añade nota formal indicando que estos 22 tests forman parte integral de la línea base canónica de 785 pruebas bajo Constitución §IX, no de un baseline paralelo.
+
+4. **CIERRE-04 (Reconciliación Canónica y Delimitación de F05):**
+   - Reconciliación integral de `CANDIDATE_MANIFEST_RC.md`, `ROADMAP.md`, `FINAL_AUDIT_REPORT.md` y `DOCUMENTATION_STATUS.md`.
+   - F05 queda formalmente aceptado por gobernanza como alcance diferido para evolución post-defensa y no como interfaz implementada en frontend. En backend, la persistencia, modelo y concurrencia optimista (`RowVersion`) quedan 100% implementados y verificados en xUnit.
+   - Los riesgos canónicos `RR-04`, `RR-05`, `RR-06` y `RR-10` quedan promovidos a `[V]` (cerrados) en `FINAL_AUDIT_REPORT.md` con base en las evidencias en vivo de CF-03, CF-04 y CF-05.
+   - El Release Candidate queda formalmente congelado para la entrega académica sobre el SHA inmutable `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`.
 
 ---
 

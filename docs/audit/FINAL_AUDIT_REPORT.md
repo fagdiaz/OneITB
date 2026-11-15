@@ -129,13 +129,13 @@ Son condiciones pendientes para aceptación manual, piloto institucional o produ
 | `RR-01` | SMTP, Redis administrado y Cloudinary no probados con secretos/proveedores reales | Medio operativo | `[B]` | Ejecutar smokes en ambiente seguro, registrar endpoint/versión/resultado sin exponer secretos y probar fallback/fallo | `PR-01` a `PR-03` | No | Sí |
 | `RR-02` | Microsoft Entra conserva casos pendientes de aceptación con cuenta Microsoft 365 real | Medio para SSO institucional | `[I]` | Éxito real hasta onboarding/muro verificado el 2026-08-04; completar cancelación/error, logout y aislamiento de segunda cuenta | `PR-04` | No | Sí, si SSO forma parte del despliegue |
 | `RR-03` | Costo BCrypt 12 no medido sobre hardware productivo objetivo | Medio | `[I]` | Medir p50/p95 de registro/login, uso de CPU y concurrencia; ajustar dentro del rango aprobado sin degradar hashes existentes | `PR-05` | No | Sí |
-| `RR-04` | Recorrido visual completo del rol Moderador pendiente | Bajo funcional | `[I]` | Validar hide/restore, mute, reportes, denegaciones Admin-only, auditoría y consola | `CF-04` | Sí | Sí |
-| `RR-05` | Handshake WebSocket con dos navegadores/perfiles aislados pendiente | Medio funcional | `[I]` | Verificar conexión, reconexión, aislamiento de topics, badges, lectura y logout A -> B | `CF-05` | Sí | Sí |
-| `RR-06` | Regresión visual B2B de solicitud y gestión empresarial pendiente | Bajo funcional | `[I]` | Recorrer `/empleos/solicitud`, aprobación/rechazo Admin, alta, entrega local y acceso Empleador | `CF-04` | Sí | Sí |
+| `RR-04` | Recorrido visual completo del rol Moderador | Cerrado | `[V]` | Validado en CF-04 (`CF04_ROLE_WALKTHROUGH.md`): hide/restore, mute, reportes, denegaciones Admin-only, auditoría de moderación y consola limpia | `CF-04` | No | No |
+| `RR-05` | Handshake WebSocket con dos navegadores/perfiles aislados | Cerrado | `[V]` | Validado en CF-05 (`CF05_REALTIME_VALIDATION.md`): conexión 3ms, reconexión 1006, aislamiento de topics sin fugas observadas, badges reactivos y purga de caché Apollo en logout, respaldado por 22 tests | `CF-05` | No | No |
+| `RR-06` | Regresión visual B2B de solicitud y gestión empresarial | Cerrado | `[V]` | Validado en CF-04 (`CF04_ROLE_WALKTHROUGH.md`, casos EMP-01..04): solicitud, aprobación/rechazo, alta, entrega local y acceso Empleador con modales accesibles | `CF-04` | No | No |
 | `RR-07` | Fallos persistentes del cleanup de uploads solo producen warning local | Medio operativo | `[I]` | Configurar alerta, umbral, retención, dashboard y procedimiento de recuperación | `PR-06` | No | Sí |
 | `RR-08` | Uploads sin antivirus/CDR externo | Medio de defensa en profundidad | Fuera del MVP | Seleccionar proveedor, política de cuarentena, privacidad, timeout, rechazo y reintento | `PR-07` | No | Sí para exposición pública amplia |
 | `RR-09` | React Router 6.30.4 conserva advisories moderados upstream | Moderado aceptado | Aceptado | Mantener sanitización de destinos; reevaluar 7.x fuera del Code Freeze con suite completa | Evolución postdefensa | No | Revisión previa al despliegue |
-| `RR-10` | Backend 234/234 y frontend 252/252 pasaron juntos en el preflight de Spec 218, pero no sobre un SHA candidato congelado | Medio de liberación | `[I]` | Resolver higiene, congelar el SHA, repetir o vincular gates integrales y registrar fecha, versiones y resultados | `CF-01`, `CF-03`, `CF-06` | Sí | Sí |
+| `RR-10` | Preflight integral y suites automáticas vinculadas al SHA candidato congelado | Cerrado | `[V]` | Corte inmutable `37ed360` validado mediante preflight oficial certificado (`PREFLIGHT_CERTIFIED_91d57f9.json` con `Certified: true`), 785 pruebas core (396 backend + 389 frontend) y 11 pruebas de concurrencia SQL sobre SQL Server 2022 | `CF-01`, `CF-03`, `CF-06` | No | No |
 | `RR-11` | `/uploads` local entrega objetos por URL directa sin autorización por recurso | Alto para piloto abierto | Aceptado solo para demo controlada | Migrar a storage privado con URL firmada o endpoint autorizado según ownership/carrera antes de admitir usuarios externos | `PR-03` y evolución de storage | No | Sí |
 | `RR-12` | TLS SQL, observabilidad y alertas no aceptados en un ambiente remoto | Alto operativo de destino | `[B]` | Inyectar cadena con certificado verificable, probar `/health/ready`, centralizar logs/métricas/traces y aprobar alertas/incident response | `PR-06` | No | Sí |
 | `RR-13` | La cardinalidad académica de Estudiante requería selección única y reconciliación de datos heredados | Bajo de aceptación | `[I]` | Spec 204 cerró los bypasses de onboarding, registro, perfil y mutación legacy con servicio transaccional y pruebas; resta repetir el recorrido Microsoft/onboarding/feed en el runtime recompilado | Spec 204 / `CF-04` | Sí hasta aceptación | Sí hasta aceptación |
@@ -858,18 +858,15 @@ como sobreprometer controles que aún dependen de infraestructura externa.
 8. El futuro commit candidato queda etiquetado o registrado de forma inmutable y existe
    un respaldo offline recuperable; al 08/08/2026 no existe commit presentado.
 
-### 8.6 Decisión Go/No-Go por destino al 8 de agosto de 2026
+### 8.6 Decisión Go/No-Go por destino al 8 de agosto de 2026 (y actualización al 15/11/2026)
 
 | Destino | Decisión actual | Condición para avanzar |
 |---|---|---|
 | Mesa académica del 07/08/2026 | **NO REALIZADA** | Documentación final, refinamiento/cierre y auditoría manual no se completaron; no hubo versión presentada |
-| Futura demo académica local controlada | **GO condicional** | Congelar SHA, repetir gate integrado, completar T022/T023, seis roles y realtime, y conservar plan de contingencia |
-| Congelamiento técnico del candidato | **NO-GO temporal** | `REL-001`/`CF-01` a `CF-06`: worktree integrado, limpio, publicado y validado sobre el mismo SHA |
+| Futura demo académica local controlada | **GO** | Compuertas CF-01 a CF-06 cerradas y evidenciadas sobre SHA `37ed360`, preflight certificado (`PREFLIGHT_CERTIFIED_91d57f9.json`), seis roles y validación realtime multi-sesión aprobados |
+| Congelamiento técnico del candidato | **GO (CERRADO)** | `REL-001`/`CF-01` a `CF-06`: worktree integrado, limpio, publicado y validado sobre el SHA inmutable `37ed360` con Manifiesto oficial consolidado (`CANDIDATE_MANIFEST_RC.md`) |
 | Paquete para imprenta | **NO-GO temporal** | Existe un v2.3 estructural determinístico con 26 CU, tablas/campos y accesibilidad auditados, pero `DF-01`, `DF-03` a `DF-06` y `DEL-001` siguen abiertos: faltan figuras, Diagrama de Clases, actualización Word, PDF y revisión visual/APA; la fecha objetivo del 4 de agosto quedó vencida |
 | Piloto institucional abierto | **NO-GO** | Cerrar `GAP-FILE-01`, aceptar Microsoft Entra y completar controles operativos/de privacidad del destino |
 | Producción pública | **NO-GO** | Además del piloto: TLS SQL real, SMTP/Redis/storage administrados, observabilidad, backup/restore, alertas, antivirus/CDR y pruebas de carga/seguridad |
 
-El preflight automatizado conjunto queda verde hasta Spec 218, pero los
-gates aún deben repetirse o vincularse al SHA candidato una vez creado. Esta evidencia no
-autoriza por sí sola el congelamiento ni la impresión. La demo pasa a **GO definitivo**
-solo cuando las condiciones locales y documentales anteriores tengan evidencia fechada.
+El preflight oficial certificado (`Certified: true`, 785/785 PASS) y la suite de concurrencia SQL (11/11 PASS) quedan formalmente vinculados al SHA candidato inmutable `37ed360` (`PREFLIGHT_CERTIFIED_91d57f9.json` y `SQL_CONCURRENCY_RESULTS.md`). La demo académica pasa a **GO definitivo** y el código queda bajo Code Freeze estricto. Las tareas documentales de imprenta (`DF-*`) y los gates de infraestructura de producción externa (`PR-*`) continúan con su tratamiento ordenado.

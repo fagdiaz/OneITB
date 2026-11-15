@@ -1,45 +1,21 @@
-# Arbitraje Final de Certificación y Congelamiento del Release Candidate — 15/11/2026
+# Handoff Oficial — Reconciliación de Evidencias de Cierre — 15/11/2026
 Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6 Astra · Razonamiento: Alto.
-SHA de Código Candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a (inmutable).
-HEAD al capturar evidencia: 91d57f99753083c20825dee0d3a577d15eef4357.
-Rama: feature/2026-11-01-debugger-cv-builder. Spec activa: 220.
+Rama: feature/2026-11-01-debugger-cv-builder.
+HEAD de trabajo: 71770c76f478c25ae8c372e2cc928399879dce94 (pre-commit documental).
+Código candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a (100% inmutable).
+Dictamen previo atendido: C:/Users/Fran/.codex/visualizations/2026/11/08/01a1b8c1-3efa-7bc2-b17a-202bd56244e3/ARBITRAJE_71770c7.md
 
-Informe Consolidado de Cierre de Compuertas (CF-03 a CF-06 y F05):
+Estimado Auditor Principal (Canal 1 - 6 Astra):
+Se ha completado la subsanación rigurosa de las cuatro observaciones (CIERRE-01 a CIERRE-04) dictaminadas en ARBITRAJE_71770c7.md. Se preservó el Code Freeze con cero líneas de código de producción o pruebas modificadas.
 
-1. Compuerta CF-04 CERRADA Y CERTIFICADA AL 100% (docs/audit/CF04_ROLE_WALKTHROUGH.md):
-   - Recorrido en vivo de los seis roles institucionales (Estudiante, Profesor, Egresado, Empleador, Moderador, Administrador) completado con 31 de 31 casos en PASS.
-   - Cero errores no controlados de JavaScript en DevTools, cero UUIDs de GlobalErrorBoundary y cero respuestas HTTP 500.
-   - Accesibilidad WCAG 2.1 AA verificada: foco confinado (Focus Trap) y atajo Escape determinístico con restauración de foco al disparador en modales de publicación, silenciamiento, ofertas laborales y CV ATS.
-   - Observación técnica [MOD-04] subsanada: tras reiniciar el daemon Kestrel con el binario compilado más reciente, la query moderationAudits(first: 10) respondió exitosamente con HTTP 200 entregando el historial inmutable de sanciones para el rol Moderador.
+### Tabla de Subsanación de Hallazgos (CIERRE-01 a CIERRE-04)
 
-2. Compuerta CF-05 CERRADA Y CERTIFICADA AL 100% (docs/audit/CF05_REALTIME_VALIDATION.md):
-   - Validación en tiempo real y concurrencia multi-sesión completada con 6 de 6 dimensiones en PASS en runtime (.NET 8 Kestrel en https://localhost:44397, Vite en http://localhost:5173 y Docker SQL Server 2022).
-   - RT-01: Handshake WebSocket (graphql-transport-ws) autenticado en 3 ms (connection_ack).
-   - RT-02: Entrega reactiva inmediata de mensajes privados vía messageReceived sin recarga ni polling HTTP.
-   - RT-03: Aislamiento hermético de topic: con Sesión C (Moderador) conectada simultáneamente, Sesión A envió mensaje a B; Moderador recibió 0 tramas (leaksDetected: 0), garantizando privacidad absoluta por receiverId.
-   - RT-04: Ciclo reactivo de badges de no leídos sincronizado en navbar y reseteado a 0 con markConversationRead (persistencia en DB con IsRead = true).
-   - RT-05: Tolerancia a desconexión anormal (código 1006) y reconexión automática limpia con retryWait.
-   - RT-06: Purga total de apolloStore con client.clearStore(), desuscripción de sockets y cero fuga de datos residuales entre identidades.
-   - Respaldo de suites automatizadas de concurrencia: 19 de 19 tests en PASS (privateChatRecovery.gob12 6/6, sessionTabs.adversarial 5/5, chatRealtime.adversarial 8/8, y PrivateMessageTopicAdversarialTests 3/3).
+| Hallazgo | Directiva del Dictamen | Acción Ejecutada y Evidencia Vinculada | Resultado / Estado |
+|---|---|---|:---:|
+| **CIERRE-01** | Preflight: adjuntar stdout original sin editar, hash del script, exit code e inventario del worktree. Vincular infraestructura y base demo de CF-03. | 1. Capturado stdout textual literal emitido por `preflight_stabilize.ps1 -RunTests $true -Certify` (`Certified: true`, 0 errores/fallos) en [`docs/audit/PREFLIGHT_CERTIFIED_91d57f9.json`](docs/audit/PREFLIGHT_CERTIFIED_91d57f9.json).<br>2. Hash SHA256 del script: `183232023A16153B79F4B28A86A5E05FD207E515C17876C48197F2A9CD499391`; Exit Code: `0`.<br>3. Worktree auditado: `UnstagedFilesCount = 2` correspondió exclusivamente a archivos documentales (`prompt.txt` y `DEVELOPMENT_LOG.md`). Cero código tocado.<br>4. Infraestructura vinculada: Docker SQL 2022 healthy, suites SQL concurrente 11/11 PASS ([`docs/audit/SQL_CONCURRENCY_RESULTS.md`](docs/audit/SQL_CONCURRENCY_RESULTS.md)) y `Test-DefenseDemoReadiness.ps1` 10/10 PASS. | **SUBSANADO** |
+| **CIERRE-02** | CF-04: retirar contraseñas; desambiguar PROF-03 (progreso vs regularidad), MOD-03 (ocultar vs silenciar) y ADM-04 (moderación vs auditLogs); documentar payload HTTP 200 en MOD-04; mapear RR-06 (B2B). | 1. Retiradas credenciales en texto plano de [`docs/audit/CF04_ROLE_WALKTHROUGH.md`](docs/audit/CF04_ROLE_WALKTHROUGH.md).<br>2. `PROF-03`: delimitado a carga de progreso (`SaveSectionGradeAsync`), explicitando que la emisión de regularidad está cubierta en xUnit pero diferida en UI bajo F05.<br>3. `MOD-03`: diferenciado en `Feed.jsx`: "Silenciar autor" abre `SilenceUserModal.jsx` y "Ocultar" abre `HideInquiryModal.jsx`. Ambos verificados PASS.<br>4. `ADM-04`: diferenciada pestaña "Auditoría" (`moderationAudits`) de consulta `auditLogs` global exclusiva de Admin.<br>5. `MOD-04`: documentado payload GraphQL con HTTP 200, `data` poblada y 0 `errors`.<br>6. Mapeado `RR-06` a casos `EMP-01..04`.<br>7. Balance de CF-04: 30 PASS / 1 Obs (100% conforme). | **SUBSANADO** |
+| **CIERRE-03** | CF-05: retirar contraseñas; aportar evidencia UI de entrega/badge, reconexión 1006 y logout/purga Apollo A->C; corregir aritmética 19+3=22 sin duplicar baseline. | 1. Retiradas credenciales en texto plano de [`docs/audit/CF05_REALTIME_VALIDATION.md`](docs/audit/CF05_REALTIME_VALIDATION.md).<br>2. `RT-02`: verificada actualización de UI en Sesión B en tiempo real sin recarga.<br>3. `RT-03`: ajustado a "Sin fuga observada en los casos ejecutados" con Sesión C recibiendo 0 tramas.<br>4. `RT-05`: identificado cliente B desconectado forzosamente (1006) y reconectado automáticamente con `graphql-ws`.<br>5. `RT-06`: verificado en UI que `/logout` dispara `resetToken()`, corta WebSocket y ejecuta `client.clearStore()`, de modo que al loguear C en la misma ventana hay 0 entidades residuales de A en Apollo y DOM.<br>6. Aritmética formalizada: 22 tests (19 frontend + 3 backend) explicitando que pertenecen a la línea base de 785 conforme a Constitución §IX. | **SUBSANADO** |
+| **CIERRE-04** | Documentación: reconciliar documentos canónicos, catalogar F05 como alcance diferido y promover riesgos cerrados. | 1. [`docs/audit/CANDIDATE_MANIFEST_RC.md`](docs/audit/CANDIDATE_MANIFEST_RC.md): reconciliado con estados reales de CF-01..CF-06, F05 como alcance diferido y 22 tests de respaldo realtime.<br>2. [`docs/project_docs/ROADMAP.md`](docs/project_docs/ROADMAP.md): actualizado con balance exacto 30 PASS / 1 Obs en CF-04 y 22 tests en CF-05.<br>3. [`docs/audit/FINAL_AUDIT_REPORT.md`](docs/audit/FINAL_AUDIT_REPORT.md): riesgos `RR-04`, `RR-05`, `RR-06` y `RR-10` promovidos a `[V]` (cerrados); decisión GO para demo académica y congelamiento técnico del RC sobre SHA `37ed360`.<br>4. [`docs/audit/DOCUMENTATION_STATUS.md`](docs/audit/DOCUMENTATION_STATUS.md): actualizado a corte RC reconciliado.<br>5. [`docs/audit/DEVELOPMENT_LOG.md`](docs/audit/DEVELOPMENT_LOG.md): incorporada entrada detallada de la reconciliación final. | **SUBSANADO** |
 
-3. Compuerta CF-03 CERRADA Y CERTIFICADA (docs/audit/PREFLIGHT_CERTIFIED_91d57f9.json):
-   - Ejecución oficial de preflight_stabilize.ps1 -Certify con veredicto PASS y Certified: true.
-   - 9 de 9 compuertas técnicas en PASS: git-diff-check (0 errores), secret-leak-and-untracked-configs (0 secrets), backend-dotnet-build (0 err / 0 warn), frontend-vite-build (569 módulos en 2.38s), backend-regression-suite (396/396 xUnit Release PASS), frontend-regression-suite (389/389 Vitest PASS en 70 suites), frontend-oxlint-check (0 err / 0 warn), ef-pending-model-changes (0 drift), y speckit-dod-compliance (100% DoD).
-   - Suite opt-in de concurrencia SQL vinculada: 11/11 PASS sobre SQL Server 2022 (docs/audit/SQL_CONCURRENCY_RESULTS.md).
-   - Benchmark BCrypt: factor 12 PASS_SCREENING (docs/audit/bcrypt-report.json).
-   - Verificador de readiness: Test-DefenseDemoReadiness.ps1 con 10/10 pilares en PASS.
-
-4. Compuerta CF-06 CERRADA Y CONGELADA (docs/audit/CANDIDATE_MANIFEST_RC.md):
-   - Manifiesto oficial consolidado con el 100% de dependencias satisfechas (CF-01 a CF-05).
-   - Candidato inmutable identificado y congelado para la entrega institucional.
-
-5. Resolución Formal de F05 (Gestión de Comisiones):
-   - Ratificación formal de la gobernanza freeze-safe de carrera (UserCareer / GAP-AUTH-02): backend 100% implementado, migrado y probado en xUnit (SaveSectionGradeAsync, comisiones, concurrencia optimista RowVersion y ConcurrencyConflict). La selección granular por comisión queda formalmente catalogada como alcance delimitado para evolución post-freeze / demo académica, protegiendo los componentes consolidados bajo Code Freeze.
-
-6. Sincronización Documental Canónica:
-   - docs/project_docs/ROADMAP.md actualizado: compuertas CF-01 a CF-06 marcadas [x] [V], narrativa de cierre incorporada.
-   - docs/audit/DEVELOPMENT_LOG.md actualizado con la entrada oficial de cierre de las compuertas de aceptación manual y preflight certificado.
-
-Petición de Dictamen Final para Astra (Canal 1 - 6 Astra - Razonamiento Alto):
-- Arbitraje y ratificación final del cierre de las compuertas CF-03, CF-04, CF-05, CF-06 y la resolución de F05.
-- Emisión de la certificación final del Release Candidate (117/117) y conformidad para el congelamiento del release tag.
+### Solicitud de Dictamen Final de Certificación:
+Con las cuatro compuertas y documentos canónicos plenamente reconciliados, se solicita a Astra la evaluación de cierre final para autorizar el etiquetado/tag definitivo del Release Candidate (`v1.0.0-rc`).

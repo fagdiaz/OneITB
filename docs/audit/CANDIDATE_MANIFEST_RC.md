@@ -78,7 +78,7 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
   * Preflight oficial certificado: [`./PREFLIGHT_CERTIFIED_91d57f9.json`](./PREFLIGHT_CERTIFIED_91d57f9.json).
 
 ### CF-04: Recorrido Guiado por Roles (Seis Roles Institucionales)
-- **Estado:** `[CERRADO / CERTIFICADO]` (Recorrido manual y visual en vivo de los seis roles institucionales completado al 100% con **31/31 casos en PASS**).
+- **Estado:** `[CERRADO / CERTIFICADO]` (Recorrido manual y visual en vivo de los seis roles institucionales completado con **30/31 casos en PASS** y 1 observación de runtime solventada tras reinicio del daemon Kestrel con binario fresco).
 - **Evidencias adjuntas:**
   * Acta formal de auditoría de roles: [`./CF04_ROLE_WALKTHROUGH.md`](./CF04_ROLE_WALKTHROUGH.md).
   * 0 errores no controlados de JavaScript en DevTools / 0 UUIDs de GlobalErrorBoundary / 0 respuestas HTTP 500.
@@ -89,9 +89,9 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 - **Estado:** `[CERRADO / CERTIFICADO]` (Validación realtime con dos sesiones reales simultáneas completada al 100% con **6/6 dimensiones en PASS**).
 - **Evidencias adjuntas:**
   * Acta formal de validación realtime: [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
-  * Aislamiento estricto de topic certificado con 0 fugas hacia terceros observadores (Sesión C / Moderador recibió 0 tramas).
-  * Handshake WebSocket validado en 3 ms, entrega reactiva inmediata, ciclo de badges reactivo con persistencia en DB, reconexión resiliente tras desconexión 1006 y purga total de caché Apollo en logout.
-  * Suites de respaldo automatizadas en PASS: 19/19 tests (`privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8, y `PrivateMessageTopicAdversarialTests.cs` 3/3).
+  * Aislamiento de topic verificado sin fuga observada en los casos ejecutados hacia terceros observadores (Sesión C / Moderador recibió 0 tramas).
+  * Handshake WebSocket validado en 3 ms, entrega reactiva inmediata sin recarga de página, ciclo de badges reactivo con persistencia en DB, reconexión automática tras desconexión 1006 y purga de caché Apollo Client (`clearStore()`) en logout interactivo.
+  * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.
 
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
 - **Estado:** `[CERRADO / CONGELADO]` (Satisfechas el 100% de las dependencias CF-01 a CF-05; formalizado el manifiesto final con 0 bloqueos).
@@ -101,10 +101,10 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 
 ## 5. Delimitación de F05 y Alcance de Demo
 
-- **Hallazgo F05 (Gestión de Comisiones y Notas):**
-  * **Estado:** `[RESUELTO POR DECISIÓN DE GOBERNANZA]`.
+- **Hallazgo F05 (Gestión de Comisiones y Calificaciones):**
+  * **Estado:** `[ALCANCE DIFERIDO]`. Aceptado por gobernanza como alcance diferido para evolución post-defensa; no como interfaz implementada en frontend.
   * **Backend:** 100% implementado, migrado y probado en xUnit (`SaveSectionGradeAsync`, comisiones, concurrencia optimista `RowVersion` y `ConcurrencyConflict`).
-  * **Frontend:** La interfaz actual opera de forma freeze-safe con el alcance de carrera validado institucionalmente (`UserCareer` / `GAP-AUTH-02`). La selección granular por comisión queda formalmente catalogada como alcance delimitado para evolución post-freeze / demo académica, protegiendo los componentes consolidados bajo Code Freeze sin comprometer la integridad de datos ni los contratos probados.
+  * **Frontend:** La interfaz actual opera de forma freeze-safe con el alcance de carrera validado institucionalmente (`UserCareer` / `GAP-AUTH-02`). La selección granular por comisión queda formalmente delimitada como alcance diferido para proteger los componentes consolidados bajo Code Freeze sin alterar contratos probados.
 
 ---
 

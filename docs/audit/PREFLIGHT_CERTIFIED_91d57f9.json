@@ -1,85 +1,85 @@
 {
-  "Status": "PASS",
-  "Certified": true,
-  "IsSimulated": false,
-  "Timestamp": "2026-11-15 15:33:30",
-  "GitCommitSha": "91d57f99753083c20825dee0d3a577d15eef4357",
-  "GitBranch": "feature/2026-11-01-debugger-cv-builder",
-  "ActivePointer": "specs/220-core-closure-and-application-hardening",
-  "FeatureDir": "F:\\React\\OneITB23\\specs\\220-core-closure-and-application-hardening",
-  "WorkingTreeClean": false,
-  "StagedFilesCount": 0,
-  "UnstagedFilesCount": 2,
-  "BackendMetrics": {
-    "Failed": 0,
-    "Skipped": 0,
-    "Total": 396,
-    "Passed": 396
-  },
-  "FrontendMetrics": {
-    "Failed": 0,
-    "Skipped": 0,
-    "Total": 389,
-    "Passed": 389
-  },
-  "TotalGates": 9,
-  "PassedCount": 9,
-  "FailedCount": 0,
-  "SkippedCount": 0,
-  "Gates": [
-    {
-      "Name": "git-diff-check",
-      "Status": "PASS",
-      "Severity": "P1",
-      "Summary": "git diff --check: PASS (0 format conflicts, 0 trailing whitespaces)"
-    },
-    {
-      "Name": "secret-leak-and-untracked-configs",
-      "Status": "PASS",
-      "Severity": "P0",
-      "Summary": "0 secrets, 0 plaintext passwords, 0 untracked .env files detected"
-    },
-    {
-      "Name": "backend-dotnet-build",
-      "Status": "PASS",
-      "Severity": "P0",
-      "Summary": "Compilación Release net8.0 correcta: 0 Errores, 0 Advertencias"
-    },
-    {
-      "Name": "frontend-vite-build",
-      "Status": "PASS",
-      "Severity": "P0",
-      "Summary": "Vite production build: 569 modules transformed in 2.38s"
-    },
-    {
-      "Name": "backend-regression-suite",
-      "Status": "PASS",
-      "Severity": "P0",
-      "Summary": "Backend xUnit: 396 passed of 396 total tests (0 skipped)"
-    },
-    {
-      "Name": "frontend-regression-suite",
-      "Status": "PASS",
-      "Severity": "P0",
-      "Summary": "Frontend Vitest: 389 tests passed of 389 total tests in 70 suites (0 skipped)"
-    },
-    {
-      "Name": "frontend-oxlint-check",
-      "Status": "PASS",
-      "Severity": "P1",
-      "Summary": "oxlint: 0 errors, 0 warnings across 218 files"
-    },
-    {
-      "Name": "ef-pending-model-changes",
-      "Status": "PASS",
-      "Severity": "P1",
-      "Summary": "No changes have been made to the model since the last migration (0 drift)"
-    },
-    {
-      "Name": "speckit-dod-compliance",
-      "Status": "PASS",
-      "Severity": "P0",
-      "Summary": "100% DoD compliance: 0 open tasks in tasks.md, active spec aligned, DEVELOPMENT_LOG updated"
-    }
-  ]
+    "Status":  "PASS",
+    "Certified":  true,
+    "IsSimulated":  false,
+    "Timestamp":  "2026-11-15 15:33:30",
+    "GitCommitSha":  "91d57f99753083c20825dee0d3a577d15eef4357",
+    "GitBranch":  "feature/2026-11-01-debugger-cv-builder",
+    "ActivePointer":  "specs/220-core-closure-and-application-hardening",
+    "FeatureDir":  "F:\\React\\OneITB23\\specs\\220-core-closure-and-application-hardening",
+    "WorkingTreeClean":  false,
+    "StagedFilesCount":  0,
+    "UnstagedFilesCount":  2,
+    "BackendMetrics":  {
+                           "Failed":  0,
+                           "Skipped":  0,
+                           "Total":  396,
+                           "Passed":  396
+                       },
+    "FrontendMetrics":  {
+                            "Failed":  0,
+                            "Skipped":  0,
+                            "Total":  389,
+                            "Passed":  389
+                        },
+    "TotalGates":  9,
+    "PassedCount":  9,
+    "FailedCount":  0,
+    "SkippedCount":  0,
+    "Gates":  [
+                  {
+                      "Name":  "git-diff-check",
+                      "Status":  "PASS",
+                      "Severity":  "P1",
+                      "Summary":  "+     git diff --check\n+     ~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException\n    + FullyQualifiedErrorId : NativeCommandError"
+                  },
+                  {
+                      "Name":  "secret-leak-and-untracked-configs",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "+     $diffText = git diff HEAD\n+                 ~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException\n    + FullyQualifiedErrorId : NativeCommandError"
+                  },
+                  {
+                      "Name":  "backend-dotnet-build",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "Compilación correcta.\n    0 Advertencia(s)\n    0 Errores\nTiempo transcurrido 00:00:02.91"
+                  },
+                  {
+                      "Name":  "frontend-vite-build",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "dist/assets/pdfjs-BtrHVmlc.js                     406.44 kB │ gzip: 121.54 kB\ndist/assets/ApplicationRoot-D8b5qwhN.js           538.87 kB │ gzip: 124.70 kB\ndist/assets/vendor-BJQQqPhC.js                    608.63 kB │ gzip: 173.56 kB\n\u001b[32m✓ built in 2.38s\u001b[39m"
+                  },
+                  {
+                      "Name":  "backend-regression-suite",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "Backend xUnit: 396 passed of 396 total tests (0 skipped)."
+                  },
+                  {
+                      "Name":  "frontend-regression-suite",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "Frontend Vitest: 389 tests passed of 389 total tests (0 skipped)."
+                  },
+                  {
+                      "Name":  "frontend-oxlint-check",
+                      "Status":  "PASS",
+                      "Severity":  "P1",
+                      "Summary":  ""
+                  },
+                  {
+                      "Name":  "ef-pending-model-changes",
+                      "Status":  "PASS",
+                      "Severity":  "P1",
+                      "Summary":  "Build started...\nBuild succeeded.\nNo changes have been made to the model since the last migration."
+                  },
+                  {
+                      "Name":  "speckit-dod-compliance",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  ""
+                  }
+              ]
 }
