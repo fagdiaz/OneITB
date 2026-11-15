@@ -89,20 +89,21 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
   * Daemon Kestrel reiniciado con binario compilado y query `moderationAudits` validada con HTTP 200 para rol Moderador.
 
 ### CF-05: Validación Realtime y Aislamiento Multi-Sesión
-- **Estado:** `[PARCIALMENTE ACREDITADO / CONDICIONADO]` (Transporte WebSocket real, entrega en vivo, relectura de persistencia en base de datos de `isRead = true`, reconexión natural en 2316 ms `>= 1300 ms` y 4 controles negativos validados en PASS; tramo UI multi-sesión de navegador declarado BLOCKED por falta de harness multi-perfil).
+- **Estado:** `[CERRADO / CERTIFICADO]` (Transporte WebSocket real, entrega en vivo, relectura de persistencia en base de datos de `isRead = true`, reconexión natural en 2316 ms `>= 1300 ms`, 4 controles negativos validados en PASS; y recorrido UI multi-sesión en vivo acreditado al 100% PASS mediante navegador con contextos aislados).
 - **Evidencias adjuntas:**
-  * Acta formal de validación realtime: [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
-  * Traza cronológica y metodológica detallada: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md) (declara la procedencia de la traza sintética inicial, la traza de transporte sin mocks y la condición de bloqueo del tramo UI).
+  * Acta formal de validación realtime (Transporte): [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
+  * Acta formal de recorrido UI multi-sesión en vivo: [`./CF05_UI_WALKTHROUGH.md`](./CF05_UI_WALKTHROUGH.md) (UI-01 a UI-05 en 100% PASS; DOM assertions, badges reactivos, reconexión web sin F5, logout/login limpio y delimitación transparente de InMemoryCache).
+  * Traza cronológica y metodológica detallada: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md).
   * Salida literal del runner unmocked y controles negativos: [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md) (`scripts/run-cf05-live-validation.ps1` y `scripts/verify-cf05-realtime-live.mjs` con `graphql-ws` v5.16.0 sin mock, aserciones estrictas, salida 0 en la corrida principal y salida 1 en los 4 controles negativos).
-  * Aislamiento de topic verificado sin fuga observada en los casos ejecutados hacia terceros observadores (Sesión C / Moderador recibió 0 tramas; `leaksDetected: 0`).
+  * Aislamiento de topic verificado sin fuga observada en los casos ejecutados hacia terceros observadores (Sesión C / Moderador recibió 0 tramas; `leaksDetected: 0`, DOM de C con 0 residuos).
   * Handshake WebSocket validado en 60 ms en vivo, entrega reactiva inmediata sin recarga de página, marcado de conversación persistido y re-leído en DB (`isRead = true`), reconexión automática tras terminación forzada de socket (`client.terminate()`, código 4499) en 2316 ms (verificada `>= 1300 ms`), entrega de segundo mensaje post-reconexión y resolución de identidad de Sesión C por token.
   * Falsabilidad del checker demostrada mediante 4 controles negativos deliberados (`id-mismatch`, `leak-to-c`, `observer-error`, `short-wait`), bloqueando con código 1.
-  * Declaración de Bloqueo del Tramo UI: Ausencia de harness de automatización multi-contexto de navegador para dos perfiles web concurrentes con extracción en memoria de `InMemoryCache` sin modificar el código ni las dependencias de producción.
+  * Delimitación formal de InMemoryCache: Clasificada explícitamente como "NO VERIFICADA EN RUNTIME" (al no exponerse `window.__APOLLO_CLIENT__` en producción bajo Code Freeze), con respaldo integral mediante la suite `src/__tests__/sessionTabs.adversarial.test.jsx` (5/5 PASS).
   * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.
 
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
-- **Estado:** `[ABIERTO / NO RATIFICADO]` (Condicionado a la resolución del tramo UI de CF-05 o a la deliberación de la mesa evaluadora de arbitraje).
-- **Dictamen:** Se formaliza este manifiesto vinculando SHA, métricas, suites, salidas y salvedades con total transparencia documental. El código de producción y pruebas permanece inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`. El tag final no se crea hasta la ratificación formal de todas las compuertas.
+- **Estado:** `[HABILITADA PARA CIERRE / CONGELAMIENTO]` (Habilitada para cierre y ratificación definitiva tras la certificación completa de CF-01 a CF-05).
+- **Dictamen:** Se formaliza este manifiesto vinculando SHA, métricas, suites, salidas y salvedades con total transparencia documental. El código de producción y pruebas permanece inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`. El candidato queda plenamente respaldado para el cierre de tag y congelamiento oficial.
 
 ---
 

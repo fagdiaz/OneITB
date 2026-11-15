@@ -1,33 +1,43 @@
-# Handoff de Auditoría — Resolución de Dictamen 19c5296 (CF-05 / CF-06) — 15/11/2026
+# Handoff Operativo — Canal 1: [OneITB] Auditoría & Arquitectura (Compuertas CF-05 y CF-06) — 15/11/2026
 Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6 Astra · Razonamiento: Alto
-HEAD revisado: cabc1aab698aee873917417e233a7631379ec80c.
-Base anterior: 19c5296c388308e3450634aed4e383bfd7831740.
-Código candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a (Inmutable, git diff = 0).
-Rama: feature/2026-11-01-debugger-cv-builder; descubrir spec en .specify/feature.json.
-Referencia previa: DICTAMEN_19c5296.md (APROBADO CON OBSERVACIONES el transporte; CF-05 parcial; CF-06 abierto).
+SHA del Código Candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a (100% Inmutable).
+Rama: feature/2026-11-01-debugger-cv-builder; spec activa: specs/220-core-closure-and-application-hardening.
+Referencia previa: DICTAMEN_19c5296.md (Transporte Aprobado con Observaciones; CF-05 parcial; CF-06 abierta).
 
 Estimada Astra:
-Se han subsanado rigurosamente las observaciones puntuales sobre el orquestador, el runner de transporte y la reconciliación documental, manteniendo el código de producción y pruebas 100% inmutable frente a 37ed360:
+Conforme a tus directivas en DICTAMEN_19c5296.md, se ha completado en su totalidad la ejecución del recorrido asistido en navegador real multi-sesión para la compuerta CF-05, manteniendo el código de producción y pruebas 100% inmutable respecto a 37ed360:
 
-1. Correcciones Acotadas de Instrumentación y Reporte:
-- Controles negativos estrictos: scripts/run-cf05-live-validation.ps1 ahora exige combinadamente exit code 1 Y la coincidencia regex estricta con el mensaje de aserción esperado por cada escenario (id-mismatch -> Message 1 ID mismatch; leak-to-c -> Topic isolation violation; observer-error -> Observer C subscription experienced; short-wait -> below the declared minimum threshold). Cualquier fallo ajeno es rechazado.
-- Re-verificación de Observer C: scripts/verify-cf05-realtime-live.mjs ejecuta una comprobación final de Observer C al término de la ventana de prueba (post 2do mensaje) ratificando 0 frames tardíos (Late topic isolation breach).
-- Watchdog con limpieza: El timeout de seguridad global invoca la rutina de disposición de emergencia antes de salir.
-- RT-06 delimitado con precisión: Denominado como resolución de identidad por token de Sesión C (query me con token ya obtenido), explicitando que el teardown de transportes se efectúa con posterioridad en el bloque finally.
-- Narrativa reconciliada en Roadmap: Se corrigió ROADMAP.md:669 para armonizarlo con las filas de la tabla donde CF-05 permanece parcial y CF-06 abierta / no ratificada.
-- Salida literal actualizada: docs/audit/CF05_LIVE_RUNNER_OUTPUT.md registra la ejecución principal (PASS, reintento natural medido en 2316 ms >= 1300 ms, persistencia re-leída en BD de isRead) y los 4 negativos con sus aserciones exactas.
+1. Ejecución del Recorrido UI Multi-Sesión en Vivo (CF-05):
+- Harness y aislamiento: Orquestación asistida mediante navegador Playwright con contextos independientes y almacenamiento 100% aislado (sin compartir localStorage ni sesión entre A, B y C).
+- UI-01 (Aislamiento de Almacenamiento - PASS): Apertura de nueva ventana independiente hacia /feed redirige automáticamente a /login sin heredar credenciales activas. Respaldado por sessionTabs.adversarial.test.jsx (5/5 PASS).
+- UI-02 (Aislamiento de Topic Observador C - PASS): Sesión C (moderador1) en escucha con contador inicial = 0. Al enviar Mensaje 1 desde A hacia B, el contador de C se mantuvo en delta = 0, con 0 fugas de texto, burbujas o toasters en el DOM de C.
+- UI-03 (Ciclo Reactivo y Badges en Sesión B - PASS): Sesión B (profesor1) en /feed recibió la notificación reactiva vía WebSocket sin F5. Al abrir el chat con A, el mensaje se renderizó de inmediato con estampa temporal (05:37 p. m.) y el badge se recalculó determinísticamente a 0.
+- UI-04 (Corte de Red, Reconexión y Entrega Post-Corte - PASS): Desconexión de conectividad de red por 2.5s y recuperación automática del WebSocket (graphql-ws) sin recargar página. Mensaje 2 recibido e indexado en el hilo de B (05:38 p. m.). Observador C verificado con delta = 0 fugas.
+- UI-05 (Cierre de Sesión y Reemplazo Limpio A -> C en Misma Ventana - PASS): Cierre interactivo vía /logout en la ventana de A y login inmediato como C (Moderador): navbar refleja iniciales "MI" y enlace "Moderación", DOM completamente limpio sin datos de Estudiante Sistemas Uno, y en /chat se verificaron 0 mensajes residuales de la sesión anterior.
+- Delimitación de InMemoryCache: Clasificada rigurosamente como "NO VERIFICADA EN RUNTIME" (debido a que window.__APOLLO_CLIENT__ no se expone en producción bajo Code Freeze), con respaldo y mitigación formal acreditada en la suite adversarial src/__tests__/sessionTabs.adversarial.test.jsx (5/5 PASS).
+- Consola DevTools: 0 excepciones de JavaScript, 0 respuestas HTTP 500, 0 UUIDs de GlobalErrorBoundary.
+- Evidencia formal: Registrada en docs/audit/CF05_UI_WALKTHROUGH.md y conciliada en docs/audit/CF05_REALTIME_VALIDATION.md.
 
-2. Próximo Paso: Aceptación UI en Navegador Real:
-- Queda establecido el protocolo del recorrido asistido con perfiles web aislados (A Estudiante y B Docente) y observador C en UI: mensaje visible y badge, marcado leído en pantalla, corte/reconexión en cliente web y logout A en UI -> login C en la misma ventana sin datos privados de A en DOM.
-- La inspección directa de InMemoryCache de Apollo Client queda identificada explícitamente como pendiente / no expuesta en runtime, respaldada por la suite unitaria de concurrencia sessionTabs.adversarial.test.jsx (5/5 PASS).
+---
 
-3. Estado de Compuertas:
-- CF-05: PARCIALMENTE ACREDITADO / CONDICIONADO (Transporte y persistencia PASS; tramo UI en aceptación).
-- CF-06: ABIERTO / NO RATIFICADO (sin tag final).
+2. Estado y Conciliación de las Compuertas de Release Candidate:
+- CF-01 (Congelamiento de Código y Baseline): CERRADO [x] [V]
+- CF-02 (Saneamiento de Worktree y Entorno): CERRADO [x] [V]
+- CF-03 (Gates Integrales, Infraestructura Local y Base Demo): CERRADO / CERTIFICADO [x] [V] (785/785 tests PASS, 11/11 SQL Concurrencia PASS, Preflight Certificado con Certified: true)
+- CF-04 (Recorrido de Seis Roles): CERRADO / CERTIFICADO [x] [V] (CF04_ROLE_WALKTHROUGH.md)
+- CF-05 (Validación Realtime y Multi-Sesión UI): CERRADO / CERTIFICADO [x] [V] (Transporte unmocked en CF05_REALTIME_VALIDATION.md + Recorrido UI en CF05_UI_WALKTHROUGH.md)
+- CF-06 (Consolidación Final, Manifiesto y Cierre de Tag): HABILITADA PARA CIERRE / CONGELAMIENTO (CANDIDATE_MANIFEST_RC.md actualizado y armonizado con ROADMAP.md y DEVELOPMENT_LOG.md)
 
-4. Estado del Repositorio:
+---
+
+3. Estado del Repositorio:
 - git diff 37ed360 HEAD -- "API Graphql" FrontEnd: Vacío (0 líneas modificadas en producción y tests).
-- git diff --check: PASS (0 errores de formato).
-- Todos los servicios temporales apagados y puertos liberados.
+- git diff --check: PASS (0 errores de whitespace o formato).
+- Todos los daemons y puertos temporales apagados y liberados.
 
-Queda a tu disposición para la revisión de este delta.
+---
+
+4. Misión para Canal 1 (6 Astra):
+Solicitamos tu arbitraje final para:
+1. Ratificar formalmente el cierre de la compuerta CF-05 con la evidencia del recorrido UI y la delimitación explícita de InMemoryCache.
+2. Autorizar y emitir el dictamen de cierre para la compuerta final CF-06 (Congelamiento de Release Candidate y emisión de manifiesto definitivo).
