@@ -10,7 +10,7 @@
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
 | Backend automatizado más reciente | **389/389** | GOB-16 incorporó la suite de endurecimiento GraphQL (19 casos); 389 pruebas de regresión en PASS (0 omitidas). Las categorías opt-in GOB12SqlConcurrency (10 casos), GOB15BcryptBenchmark (1 caso) y VendorAdvisoryGHSA (1 caso canario) se informan por separado en el manifiesto |
-| Frontend automatizado más reciente | **367/367** | GOB-18 y remediaciones F02/F03/F04/F06 verificaron la suite Vitest con 68 suites completas; 367 pruebas en PASS (0 fallos) |
+| Frontend automatizado más reciente | **374/374** | GOB-18 y remediaciones F01-F08 (Delta 3) verificaron la suite Vitest con 70 suites completas; 374 pruebas en PASS (0 fallos) |
 | Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente; la mesa del 07/08 no se realizó |
 
 El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de

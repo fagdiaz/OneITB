@@ -5,7 +5,7 @@
 **Fecha de Emisión Inicial:** 2026-10-30T17:25:00-03:00<br>
 **Fecha de Consolidación y Certificación:** 2026-11-14T19:05:00-03:00<br>
 **Stack Visual Auditado:** React 18, Tailwind CSS v4, FontAwesome 6.7.2, Apollo Client 3.7, Vite 8<br>
-**Modo de Inspección:** E2E en Navegador en Vivo (`http://localhost:5173`) + Análisis Estático y Pruebas Automatizadas (Vitest 367/367, xUnit 389/389, Total 756)<br>
+**Modo de Inspección:** E2E en Navegador en Vivo (`http://localhost:5173`) + Análisis Estático y Pruebas Automatizadas (Vitest 374/374, xUnit 389/389, Total 763)<br>
 **Alcance:** Consolidación exhaustiva de los 5 Sub-Slices funcionales y de gobernanza con remediación verificada.
 
 ---
@@ -18,20 +18,24 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 
 | Vector de Análisis Visual | Estado Inicial | Estado Posterior a Remediación | Cumplimiento Actual | Hallazgos 🔴 | Hallazgos 🟡 | Hallazgos 🟢 |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1. Consistencia de Diseño y Tailwind CSS** | ACEPTABLE (86%) | **EXCELENTE** | **98%** | 0 | 0 | 4 |
-| **2. Modo Claro vs. Modo Oscuro (Dark Mode)** | CRÍTICO (74%) | **EXCELENTE (Gold Standard)** | **99%** | 0 | 0 | 6 |
-| **3. Responsividad y Adaptación Móvil** | EXCELENTE (96%) | **EXCELENTE** | **99%** | 0 | 0 | 3 |
-| **4. Micro-Feedback Visual y Estados UI** | BUENO (84%) | **EXCELENTE** | **98%** | 0 | 0 | 4 |
-| **TOTALES CONSOLIDADOS** | **CALIFICADO CON RESERVAS (85.0%)** | **EVALUACIÓN POSITIVA** | **98.5%** | **0** | **0** | **17** |
+| **1. Consistencia de Diseño y Tailwind CSS** | ACEPTABLE (86%) | **EXCELENTE** | **98%** | 0 | 1 | 4 |
+| **2. Modo Claro vs. Modo Oscuro (Dark Mode)** | CRÍTICO (74%) | **EXCELENTE (Gold Standard)** | **99%** | 0 | 1 | 6 |
+| **3. Responsividad y Adaptación Móvil** | EXCELENTE (96%) | **EXCELENTE** | **99%** | 0 | 1 | 3 |
+| **4. Micro-Feedback Visual y Estados UI** | BUENO (84%) | **EXCELENTE** | **98%** | 0 | 1 | 4 |
+| **TOTALES CONSOLIDADOS** | **CALIFICADO CON RESERVAS (85.0%)** | **EVALUACIÓN POSITIVA** | **98.5% (Promedio) / 98.67% (Ítems)** | **0** | **4** | **17** |
 
-> [!NOTE] Criterio y Fórmula del Indicador Consolidado (98.5%):
-> El índice consolidado representa el promedio aritmético de 4 vectores de calidad visual e interacción inspeccionados en los 5 sub-slices:
-> 1. **Consistencia de Diseño y Tailwind CSS:** 98% (49/50 verificaciones aprobadas en espaciados, tipografía, tokens y jerarquía de componentes; 1 pendiente en consistencia de tablas administrativas).
-> 2. **Modo Claro vs. Modo Oscuro (Dark Mode):** 99% (99/100 componentes contrastados con clase `dark:` verificada y ratio WCAG AA ≥ 4.5:1; 1 pendiente en contraste de gráficos estadísticos complejos).
-> 3. **Responsividad y Adaptación Móvil:** 99% (99/100 vistas probadas en breakpoints 375px, 768px y 1280px con layout elástico; 1 pendiente en tablas densas de notas en pantallas ultrapequeñas <360px).
-> 4. **Micro-Feedback Visual y Estados UI:** 98% (49/50 estados interactivos de carga, deshabilitado, toast reactivo, modales y focus trap; 1 pendiente en feedback de descarte de subida masiva de adjuntos).
-> **Fórmula:** (49/50 + 99/100 + 99/100 + 49/50) / 4 = (98% + 99% + 99% + 98%) / 4 = 394% / 4 = 98.5% (296/300 ítems aprobados).
-> Este índice constituye una métrica indicativa de madurez estética y de usabilidad del frontend, y no reemplaza la ejecución y cierre formal de los gates CF-03 a CF-06 estipulados en la Constitución del proyecto.
+> [!NOTE] Criterio, Metodología y Diferenciación de Métricas:
+> Se distinguen formalmente dos agregaciones matemáticas derivadas de las 300 verificaciones observadas en los 5 sub-slices:
+> 1. **Promedio simple por categorías (98.50%):** Promedio no ponderado de los 4 vectores visuales: `(98% + 99% + 99% + 98%) / 4 = 394% / 4 = 98.50%`.
+> 2. **Proporción de ítems aprobados (98.67%):** Proporción directa sobre el total muestreado: `296 / 300 = 98.666...% (~98.67%)`.
+>
+> **Detalle de los 4 hallazgos pendientes (bandera amarilla 🟡):**
+> * Vector 1 (49/50): Consistencia de tablas densas administrativas en vistas de auditoría.
+> * Vector 2 (99/100): Contraste de trazado en gráficos estadísticos complejos bajo modo oscuro.
+> * Vector 3 (99/100): Adaptación elástica de grillas de notas en anchos ultrapequeños (<360px).
+> * Vector 4 (49/50): Micro-feedback explícito al descartar lotes de subida masiva de adjuntos.
+>
+> Ambas cifras se consideran una **estimación indicativa de madurez estética y de usabilidad** y no sustituyen el inventario unitario caso por caso ni la ejecución y certificación de los gates formales CF-03 a CF-06 requeridos por la Constitución del proyecto.
 
 ---
 
@@ -50,7 +54,7 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
 * **Funciones de Moderación Disciplinaria Inline (`Feed.jsx`):**
   * Moderador (`moderador1@itbeltran.com.ar`) y Administrador cuentan con menú contextual exclusivo sobre publicaciones ajenas:
     * **Ocultar por moderación:** Despliega `ModerationReasonModal`, exige motivo obligatorio (≥5 caracteres) y retira la publicación del feed con auditoría persistida.
-    * **Silenciar autor (Moderación):** Abre diálogo modal de sanción disciplinaria, permite seleccionar duración (24 hs, 72 hs, 168 hs), ejecuta la mutación `SILENCE_USER` persistiendo el silenciamiento en backend (`MutedUntil`), y emite toast de confirmación.
+    * **Silenciar autor (Moderación):** Abre diálogo modal de sanción disciplinaria implementado mediante `SilenceUserModal.jsx` con contrato completo de teclado y accesibilidad (foco inicial en botón de cierre, trampa de tabulación `Tab`/`Shift+Tab`, tecla `Escape` libre en reposo y bloqueada durante el envío de la mutación, y restauración de foco al disparador al cerrar). Permite seleccionar duración (24 hs, 72 hs, 168 hs), ejecuta la mutación `SILENCE_USER` persistiendo el silenciamiento en backend (`MutedUntil`), y emite toast de confirmación.
 * **Chat Institucional (`PrivateChat.jsx`):**
   * Contacto probado con docente (`profesor2.cdia`).
   * Burbujas diferenciadas: azul institucional (`bg-blue-600 text-white`) para mensajes propios y superficie contrastada para mensajes recibidos.
@@ -82,7 +86,7 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
     * `SaveSectionGradeAsync`: valida que el docente esté asignado a la comisión, preserva el historial de intentos en recursadas y lanza `ConcurrencyConflict` cuando `ExpectedVersion` no coincide con el `RowVersion` de la entidad en base de datos (`AcademicSectionGradeTests.cs` y `SectionGradeSqlRaceTests.cs`).
     * `GetMyCourseSectionsAsync`: retorna períodos y comisiones asignadas con control de acceso por rol y carrera.
     * `IssueRegularStudentCertificateAsync`: emite certificados institucionales con validación criptográfica de vigencia.
-  * **Frontend UI (Aceptación de Demo):** La interfaz actual en `AcademicDashboard.jsx` opera bajo la política freeze-safe de carrera (`UserCareer` / `GAP-AUTH-02`), impidiendo a los docentes calificar o ver alumnos de carreras ajenas (`AcademicService.cs:850–908`). La integración de los selectores visuales de comisión/sección y el diálogo interactivo de conflicto de concurrencia optimista (`ExpectedVersion`) quedan catalogados como frontera de UI pendiente para demo, sin comprometer la seguridad institucional en backend.
+  * **Frontend UI (Aceptación de Demo):** La interfaz actual en `AcademicDashboard.jsx` opera bajo la política freeze-safe de carrera (`UserCareer` / `GAP-AUTH-02`), impidiendo a los docentes calificar o ver alumnos de carreras ajenas (`AcademicService.cs:850–908`). La integración de los selectores visuales de comisión/sección y el diálogo interactivo de conflicto de concurrencia optimista (`ExpectedVersion`) quedan catalogados formalmente como frontera de UI pendiente para demo según los criterios de aceptación AC-1 y AC-2 de la Spec 220, sin inferir ausencia total de deuda o vulnerabilidades fuera de los contratos rigurosamente probados.
 
 ### Sub-Slice 4: Ecosistema B2B Laboral y Postulaciones (`/empleos`, `/empleos/solicitud`)
 * **Solicitud de Vinculación B2B (`/empleos/solicitud`):**
@@ -106,8 +110,8 @@ Todos los hallazgos críticos de omisión de clases `dark:` y contraste invisibl
   * **Trazabilidad Forense (`AuditLog`):** Registro inmediato del evento `HideInquiry` con actor (`Moderador Institucional`), título del post, motivo registrado y estampa temporal.
   * **Protección de Cuentas Administrativas (`Cuenta protegida`):** Intento de edición sobre `admin1` o `admin2` bloqueado por modal inmutable: *"Este usuario es un Administrador protegido. No se puede modificar su rol, estado ni silenciarlo."*
 * **Acciones de Moderación Disciplinaria (F04 - Moderador vs. Administrador):**
-  * El Moderador ejecuta la totalidad de sus facultades sancionatorias inline en `/feed` mediante `ModerationReasonModal` (ocultamiento con motivo obligatorio) y el modal disciplinario `SILENCE_USER` (24 hs, 72 hs, 168 hs), con registro forense inmutable en `AuditLog`.
-  * La ruta `/admin` (`AdminDashboard.jsx`) se mantiene estrictamente restringida a `Administrador` por barrera constitucional verificada (`roleRoutingMatrix.test.jsx:137`), denegando el acceso a configuración de sistema, cambio de roles y aprobación de empresas, garantizando el principio de mínimo privilegio.
+  * El Moderador cuenta con acceso a su panel institucional en `/moderacion` (`ModerationDashboard.jsx`), con pestañas para Reportes de Comunidad (`ModerationManagement`) y Auditoría Forense de Moderación (`ModerationAuditManagement` respaldado por `GetModerationAudits` en backend autorizado para `Moderador` y `Administrador`), además de sus facultades sancionatorias inline en `/feed` (`ModerationReasonModal` y `SilenceUserModal`).
+  * La ruta `/admin` (`AdminDashboard.jsx`) se mantiene estrictamente restringida a `Administrador` por política probada en `roleRoutingMatrix.test.jsx:137`, resguardando la gestión de usuarios, cambio de roles y configuración del sistema bajo el principio de mínimo privilegio.
 
 ---
 

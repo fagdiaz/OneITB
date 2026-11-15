@@ -9,6 +9,7 @@ import { Feed } from '../Components/publication/Feed'
 import { UserProfile } from '../Components/profile/UserProfile'
 import { CvEditorProfile } from '../Components/profile/CvEditorProfile'
 import { AdminDashboard } from '../Components/admin/AdminDashboard'
+import { ModerationDashboard } from '../Components/moderation/ModerationDashboard'
 import { EmployerLogin } from '../Components/auth/EmployerLogin'
 import { AuthProvider } from '../context/AuthProvider'
 import { Logout } from '../Components/user/Logout'
@@ -70,6 +71,8 @@ export const Routing = () => {
             <Route path='empleos' element={<JobBoard />} />
             <Route path='empleos/mis-ofertas' element={<EmployerJobOffers />} />
             <Route path='empresa/ofertas' element={<Navigate to="/empleos/mis-ofertas" replace />} />
+            <Route path='moderacion' element={<ModerationDashboard />} />
+            <Route path='moderation' element={<Navigate to="/moderacion" replace />} />
             <Route path='admin' element={<AdminDashboard />} />
             <Route path='admin/users' element={<Navigate to="/admin" replace />} />
             <Route path='logout' element={<Logout></Logout>} />

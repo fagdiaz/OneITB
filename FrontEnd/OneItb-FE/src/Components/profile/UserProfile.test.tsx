@@ -19,7 +19,8 @@ describe('profile ATS print route parity', () => {
     }
   });
 
-  it('implements accessible dialog attributes and keyboard focus management in ATS print preview', () => {
+  // Static AST/contract verification. Interactive runtime keyboard focus is executed in manual gate CF-06.
+  it('statically checks accessible dialog attributes and keyboard focus contract in ATS print preview (interactive runtime verification reserved for gate CF-06)', () => {
     const profileSource = fs.readFileSync(path.join(profileDirectory, 'UserProfile.tsx'), 'utf8');
 
     expect(profileSource).toContain('printPreviewDialogRef');

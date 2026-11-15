@@ -358,7 +358,7 @@ describe('Feed attachment & comment interaction regressions', () => {
     expect(toggleButton).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('re-opens thread when targetCommentId changes on the same inquiryId and preserves closed state on same key', async () => {
+  it('re-opens thread when targetCommentId changes on the same inquiryId and preserves user-collapsed state across same-key re-navigation', async () => {
     useInquiryPageMock.mockReturnValue({
       items: [
         makePost({
@@ -493,7 +493,7 @@ describe('Feed attachment & comment interaction regressions', () => {
     fireEvent.click(silenceAction);
 
     // Dialog appears with author information
-    const dialog = screen.getByRole('dialog', { name: /Silenciar usuario por moderación/i });
+    const dialog = screen.getByRole('dialog', { name: /Silenciar Usuario/i });
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveTextContent('Infractor Social');
 
@@ -508,6 +508,6 @@ describe('Feed attachment & comment interaction regressions', () => {
     });
 
     expect(await screen.findByText('Usuario silenciado por 24 horas.')).toBeInTheDocument();
-    expect(screen.queryByRole('dialog', { name: /Silenciar usuario por moderación/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /Silenciar Usuario/i })).not.toBeInTheDocument();
   });
 });

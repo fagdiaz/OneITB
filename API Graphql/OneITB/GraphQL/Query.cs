@@ -355,7 +355,7 @@ namespace GraphQL.GraphQL
             return moderationService.GetCommunityReports();
         }
 
-        [Authorize(Roles = new[] { "Administrador" })]
+        [Authorize(Roles = new[] { "Administrador", "Moderador" })]
         [UseProjection]
         public IQueryable<ModerationAudit> GetModerationAudits(int first, [Service] IModerationService moderationService)
         {

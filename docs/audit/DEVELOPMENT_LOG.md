@@ -19,43 +19,50 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
-## [2026-11-14] - Remediation of Astra Audit Findings F01-F08 (Spec 220 / RC Stabilization) - branch: feature/2026-11-01-debugger-cv-builder
+## [2026-11-14] - Remediation of Astra Audit Findings F01-F08 (Spec 220 / RC Stabilization - Delta 3) - branch: feature/2026-11-01-debugger-cv-builder
 
-**Alcance:** Remediación integral y verificación automatizada de los hallazgos F01 a F08 de los dictámenes de Astra (`DICTAMEN_RC_15a60c4.md` y `RATIFICACION_499e402.md`), cubriendo consistencia de caché en fallos de mutación, navegación compuesta en hilos de comentarios, silenciamiento disciplinario inline para Moderador en Feed, ciclo desacoplado de foco modal (foco inicial, focus trap, preservación en rerender y restauración), formalizaciones y precisiones de alcance para roles y gestión académica AC-1/AC-2, y alineación métrica de suites dual-stack a 756 pruebas automatizadas (389 backend / 367 frontend).
+**Alcance:** Remediación integral y verificación automatizada de los hallazgos F01 a F08 tras los dictámenes de Astra (`DICTAMEN_RC_15a60c4.md`, `RATIFICACION_499e402.md` y `RATIFICACION_d145d84.md`), incorporando el componente desacoplado `SilenceUserModal.jsx` con contrato completo de teclado/foco, el panel institucional `/moderacion` (`ModerationDashboard.jsx`) con autorización de `GetModerationAudits` para Moderador en backend, precisión de navegación en Feed, distinción métrica de 98.50% (promedio) vs 98.67% (296/300 ítems) con 4 hallazgos 🟡 en la matriz, y suite global de 763 pruebas automatizadas en PASS (389 backend / 374 frontend en 70 suites).
 
 ### Tareas y Artefactos Integrados
 
-1. **Aislamiento y Reversión de Caché Apollo en Privacidad (F02 - `CvEditorProfile.tsx`):**
+1. **Modal de Silenciamiento Disciplinario Accesible (F04/F06 - `SilenceUserModal.jsx` y `Feed.jsx`):**
+   - Extracción y diseño del componente modal `SilenceUserModal.jsx` con contrato exhaustivo de teclado: foco inicial automático en el botón de cierre al abrir, trampa de tabulación bidireccional (`Tab` de último a primero, `Shift+Tab` de primero a último), tecla `Escape` libre en reposo y bloqueada durante el envío de la mutación (`submitting`), y restauración garantizada de foco al botón disparador tras el cierre.
+   - Conexión directa a `SILENCE_USER` en `Feed.jsx` con selección interactiva de duración (24 hs, 72 hs, 168 hs), impacto en base de datos (`MutedUntil`) y registro forense inmutable en `AuditLog`.
+   - Nueva suite `SilenceUserModal.test.jsx` con 4 pruebas unitarias de accesibilidad y foco (4/4 tests en PASS).
+
+2. **Panel Institucional de Moderación y Entrada Autorizada (F04 - `ModerationDashboard.jsx` y `Query.cs`):**
+   - Creación del panel institucional `ModerationDashboard.jsx` montado en la nueva ruta protegida `/moderacion`, permitiendo acceso exclusivo a roles `Moderador` y `Administrador` y denegando a roles no autorizados (`Estudiante`, `Profesor`, etc.) con vista de `Acceso restringido`.
+   - Incorporación de pestañas operativas: Reportes de Comunidad (`ModerationManagement`) y Auditoría Forense de Moderación (`ModerationAuditManagement`).
+   - Actualización en backend `Query.cs:358`: `GetModerationAudits` ampliado a `[Authorize(Roles = new[] { "Administrador", "Moderador" })]`, permitiendo consulta de auditoría disciplinaria sin vulnerar la protección de `/admin`, que permanece 100% exclusiva de `Administrador`.
+   - Enlace contextual de navegación en `navigationItems.js` para `Moderador` (`/moderacion`) sin alterar las secuencias de `Estudiante`, `Empleador` ni `Administrador`.
+   - Nueva suite `ModerationDashboard.test.jsx` (3/3 tests en PASS) y test ampliado en `navigationItems.test.js`.
+
+3. **Aislamiento y Reversión de Caché Apollo en Privacidad (F02 - `CvEditorProfile.tsx`):**
    - Eliminación de escritura optimista previa a la validación de `response.data?.toggleProfilePrivacy?.success`.
    - Actualización de Apollo Cache (`GET_USER_PROFILE`) ejecutada estrictamente tras confirmación de éxito.
    - En caso de error o rechazo, reversión del estado local (`isPublicProfile: !nextPrivacy`), despliegue de alerta visual (`setSaveStatus('error')`) y preservación intacta de la caché.
    - Prevención de concurrencia mediante `disabled={savingPrivacy || savingProfile}`.
-   - Pruebas unitarias añadidas en `CvEditorProfile.lifecycle.test.tsx` (11/11 tests en PASS).
+   - Pruebas unitarias en `CvEditorProfile.lifecycle.test.tsx` (11/11 tests en PASS).
 
-2. **Navegación Selectiva por Comentario y Preservación de Cierre en Feed (F03 - `Feed.jsx`):**
+4. **Navegación Selectiva por Comentario y Preservación de Cierre en Feed (F03 - `Feed.jsx`):**
    - Clave de apertura reactiva compuesta: `targetKey = `${targetInquiryId}:${targetCommentId || ''}``.
-   - Navegación hacia un comentario distinto en la misma publicación reabre el hilo (`openThreads[targetInquiryId] = true`); refetch o navegación con la misma clave respeta estrictamente el repliegue manual del usuario.
-   - Pruebas unitarias añadidas y ampliadas en `Feed.interactions.test.jsx` demostrando apertura selectiva y preservación de cierre ante refetch (6/6 tests en PASS).
+   - Navegación hacia un comentario distinto en la misma publicación reabre el hilo (`openThreads[targetInquiryId] = true`); re-navegación con la misma clave respeta estrictamente el repliegue manual del usuario sin forzar expansión.
+   - Pruebas unitarias en `Feed.interactions.test.jsx` demostrando apertura selectiva y preservación de cierre ante re-navegación (6/6 tests en PASS).
 
-3. **Silenciamiento Disciplinario Inline para Moderador en Feed (F04 - `Feed.jsx`):**
-   - Incorporación directa de la mutación `SILENCE_USER` en `Feed.jsx` accesible para roles `Moderador` y `Administrador`.
-   - Modal disciplinario interactivo para sancionar autores de publicaciones (24 hs, 72 hs, 168 hs) con registro inmutable en `AuditLog`, respetando la barrera constitucional que preserva `/admin` como exclusivo de Administrador.
-   - Prueba unitaria añadida en `Feed.interactions.test.jsx` verificando el flujo completo de silenciamiento por Moderador.
-
-4. **Desacoplamiento de Foco y Accesibilidad Modal Robusta (F06 - `AvatarEditorModal.jsx` y `UserProfile.tsx`):**
+5. **Desacoplamiento de Foco en Avatar y ATS (F06 - `AvatarEditorModal.jsx` y `UserProfile.tsx`):**
    - `AvatarEditorModal`: desacoplamiento del ciclo de apertura/cierre respecto a dependencias volátiles (`onClose`, `saving`) mediante `handlersRef`. El foco anterior y foco inicial se programan únicamente en transiciones de `isOpen`.
    - Preservación comprobada de foco activo ante re-renderizados del componente padre.
-   - Confinamiento estricto de foco (`Tab` del último al primero, `Shift+Tab` del primero al último) con aserciones activas (`expect(...).toHaveFocus()`), bloqueo de `Escape` durante `saving`, y restauración limpia de foco al botón disparador al cerrar.
-   - Pruebas exhaustivas verificadas en `AvatarEditorModal.test.jsx` (3/3 tests en PASS) y en `UserProfile.test.tsx` (2/2 tests en PASS).
+   - Confinamiento estricto de foco (`Tab`/`Shift+Tab`) con aserciones activas (`expect(...).toHaveFocus()`), bloqueo de `Escape` durante `saving`, y restauración de foco al disparador al cerrar (`AvatarEditorModal.test.jsx` 3/3 tests en PASS).
+   - Comprobación estática de contratos accesibles en previsualización ATS documentada en `UserProfile.test.tsx` (2/2 tests en PASS), reservando la interacción manual para el gate CF-06.
 
-5. **Formalizaciones de Alcance, Desglose 296/300 y AC-1/AC-2 (F01, F05, F08 - `VISUAL_AUDIT_REPORT.md` / `spec.md`):**
-   - F05 / AC-1 y AC-2: Documentación precisa del estado de implementación: 100% implementado y probado en backend (`SaveSectionGradeAsync`, `GetMyCourseSectionsAsync`, `IssueRegularStudentCertificateAsync`, comisiones, concurrencia optimista `RowVersion` y `ConcurrencyConflict`). En frontend, la pantalla actual opera bajo la política freeze-safe de carrera (`UserCareer`), delimitando los selectores de comisión como integración UI pendiente.
-   - F08: Desglose explícito de los 296/300 ítems (98.5%) identificando las 4 verificaciones no aprobadas correspondientes a las fronteras documentadas del release candidate. Margen ATS 12 mm e identidades `GAP-PRIV-01` ratificadas.
+6. **Formalizaciones de Alcance, Desglose 296/300 y AC-1/AC-2 (F01, F05, F08 - `VISUAL_AUDIT_REPORT.md` / `spec.md`):**
+   - F05 / AC-1 y AC-2: Backend 100% implementado y probado en xUnit (`SaveSectionGradeAsync`, comisiones, concurrencia optimista `RowVersion` y `ConcurrencyConflict`). En frontend, la pantalla actual opera bajo la política freeze-safe de carrera (`UserCareer`), catalogando formalmente los selectores de comisión como integración UI pendiente para demo, sin inferir ausencia universal de deuda fuera de los contratos probados.
+   - F08: Desglose explícito de métricas diferenciando el promedio simple de categorías (98.50%) de la proporción directa de ítems aprobados (296/300 = 98.67%), reflejando los 4 hallazgos pendientes (bandera amarilla 🟡) en la matriz ejecutiva.
 
-6. **Reconciliación Métrica Oficial (F07 - `ROADMAP.md`):**
+7. **Reconciliación Métrica Oficial (F07 - `ROADMAP.md`):**
    - Backend: 389/389 en PASS (0 omitidas, Release mode net8.0).
-   - Frontend: 367/367 en PASS (68 suites en Vitest).
-   - Total regresión automatizada: 756 pruebas en PASS (0 fallos).
+   - Frontend: 374/374 en PASS (70 suites en Vitest).
+   - Total regresión automatizada: 763 pruebas en PASS (0 fallos).
 
 ---
 ## [2026-11-13] - E2E Interactive Verification, Modal Accessibility & Six-Role Audit Gate (Spec 219 / GOB-20261113-18) - branch: feature/2026-11-01-debugger-cv-builder

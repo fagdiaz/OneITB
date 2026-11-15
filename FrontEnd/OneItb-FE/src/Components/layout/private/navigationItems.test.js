@@ -11,6 +11,8 @@ describe('navigationItems', () => {
       .toEqual(['messages', 'academic', 'jobs']);
     expect(buildNavigationItems({ role: 'Empleador' }).map((item) => item.id))
       .toEqual(['messages', 'academic', 'jobs', 'applications']);
+    expect(buildNavigationItems({ role: 'Moderador' }).map((item) => item.id))
+      .toEqual(['messages', 'academic', 'jobs', 'moderation']);
     expect(buildNavigationItems({ role: 'Administrador' }).map((item) => item.id))
       .toEqual(['messages', 'academic', 'jobs', 'applications', 'admin']);
   });

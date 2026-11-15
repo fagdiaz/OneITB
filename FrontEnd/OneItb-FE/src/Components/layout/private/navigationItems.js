@@ -37,6 +37,14 @@ export const buildNavigationItems = ({
         icon: 'fa-solid fa-list-check',
       }
     : null,
+  role === 'Moderador'
+    ? {
+        id: 'moderation',
+        to: '/moderacion',
+        label: 'Moderación',
+        icon: 'fa-solid fa-shield-halved',
+      }
+    : null,
   role === ROLE_ADMIN
     ? {
         id: 'admin',
