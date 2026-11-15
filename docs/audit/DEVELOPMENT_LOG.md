@@ -19,6 +19,29 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-15] - Resolution of Arbitraje aeceeb7: Realtime Assertions, DB Re-Read Verification, Negative Controls & UI Status Declaration (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Cierre de Observaciones de Arbitraje aeceeb7 (15/11/2026)
+
+**Alcance:** Subsanación rigurosa de los hallazgos falsables del instrumento (`CF05-R1`, `CF05-R2`, `CF05-R3`) y formalización del estado de CF-05/CF-06 conforme al dictamen de Astra en `ARBITRAJE_aeceeb7.md`, manteniendo el código de producción y pruebas 100% inmutable frente a `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`:
+
+1. **Reescritura Estricta del Runner de Transporte (`scripts/verify-cf05-realtime-live.mjs`):**
+   - Incorporación de aserciones estrictas (`assert`) que lanzan excepción inmediata y provocan salida con código 1 ante cualquier fallo de matching de IDs, contenido, senderId, receiverId, umbral de tiempo o fugas.
+   - Eliminación de contraseñas por defecto en texto plano; adquisición de credenciales requerida dinámicamente vía variable de entorno o User Secrets (`Seed:DemoPassword`).
+   - `RT-04`: Invocación de `markConversationRead` verificada con relectura directa contra la base de datos mediante query GraphQL `conversation(otherUserId: $otherUserId)`, comprobando que el mensaje persistió con `isRead: true` (`verifiedViaReRead: true`).
+   - `RT-05`: Desconexión forzada descrita con exactitud como terminación forzada de cliente (`client.terminate()`, código 4499 Terminated). Aserción estricta de umbral de reintento natural (`measuredRetryWaitMs >= 1300`), midiendo **3336 ms** en la ejecución real. Entrega exitosa del segundo mensaje por el canal recuperado.
+   - `RT-06`: Explicitado como verificación de transporte y re-autenticación de Sesión C a nivel de API, sin sustituir ni afirmar indebidamente la prueba de UI en navegador.
+   - Incorporación de timeout global (35s), plazos por operación (deadlines) y limpieza garantizada de suscripciones y sockets en bloque `finally`.
+
+2. **Falsabilidad del Checker Acreditada Mediante Controles Negativos:**
+   - Se validaron 4 simulaciones de fallo deliberadas en `scripts/run-cf05-live-validation.ps1`: `id-mismatch`, `leak-to-c`, `observer-error` y `short-wait`. Cada una resultó determinísticamente en código de salida **1** y captura del mensaje de aserción en `docs/audit/CF05_LIVE_RUNNER_OUTPUT.md`.
+
+3. **Declaración Transparente del Tramo UI y Estado de Compuertas:**
+   - Se catalogó el tramo de UI multi-sesión (`UI-01`) formalmente como **`BLOCKED`**, declarando la dependencia exacta: falta de harness de automatización multi-contexto de navegador para dos perfiles independientes concurrentes e inspección de `InMemoryCache` sin modificar el código ni las dependencias de producción.
+   - La compuerta **CF-05** pasa a estado **`PARCIALMENTE ACREDITADO / CONDICIONADO`** (Transporte PASS / UI Multi-Sesión BLOCKED).
+   - La compuerta **CF-06** permanece **`ABIERTA / NO RATIFICADA`**, sin creación de tag final ni afirmaciones de cierre total indebido.
+
+---
 ## [2026-11-15] - Resolution of Arbitraje 31e59a2: Unmocked graphql-ws Live Execution, Natural Retry Delay & Tooling Provenance (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Cierre de Observaciones de Arbitraje 31e59a2 (15/11/2026)

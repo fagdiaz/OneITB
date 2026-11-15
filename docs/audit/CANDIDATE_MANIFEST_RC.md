@@ -7,7 +7,7 @@
 - **SHA del Código Candidato (Producción y Pruebas):** `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (inmutable en producción y pruebas)
 - **HEAD al capturar evidencia:** `91d57f99753083c20825dee0d3a577d15eef4357`
 - **Base previa revisada por Astra:** `fd403c86ed63a31cb1b8090cb082a73a0d29b409`
-- **Estado:** Release Candidate Académico Certificado — Core Feature Complete (117/117), Code Freeze Operativo y Compuertas CF-01 a CF-06 Satisfechas
+- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; CF-01 a CF-04 Cerradas, CF-05 Parcialmente Acreditada (Transporte PASS / UI Multi-Sesión BLOCKED) y CF-06 Abierta / Condicionada
 
 ---
 
@@ -89,18 +89,20 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
   * Daemon Kestrel reiniciado con binario compilado y query `moderationAudits` validada con HTTP 200 para rol Moderador.
 
 ### CF-05: Validación Realtime y Aislamiento Multi-Sesión
-- **Estado:** `[CERRADO / CERTIFICADO]` (Validación realtime con dos sesiones reales simultáneas completada al 100% con **6/6 dimensiones en PASS** contra runtime Kestrel ASP.NET Core 8 y cliente real `graphql-ws` v5.16.0 sin mock).
+- **Estado:** `[PARCIALMENTE ACREDITADO / CONDICIONADO]` (Transporte WebSocket real, entrega en vivo, relectura de persistencia en base de datos de `isRead = true`, reconexión natural en 3336 ms `>= 1300 ms` y 4 controles negativos validados en PASS; tramo UI multi-sesión de navegador declarado BLOCKED por falta de harness multi-perfil).
 - **Evidencias adjuntas:**
   * Acta formal de validación realtime: [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
-  * Traza cronológica y metodológica detallada: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md) (declara la procedencia de la traza sintética inicial de pruebas unitarias y documenta la traza en vivo sin mocks).
-  * Salida literal del runner unmocked en vivo: [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md) (`scripts/run-cf05-live-validation.ps1` y `scripts/verify-cf05-realtime-live.mjs` ejecutados contra Kestrel en puerto 5098 con `graphql-ws` v5.16.0 respetando la temporización natural de retryWait).
+  * Traza cronológica y metodológica detallada: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md) (declara la procedencia de la traza sintética inicial, la traza de transporte sin mocks y la condición de bloqueo del tramo UI).
+  * Salida literal del runner unmocked y controles negativos: [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md) (`scripts/run-cf05-live-validation.ps1` y `scripts/verify-cf05-realtime-live.mjs` con `graphql-ws` v5.16.0 sin mock, aserciones estrictas, salida 0 en la corrida principal y salida 1 en los 4 controles negativos).
   * Aislamiento de topic verificado sin fuga observada en los casos ejecutados hacia terceros observadores (Sesión C / Moderador recibió 0 tramas; `leaksDetected: 0`).
-  * Handshake WebSocket validado en 52 ms en vivo, entrega reactiva inmediata sin recarga de página (141 ms), marcado de conversación persistido en DB, reconexión automática tras terminación física de socket (`client.terminate()`) con una espera natural medida de **2112 ms** (dentro del rango `>= 1300 ms`), entrega exitosa de segundo mensaje post-reconexión y purga/reemplazo de sesión limpia en cliente.
+  * Handshake WebSocket validado en 60 ms en vivo, entrega reactiva inmediata sin recarga de página, marcado de conversación persistido y re-leído en DB (`isRead = true`), reconexión automática tras terminación forzada de socket (`client.terminate()`, código 4499) en 3336 ms (verificada `>= 1300 ms`), entrega de segundo mensaje post-reconexión y disposición de transporte.
+  * Falsabilidad del checker demostrada mediante 4 controles negativos deliberados (`id-mismatch`, `leak-to-c`, `observer-error`, `short-wait`), bloqueando con código 1.
+  * Declaración de Bloqueo del Tramo UI: Ausencia de harness de automatización multi-contexto de navegador para dos perfiles web concurrentes con extracción en memoria de `InMemoryCache` sin modificar el código ni las dependencias de producción.
   * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.
 
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
-- **Estado:** `[CERRADO / CONGELADO]` (Satisfechas el 100% de las dependencias CF-01 a CF-05; formalizado el manifiesto final con 0 bloqueos).
-- **Dictamen:** Se formaliza este manifiesto vinculando SHA, métricas, suites, salidas y salvedades con total transparencia documental. El Release Candidate queda formalmente congelado para la entrega institucional.
+- **Estado:** `[ABIERTO / NO RATIFICADO]` (Condicionado a la resolución del tramo UI de CF-05 o a la deliberación de la mesa evaluadora de arbitraje).
+- **Dictamen:** Se formaliza este manifiesto vinculando SHA, métricas, suites, salidas y salvedades con total transparencia documental. El código de producción y pruebas permanece inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`. El tag final no se crea hasta la ratificación formal de todas las compuertas.
 
 ---
 

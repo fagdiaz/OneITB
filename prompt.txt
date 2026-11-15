@@ -1,27 +1,33 @@
-# Handoff de Auditoría y Certificación — Resolución Dictamen 31e59a2 — 15/11/2026
+# Handoff de Arbitraje — Resolución Dictamen aeceeb7 (CF-05 / CF-06) — 15/11/2026
 Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6 Astra · Razonamiento: Alto
 Código candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a (Inmutable, git diff = 0).
 Rama: feature/2026-11-01-debugger-cv-builder; descubrir spec en .specify/feature.json.
-Referencia previa: ARBITRAJE_31e59a2.md (Dictamen REQUIERE AJUSTES por CIERRE-03 / CF-05).
+Referencia previa: ARBITRAJE_aeceeb7.md (Dictamen REQUIERE AJUSTES: CF05 parcial, CF06 no ratificado).
 
 Estimada Astra:
-Se ha subsanado rigurosamente el único bloqueo de evidencia pendiente (CIERRE-03 / CF-05) y la observación de procedencia de herramientas, manteniendo el código de producción y pruebas 100% intacto frente a 37ed360:
+Se han subsanado rigurosamente los hallazgos falsables del instrumento (CF05-R1, CF05-R2, CF05-R3) y formalizado el estado de las compuertas conforme a tus directivas, manteniendo el código de producción y pruebas 100% intacto frente a 37ed360:
 
-1. CIERRE-03 / CF-05 (Acreditación Realtime con graphql-ws Unmocked y Salida Literal):
-- Aclaración transparente de procedencia: En CF05_REALTIME_TRACE.md se formalizó que la traza preliminar previa derivó de las suites de prueba unitarias en Vitest (donde retryWait fue mockeado a 0 ms para velocidad en CI y "epoch" fue una variable de control interna del test loop). Se ratificó que en la aplicación (GraphqlProvider.js:356), sessionEpoch cambia únicamente por invalidación de sesión (resetToken()), no por caídas de red.
-- Ejecución en vivo sin mock (Runner real): Se implementó y ejecutó el runner automatizado scripts/run-cf05-live-validation.ps1 y scripts/verify-cf05-realtime-live.mjs contra Kestrel ASP.NET Core 8 (puerto 5098) utilizando el paquete real instalado node_modules/graphql-ws v5.16.0 sin alterar retryWait (respetando la fórmula de biblioteca: 1000ms + random(300..2999ms) >= 1300ms).
-- Método de corte de red: Terminación abrupta física del socket (client.terminate()).
-- Demora de reintento natural medida: 2112 ms (estrictamente en el rango natural esperado >= 1300 ms).
-- Salida literal del runner sin alteraciones: Capturada y vinculada en docs/audit/CF05_LIVE_RUNNER_OUTPUT.md con código de salida 0 (PASS).
-- 6 dimensiones verificadas en vivo: Handshake 52 ms (RT-01), entrega reactiva instantánea a Sesión B (RT-02), aislamiento estricto de topic en Sesión C Moderador con 0 tramas recibidas (leaksDetected: 0, RT-03), marcado de lectura persistido en BD (RT-04), reconexión automática natural con recuperación de canal y entrega de segundo mensaje (RT-05), y logout con terminación de transportes e hidratación limpia de Sesión C sin datos residuales de A (RT-06).
-- Documentos actualizados: CF05_REALTIME_TRACE.md, CF05_REALTIME_VALIDATION.md, CANDIDATE_MANIFEST_RC.md y ROADMAP.md.
+1. Transporte Realtime con Aserciones Estrictas, Relectura en BD y Falsabilidad Verificada:
+- Aserciones efectivas que bloquean: scripts/verify-cf05-realtime-live.mjs fue reescrito con aserciones estrictas (assert) en todas las comprobaciones críticas (IDs exactos, roles, sender/receiver, ausencia de fugas, error en observador C y umbral de tiempo). Cualquier discrepancia o fuga lanza AssertionError y termina con código de salida 1.
+- RT-04 con persistencia comprobada por relectura: Tras markConversationRead, se ejecuta una query GraphQL conversation(otherUserId: A) contra Kestrel / SQL Server, comprobando programáticamente que el mensaje específico persistió con isRead: true (verifiedViaReRead: true).
+- RT-05 con corte real y reconexión natural: La desconexión se describe como terminación forzada (client.terminate(), código 4499 Terminated). La reconexión natural de graphql-ws sin mock se midió en 3336 ms (verificada estrictamente contra el umbral >= 1300 ms). Se entregó con éxito el 2do mensaje en vivo por el canal recuperado.
+- RT-06 acotado a nivel de transporte: Se asserta la re-autenticación limpia de la identidad del Moderador (Sesión C) y disposición de transporte, explicitando que la purga de InMemoryCache en UI pertenece al tramo de navegador.
+- Credenciales seguras: Retirada toda contraseña por defecto en texto plano; el runner exige DEMO_USER_PASSWORD o Seed:DemoPassword vía User Secrets.
+- Falsabilidad demostrada (4 Controles Negativos): Se ejecutaron 4 escenarios deliberados en scripts/run-cf05-live-validation.ps1 (id-mismatch, leak-to-c, observer-error, short-wait); cada uno arrojó AssertionError y salió con código 1. La salida literal completa está registrada en docs/audit/CF05_LIVE_RUNNER_OUTPUT.md.
 
-2. Procedencia de Herramientas de Soporte (CF-03):
-- Declarado explícitamente en CANDIDATE_MANIFEST_RC.md el hash SHA256 (7FCC83CE6D637D520C90ACB29759DFA91E9C1F4829E25F43B54C6DA55B066511) del script scripts/validate-local-infrastructure.ps1 modificado en el commit 31e59a2 (filtro opt-in y espera de liberación de puertos), diferenciándolo del árbol de código candidato inmutable 37ed360.
+2. Tramo UI Multi-Sesión en Navegador Real Declarado BLOCKED:
+- Conforme a tu directiva, el tramo de UI multi-sesión (dos perfiles web concurrentes A y B, observador C en UI, badges en DOM y purga de InMemoryCache en /logout interactivo) se declara formalmente como BLOCKED.
+- Dependencia exacta de bloqueo: Falta de un harness de automatización multi-contexto de navegador (p. ej. Playwright multi-perfil o Selenium Grid) capaz de ejecutar dos sesiones web concurrentes con extracción de caché de cliente Apollo sin alterar dependencias de desarrollo ni código de producción bajo Code Freeze.
 
-3. Estado del Repositorio:
+3. Estado Formal de Compuertas y Gobernanza:
+- CF-05: PARCIALMENTE ACREDITADO / CONDICIONADO (Transporte y persistencia PASS; UI Multi-Sesión BLOCKED por dependencia de harness).
+- CF-06: ABIERTO / NO RATIFICADO (condicionado a la deliberación de la mesa de arbitraje sobre el tramo UI).
+- No se genera tag final y se preserva el candidato 37ed360 inmutable.
+- Documentos reconciliados: CF05_REALTIME_TRACE.md, CF05_REALTIME_VALIDATION.md, CANDIDATE_MANIFEST_RC.md, ROADMAP.md y DEVELOPMENT_LOG.md.
+
+4. Estado del Repositorio:
 - git diff 37ed360 HEAD -- "API Graphql" FrontEnd: Vacío (0 líneas modificadas en producción y tests).
 - git diff --check: PASS (0 errores de formato).
 - Todos los servicios temporales apagados y puertos liberados.
 
-Queda a tu disposición para el dictamen final sobre la ratificación de CF-05 y el congelamiento oficial de CF-06.
+Queda a tu disposición para el arbitraje de este delta.

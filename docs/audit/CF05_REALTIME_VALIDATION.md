@@ -1,87 +1,63 @@
 # Protocolo y Acta de Validación Realtime y Aislamiento Multi-Sesión (Compuerta CF-05)
 
-- **Fecha de Ejecución y Cierre:** 2026-11-15
+- **Fecha de Ejecución:** 2026-11-15
 - **Rama:** `feature/2026-11-01-debugger-cv-builder`
-- **SHA del Código Candidato (Producción y Tests):** `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`
-- **HEAD al capturar evidencia:** `91d57f99753083c20825dee0d3a577d15eef4357`
+- **SHA del Código Candidato (Producción y Tests):** `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (100% inmutable)
+- **HEAD al capturar evidencia:** `aeceeb741c19277a4f7c39914d1b1346d76a217c`
 - **Runtimes Activos y Verificados en Vivo:**
-  * Frontend: `http://localhost:5173` (React 18 + Vite, Apollo Client 3.7)
-  * Backend: `https://localhost:44397` / `http://localhost:5000` (ASP.NET Core 8 Kestrel, HotChocolate 14.2.0 GraphQL)
-  * WebSocket Endpoint: `wss://localhost:44397/graphql` (proxy en `ws://localhost:5173/graphql`)
+  * Backend: ASP.NET Core 8 Kestrel en `http://127.0.0.1:5098` (HotChocolate 14.2.0 GraphQL, healthy)
+  * WebSocket Endpoint: `ws://127.0.0.1:5098/graphql` (subprotocolo `graphql-transport-ws`)
   * Base de Datos: Docker `oneitb23-sql` en `127.0.0.1:1433` (SQL Server 2022)
+  * Cliente Transporte: Node.js v22.13.0 con paquete real instalado `graphql-ws` v5.16.0 (sin mocks)
 - **Actores de Prueba Seleccionados (Entorno Demo):**
   * **Sesión A (Emisor):** `estudiante1.ads@itbeltran.com.ar` (ID: `2e9b3337-1824-339f-b73f-28b9d2cc7832`, Estudiante)
   * **Sesión B (Destinatario):** `profesor1.ads@itbeltran.com.ar` (ID: `35a605e9-120c-e91b-cb8d-a8326ae09a48`, Profesor)
   * **Sesión C (Observador de Aislamiento):** `moderador1@itbeltran.com.ar` (ID: `d95fe123-ce75-fe5b-d78c-614456713c50`, Moderador)
-- **Contraseña de cuentas demo:** Gestionada mediante User Secrets / Seeder institucional (no expuesta en texto plano).
-- **Ejecutor y Entorno de Cliente:** Chromium (Vite Devview / Playwright Headless) sobre Windows 11 (10.0.26200) y Runner en vivo automatizado con Node v22.13.0 y cliente real `graphql-ws` v5.16.0.
-- **Traza Saneada y Evidencia Literal en Vivo:**
-  * Traza cronológica y metodológica detallada en [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md).
-  * Salida literal sin alteraciones del runner unmocked en [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md).
+- **Gestión de Credenciales:** Obtenidas dinámicamente mediante `Seed:DemoPassword` (User Secrets) sin valores fijos en texto plano.
+- **Traza Saneada y Evidencias Adjuntas:**
+  * Traza cronológica y metodológica detallada: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md).
+  * Salida literal del runner unmocked y controles negativos: [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md).
 
 ---
 
-## 1. Matriz de Casos de Validación Realtime (CF-05)
+## 1. Matriz de Evaluación de Dimensiones Realtime (CF-05)
 
 | Caso ID | Dimensión Evaluada | Protocolo / Pasos de Verificación | Criterio de Éxito Esperado | Resultado Observado en Runtime | Veredicto |
 |---|---|---|---|---|:---:|
-| `RT-01` | **Handshake WebSocket & Auth de Socket** | Establecer conexión WebSocket bajo subprotocolo `graphql-transport-ws` enviando payload de inicialización `connection_init` con token Bearer de Sesión B. | Kestrel valida token y responde con trama `connection_ack`. Socket pasa a estado `connected`. Cero desconexiones por timeout. | `connection_ack` recibido en **3 ms** (Trace Step 1). Socket autenticado y vinculado a la identidad del docente en Kestrel. Cero errores de CORS/Origin. | `PASS` |
-| `RT-02` | **Suscripción y Entrega Bidireccional en Vivo** | Con Sesión B suscrita a `messageReceived`, Sesión A ejecuta mutación `sendMessage(receiverId: B, content: "Mensaje de prueba CF-05")`. | Trama de evento emitida en tiempo real al WebSocket de B. Renderizado instantáneo en el hilo de UI de Sesión B sin refetch manual ni recarga de página (polling HTTP). | Mensaje emitido por A (`4441bba9-4866-49cf-ad4b-96fffc8c10b1`). Sesión B recibió la trama reactiva WebSocket en tiempo real de forma inmediata en 30ms (Trace Step 2) y el componente de chat actualizó su lista de mensajes en pantalla sin requerir recarga. | `PASS` |
-| `RT-03` | **Aislamiento Estricto de Topic / Canal Privado** | Con Sesión C (Moderador) conectada y suscrita al mismo servidor WebSocket, Sesión A envía mensaje confidencial dirigido exclusivamente a Sesión B. | Sesión C NO recibe ninguna trama ni fragmento del mensaje. El filtro de topic por `receiverId` en HotChocolate garantiza aislamiento de canales sin fugas en los casos probados. | Mensaje confidencial `b332d961-26e2-40fe-8987-aec4d965072b` recibido por Sesión B (`true`). Sesión C permaneció en escucha activa durante ventana de 2000ms y recibió **0 tramas** (`leaksDetected: 0`, Trace Step 3). Sin fuga observada en los casos ejecutados. | `PASS` |
-| `RT-04` | **Badges de No Leídos & Marcado como Leído** | Sesión A envía mensajes consecutivos a Sesión B con B fuera del chat activo. Luego B abre la conversación y dispara `markConversationRead`. | Contador visual de no leídos en Sesión B se incrementa reactivamente. Al marcar leído, el badge se resetea a 0 y persiste en backend (`IsRead = true`). | Contador de no leídos de A en B incrementó de 2 a 3 en navbar. `markConversationRead` marcó 3 mensajes (Trace Step 4). Contador final reseteado a **0**. En DB, mensaje `861785b5-3341-4ab5-ad2e-6aaaa1032d24` persistió con `isRead = true`. | `PASS` |
-| `RT-05` | **Reconexión Automática ante Caída de Red** | Forzar interrupción abrupta de socket en cliente B (cierre anormal código 1006 / terminación física). Restablecer conectividad y re-suscribir mediante `graphql-ws` natural. Enviar nuevo mensaje desde A. | El cliente B re-ejecuta handshake ordenado, restablece la suscripción a `messageReceived` y procesa tramas posteriores sin pérdida de estado ni listeners huérfanos. | Socket de cliente B interrumpido abruptamente mediante terminación física (`client.terminate()`, simulando pérdida de red). Reconexión automática exitosa mediante protocolo `graphql-ws` v5.16.0 con nuevo handshake `connection_ack` en 2112 ms (demora de reintento natural medida, dentro del rango esperado `>= 1300 ms` por fórmula base 1000ms + jitter 300..2999ms, sin override de `retryWait`). Nuevo mensaje emitido posteriormente por A fue recibido en vivo por B en el socket reconectado sin pérdida de paquetes (Trace Step 5). | `PASS` |
-| `RT-06` | **Purga de Caché Apollo en Logout / Reemplazo de Sesión** | Sesión A cierra sesión interactiva (`/logout`), disparando `resetToken()`, cierre de sockets y `clearStore()`. Iniciar sesión como Sesión C en el mismo cliente e inspeccionar store de Apollo y DOM. | HotChocolate rechaza conexiones con tokens revocados/nulos. Apollo Client ejecuta `clearStore()`, finaliza transportes activos y purga entidades en memoria; la nueva sesión de C no muestra rastros ni datos de A. | Al accionar `/logout` en UI, se ejecutó `resetToken()`, interrumpiendo el transporte WebSocket y purgando la caché mediante `client.clearStore()`. Validado tanto en navegador como en runner en vivo (donde tras el logout de A, la autenticación de C en el mismo contexto de cliente hidrató exclusivamente los datos de C con 0 entidades residuales de A, Trace Step 6). Complementado con 5/5 PASS en tests automatizados de cliente (`sessionTabs.adversarial.test.jsx`) y rechazo por backend ante tokens caducados/nulos (`ConnectionStatus.Reject`). | `PASS` |
+| `RT-01` | **Handshake WebSocket & Auth de Socket** | Establecer conexión WebSocket bajo subprotocolo `graphql-transport-ws` enviando payload `connection_init` con token Bearer de Sesión B. | Kestrel valida token y responde con trama `connection_ack`. Socket pasa a estado `connected`. Cero desconexiones por timeout. | Handshake completado en **60 ms** (Trace Step 2). Socket autenticado y vinculado a la identidad de Sesión B en Kestrel. Aserción estricta evaluada con éxito. | `PASS` |
+| `RT-02` | **Suscripción y Entrega Bidireccional en Vivo** | Con Sesión B suscrita a `messageReceived`, Sesión A ejecuta mutación `sendMessage(receiverId: B, content: "...")`. | Trama de evento emitida en tiempo real al WebSocket de B con coincidencia exacta de ID, contenido y participantes. | Mensaje emitido por A (`1bf6a6e9-f3cf-413d-a95c-69f60ada6683`). Sesión B recibió la trama reactiva en tiempo real por WebSocket. Aserciones estrictas de ID, contenido, senderId y receiverId en PASS. | `PASS` |
+| `RT-03` | **Aislamiento Estricto de Topic / Canal Privado** | Con Sesión C (Moderador) conectada y suscrita al mismo servidor WebSocket, Sesión A envía mensaje confidencial a Sesión B. | Sesión C NO recibe ninguna trama ni fragmento del mensaje (`leaksDetected = 0`). Errores en observador C deben bloquear la prueba. | Sesión C permaneció en escucha activa durante la ventana de observación y recibió exactamente **0 tramas** (`leaksDetected = 0`). Aserción de ausencia de fugas y aserción de suscripción sin errores en PASS. Falsabilidad verificada (inyección de frame leak provoca `[ASSERTION_FAILED]` con exit code 1). | `PASS` |
+| `RT-04` | **Marcado como Leído y Persistencia en Base de Datos** | Sesión B invoca mutación `markConversationRead(otherUserId: A)`. Posteriormente, se ejecuta relectura directa en backend mediante query `conversation(otherUserId: A)`. | Mutación retorna `markedCount >= 1`. La relectura contra base de datos confirma que el mensaje específico persistió con `isRead = true`. | Mutación retornó `markedCount = 1`. Relectura mediante query GraphQL `conversation` confirmó que el mensaje persistió con `isRead = true` (`verifiedViaReRead = true`). Aserción estricta de persistencia evaluada con éxito. (Nota: Observación visual de badge en UI clasificada en tramo UI). | `PASS` |
+| `RT-05` | **Reconexión Automática ante Corte de Red y Recuperación** | Forzar terminación física de socket en cliente B (`client.terminate()`, código 4499 Terminated). Medir tiempo de reintento natural sin mock y enviar 2do mensaje post-reconexión. | Cliente B re-ejecuta handshake automático respetando la fórmula natural (`1000ms + random(300..2999ms) >= 1300ms`). El 2do mensaje llega limpiamente por el canal recuperado. | Socket interrumpido con código 4499 Terminated. Reconexión automática exitosa con nuevo handshake en **3336 ms** (aserción estricta `measuredRetryWaitMs >= 1300` evaluada en PASS). Segundo mensaje emitido por A recibido en vivo por B en el socket reconectado. | `PASS` |
+| `RT-06` | **Disposición de Transporte y Re-Autenticación Limpia** | Disponer transportes de Sesión A y autenticar Sesión C en el contexto de API/transporte. | Contexto re-autentica exclusivamente con identidad C; cero fugas de identificadores de A. | Re-autenticación de Sesión C verificada con `id` y rol exactos de C (`Moderador`), assert `currentUserId !== sessionA.id` en PASS. (Nota: El ciclo de logout interactivo en UI y purga de caché Apollo en memoria pertenece al tramo UI). | `PASS (Transporte)` |
+| `UI-01` | **Recorrido Multi-Sesión en UI de Navegador (React / Apollo)** | Ejecutar frontend en dos contextos de navegador aislados (A y B) con C de observador: visualización de badges, simulación de corte y logout en UI con purga de `InMemoryCache`. | Dos perfiles web concurrentes, badges sincronizados, y purga total de caché de cliente Apollo al accionar `/logout` en UI verificado en navegador. | **BLOCKED por Dependencia de Infraestructura:** No se dispone de un harness de automatización multi-contexto de navegador (p. ej. Playwright multi-perfil) capaz de orquestar dos sesiones concurrentes con extracción en memoria de `InMemoryCache` sin modificar dependencias ni código de producción. | **`BLOCKED`** |
 
 ---
 
-## 2. Evidencia de Respaldos Automatizados (Suites de Prueba)
+## 2. Evidencia de Falsabilidad del Instrumento de Transporte
 
-Se ejecutó un subconjunto focalizado de 22 pruebas automatizadas (19 en frontend + 3 en backend) para corroborar la resiliencia del canal en tiempo real y la sincronización de sesiones:
+Conforme al dictamen `ARBITRAJE_aeceeb7.md`, se comprobó que el runner de transporte no emite falsos positivos ejecutando 4 controles negativos deliberados, cada uno resultando en código de salida **1** y capturado en [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md):
 
-> [!NOTE]
-> **Nota de Aritmética y Constitución §IX:**
-> Los 22 tests ejecutados en esta sección (6 + 5 + 8 = 19 en frontend; 3 en backend) forman parte integral de la línea base canónica de **785 pruebas** (396 backend + 389 frontend) establecida en el corte `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` y ratificada por la Constitución §IX. No constituyen un baseline adicional ni paralelo.
-
-### 2.1 Frontend: Recuperación y Concurrencia de Chat (`privateChatRecovery.gob12.test.jsx`)
-Comando: `npm.cmd --prefix FrontEnd/OneItb-FE run test -- --run src/Components/chat/privateChatRecovery.gob12.test.jsx`
-- **Resultado:** **6/6 tests en PASS** (Duración: 4.13s).
-- **Casos Validados:**
-  * Replay-before-http reconciles real composer optimism, reconnect and duplicate echo (Página y Widget).
-  * Http-before-replay reconciles real composer optimism, reconnect and duplicate echo (Página y Widget).
-  * Reemplazo remoto de Sesión A hacia B crea una suscripción utilizable en el nuevo epoch sin mezclar datos.
-
-### 2.2 Frontend: Aislamiento Multi-Pestaña y Purga de Caché (`sessionTabs.adversarial.test.jsx`)
-Comando: `npm.cmd --prefix FrontEnd/OneItb-FE run test -- --run src/context/sessionTabs.adversarial.test.jsx`
-- **Resultado:** **5/5 tests en PASS** (Duración: 1.65s).
-- **Casos Validados:**
-  * Sincronización de storage events entre pestañas.
-  * Invocación de `client.clearStore()` ante evento de logout.
-  * Invalidación total de cache y desuscripción de WebSockets.
-
-### 2.3 Frontend: Hardening Adversarial de Realtime (`chatRealtime.adversarial.test.jsx`)
-Comando: `npm.cmd --prefix FrontEnd/OneItb-FE run test -- --run src/Components/chat/chatRealtime.adversarial.test.jsx`
-- **Resultado:** **8/8 tests en PASS** (Duración: 2.83s).
-- **Casos Validados:**
-  * Deduplicación de tramas repetidas y resiliencia ante 9 pérdidas consecutivas de paquetes sin ACK.
-  * Desuscripción limpia al desmontar componentes de chat.
-
-### 2.4 Backend: Aislamiento Criptográfico de Tópicos (`PrivateMessageTopicAdversarialTests.cs`)
-Comando: `dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore --filter "FullyQualifiedName~PrivateMessageTopicAdversarialTests"`
-- **Resultado:** **3/3 tests en PASS** (Duración: 1s).
-- **Casos Validados:**
-  * Identidades nulas o sin claims válidos no pueden abrir tópicos de mensajería (`InvalidIdentityCannotOpenATopic`).
-  * Envíos masivos y concurrentes llegan con estricta exactitud a sus destinatarios, y usuarios ajenos reciben exactamente 0 mensajes (`Assert.Empty(batches[3])`).
+1. **`id-mismatch` (Exit code 1):** `[ASSERTION_FAILED]: Message 1 ID mismatch: expected 7d00e8a6-..., received 00000000-...`
+2. **`leak-to-c` (Exit code 1):** `[ASSERTION_FAILED]: Topic isolation violation: Observer C received 1 unexpected frames`
+3. **`observer-error` (Exit code 1):** `[ASSERTION_FAILED]: Observer C subscription experienced immediate error`
+4. **`short-wait` (Exit code 1):** `[ASSERTION_FAILED]: Natural retryWait was 500 ms, which is below the declared minimum threshold of 1300 ms`
 
 ---
 
-## 3. Resumen y Veredicto Consolidado
+## 3. Respaldo de Pruebas Automatizadas de Concurrencia (Constitución §IX)
 
-- **Total de Casos Evaluados en Vivo:** 6 dimensiones de hardening y concurrencia.
-- **Casos en PASS:** 6 / 6 (100%).
-- **Casos en FAIL:** 0.
-- **Traza Saneada y Evidencia en Vivo:** [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md) (registro cronológico con metodología, Contexts A/B/C, latencias de handshake y mutación, estado de reconexión y purga de caché) y [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md) (salida literal del runner Node con cliente `graphql-ws` v5.16.0 sin mock, reintento medido en 2112 ms y 0 fugas).
-- **Respaldo Automatizado Focalizado:** 22 pruebas (19 frontend + 3 backend) en PASS, correspondientes al subconjunto realtime de la línea base canónica de 785 pruebas.
-- **Aislamiento de Topic:** **Sin fuga observada en los casos ejecutados** (Cero tramas privadas interceptadas por Sesión C en runtime y en tests unitarios).
-- **Veredicto Final Compuerta CF-05:** **APROBADO (PASS)**.
+Se mantiene el subconjunto focalizado de 22 pruebas automatizadas (19 en frontend + 3 en backend) como parte del baseline canónico de 785 pruebas:
+- `sessionTabs.adversarial.test.jsx`: **5/5 PASS**
+- `chatRealtime.adversarial.test.jsx`: **8/8 PASS**
+- `privateChatRecovery.gob12.test.jsx`: **6/6 PASS**
+- `PrivateMessageTopicAdversarialTests.cs`: **3/3 PASS**
 
-La compuerta **CF-05** queda formalmente **CERRADA Y APROBADA** con respaldo de ejecución en vivo en dos sesiones aisladas, evidencia literal del cliente `graphql-ws` real sin mock, traza cronológica saneada y suites de concurrencia.
+---
+
+## 4. Resumen y Veredicto Consolidado
+
+- **Transporte y Resiliencia en Vivo (`RT-01` a `RT-05`):** **100% PASS** acreditado con runner unmocked sobre Kestrel real, persistencia re-leída en BD, demora natural medida (3336 ms `>= 1300 ms`), aserciones estrictas y 4 controles negativos validados.
+- **Tramo de UI Multi-Sesión en Navegador (`UI-01`):** **`BLOCKED`** por falta de harness de automatización multi-contexto para dos perfiles independientes concurrentes e inspección de `InMemoryCache` sin alterar el código de producción.
+- **Veredicto Final Compuerta CF-05:** **`PARCIALMENTE ACREDITADO / CONDICIONADO`** (Transporte Acreditado; UI Multi-Sesión Bloqueada).
+- **Estado de Cierre:** Conforme a la gobernanza y a las instrucciones de arbitraje, la compuerta **CF-05** permanece **PARCIAL**, y la compuerta **CF-06** permanece **ABIERTA / NO RATIFICADA** hasta que se resuelva o delibere el tramo UI.
