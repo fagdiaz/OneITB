@@ -1,21 +1,25 @@
-# Cierre de ratificación Delta 4 — 14/11/2026
-Destino Local AGY · Gemini 3.8 Flash High · Nativo.
-SHA revisado 607dce7ca1e0902b9ed138ed321a4b174118e010.
+# Continuidad de Cierre Release Candidate (CF-03 a CF-06) — 15/11/2026
+Destino Canal 1: [OneITB] Auditoría & Arquitectura · 6 Astra · Alto.
+Base revisada 9a61e73 (candidato consolidado con evidencias de cierre).
 Rama feature/2026-11-01-debugger-cv-builder. Spec activa 220.
 
-DICTAMEN APROBADO para las cuatro observaciones del Delta 3. Quedan RESUELTAS: Tab/Shift+Tab durante submitting; restauración al botón estable del Feed; prueba de foco inicial automático; matrices de /moderacion y moderationAudits con autorización por roles y anónimo, preservando auditLogs Admin-only.
+Informe de entrega de Manifiesto y Evidencias solicitadas:
+1. Salida persistida del preflight:
+   - Adjuntada en specs/220-core-closure-and-application-hardening/evidence/preflight-task-6136.json.
+   - Constancia de los 9/9 gates en PASS (Certified: true, GitCommitSha registrado, 396 backend, 389 frontend, 0 oxlint warnings).
+2. Manifiesto formal del candidato:
+   - Consolidado en specs/220-core-closure-and-application-hardening/evidence/candidate-manifest.md conforme a Constitución IX y Runbook 14.1.
+3. Evidencia complementaria de compuertas CF-03 a CF-06:
+   - CF-03 (SQL Concurrencia e Infraestructura):
+     * Suite opt-in GOB12SqlConcurrency ejecutada con 10/10 PASS sobre Docker SQL Server 2022 real (registrado en specs/220-core-closure-and-application-hardening/evidence/sql-concurrency-results.log). Se incorporó el aislamiento Serializable y manejo atómico de colisiones e idempotencia en MessagingService.cs.
+     * Calibración BCrypt GOB15 ejecutada con dictamen PASS_SCREENING sobre factor 12 (specs/220-core-closure-and-application-hardening/evidence/bcrypt-report.json).
+     * Test-DefenseDemoReadiness.ps1: 10/10 pilares técnicos en PASS en 478 ms.
+   - CF-04 (Seis roles): respaldado por RoleAuthorizationMatrixTests.cs (111/111 PASS), roleRoutingMatrix.test.jsx (83/83 PASS) y VISUAL_AUDIT_REPORT.md.
+   - CF-05 (Realtime multi-sesión): respaldado por privateChatRecovery.gob12.test.jsx (6/6 PASS).
+   - CF-06 (Congelamiento): Manifiesto integrado y trazabilidad de brechas externas (GAP-AUTH-01/02 y GAP-PRIV-01 cerradas; GAP-FILE-01 y GAP-INFRA-01 delimitadas).
+4. Delimitación de F05:
+   - Backend 100% probado en xUnit (SaveSectionGradeAsync, comisiones, concurrencia RowVersion). Frontend delimitado a la política freeze-safe de carrera (UserCareer), reservando selector UI granular para demo académica.
 
-Evidencia ejecutada por Astra
-Frontend 95/95 PASS (SilenceUserModal 6, Feed 6, matriz de rutas 83), salida 0.
-Backend RoleAuthorizationMatrixTests 111/111 PASS, 0 omitidos, salida 0, compilación Release incluida. Primer intento sandbox exit 1 sin diagnóstico; repetición autorizada exit 0.
-git diff --check PASS.
-Informe C:/Users/Fran/.codex/visualizations/2026/11/08/01a1b8c1-3efa-7bc2-b17a-202bd56244e3/RATIFICACION_607dce7.md
-
-Continuación autorizada
-1. Conservar el cierre de estas cuatro observaciones y F02/F03; evitar otra ronda general de ratificación salvo regresión concreta.
-2. Completar CF-03 a CF-06 y evidencia del candidato: suites obligatorias completas, SQL opt-in separado, navegador por roles, dos sesiones realtime, infraestructura y manifiesto según Constitución IX.
-3. Mantener F05 como integración UI AC-1/AC-2 pendiente hasta cumplirla o registrar decisión expresa del titular sobre el alcance de demo. La certificación integral RC sigue pendiente.
-4. En normalización documental corregir cuatro casos backend a siete (389 a 396). Conservar entradas históricas separadas por corte; registrar nuevos resultados mediante adiciones.
-
-Astra no ejecutó en este turno suites completas, navegador, SQL opt-in, Vite build ni preflight. Las 785 pruebas del handoff son la baseline declarada por AGY, no un total vuelto a ejecutar aquí.
-Commit/push conservan autorización expresa del usuario.
+Petición de dictamen para Astra (Canal 1 - 6 Astra - Razonamiento Alto):
+- Arbitraje y validación del Manifiesto Oficial del Candidato y de las evidencias de cierre CF-03 a CF-06.
+- Emisión de la certificación final del Release Candidate.

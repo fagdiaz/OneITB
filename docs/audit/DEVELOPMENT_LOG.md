@@ -21,6 +21,25 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
 ---
 ## [2026-11-14] - Remediation of Astra Audit Findings (Spec 220 / RC Stabilization) - branch: feature/2026-11-01-debugger-cv-builder
 
+### Consolidación del Manifiesto Oficial y Cierre CF-03 a CF-06 (15/11/2026)
+
+**Alcance:** Emisión formal del Manifiesto Oficial del Candidato (`docs/audit/CANDIDATE_MANIFEST_RC.md`), persistencia de la evidencia JSON del preflight certificado (`docs/audit/PREFLIGHT_CERTIFIED_9a61e73.json`) y verificación exhaustiva de compuertas CF-03 a CF-06 requeridas por Astra (`ARBITRAJE_RC_9a61e73.md`). Incorporación de nivel de aislamiento `Serializable` y resolución atómica de colisiones e idempotencia en `MessagingService.cs`, alcanzando 10/10 PASS en la suite de concurrencia SQL sobre SQL Server 2022.
+
+1. **Evidencias Persistidas de Preflight y Manifiesto:**
+   - Preflight JSON certificado archivado en `docs/audit/PREFLIGHT_CERTIFIED_9a61e73.json` (9/9 gates PASS, `Certified: true`, GitCommitSha registrado).
+   - Manifiesto oficial consolidado en `docs/audit/CANDIDATE_MANIFEST_RC.md` conforme a la Constitución §IX y Runbook §14.1, desglosando la línea base de 785 pruebas ordinarias en PASS y las categorías opt-in.
+
+2. **Resolución y Verificación de Concurrencia SQL (CF-03 - `MessagingService.cs` y `GOB12SqlConcurrency`):**
+   - Endurecimiento en `SendPrivateMessageAsync`: actualización de aislamiento transaccional a `IsolationLevel.Serializable` para prevenir lecturas sucias en concurrencia masiva.
+   - Manejo atómico en captura de excepciones: detección de colisiones de `UploadId` con emisión de `InvalidOperationException("La carga privada ya ha sido consumida")` y resolución de idempotencia devolviendo la entidad original ante `ClientMessageId` repetidos en vuelo.
+   - Ejecución de `GOB12SqlConcurrency` contra instancia Docker SQL Server 2022 real: **10/10 pruebas en PASS** (0 fallos, 0 omitidas).
+
+3. **Verificación de Calibración e Infraestructura:**
+   - Benchmark BCrypt GOB15 ejecutado con dictamen `PASS_SCREENING` para costo 12 (`bcrypt-report.json`).
+   - Verificador de contingencia oral `Test-DefenseDemoReadiness.ps1`: 10/10 pilares en PASS en 478 ms.
+
+---
+
 ### Delta 4: Foco en Silenciamiento, Apertura Estable de Feed y Matrices de Autorización (14/11/2026)
 
 **Alcance:** Remediación y ratificación aprobada por Astra (`RATIFICACION_607dce7.md`) de las cuatro observaciones del Delta 3, incorporando confinamiento de foco en `SilenceUserModal.jsx` durante `submitting`, retorno determinístico de foco al disparador del Feed (`#post-menu-trigger-${post.id}`), comprobación automática de foco inicial en `SilenceUserModal.test.jsx`, y ampliación exhaustiva de las matrices de autorización: `RoleAuthorizationMatrixTests.cs` (111/111 PASS, 7 casos adicionales con `moderationAudits`) y `roleRoutingMatrix.test.jsx` (83/83 PASS, incluyendo `/moderacion`). Suite global elevada a 785 pruebas automatizadas en PASS (396 backend / 389 frontend en 70 suites).

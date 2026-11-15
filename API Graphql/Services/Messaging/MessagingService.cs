@@ -253,7 +253,7 @@ namespace Services.Messaging
 
             var isRelational = _context.Database.IsRelational();
             IDbContextTransaction? transaction = isRelational
-                ? await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken)
+                ? await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken)
                 : null;
 
             try
@@ -284,7 +284,7 @@ namespace Services.Messaging
                     foreach (var upload in freshUploads)
                     {
                         if (upload.IsConsumed)
-                            throw new ArgumentException("El archivo adjunto ya ha sido utilizado.");
+                            throw new InvalidOperationException("La carga privada ya ha sido consumida");
 
                         upload.IsConsumed = true;
                     }
@@ -337,6 +337,58 @@ namespace Services.Messaging
                     message.Attachments.Count);
 
                 return message;
+            }
+            catch (Exception ex)
+            {
+                if (transaction != null)
+                {
+                    try { await transaction.RollbackAsync(cancellationToken); }
+                    catch { /* ignore rollback errors if connection aborted */ }
+                }
+
+                try
+                {
+                    // 1. Caso Idempotencia: si otra llamada concurrente ya persistió el mensaje con el mismo ClientMessageId
+                    var idempotent = await _context.Messages
+                        .Include(m => m.Attachments)
+                        .Include(m => m.Sender)
+                        .Include(m => m.Receiver)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(
+                            m => m.SenderId == senderId && m.ClientMessageId == clientMessageId,
+                            cancellationToken);
+
+                    if (idempotent != null)
+                    {
+                        return idempotent;
+                    }
+
+                    // 2. Caso Colisión de Upload: si otra transacción ganó la carrera consumiendo la carga privada
+                    if (uploadIds.Count > 0)
+                    {
+                        bool anyConsumed = await _context.PrivateUploads
+                            .AsNoTracking()
+                            .AnyAsync(u => uploadIds.Contains(u.Id) && u.IsConsumed, cancellationToken);
+
+                        if (anyConsumed ||
+                            ex.ToString().Contains("IX_MessageAttachments_UploadId") ||
+                            ex.ToString().Contains("MessageAttachments") ||
+                            ex.ToString().Contains("PrivateUploads"))
+                        {
+                            throw new InvalidOperationException("La carga privada ya ha sido consumida");
+                        }
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    // Si la consulta de verificación falla, se relanza la excepción original
+                }
+
+                throw;
             }
             finally
             {
