@@ -1,82 +1,33 @@
-# OneITB23 Handoff Prompt: Ratificación de Correcciones F01-F08 (Delta 3)
+# Continuidad de ratificación Delta 4 — 14/11/2026
+Destino Canal 1: [OneITB] Auditoría & Arquitectura · 6 Astra · Alto.
+Base anterior da4e25166d4e0d582aa5f8fa85e1999e980b5dda.
+Rama feature/2026-11-01-debugger-cv-builder. Spec activa 220.
 
-**Canal de Destino:** Canal 1: [OneITB] Auditoría & Arquitectura
-**Modelo:** 6 Astra
-**Nivel de Razonamiento:** Alto
-**Fecha de Handoff:** 2026-11-14
-**Rama Git Activa:** feature/2026-11-01-debugger-cv-builder
-**Commit Base Anterior:** d145d845931dc93b0cdbcce3b301ee8eb6b19ea3 (origin sincronizado)
-**Puntero Spec:** specs/220-core-closure-and-application-hardening
+Informe de resolución de observaciones (Delta 4):
+1. SilenceUserModal (Confinamiento hermético de foco durante submitting):
+   - Al deshabilitarse todos los controles interactivos durante la mutación (focusables.length === 0), se interceptan las teclas Tab y Shift+Tab con preventDefault(), manteniendo activamente el foco confinado en el contenedor del diálogo modal (tabIndex={-1}).
+   - Verificado con dos pruebas unitarias adicionales en SilenceUserModal.test.jsx (Tab y Shift+Tab en estado submitting; 6/6 tests PASS).
 
----
+2. Feed (Restauración de foco a disparador estable):
+   - Se asignó id={`post-menu-trigger-${post.id}`} al botón principal "Abrir acciones de publicacion".
+   - Al abrir el modal de silencio, Feed captura la referencia al disparador estable y la suministra a SilenceUserModal a través de restoreFocusTo={silenceTriggerRef.current}.
+   - Al cerrarse el modal y haberse desmontado el menú contextual, el foco se restaura de manera determinística al disparador del post sin fugas hacia el body.
+   - Verificado con aserción explícita expect(menuButton).toHaveFocus() en Feed.interactions.test.jsx (6/6 tests PASS).
 
-## 1. Objetivo del Relevo
+3. SilenceUserModal.test.jsx (Test de foco inicial limpio):
+   - Se removió la llamada manual closeBtn.focus(), comprobando el foco inicial exclusivamente a través del ciclo de vida del componente mediante await waitFor(() => expect(closeBtn).toHaveFocus()).
 
-Someter a dictamen de ratificación de Astra (Canal 1, Razonamiento Alto) el delta 3 que subsana integralmente los puntos observados en `RATIFICACION_d145d84.md`:
-1. Modal de silenciamiento desacoplado (`SilenceUserModal.jsx`) con contrato completo de teclado, foco y pruebas unitarias falsables.
-2. Entrada autorizada de Moderador a reportes y auditoría disciplinaria mediante ruta dedicada `/moderacion` (`ModerationDashboard.jsx`) y autorización de `GetModerationAudits` en backend, preservando `/admin` 100% exclusivo de Administrador.
-3. Precisión de contratos y delimitaciones de alcance en F03, F05 y F06.
-4. Diferenciación métrica en `VISUAL_AUDIT_REPORT.md` (promedio 98.50% vs proporción de ítems 296/300 = 98.67%) con los 4 hallazgos amarillos (🟡) reflejados en la matriz.
-5. Reconciliación de suites a 763 pruebas en PASS (389 backend / 374 frontend).
+4. Cobertura completa en matrices de autorización por rol:
+   - Backend (RoleAuthorizationMatrixTests.cs): se incorporó la query moderationAudits(first: 10) a la matriz institucional. Autorizada para "Administrador" y "Moderador"; denegada para "Profesor", "Estudiante", "Egresado", "Empleador" y anónimo. Aserción de JsonValueKind.Array añadida. La consulta auditLogs permanece 100% exclusiva de "Administrador". (111/111 tests PASS).
+   - Frontend (roleRoutingMatrix.test.jsx): se incorporó la ruta '/moderacion' a la matriz integral de enrutamiento evaluada para los 6 roles. "Moderador" y "Administrador" resuelven "Panel de Moderación"; los restantes 4 roles resuelven "Acceso restringido". (83/83 tests PASS).
 
----
+5. Regresión automatizada y compuertas de compilación:
+   - Backend (.NET 8 Release xUnit): 396/396 tests PASS (0 omitidas, 0 errores).
+   - Frontend (Vite 8 Vitest): 389/389 tests PASS (70 suites en verde).
+   - Total suites automatizadas: 785/785 PASS (0 fallos).
+   - Compilación dual limpia (.NET 8 Release 0 advertencias / Vite build 0 errores).
+   - git diff --check: PASS (0 espacios en blanco o conflictos).
 
-## 2. Resoluciones Concretas por Observación
-
-### 1. Modal de Silenciamiento con Contrato Completo de Teclado y Foco (F04/F06)
-* **Archivos:** `FrontEnd/OneItb-FE/src/Components/publication/SilenceUserModal.jsx` y `SilenceUserModal.test.jsx`
-* **Implementación:**
-  1. Se extrajo el modal a un componente modular `SilenceUserModal.jsx`.
-  2. Implementa `dialogRef`, `previousFocusRef` y `handlersRef` desacoplado del efecto de foco dependiente únicamente de `[target]`.
-  3. Foco inicial automático en el botón de cierre (`closeButton`) al abrir mediante `requestAnimationFrame`.
-  4. Atajo de teclado `Escape`: libre y funcional al estar en reposo; **estrictamente bloqueado durante el guardado** (`submitting === true`).
-  5. Clic en backdrop: cierra el modal en reposo; **bloqueado durante el guardado** (`submitting === true`).
-  6. Confinamiento de tabulación (focus trap): desde el último control interactivo (`confirmButton`) `Tab` envuelve al primero (`closeButton`); desde el primero (`closeButton`) `Shift+Tab` envuelve al último (`confirmButton`).
-  7. Restauración de foco garantizada al elemento disparador (`openerButton`) tras desmontar/cerrar el modal.
-* **Suite Automatizada Añadida:**
-  * `SilenceUserModal.test.jsx`: 4 pruebas falsables cubriendo foco inicial, trampa Tab/Shift+Tab, Escape libre con restauración, bloqueo de Escape y backdrop en submitting, y despacho de mutación con duración elegida (4/4 PASS).
-
-### 2. Entrada Autorizada de Moderador a Reportes y Auditoría sin Afectar `/admin` (F04)
-* **Archivos:** `ModerationDashboard.jsx`, `Routing.jsx`, `navigationItems.js`, `Query.cs`
-* **Implementación:**
-  1. **Ruta y Shell Protegida (`/moderacion`):** Se creó `ModerationDashboard.jsx` permitiendo acceso a `Moderador` y `Administrador`. Cualquier otro rol recibe vista de `Acceso restringido`.
-  2. **Pestañas Operativas:**
-     * `Reportes de Comunidad` (`ModerationManagement`): consulta de `GET_COMMUNITY_REPORTS` e historial con `UPDATE_REPORT_STATUS`.
-     * `Auditoria de Moderacion` (`ModerationAuditManagement`): visualización de acciones forenses de moderación.
-  3. **Backend (`Query.cs:358`):** `GetModerationAudits` se actualizó a `[Authorize(Roles = new[] { "Administrador", "Moderador" })]`, permitiendo al Moderador auditar acciones sancionatorias.
-  4. **Protección de `/admin` Intacta:** `/admin` (`AdminDashboard.jsx`) se mantiene **100% exclusivo de Administrador**, preservando la política probada en `roleRoutingMatrix.test.jsx:137`.
-  5. **Navegación:** En `navigationItems.js` se agregó el ítem `moderation` (`/moderacion`) para `Moderador`, conservando inalteradas las secuencias de `Estudiante`, `Empleador` y `Administrador`.
-* **Suites Automatizadas Añadidas/Actualizadas:**
-  * `ModerationDashboard.test.jsx`: 3 pruebas (denegación a roles no autorizados, acceso de Moderador con tab reportes, y acceso de Administrador con tab auditoría) (3/3 PASS).
-  * `navigationItems.test.js`: verificado con caso `Moderador` añadido (3/3 PASS).
-
-### 3. Precisión de Contratos en F03, F05 y F06
-* **F03 (`Feed.interactions.test.jsx`):** Se precisó la descripción del test: demuestra re-navegación reactiva al mismo destino preservando el repliegue manual del hilo por el usuario (sin mutación ni refetch de nueva colección).
-* **F05 (`VISUAL_AUDIT_REPORT.md` / `spec.md`):** Se ratifica la distinción: Backend 100% implementado y probado en xUnit (`SaveSectionGradeAsync`, comisiones, concurrencia `RowVersion` y `ConcurrencyConflict`). En frontend, la pantalla opera bajo la política freeze-safe de carrera (`UserCareer`), catalogando formalmente selectores de comisión como integración UI pendiente para demo, sin inferir ausencia universal de deuda fuera de los contratos probados.
-* **F06 (`UserProfile.test.tsx`):** Se clasificó explícitamente como comprobación estática de contratos y atributos accesibles de la previsualización ATS, reservando la interacción manual de teclado/foco para el gate CF-06.
-
-### 4. Diferenciación Métrica y 4 Pendientes 🟡 en `VISUAL_AUDIT_REPORT.md`
-* Se diferenciaron explícitamente en `VISUAL_AUDIT_REPORT.md` §1 las dos agregaciones matemáticas:
-  * **Promedio simple por categorías:** `(98% + 99% + 99% + 98%) / 4 = 98.50%`.
-  * **Proporción directa de ítems aprobados:** `296 / 300 = 98.666...% (~98.67%)`.
-* Se incorporaron a la matriz de madurez visual los **4 hallazgos pendientes en bandera amarilla (🟡)**:
-  1. Consistencia de tablas densas administrativas (1).
-  2. Contraste de trazado en gráficos estadísticos complejos bajo modo oscuro (1).
-  3. Adaptación elástica de tablas de notas en anchos ultrapequeños <360px (1).
-  4. Micro-feedback explícito al descartar lotes de subida masiva de adjuntos (1).
-* Se califican explícitamente como estimación indicativa del muestreo de interfaz y no como sustituto de los gates CF-03 a CF-06.
-
-### 5. Reconciliación Métrica de Suites
-* **Backend:** 389/389 en PASS (0 omitidas, .NET 8 Release). Las categorías opt-in (SqlConcurrency, BcryptBenchmark y Canary GHSA) se informan por separado en el manifiesto.
-* **Frontend:** 374/374 en PASS (70 suites completas en Vitest, incorporando `SilenceUserModal.test.jsx` y `ModerationDashboard.test.jsx`).
-* **Total Regresión:** **763 pruebas automatizadas en PASS (0 fallos)**.
-* **Compilación:** Backend Release 0 errores / 0 advertencias; Frontend Vite build en 578ms. `git diff --check` arrojó 0 errores.
-
----
-
-## 3. Instrucciones para Astra (Canal 1)
-
-1. Revisar los diffs correspondientes al componente `SilenceUserModal.jsx` y su suite `SilenceUserModal.test.jsx`.
-2. Inspeccionar la entrada autorizada de Moderador en `/moderacion` (`ModerationDashboard.jsx`, `Routing.jsx`, `navigationItems.js` y `Query.cs:358`) preservando `/admin` exclusivo para Administrador.
-3. Verificar la diferenciación métrica en `VISUAL_AUDIT_REPORT.md` (98.50% promedio vs 98.67% proporción, con 4 hallazgos 🟡 en la matriz).
-4. Emitir el dictamen correspondiente sobre las correcciones del Delta 3.
+Petición de dictamen para Astra (Canal 1 - 6 Astra - Razonamiento Alto):
+- Ratificación de la resolución de los 4 ítems observados en Delta 3.
+- Estado de evaluación para la certificación Release Candidate.

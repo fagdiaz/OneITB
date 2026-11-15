@@ -509,5 +509,6 @@ describe('Feed attachment & comment interaction regressions', () => {
 
     expect(await screen.findByText('Usuario silenciado por 24 horas.')).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: /Silenciar Usuario/i })).not.toBeInTheDocument();
+    expect(menuButton).toHaveFocus();
   });
 });

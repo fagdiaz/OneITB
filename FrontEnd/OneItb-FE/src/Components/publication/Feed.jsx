@@ -295,6 +295,7 @@ export const Feed = () => {
   const [moderateCommentVisibility, { loading: moderatingComment }] = useMutation(MODERATE_COMMENT_VISIBILITY);
   const [silenceUser, { loading: silencingUser }] = useMutation(SILENCE_USER);
   const [silenceModalTarget, setSilenceModalTarget] = useState(null);
+  const silenceTriggerRef = useRef(null);
   const [followOverrides, setFollowOverrides] = useState({});
 
   const careers = careersData?.careers ?? [];
@@ -986,6 +987,7 @@ export const Feed = () => {
               <div className="relative" data-post-menu>
                 <button
                   type="button"
+                  id={`post-menu-trigger-${post.id}`}
                   onClick={() => setOpenMenuId((current) => (current === post.id ? null : post.id))}
                   className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-100"
                   aria-label="Abrir acciones de publicacion"
@@ -1014,7 +1016,17 @@ export const Feed = () => {
                   {isModerator && post.user?.id !== auth.id && (
                     <>
                       <button type="button" onClick={() => { setModerationTarget({ kind: 'inquiry', id: post.id }); setModerationError(null); setOpenMenuId(null); }} className="block w-full border-t border-slate-100 px-4 py-2 text-left text-amber-700 hover:bg-amber-50">Ocultar por moderacion</button>
-                      <button type="button" onClick={() => { setSilenceModalTarget(post.user); setOpenMenuId(null); }} className="block w-full px-4 py-2 text-left text-amber-800 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-white/[0.05]">Silenciar autor (Moderacion)</button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          silenceTriggerRef.current = document.getElementById(`post-menu-trigger-${post.id}`);
+                          setSilenceModalTarget(post.user);
+                          setOpenMenuId(null);
+                        }}
+                        className="block w-full px-4 py-2 text-left text-amber-800 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-white/[0.05]"
+                      >
+                        Silenciar autor (Moderacion)
+                      </button>
                     </>
                   )}
                 </div>
@@ -1232,6 +1244,7 @@ export const Feed = () => {
       <SilenceUserModal
         target={silenceModalTarget}
         submitting={silencingUser}
+        restoreFocusTo={silenceTriggerRef.current}
         onClose={() => {
           if (!silencingUser) setSilenceModalTarget(null);
         }}

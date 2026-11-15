@@ -43,11 +43,11 @@ public sealed class RoleAuthorizationMatrixTests
     // B2B creation/management is Employer-only in this policy. The current code also permits Admin.
     public static readonly string[] Operations = [
         "updateReportStatus", "saveSectionGrade", "createJobOffer", "myJobOffers", "applyToJob",
-        "jobOffers", "approveEmployerRequest", "rejectEmployerRequest", "auditLogs",
+        "jobOffers", "approveEmployerRequest", "rejectEmployerRequest", "auditLogs", "moderationAudits",
         "updateUserRole", "updateUserStatus",
     ];
     private static bool Allowed(string role, string operation) => operation switch {
-        "updateReportStatus" => role is "Administrador" or "Moderador",
+        "updateReportStatus" or "moderationAudits" => role is "Administrador" or "Moderador",
         "saveSectionGrade" => role is "Administrador" or "Profesor",
         "createJobOffer" or "myJobOffers" => role is "Administrador" or "Empleador",
         "applyToJob" => role is "Estudiante" or "Egresado",
@@ -198,6 +198,7 @@ public sealed class RoleAuthorizationMatrixTests
         "approveEmployerRequest" => $$"""mutation { r: approveEmployerRequest(requestId:"{{RequestId}}") { request { id status } accountCreated } }""",
         "rejectEmployerRequest" => $$"""mutation { r: rejectEmployerRequest(requestId:"{{RequestId}}", reason:"Verificación rechazada") { request { id status } } }""",
         "auditLogs" => """query { r: auditLogs(first:10) { id } }""",
+        "moderationAudits" => """query { r: moderationAudits(first:10) { id } }""",
         "updateUserRole" => $$"""mutation { r: updateUserRole(userId:"{{TargetId}}", newRole:"Profesor") { id success } }""",
         "updateUserStatus" => $$"""mutation { r: updateUserStatus(userId:"{{TargetId}}", isActive:false) { id success } }""",
         _ => throw new ArgumentOutOfRangeException(nameof(operation)),
@@ -363,6 +364,7 @@ public sealed class RoleAuthorizationMatrixTests
                     Assert.Empty(await Context.EmployerOnboardingOutboxMessages.ToListAsync());
                     break;
                 case "auditLogs": Assert.Equal(1, value.GetArrayLength()); break;
+                case "moderationAudits": Assert.Equal(JsonValueKind.Array, value.ValueKind); break;
                 case "updateUserRole": Assert.Equal("Profesor", (await Context.Users.AsNoTracking().SingleAsync(row => row.Id == TargetId)).Role); break;
                 case "updateUserStatus": Assert.False((await Context.Users.AsNoTracking().SingleAsync(row => row.Id == TargetId)).IsActive); break;
                 default: throw new ArgumentOutOfRangeException(nameof(operation));

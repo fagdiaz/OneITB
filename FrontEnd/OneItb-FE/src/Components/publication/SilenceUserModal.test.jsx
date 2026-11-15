@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SilenceUserModal } from './SilenceUserModal';
 
@@ -57,9 +57,10 @@ describe('SilenceUserModal Accessibility and Keyboard Focus Contract', () => {
     const cancelBtn = screen.getByRole('button', { name: 'Cancelar' });
     const confirmBtn = screen.getByRole('button', { name: /Confirmar silencio/i });
 
-    // Initial focus on close button
-    closeBtn.focus();
-    expect(closeBtn).toHaveFocus();
+    // Initial focus placed automatically by the component via requestAnimationFrame
+    await waitFor(() => {
+      expect(closeBtn).toHaveFocus();
+    });
 
     // Tab trap: when at the last interactive control (confirmBtn), pressing Tab wraps to first (closeBtn)
     confirmBtn.focus();
@@ -106,6 +107,48 @@ describe('SilenceUserModal Accessibility and Keyboard Focus Contract', () => {
     const backdrop = dialog.parentElement;
     fireEvent.mouseDown(backdrop);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('confines focus to the dialog container during submitting when controls are disabled', async () => {
+    render(<TestHost defaultSubmitting={true} />);
+    const opener = screen.getByTestId('opener-button');
+    opener.focus();
+    fireEvent.click(opener);
+
+    const dialog = screen.getByRole('dialog', { name: 'Silenciar Usuario (Moderación)' });
+    expect(dialog).toBeInTheDocument();
+
+    // Verify all buttons are disabled during submitting
+    const buttons = dialog.querySelectorAll('button');
+    buttons.forEach((btn) => expect(btn).toBeDisabled());
+
+    // When Tab is pressed during submitting, focus must not leak; it remains on the dialog container
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(dialog).toHaveFocus();
+
+    // When Shift+Tab is pressed during submitting, focus remains on the dialog container
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(dialog).toHaveFocus();
+  });
+
+  it('restores focus to custom restoreFocusTo target when provided', () => {
+    const customTarget = document.createElement('button');
+    document.body.appendChild(customTarget);
+    customTarget.focus();
+
+    const onClose = vi.fn();
+    const { unmount } = render(
+      <SilenceUserModal
+        target={targetUser}
+        restoreFocusTo={customTarget}
+        onClose={onClose}
+        onConfirm={vi.fn()}
+      />
+    );
+
+    unmount();
+    expect(customTarget).toHaveFocus();
+    document.body.removeChild(customTarget);
   });
 
   it('allows selecting sanction duration and dispatches onConfirm with selected hours', () => {

@@ -101,7 +101,7 @@ vi.mock('../Components/admin/ModerationAuditManagement', () => ({ ModerationAudi
 vi.mock('../Components/admin/EmployerRequestManagement', () => ({ EmployerRequestManagement: () => null }));
 
 const roles = ['Administrador', 'Moderador', 'Profesor', 'Estudiante', 'Egresado', 'Empleador'];
-const paths = ['/admin', '/admin/users', '/empleos/mis-ofertas', '/academic'];
+const paths = ['/admin', '/admin/users', '/empleos/mis-ofertas', '/academic', '/moderacion'];
 const cases = roles.flatMap((role) => paths.map((path) => [role, path]));
 let consoleErrors;
 
@@ -154,6 +154,18 @@ async function assertPagePolicy(role, requestedPath) {
       expect(matrix.queries).not.toContain('myJobOffers');
       expect(consoleErrors).not.toHaveBeenCalled();
       expect(matrix.locations.length).toBeLessThanOrEqual(4);
+    }
+    return;
+  }
+  if (requestedPath === '/moderacion') {
+    await settled(requestedPath);
+    if (role === 'Moderador' || role === 'Administrador') {
+      expect(screen.getByRole('heading', { name: 'Panel de Moderación' })).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: 'Secciones de moderacion' })).toBeInTheDocument();
+    } else {
+      expect(screen.getByRole('heading', { name: 'Acceso restringido' })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Panel de Moderación' })).toBeNull();
+      expect(screen.queryByRole('navigation', { name: 'Secciones de moderacion' })).toBeNull();
     }
     return;
   }

@@ -9,6 +9,7 @@ const DURATION_OPTIONS = [
 export const SilenceUserModal = ({
   target,
   submitting = false,
+  restoreFocusTo = null,
   onClose,
   onConfirm,
 }) => {
@@ -17,11 +18,11 @@ export const SilenceUserModal = ({
   const descId = useId();
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
-  const handlersRef = useRef({ onClose, submitting });
+  const handlersRef = useRef({ onClose, submitting, restoreFocusTo });
 
   useEffect(() => {
-    handlersRef.current = { onClose, submitting };
-  }, [onClose, submitting]);
+    handlersRef.current = { onClose, submitting, restoreFocusTo };
+  }, [onClose, submitting, restoreFocusTo]);
 
   useEffect(() => {
     if (!target) return undefined;
@@ -59,7 +60,13 @@ export const SilenceUserModal = ({
             'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
           )
         );
-        if (focusables.length === 0) return;
+        if (focusables.length === 0) {
+          event.preventDefault();
+          if (document.activeElement !== dialog) {
+            dialog.focus();
+          }
+          return;
+        }
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
 
@@ -83,7 +90,11 @@ export const SilenceUserModal = ({
       window.cancelAnimationFrame(frame);
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = previousOverflow;
-      previousFocusRef.current?.focus?.();
+      const explicit = typeof handlersRef.current.restoreFocusTo === 'function'
+        ? handlersRef.current.restoreFocusTo()
+        : handlersRef.current.restoreFocusTo?.current ?? handlersRef.current.restoreFocusTo;
+      const targetElement = explicit || previousFocusRef.current;
+      targetElement?.focus?.();
     };
   }, [target]);
 
