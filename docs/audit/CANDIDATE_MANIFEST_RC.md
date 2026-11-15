@@ -73,6 +73,7 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 - **Evidencias adjuntas:**
   * Contenedor Docker `oneitb23-sql` verificado (puerto 1433 Up/healthy).
   * Validación integral de infraestructura local y aceptación de servicios: [`./INFRASTRUCTURE_ACCEPTANCE_RESULTS.md`](./INFRASTRUCTURE_ACCEPTANCE_RESULTS.md) (`scripts/validate-local-infrastructure.ps1` PASS con exit code 0; Redis 7, Mailpit, integración real de infra, regresión de aislamiento de sesión, suites completas y cleanup sin residuos).
+    - *Declaración de procedencia del script:* El script ejecutado `scripts/validate-local-infrastructure.ps1` posee hash SHA256 `7FCC83CE6D637D520C90ACB29759DFA91E9C1F4829E25F43B54C6DA55B066511` (modificado en commit `31e59a2` para filtro de exclusión de categorías opt-in y bucle acotado de liberación de puertos). Se declara formalmente como herramienta de soporte diferenciada del árbol inmutable del código candidato de producción `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`.
   * Validación de integridad relacional y base demo: [`./DEMO_DATABASE_VALIDATION_RESULTS.md`](./DEMO_DATABASE_VALIDATION_RESULTS.md) (`scripts/validate-demo-database.ps1` PASS con exit code 0; 0 violaciones relacionales en 10 dimensiones, 6 logins de rol, smokes de 8 dominios GraphQL, upload y cleanup).
   * Suite opt-in de concurrencia SQL (`GOB12SqlConcurrency`) ejecutada con **11/11 PASS** sobre SQL Server 2022 ([`./SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md); ejecutada sobre árbol limpio en HEAD `a62c4e3`, código idéntico a `37ed360`).
   * Calibración BCrypt (`GOB15BcryptBenchmark`) con dictamen `PASS_SCREENING` ([`./bcrypt-report.json`](./bcrypt-report.json)).
@@ -88,12 +89,13 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
   * Daemon Kestrel reiniciado con binario compilado y query `moderationAudits` validada con HTTP 200 para rol Moderador.
 
 ### CF-05: Validación Realtime y Aislamiento Multi-Sesión
-- **Estado:** `[CERRADO / CERTIFICADO]` (Validación realtime con dos sesiones reales simultáneas completada al 100% con **6/6 dimensiones en PASS**).
+- **Estado:** `[CERRADO / CERTIFICADO]` (Validación realtime con dos sesiones reales simultáneas completada al 100% con **6/6 dimensiones en PASS** contra runtime Kestrel ASP.NET Core 8 y cliente real `graphql-ws` v5.16.0 sin mock).
 - **Evidencias adjuntas:**
   * Acta formal de validación realtime: [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
-  * Traza saneada cronológica en vivo: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md) (registro con timestamps, Contexts A/B/C, handshake 3ms, entrega 30ms, cero fugas observadas a observador C, reconexión 1006 y purga en logout).
-  * Aislamiento de topic verificado sin fuga observada en los casos ejecutados hacia terceros observadores (Sesión C / Moderador recibió 0 tramas).
-  * Handshake WebSocket validado en 3 ms, entrega reactiva inmediata sin recarga de página, ciclo de badges reactivo con persistencia en DB, reconexión automática tras desconexión 1006 y purga de caché Apollo Client (`clearStore()`) en logout interactivo.
+  * Traza cronológica y metodológica detallada: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md) (declara la procedencia de la traza sintética inicial de pruebas unitarias y documenta la traza en vivo sin mocks).
+  * Salida literal del runner unmocked en vivo: [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md) (`scripts/run-cf05-live-validation.ps1` y `scripts/verify-cf05-realtime-live.mjs` ejecutados contra Kestrel en puerto 5098 con `graphql-ws` v5.16.0 respetando la temporización natural de retryWait).
+  * Aislamiento de topic verificado sin fuga observada en los casos ejecutados hacia terceros observadores (Sesión C / Moderador recibió 0 tramas; `leaksDetected: 0`).
+  * Handshake WebSocket validado en 52 ms en vivo, entrega reactiva inmediata sin recarga de página (141 ms), marcado de conversación persistido en DB, reconexión automática tras terminación física de socket (`client.terminate()`) con una espera natural medida de **2112 ms** (dentro del rango `>= 1300 ms`), entrega exitosa de segundo mensaje post-reconexión y purga/reemplazo de sesión limpia en cliente.
   * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.
 
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato

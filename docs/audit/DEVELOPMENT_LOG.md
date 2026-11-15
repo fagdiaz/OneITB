@@ -19,6 +19,26 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-15] - Resolution of Arbitraje 31e59a2: Unmocked graphql-ws Live Execution, Natural Retry Delay & Tooling Provenance (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Cierre de Observaciones de Arbitraje 31e59a2 (15/11/2026)
+
+**Alcance:** Subsanación rigurosa del único bloqueo de evidencia pendiente (`CIERRE-03`) señalado por Astra en `ARBITRAJE_31e59a2.md` sin tocar una sola línea de código de producción o pruebas (candidate SHA `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` 100% inmutable):
+
+1. **CF-05 (Ejecución en Vivo Unmocked con Cliente Real `graphql-ws` y Temporización Natural):**
+   - Se diseñó y ejecutó el orquestador finito `scripts/run-cf05-live-validation.ps1` que ejecuta `scripts/verify-cf05-realtime-live.mjs` contra Kestrel ASP.NET Core 8 en el puerto 5098 con el paquete real instalado `graphql-ws` v5.16.0 (Node 22).
+   - Se respetó la política predeterminada de `graphql-ws` sin sobrescritura de `retryWait` (fórmula de biblioteca: `1000ms + random(300..2999ms)` = espera mínima de 1300 ms).
+   - Se provocó la desconexión anormal mediante terminación abrupta física del socket (`client.terminate()`).
+   - La reconexión automática ocurrió exitosamente tras una espera natural medida de **2112 ms** (estrictamente en el rango esperado `>= 1300 ms`).
+   - El canal reconectado entregó en tiempo real un segundo mensaje emitido posteriormente por la Sesión A hacia la Sesión B.
+   - Se verificaron en vivo las 6 dimensiones críticas: Handshake (52 ms, RT-01), entrega reactiva instantánea (RT-02), aislamiento estricto de topic con 0 tramas recibidas por el Moderador en Sesión C (`leaksDetected: 0`, RT-03), marcado de lectura persistido en BD (RT-04), reconexión automática natural con recuperación de canal (RT-05) y logout con descarte de transporte e hidratación limpia de la Sesión C en el mismo cliente sin datos residuales de A (RT-06).
+   - Se capturó la salida literal sin alteraciones en `docs/audit/CF05_LIVE_RUNNER_OUTPUT.md`.
+   - Se actualizaron `docs/audit/CF05_REALTIME_TRACE.md` y `docs/audit/CF05_REALTIME_VALIDATION.md` declarando con total transparencia la distinción entre las suites sintéticas de Vitest (con mock para CI y control loop interno) y la sesión en vivo unmocked.
+
+2. **Declaración de Procedencia de Herramientas (CF-03):**
+   - Se identificó explícitamente en `docs/audit/CANDIDATE_MANIFEST_RC.md` el hash SHA256 (`7FCC83CE6D637D520C90ACB29759DFA91E9C1F4829E25F43B54C6DA55B066511`) del script `scripts/validate-local-infrastructure.ps1` modificado en el commit `31e59a2`, diferenciándolo del árbol de código de producción candidato `37ed360`.
+
+---
 ## [2026-11-15] - Resolution of Arbitraje a393a88: Infrastructure/DB Validation Scripts, Role Reconciliations & Realtime Trace Log (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Cierre de Observaciones de Arbitraje a393a88 (15/11/2026)
