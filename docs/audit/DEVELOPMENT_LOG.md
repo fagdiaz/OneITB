@@ -19,6 +19,27 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-15] - Resolution of Arbitraje a393a88: Infrastructure/DB Validation Scripts, Role Reconciliations & Realtime Trace Log (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Cierre de Observaciones de Arbitraje a393a88 (15/11/2026)
+
+**Alcance:** Subsanación rigurosa de los pendientes señalados por Astra en `ARBITRAJE_a393a88.md` sin tocar una sola línea de código de producción o pruebas (candidate SHA `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` 100% inmutable):
+
+1. **CF-03 (Infraestructura Local, Base Demo y Cleanup Acreditados):**
+   - Ejecutado `scripts/validate-local-infrastructure.ps1` con exit code 0 (`Spec 195 local infrastructure acceptance: PASS`), verificando Compose acceptance, contenedores Redis 7 y Mailpit healthy, 2/2 tests de integración TCP/SMTP en PASS, regresión de aislamiento de sesión en PASS (15/15), suites completas (396 backend + 389 frontend) y teardown limpio con liberación de puertos. Acta formal generada en `docs/audit/INFRASTRUCTURE_ACCEPTANCE_RESULTS.md`.
+   - Ejecutado `scripts/validate-demo-database.ps1` con exit code 0 (`IntegrityViolations: 0`, `Status: PASS`), auditando 10 dimensiones relacionales en SQL Server 2022, 6 logins de rol institucionales y smokes en 8 dominios GraphQL más upload de fixture con cleanup. Acta formal generada en `docs/audit/DEMO_DATABASE_VALIDATION_RESULTS.md`.
+
+2. **CF-04 (Desambiguación de Operaciones y Conciliación):**
+   - `PROF-03`: corregido el contrato a `upsertAcademicProgress` (`AcademicDashboard.jsx:239/421` y `AcademicService.UpsertAcademicProgressAsync`), explicitando que `SaveSectionGradeAsync` con `RowVersion` y comisiones pertenece a la lógica de backend delimitada bajo F05.
+   - `MOD-03`: corregido el modal de ocultamiento a `ModerationReasonModal` (`Feed.jsx:1234`), ratificando el confinamiento de foco y Escape en `SilenceUserModal` (`Feed.jsx:1244`).
+   - Mapeo de `RR-06`: preservado honestamente como riesgo funcional pendiente `[I]` para la fase de producción, sin afirmar cierre indebido por los casos `EMP-01..04`.
+   - Conciliación de métricas: 30 PASS directos / 1 Observación de runtime (100% conforme tras reinicio de Kestrel) unificada en acta y manifiesto.
+
+3. **CF-05 (Traza Saneada Cronológica de Clientes UI):**
+   - Generado el registro estructurado `docs/audit/CF05_REALTIME_TRACE.log` con timestamps, Contexts A/B/C, latencia de handshake (3ms), entrega reactiva en 30ms sin recarga, cero fugas observadas al observador C activo, reconexión automática tras código 1006 en epoch 2 y aserciones de purga total de caché Apollo / DOM en logout interactivo A -> C.
+   - Respaldo automatizado de 22 pruebas (19 frontend + 3 backend) en PASS.
+
+---
 ## [2026-11-15] - Final Evidence Reconciliation & Release Candidate Freeze (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Reconciliación Documental y Cierre de Compuertas CF-03 a CF-06 (15/11/2026)

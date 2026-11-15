@@ -69,9 +69,11 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 - **Estado:** `[CERRADO]` (Raíz depurada de prompts antiguos; secretos resguardados en user-secrets y variables de entorno excluidas por `.gitignore`).
 
 ### CF-03: Gates Integrales, Infraestructura Local y Base Demo
-- **Estado:** `[CERRADO / CERTIFICADO]` (Regresión automatizada core 785/785 PASS, suite opt-in SQL concurrente 11/11 PASS sobre SQL Server 2022, BCrypt calibrado y preflight oficial certificado con `Certified: true`).
+- **Estado:** `[CERRADO / CERTIFICADO]` (Regresión automatizada core 785/785 PASS, suite opt-in SQL concurrente 11/11 PASS sobre SQL Server 2022, aceptación integral de infraestructura local y base demo certificadas, BCrypt calibrado y preflight oficial certificado con `Certified: true`).
 - **Evidencias adjuntas:**
   * Contenedor Docker `oneitb23-sql` verificado (puerto 1433 Up/healthy).
+  * Validación integral de infraestructura local y aceptación de servicios: [`./INFRASTRUCTURE_ACCEPTANCE_RESULTS.md`](./INFRASTRUCTURE_ACCEPTANCE_RESULTS.md) (`scripts/validate-local-infrastructure.ps1` PASS con exit code 0; Redis 7, Mailpit, integración real de infra, regresión de aislamiento de sesión, suites completas y cleanup sin residuos).
+  * Validación de integridad relacional y base demo: [`./DEMO_DATABASE_VALIDATION_RESULTS.md`](./DEMO_DATABASE_VALIDATION_RESULTS.md) (`scripts/validate-demo-database.ps1` PASS con exit code 0; 0 violaciones relacionales en 10 dimensiones, 6 logins de rol, smokes de 8 dominios GraphQL, upload y cleanup).
   * Suite opt-in de concurrencia SQL (`GOB12SqlConcurrency`) ejecutada con **11/11 PASS** sobre SQL Server 2022 ([`./SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md); ejecutada sobre árbol limpio en HEAD `a62c4e3`, código idéntico a `37ed360`).
   * Calibración BCrypt (`GOB15BcryptBenchmark`) con dictamen `PASS_SCREENING` ([`./bcrypt-report.json`](./bcrypt-report.json)).
   * Verificador `Test-DefenseDemoReadiness.ps1` ejecutado en 478 ms con 10/10 pilares en PASS.
@@ -82,13 +84,14 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 - **Evidencias adjuntas:**
   * Acta formal de auditoría de roles: [`./CF04_ROLE_WALKTHROUGH.md`](./CF04_ROLE_WALKTHROUGH.md).
   * 0 errores no controlados de JavaScript en DevTools / 0 UUIDs de GlobalErrorBoundary / 0 respuestas HTTP 500.
-  * Accesibilidad WCAG 2.1 AA verificada: foco confinado en modales y atajo `Escape` determinístico en modales de publicación, silenciamiento, ofertas laborales y visor de CV ATS con retorno al disparador.
+  * Accesibilidad WCAG 2.1 AA verificada: foco confinado en modales y atajo `Escape` determinístico en modales de publicación, silenciamiento (`SilenceUserModal`), razón de moderación (`ModerationReasonModal`), ofertas laborales y visor de CV ATS con retorno al disparador.
   * Daemon Kestrel reiniciado con binario compilado y query `moderationAudits` validada con HTTP 200 para rol Moderador.
 
 ### CF-05: Validación Realtime y Aislamiento Multi-Sesión
 - **Estado:** `[CERRADO / CERTIFICADO]` (Validación realtime con dos sesiones reales simultáneas completada al 100% con **6/6 dimensiones en PASS**).
 - **Evidencias adjuntas:**
   * Acta formal de validación realtime: [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
+  * Traza saneada cronológica en vivo: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md) (registro con timestamps, Contexts A/B/C, handshake 3ms, entrega 30ms, cero fugas observadas a observador C, reconexión 1006 y purga en logout).
   * Aislamiento de topic verificado sin fuga observada en los casos ejecutados hacia terceros observadores (Sesión C / Moderador recibió 0 tramas).
   * Handshake WebSocket validado en 3 ms, entrega reactiva inmediata sin recarga de página, ciclo de badges reactivo con persistencia en DB, reconexión automática tras desconexión 1006 y purga de caché Apollo Client (`clearStore()`) en logout interactivo.
   * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.

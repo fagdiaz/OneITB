@@ -181,8 +181,8 @@ vista resumida claramente identificada y de mantenimiento razonable.
 
 | Bloque | Estado | Trabajo pendiente | Estimación canónica |
 |---|---|---|---:|
-| `CF-01` a `CF-06` | `[x] [V]` | Completados al 100%: integración Git, higiene, suites core (785/785 PASS), SQL concurrente (11/11 PASS), preflight certificado, seis roles en vivo (30 PASS / 1 Obs en CF-04), validación realtime multi-sesión (CF-05) y manifiesto oficial congelado | Ejecutado y certificado sobre SHA `37ed360` |
-| Riesgos manuales `RR-04` a `RR-06` | `[x] [V]` | Moderador visual, WebSocket aislado y onboarding B2B completo | Cerrados en `CF-04`/`CF-05` |
+| `CF-01` a `CF-06` | `[x] [V]` | Completados al 100%: integración Git, higiene, suites core (785/785 PASS), SQL concurrente (11/11 PASS), validación local infra/base demo (scripts oficiales PASS con exit code 0), preflight certificado, seis roles (30 PASS / 1 Obs en CF-04), validación realtime multi-sesión con traza saneada (CF-05) y manifiesto oficial congelado | Ejecutado y certificado sobre SHA `37ed360` |
+| Riesgos manuales `RR-04`, `RR-05` y `RR-10` | `[x] [V]` | Moderador visual, WebSocket aislado y preflight vinculado a SHA | Cerrados en `CF-03`/`CF-04`/`CF-05` (`RR-06` B2B permanece `[I]`) |
 | Evidencia final | `[x] [V]` | Registrar fecha, SHA, comandos, métricas, capturas y desviaciones | Consolidada en `CANDIDATE_MANIFEST_RC.md` |
 
 ### 6.3 Producción documental y logística

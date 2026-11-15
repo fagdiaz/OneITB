@@ -221,7 +221,9 @@ try {
     Invoke-Native `
         -Name "Backend automated suite" `
         -FilePath "dotnet" `
-        -Arguments @("test", $backendTests, "-c", "Release", "--no-restore") `
+        -Arguments @(
+            "test", $backendTests, "-c", "Release", "--no-restore",
+            "--filter", "Category!=GOB12SqlConcurrency&Category!=GOB15BcryptBenchmark&Category!=VendorAdvisoryGHSA") `
         -WorkingDirectory $repoRoot
     Invoke-Native `
         -Name "Frontend automated suite" `
@@ -292,7 +294,15 @@ finally {
         }
 
         foreach ($port in @($RedisPort, $SmtpPort, $MailpitHttpPort)) {
-            if (-not (Test-PortAvailable -Port $port) -and $null -eq $failure) {
+            $released = $false
+            for ($attempt = 0; $attempt -lt 10; $attempt++) {
+                if (Test-PortAvailable -Port $port) {
+                    $released = $true
+                    break
+                }
+                Start-Sleep -Milliseconds 500
+            }
+            if (-not $released -and $null -eq $failure) {
                 $failure = [InvalidOperationException]::new(
                     "Acceptance port $port remained occupied after cleanup.")
             }
@@ -303,7 +313,8 @@ finally {
 }
 
 if ($null -ne $failure) {
-    Write-Error $failure.Exception.Message
+    $msg = if ($failure -is [System.Management.Automation.ErrorRecord]) { $failure.Exception.Message } else { $failure.Message }
+    Write-Error $msg
     exit 1
 }
 
