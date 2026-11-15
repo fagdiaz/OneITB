@@ -1,11 +1,13 @@
 # Manifiesto Oficial del Release Candidate (Spec 220)
 
-**Fecha de emisión:** 2026-11-15  
-**Rama:** `feature/2026-11-01-debugger-cv-builder`  
-**Tracking remoto:** `origin/feature/2026-11-01-debugger-cv-builder`  
-**Especificación activa:** `specs/220-core-closure-and-application-hardening`  
-**Base revisada por Astra:** `fd403c86ed63a31cb1b8090cb082a73a0d29b409` (incorporando remediación RC-04)
-**Estado:** Release Candidate Académico — Core Feature Complete y Code Freeze Operativo  
+- **Fecha de emisión:** 2026-11-15
+- **Rama:** `feature/2026-11-01-debugger-cv-builder`
+- **Tracking remoto:** `origin/feature/2026-11-01-debugger-cv-builder`
+- **Especificación activa:** `specs/220-core-closure-and-application-hardening`
+- **SHA del Código Candidato (Producción y Pruebas):** `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (incorpora remediación técnica RC-04 y prueba adversarial)
+- **Commit HEAD Documental Actual:** `a62c4e3642bf356b728f6fb7b1494b0d4966b294` (código de producción y pruebas idéntico a `37ed360`)
+- **Base previa revisada por Astra:** `fd403c86ed63a31cb1b8090cb082a73a0d29b409`
+- **Estado:** Release Candidate Académico — Core Feature Complete y Code Freeze Operativo (Certificación Integral Pendiente)
 
 ---
 
@@ -28,18 +30,19 @@ Conforme a la Constitución §IX y a la reconciliación oficial de [ROADMAP.md](
 | **Backend Ordinario (xUnit Release)** | **396** | **396** | 0 | 0 | 39 s | `dotnet test Services.Tests.csproj -c Release --no-restore --filter "Category!=GOB12SqlConcurrency&Category!=GOB15BcryptBenchmark&Category!=VendorAdvisoryGHSA"` |
 | **Frontend Ordinario (Vitest)** | **389** | **389** | 0 | 0 | 38 s | `npm.cmd run test -- --run` (70 suites en verde) |
 | **Subtotal Línea Base Core** | **785** | **785** | **0** | **0** | **1m 17s** | **100% PASS** |
-| **Opt-in: Concurrencia SQL (GOB12)** | **11** | **11** | 0 | 0 | 11 s | `dotnet test --filter "Category=GOB12SqlConcurrency"` (SQL Server 2022 real, aislamiento serializable, ganador atómico, validación de ReceiverId en RC-04 y RowVersion) |
-| **Opt-in: Canario Upstream (GHSA)** | **1** | **0** | 1 | 0 | 2 ms | `dotnet test --filter "Category=VendorAdvisoryGHSA"` (Aviso canario upstream HotChocolate 14.2.0 / GHSA-qr3m-xw4c-jqw3; mitigado por guardas de profundidad MaxAllowedExecutionDepth=15) |
+| **Opt-in: Concurrencia SQL (GOB12)** | **11** | **11** | 0 | 0 | 14 s | `dotnet test --filter "Category=GOB12SqlConcurrency"` (SQL Server 2022 real, aislamiento serializable, ganador atómico, validación de ReceiverId en RC-04 y RowVersion) |
+| **Opt-in: Canario Upstream (GHSA)** | **1** | **0** | 1 | 0 | 2 ms | `dotnet test --filter "Category=VendorAdvisoryGHSA"` (Aviso canario upstream HotChocolate 14.2.0 / GHSA-qr3m-xw4c-jqw3; conservado formalmente como FAIL documentado. Requiere actualización vendor de HotChocolate a 14.3.1+ que incorpore ParserOptions.MaxAllowedRecursionDepth; riesgo aceptado para demo académica local sin exposición pública directa) |
 | **Herramienta: Calibración BCrypt (GOB15)** | N/A | N/A | N/A | N/A | 15 s | `Invoke-BCryptWorkFactorBenchmark.ps1 -EffectiveWorkFactor 12` (Benchmark standalone: dictamen `PASS_SCREENING`, factor 12) |
 
 ---
 
 ## 3. Compuertas de Preflight y Certificación Oficial (speckit-stabilize)
 
-Ejecución oficial mediante `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1`:
+Ejecución histórica mediante `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1`:
 
-* **Veredicto:** **PASS**
-* **Salida Persistida:** [`./PREFLIGHT_CERTIFIED_9a61e73.json`](./PREFLIGHT_CERTIFIED_9a61e73.json)
+* **Veredicto Histórico:** **PASS** (9/9 compuertas técnicas en dicho worktree)
+* **Salida Histórica Persistida:** [`./PREFLIGHT_CERTIFIED_9a61e73.json`](./PREFLIGHT_CERTIFIED_9a61e73.json) (capturado históricamente sobre el worktree modificado `607dce7` previo al commit `9a61e73`, con 4 modificaciones registradas en el JSON original; no representa una ejecución limpia sobre el candidato `37ed360`).
+* **Disposición de Certificación Oficial:** Las comprobaciones técnicas de bajo nivel (diff, secretos, builds, regresión ordinaria, oxlint y modelo EF) pasaron satisfactoriamente en el corte histórico; no obstante, la certificación integral del Release Candidate conforme a Constitución §IX permanece **abierta y no certificada** hasta vincular el SHA definitivo, ejecutar las suites obligatorias sobre árbol limpio y completar la aceptación manual pendiente (CF-03 a CF-06).
 
 | N.º | Compuerta | Severidad | Estado | Respaldo / Detalle |
 |---|---|:---:|:---:|---|
@@ -63,7 +66,7 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 - **Estado:** `[PARCIAL]` (Regresión automatizada core 785/785 PASS, suite opt-in SQL concurrente 11/11 PASS sobre SQL Server 2022, BCrypt calibrado; suites de aceptación manual/infraestructura en vivo pendientes de vinculación final sobre el candidato).
 - **Evidencias adjuntas:**
   * Contenedor Docker `oneitb23-sql` verificado (puerto 1433 Up/healthy).
-  * Suite opt-in de concurrencia SQL (`GOB12SqlConcurrency`) ejecutada con **11/11 PASS** sobre SQL Server 2022 ([`./SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md)).
+  * Suite opt-in de concurrencia SQL (`GOB12SqlConcurrency`) ejecutada con **11/11 PASS** sobre SQL Server 2022 ([`./SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md); ejecutada el 15/11/2026 sobre árbol limpio en HEAD `a62c4e3`, código idéntico a `37ed360`).
   * Calibración BCrypt (`GOB15BcryptBenchmark`) con dictamen `PASS_SCREENING` ([`./bcrypt-report.json`](./bcrypt-report.json)).
   * Verificador `Test-DefenseDemoReadiness.ps1` ejecutado en 478 ms con 10/10 pilares en PASS.
 
@@ -72,7 +75,7 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 - **Respaldos automatizados previos:**
   * Backend: `RoleAuthorizationMatrixTests.cs` (111/111 PASS) validando operaciones a través de `Estudiante`, `Profesor`, `Egresado`, `Empleador`, `Moderador`, `Administrador` y anónimo.
   * Frontend: `roleRoutingMatrix.test.jsx` (83/83 PASS) evaluando rutas protegidas (`/admin`, `/moderacion`, etc.) para los 6 roles.
-  * Auditoría visual E2E en runtime documentada en [VISUAL_AUDIT_REPORT.md](./full_audit/VISUAL_AUDIT_REPORT.md) (madurez visual certificada en 98.50% promedio / 98.67% proporción).
+  * Auditoría visual E2E en runtime documentada en [VISUAL_AUDIT_REPORT.md](./full_audit/VISUAL_AUDIT_REPORT.md) (estimación indicativa de madurez visual del 98.50% promedio / 98.67% proporción según muestreo).
 
 ### CF-05: Validación Realtime y Aislamiento Multi-Sesión
 - **Estado:** `[PENDIENTE]` (Prueba de dos navegadores reales simultáneos pendiente de ejecución sobre el runtime en vivo).

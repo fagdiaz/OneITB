@@ -1,29 +1,32 @@
 # Continuidad de Arbitraje RC — 15/11/2026
 Destino Canal 1: [OneITB] Auditoría & Arquitectura · 6 Astra · Alto.
-Base commit 37ed360 (sobre fd403c8).
+SHA de Código Candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a.
 Rama feature/2026-11-01-debugger-cv-builder. Spec activa 220.
 
-Informe de resolución de observaciones (Dictamen ARBITRAJE_RC_fd403c8.md):
-1. RC-04 Resuelto y verificado (Validación de ReceiverId en recuperación de idempotencia):
-   - En MessagingService.cs (catch fallback), se incorporó la comprobación estricta if (idempotent.ReceiverId != receiverId) lanzando ArgumentException("El clientMessageId ya fue utilizado con otro destinatario."), previniendo que llamadas concurrentes con diferente destinatario reciban mensajes cruzados.
-   - Nueva prueba adversarial en PrivateUploadSqlRaceTests.cs: SameClientMessageId_DifferentRecipients_ExactlyOneWinnerAndOneRejection (dos llamadas concurrentes con igual ClientMessageId y distinto receptor; valida 1 ganador, 1 fila persistida y 1 rechazo por destinatario discrepante).
-   - Suite opt-in GOB12SqlConcurrency ejecutada contra Docker SQL Server 2022: 11/11 pruebas en PASS (0 fallos, 0 omitidas). Salida vinculada en docs/audit/SQL_CONCURRENCY_RESULTS.md.
+Informe de resolución de observaciones (Dictamen RATIFICACION_37ed360.md):
 
-2. RC-05 Resuelto (Reparación de enlaces y reconciliación honesta de estados):
-   - Reparados todos los enlaces en docs/audit/CANDIDATE_MANIFEST_RC.md a archivos locales existentes: ./PREFLIGHT_CERTIFIED_9a61e73.json, ./SQL_CONCURRENCY_RESULTS.md y ./bcrypt-report.json.
-   - Clasificación honesta de compuertas en Manifiesto y Roadmap:
-     * CF-03: PARCIAL (Línea base core de 785 pruebas en PASS [396 backend xUnit Release + 389 frontend Vitest], suite SQL concurrente 11/11 PASS y BCrypt factor 12 PASS_SCREENING; infraestructura local Docker activa y healthy).
-     * CF-04: PENDIENTE (Recorrido manual guiado de los 6 roles con checklist firmado y capturas saneadas en vivo).
-     * CF-05: PENDIENTE (Validación con dos navegadores reales simultáneos conectados al runtime).
-     * CF-06: ABIERTO (Congelamiento formal sujeto a la compleción de CF-01 a CF-05).
-     * F05: PENDIENTE DE INTEGRACIÓN UI / DECISIÓN DE ALCANCE (Backend 100% probado en xUnit; frontend opera bajo política freeze-safe de carrera UserCareer; selector UI granular catalogado como mejora post-freeze para demo académica).
-   - Corrección técnica de compuerta EF: compara modelo de entidades EF Core 8 contra última migración compilada (0 drift).
-   - Separación formal del benchmark BCrypt respecto al conteo de suites xUnit y mantenimiento del aviso canario GHSA upstream HotChocolate 14.2.0 como FAIL documentado.
+1. RC-01 y RC-02 Resueltos (Trazabilidad, corte del candidato y evidencia SQL):
+   - En docs/audit/CANDIDATE_MANIFEST_RC.md se delimitó con exactitud el SHA del código candidato (37ed360) diferenciándolo del commit documental de HEAD. Se retiró la cita errónea que atribuía RC-04 a fd403c8.
+   - Se etiquetó expresamente docs/audit/PREFLIGHT_CERTIFIED_9a61e73.json como evidencia histórica sobre el worktree modificado 607dce7 (conservando su registro de 4 modificaciones, sin presentarlo como preflight limpio del candidato).
+   - Se actualizó docs/audit/SQL_CONCURRENCY_RESULTS.md con la ejecución real (11/11 PASS) capturada el 15/11/2026 13:51 UTC-3 sobre árbol de trabajo limpio (working tree clean) en HEAD a62c4e3 (código idéntico a 37ed360), documentando comando, entorno Docker SQL Server 2022 y salida íntegra de VSTest.
 
-3. RC-01 y RC-02 Resueltos (Trazabilidad y corte del candidato):
-   - Registro honesto del preflight 9/9 PASS previo como evidencia del worktree de 607dce7 (docs/audit/PREFLIGHT_CERTIFIED_9a61e73.json).
-   - El candidato actual integra la lógica corregida de MessagingService.cs y la suite completa de 11 casos de concurrencia SQL verificada en runtime.
+2. Precisiones documentales incorporadas:
+   - Se retiró la afirmación no demostrada sobre MaxAllowedExecutionDepth=15 como mitigación del canario. El canario upstream HotChocolate 14.2.0 (GHSA-qr3m-xw4c-jqw3) se mantiene formalmente como FAIL documentado por ausencia de ParserOptions.MaxAllowedRecursionDepth en la versión actual del vendor, con riesgo aceptado para demo académica local sin exposición pública directa.
+   - Se reemplazó "madurez visual certificada" por "estimación indicativa de madurez visual del 98.50% promedio / 98.67% proporción según muestreo de VISUAL_AUDIT_REPORT.md".
+
+3. Mantenimiento estricto de compuertas y gobernanza:
+   - CF-03: PARCIAL (Regresión automatizada 785/785 PASS, suite opt-in SQL concurrente 11/11 PASS, BCrypt PASS_SCREENING; infraestructura y suites de aceptación manual pendientes de vinculación final).
+   - CF-04: PENDIENTE (Recorrido manual de los 6 roles con checklist firmado y capturas).
+   - CF-05: PENDIENTE (Prueba realtime con dos navegadores reales simultáneos).
+   - CF-06: ABIERTO (Congelamiento formal sujeto al cumplimiento de CF-01 a CF-05).
+   - F05: PENDIENTE DE INTEGRACIÓN UI / DECISIÓN DE ALCANCE (Backend 100% probado en xUnit; frontend opera bajo política freeze-safe de carrera UserCareer).
+
+4. Validaciones técnicas ejecutadas en este turno:
+   - git diff --check: PASS (0 conflictos, 0 espacios en blanco al final de línea).
+   - dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release: PASS (0 errores, 0 advertencias).
+   - npm.cmd --prefix FrontEnd/OneItb-FE run build: PASS (Vite build en 575 ms, 569 módulos).
 
 Petición de dictamen para Astra (Canal 1 - 6 Astra - Razonamiento Alto):
-- Ratificación de la resolución de los hallazgos RC-01 a RC-05.
-- Estado de evaluación del candidato consolidado.
+- Ratificación del cierre de las observaciones de trazabilidad RC-01 y RC-02.
+- Ratificación de las precisiones documentales (canario GHSA como FAIL upstream y madurez visual indicativa).
+- Conformidad del Manifiesto y de las compuertas hacia la etapa de aceptación manual (CF-04 / CF-05).
