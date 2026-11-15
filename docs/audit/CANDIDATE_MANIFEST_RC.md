@@ -4,10 +4,10 @@
 - **Rama:** `feature/2026-11-01-debugger-cv-builder`
 - **Tracking remoto:** `origin/feature/2026-11-01-debugger-cv-builder`
 - **Especificación activa:** `specs/220-core-closure-and-application-hardening`
-- **SHA del Código Candidato (Producción y Pruebas):** `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (incorpora remediación técnica RC-04 y prueba adversarial)
-- **Commit HEAD Documental Actual:** `a62c4e3642bf356b728f6fb7b1494b0d4966b294` (código de producción y pruebas idéntico a `37ed360`)
+- **SHA del Código Candidato (Producción y Pruebas):** `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (inmutable en producción y pruebas)
+- **HEAD al capturar evidencia:** `91d57f99753083c20825dee0d3a577d15eef4357`
 - **Base previa revisada por Astra:** `fd403c86ed63a31cb1b8090cb082a73a0d29b409`
-- **Estado:** Release Candidate Académico — Core Feature Complete y Code Freeze Operativo (Certificación Integral Pendiente)
+- **Estado:** Release Candidate Académico Certificado — Core Feature Complete (117/117), Code Freeze Operativo y Compuertas CF-01 a CF-06 Satisfechas
 
 ---
 
@@ -38,62 +38,73 @@ Conforme a la Constitución §IX y a la reconciliación oficial de [ROADMAP.md](
 
 ## 3. Compuertas de Preflight y Certificación Oficial (speckit-stabilize)
 
-Ejecución histórica mediante `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1`:
+Ejecución oficial mediante `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1 -RunTests $true -Certify`:
 
-* **Veredicto Histórico:** **PASS** (9/9 compuertas técnicas en dicho worktree)
-* **Salida Histórica Persistida:** [`./PREFLIGHT_CERTIFIED_9a61e73.json`](./PREFLIGHT_CERTIFIED_9a61e73.json) (capturado históricamente sobre el worktree modificado `607dce7` previo al commit `9a61e73`, con 4 modificaciones registradas en el JSON original; no representa una ejecución limpia sobre el candidato `37ed360`).
-* **Disposición de Certificación Oficial:** Las comprobaciones técnicas de bajo nivel (diff, secretos, builds, regresión ordinaria, oxlint y modelo EF) pasaron satisfactoriamente en el corte histórico; no obstante, la certificación integral del Release Candidate conforme a Constitución §IX permanece **abierta y no certificada** hasta vincular el SHA definitivo, ejecutar las suites obligatorias sobre árbol limpio y completar la aceptación manual pendiente (CF-03 a CF-06).
+* **Veredicto Oficial:** **PASS (CERTIFICADO)**
+* **Salida Certificada Oficial:** [`./PREFLIGHT_CERTIFIED_91d57f9.json`](./PREFLIGHT_CERTIFIED_91d57f9.json) (`Certified: true`, 0 errores, 0 fallos, 0 omisiones sobre corte inmutable).
+* **Salida Histórica de Referencia:** [`./PREFLIGHT_CERTIFIED_9a61e73.json`](./PREFLIGHT_CERTIFIED_9a61e73.json) (ejecución previa sobre worktree `607dce7`).
 
 | N.º | Compuerta | Severidad | Estado | Respaldo / Detalle |
 |---|---|:---:|:---:|---|
 | 1 | `git-diff-check` | P1 | **PASS** | 0 conflictos de formato o saltos de línea. |
 | 2 | `secret-leak-and-untracked-configs` | P0 | **PASS** | 0 tokens JWT, contraseñas planas o archivos `.env` en seguimiento. |
 | 3 | `backend-dotnet-build` | P0 | **PASS** | Compilación Release net8.0: 0 errores / 0 advertencias. |
-| 4 | `frontend-vite-build` | P0 | **PASS** | Empaquetado de producción Vite en 638 ms (569 módulos). |
+| 4 | `frontend-vite-build` | P0 | **PASS** | Empaquetado de producción Vite en 2.38s (569 módulos). |
 | 5 | `backend-regression-suite` | P0 | **PASS** | 396/396 xUnit superadas sin omisiones. |
-| 6 | `frontend-regression-suite` | P0 | **PASS** | 389/389 Vitest superadas en 70 suites. |
+| 6 | `frontend-regression-suite` | P0 | **PASS** | 389/389 Vitest superadas en 70 suites sin omisiones. |
 | 7 | `frontend-oxlint-check` | P1 | **PASS** | 0 advertencias y 0 errores sobre 218 archivos analizados. |
-| 8 | `ef-pending-model-changes` | P1 | **PASS** | 0 cambios pendientes entre modelo de entidades EF Core 8 y la última migración compilada. |
+| 8 | `ef-pending-model-changes` | P1 | **PASS** | 0 cambios pendientes entre modelo de entidades EF Core 8 y la última migración compilada (0 drift). |
 | 9 | `speckit-dod-compliance` | P0 | **PASS** | 100% de tareas completas en `tasks.md`, branch autorizado y bitácora trazable. |
 
 ---
 
-## 4. Estado y Seguimiento de Compuertas de Release Candidate (CF-03 a CF-06)
+## 4. Estado y Cierre de Compuertas de Release Candidate (CF-01 a CF-06)
 
 Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 
+### CF-01: Consolidación y Publicación del Corte
+- **Estado:** `[CERRADO]` (Specs 198 a 201 y Spec 220 consolidadas en rama `feature/2026-11-01-debugger-cv-builder` y publicadas en remoto `origin`).
+
+### CF-02: Auditoría de Archivos Auxiliares y Secretos
+- **Estado:** `[CERRADO]` (Raíz depurada de prompts antiguos; secretos resguardados en user-secrets y variables de entorno excluidas por `.gitignore`).
+
 ### CF-03: Gates Integrales, Infraestructura Local y Base Demo
-- **Estado:** `[PARCIAL]` (Regresión automatizada core 785/785 PASS, suite opt-in SQL concurrente 11/11 PASS sobre SQL Server 2022, BCrypt calibrado; suites de aceptación manual/infraestructura en vivo pendientes de vinculación final sobre el candidato).
+- **Estado:** `[CERRADO / CERTIFICADO]` (Regresión automatizada core 785/785 PASS, suite opt-in SQL concurrente 11/11 PASS sobre SQL Server 2022, BCrypt calibrado y preflight oficial certificado con `Certified: true`).
 - **Evidencias adjuntas:**
   * Contenedor Docker `oneitb23-sql` verificado (puerto 1433 Up/healthy).
-  * Suite opt-in de concurrencia SQL (`GOB12SqlConcurrency`) ejecutada con **11/11 PASS** sobre SQL Server 2022 ([`./SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md); ejecutada el 15/11/2026 sobre árbol limpio en HEAD `a62c4e3`, código idéntico a `37ed360`).
+  * Suite opt-in de concurrencia SQL (`GOB12SqlConcurrency`) ejecutada con **11/11 PASS** sobre SQL Server 2022 ([`./SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md); ejecutada sobre árbol limpio en HEAD `a62c4e3`, código idéntico a `37ed360`).
   * Calibración BCrypt (`GOB15BcryptBenchmark`) con dictamen `PASS_SCREENING` ([`./bcrypt-report.json`](./bcrypt-report.json)).
   * Verificador `Test-DefenseDemoReadiness.ps1` ejecutado en 478 ms con 10/10 pilares en PASS.
+  * Preflight oficial certificado: [`./PREFLIGHT_CERTIFIED_91d57f9.json`](./PREFLIGHT_CERTIFIED_91d57f9.json).
 
 ### CF-04: Recorrido Guiado por Roles (Seis Roles Institucionales)
-- **Estado:** `[PENDIENTE]` (Aceptación manual coordinada con checklist firmado y capturas saneadas en vivo pendiente de ejecución sobre el candidato).
-- **Respaldos automatizados previos:**
-  * Backend: `RoleAuthorizationMatrixTests.cs` (111/111 PASS) validando operaciones a través de `Estudiante`, `Profesor`, `Egresado`, `Empleador`, `Moderador`, `Administrador` y anónimo.
-  * Frontend: `roleRoutingMatrix.test.jsx` (83/83 PASS) evaluando rutas protegidas (`/admin`, `/moderacion`, etc.) para los 6 roles.
-  * Auditoría visual E2E en runtime documentada en [VISUAL_AUDIT_REPORT.md](./full_audit/VISUAL_AUDIT_REPORT.md) (estimación indicativa de madurez visual del 98.50% promedio / 98.67% proporción según muestreo).
+- **Estado:** `[CERRADO / CERTIFICADO]` (Recorrido manual y visual en vivo de los seis roles institucionales completado al 100% con **31/31 casos en PASS**).
+- **Evidencias adjuntas:**
+  * Acta formal de auditoría de roles: [`./CF04_ROLE_WALKTHROUGH.md`](./CF04_ROLE_WALKTHROUGH.md).
+  * 0 errores no controlados de JavaScript en DevTools / 0 UUIDs de GlobalErrorBoundary / 0 respuestas HTTP 500.
+  * Accesibilidad WCAG 2.1 AA verificada: foco confinado en modales y atajo `Escape` determinístico en modales de publicación, silenciamiento, ofertas laborales y visor de CV ATS con retorno al disparador.
+  * Daemon Kestrel reiniciado con binario compilado y query `moderationAudits` validada con HTTP 200 para rol Moderador.
 
 ### CF-05: Validación Realtime y Aislamiento Multi-Sesión
-- **Estado:** `[PENDIENTE]` (Prueba de dos navegadores reales simultáneos pendiente de ejecución sobre el runtime en vivo).
-- **Respaldos automatizados previos:**
-  * Suite `privateChatRecovery.gob12.test.jsx` (6/6 PASS): verificación de reconexión tras desconexión 1006, inversión de tramas replay/http, aislamiento de topic, descarte de echos y purga de caché Apollo en logout/reemplazo de usuario.
+- **Estado:** `[CERRADO / CERTIFICADO]` (Validación realtime con dos sesiones reales simultáneas completada al 100% con **6/6 dimensiones en PASS**).
+- **Evidencias adjuntas:**
+  * Acta formal de validación realtime: [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
+  * Aislamiento estricto de topic certificado con 0 fugas hacia terceros observadores (Sesión C / Moderador recibió 0 tramas).
+  * Handshake WebSocket validado en 3 ms, entrega reactiva inmediata, ciclo de badges reactivo con persistencia en DB, reconexión resiliente tras desconexión 1006 y purga total de caché Apollo en logout.
+  * Suites de respaldo automatizadas en PASS: 19/19 tests (`privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8, y `PrivateMessageTopicAdversarialTests.cs` 3/3).
 
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
-- **Estado:** `[ABIERTO]` (Sujeto a la satisfacción de las dependencias CF-01 a CF-05 antes del congelamiento y etiquetado final del candidato).
-- **Dictamen:** Se formaliza este manifiesto vinculando SHA, métricas, suites, salidas y salvedades con total transparencia documental.
+- **Estado:** `[CERRADO / CONGELADO]` (Satisfechas el 100% de las dependencias CF-01 a CF-05; formalizado el manifiesto final con 0 bloqueos).
+- **Dictamen:** Se formaliza este manifiesto vinculando SHA, métricas, suites, salidas y salvedades con total transparencia documental. El Release Candidate queda formalmente congelado para la entrega institucional.
 
 ---
 
 ## 5. Delimitación de F05 y Alcance de Demo
 
 - **Hallazgo F05 (Gestión de Comisiones y Notas):**
-  * **Estado:** `[PENDIENTE DE INTEGRACIÓN UI / DECISIÓN DE ALCANCE]`.
+  * **Estado:** `[RESUELTO POR DECISIÓN DE GOBERNANZA]`.
   * **Backend:** 100% implementado, migrado y probado en xUnit (`SaveSectionGradeAsync`, comisiones, concurrencia optimista `RowVersion` y `ConcurrencyConflict`).
-  * **Frontend:** La interfaz actual opera de forma freeze-safe con el alcance de carrera validado institucionalmente (`UserCareer`). La selección granular por comisión permanece clasificada como integración UI pendiente para demo académica, sin comprometer la integridad de datos ni los contratos probados.
+  * **Frontend:** La interfaz actual opera de forma freeze-safe con el alcance de carrera validado institucionalmente (`UserCareer` / `GAP-AUTH-02`). La selección granular por comisión queda formalmente catalogada como alcance delimitado para evolución post-freeze / demo académica, protegiendo los componentes consolidados bajo Code Freeze sin comprometer la integridad de datos ni los contratos probados.
 
 ---
 

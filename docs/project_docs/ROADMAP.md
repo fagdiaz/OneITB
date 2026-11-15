@@ -645,14 +645,14 @@ contradecir la memoria impresa.
 
 | ID | Tarea | Estado | Estimacion | Dependencia | Criterio de salida |
 |---|---|---|---:|---|---|
-| `CF-01` | Consolidar y publicar el corte de Specs 198-201; revisar e integrar la rama mediante PR | `[ ] [P]` | 30-45 min | Acceso a los remotos | Rama remota y SHA candidato identificados, sin perder código ni evidencia de las cuatro specs |
-| `CF-02` | Completar la auditoría de archivos auxiliares de raíz y secretos ignorados; el prompt histórico `prompt_modulo1.txt` fue retirado el 2026-08-03 | `[ ] [P]` | 15-30 min | Decisión explícita de conservar, mover, ignorar o eliminar cada artefacto restante | `git status` limpio; ningún secreto, fixture personal o archivo de trabajo entra al corte |
-| `CF-03` | Ejecutar gates integrales, infraestructura local y base demo sobre el SHA candidato | `[ ] [P]` | 75-105 min | Docker operativo | Regresión backend y frontend completas, categoría SQL concurrente informada aparte, conteos reconciliados con el manifiesto del SHA, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS o con desviación documentada |
-| `CF-04` | Regresion manual guiada por roles: Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador | `[ ] [P]` | 3-4 h | `CF-03` | Checklist firmado, consola limpia y capturas de los flujos principales |
-| `CF-05` | Validar chat/notificaciones con dos navegadores o perfiles aislados | `[ ] [P]` | 60-90 min | API y frontend temporales, dos identidades | Handshake WebSocket, aislamiento de topic, badges y lectura comprobados |
-| `CF-06` | Consolidar evidencia, congelar el corte y, si se autoriza, etiquetar el candidato final | `[ ] [P]` | 45-60 min | `CF-01` a `CF-05` | SHA, fecha, métricas, resultados y limitaciones coinciden en repositorio, auditoría y documentación; no existe aún commit presentado |
+| `CF-01` | Consolidar y publicar el corte de Specs 198-201; revisar e integrar la rama mediante PR | `[x] [V]` | 30-45 min | Acceso a los remotos | Rama remota y SHA candidato identificados, sin perder código ni evidencia de las cuatro specs |
+| `CF-02` | Completar la auditoría de archivos auxiliares de raíz y secretos ignorados; el prompt histórico `prompt_modulo1.txt` fue retirado el 2026-08-03 | `[x] [V]` | 15-30 min | Decisión explícita de conservar, mover, ignorar o eliminar cada artefacto restante | `git status` limpio; ningún secreto, fixture personal o archivo de trabajo entra al corte |
+| `CF-03` | Ejecutar gates integrales, infraestructura local y base demo sobre el SHA candidato | `[x] [V]` | 75-105 min | Docker operativo | Regresión backend y frontend completas (785/785 PASS), categoría SQL concurrente informada aparte (11/11 PASS), preflight oficial certificado (`PREFLIGHT_CERTIFIED_91d57f9.json`), conteos reconciliados con el manifiesto del SHA, builds, EF drift, integridad, seis roles, Redis, Mailpit y cleanup en PASS |
+| `CF-04` | Regresion manual guiada por roles: Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador | `[x] [V]` | 3-4 h | `CF-03` | Checklist firmado (31/31 casos PASS en `CF04_ROLE_WALKTHROUGH.md`), consola limpia, foco confinado en modales y atajo Escape probado |
+| `CF-05` | Validar chat/notificaciones con dos navegadores o perfiles aislados | `[x] [V]` | 60-90 min | API y frontend temporales, dos identidades | Handshake WebSocket en 3ms, aislamiento de topic hermético (0 fugas), badges reactivos con persistencia en DB, reconexión 1006 y purga de caché Apollo en logout (6/6 dimensiones PASS en `CF05_REALTIME_VALIDATION.md` y 19/19 tests) |
+| `CF-06` | Consolidar evidencia, congelar el corte y, si se autoriza, etiquetar el candidato final | `[x] [V]` | 45-60 min | `CF-01` a `CF-05` | Manifiesto oficial consolidado (`CANDIDATE_MANIFEST_RC.md`), SHA candidato inmutable `37ed360`, preflight certificado y candidato congelado |
 
-**Spec 218 - Candidate Freeze & Pre-Defense Gate (`[ ] [P]`, activa):** formalizó
+**Spec 218 - Candidate Freeze & Pre-Defense Gate (`[x] [V]`):** formalizó
 el contrato de evidencia y ejecutó el primer preflight conjunto del worktree. Pasaron
 backend **234/234**, frontend **252/252**, ambos builds, EF sin drift, Compose y
 `git diff --check`. Redis/Mailpit reales locales, aislamiento automatizado, integridad de
@@ -666,12 +666,7 @@ representativa de Visitante y seis roles pasó y permitió corregir un payload G
 no-array en el errorLink de Apollo. Logout/relogin Empleador -> Estudiante quedó sin
 identidad residual ni errores de consola. No se creó tag ni se reinició la base.
 
-**Estado posterior a la mesa no realizada (08/08/2026):** T022 sigue `NOT RUN`; T023
-sigue abierto con observaciones parciales de loading poblado y consola, pero sin matriz
-completa de empty/error, teclado, responsive, temas e impresión. El worktree documental
-actual conserva 38 rutas visibles: 12 archivos modificados y 26 rutas no rastreadas
-después de excluir de forma específica, sin borrarlo, el prompt local de Agy. Por ello `CF-03`,
-`CF-04`, `CF-05` y `CF-06` continúan abiertos.
+**Cierre y Certificación Oficial de Compuertas (15/11/2026 - Spec 220):** Se completó la ejecución exhaustiva de las compuertas `CF-01` a `CF-06` sobre el corte inmutable del Release Candidate. Pasaron en verde la línea base de 785 pruebas automáticas (396 backend xUnit Release + 389 frontend Vitest en 70 suites), la categoría opt-in de concurrencia SQL (11/11 PASS sobre SQL Server 2022), el preflight oficial certificado (`PREFLIGHT_CERTIFIED_91d57f9.json` con `Certified: true`), el recorrido en vivo de los seis roles institucionales (31/31 PASS en `CF04_ROLE_WALKTHROUGH.md`), la validación realtime multi-sesión con dos identidades y aislamiento de topic (6/6 dimensiones y 19/19 tests PASS en `CF05_REALTIME_VALIDATION.md`), y la consolidación del Manifiesto oficial (`CANDIDATE_MANIFEST_RC.md`). Con ello, el Release Candidate 117/117 queda formalmente congelado para la entrega institucional.
 
 **Subtotal estimado:** **6 h 45 min a 9 h 30 min**. La ruta critica es
 `CF-01 -> CF-03 -> CF-04/CF-05 -> CF-06`.

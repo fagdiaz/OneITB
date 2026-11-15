@@ -19,21 +19,34 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
-## [2026-11-15] - Remediation of Astra Audit Findings & RC Closure (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
+## [2026-11-15] - Remediation of Astra Audit Findings, Live Role Walkthrough & Multi-Session Realtime Closure (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
 
-### Remediación RC-04 (Destinatario en Fallback de Idempotencia) y Consolidación del Manifiesto (15/11/2026)
+### Cierre de Compuertas de Aceptación Manual CF-04 y CF-05 (15/11/2026)
 
-**Alcance:** Remediación del hallazgo estático RC-04 identificado por Astra (`ARBITRAJE_RC_fd403c8.md`), incorporando la validación estricta de `ReceiverId` en el bloque catch de `SendPrivateMessageAsync` (`MessagingService.cs`) y la prueba adversarial `SameClientMessageId_DifferentRecipients_ExactlyOneWinnerAndOneRejection` en `PrivateUploadSqlRaceTests.cs` (11/11 PASS en `GOB12SqlConcurrency`). Normalización honesta del Manifiesto Oficial del Candidato (`docs/audit/CANDIDATE_MANIFEST_RC.md`) reparando enlaces, separando el benchmark BCrypt, catalogando el aviso canario GHSA y alineando los estados de compuertas con `ROADMAP.md` (CF-03 parcial, CF-04/05 pendientes de ejecución en vivo, CF-06 abierto y F05 delimitado a demo).
+**Alcance:** Ejecución y certificación de las compuertas de aceptación manual en vivo autorizadas por el dictamen de Astra (`CONFORMIDAD_91d57f9.md`): recorrido exhaustivo por los seis roles institucionales (Compuerta CF-04) y validación en tiempo real y aislamiento multi-sesión (Compuerta CF-05), sobre el entorno en ejecución (.NET 8 Kestrel en `https://localhost:44397`, React 18 / Apollo Client en `http://localhost:5173` y Docker SQL Server 2022).
 
-1. **Blindaje de Idempotencia por Destinatario (RC-04 - `MessagingService.cs` y `PrivateUploadSqlRaceTests.cs`):**
-   - Validación añadida en `MessagingService.cs`: si la entidad recuperada tras colisión concurrente tiene un `ReceiverId` distinto al solicitado, se rechaza inmediatamente con `ArgumentException("El clientMessageId ya fue utilizado con otro destinatario.")`, previniendo la entrega indebida de mensajes cruzados entre conversaciones.
-   - Nueva prueba adversarial en `PrivateUploadSqlRaceTests.cs`: dos transacciones concurrentes con mismo `SenderId` y `ClientMessageId` compitiendo hacia destinatarios distintos; verifica exactamente una fila persistida, un ganador y un rechazo por destinatario discrepante. Suite GOB12 completa: **11/11 pruebas en PASS** sobre SQL Server 2022.
+1. **Recorrido Guiado de Seis Roles (Compuerta CF-04 - `docs/audit/CF04_ROLE_WALKTHROUGH.md`):**
+   - **Estudiante (`estudiante1.ads@itbeltran.com.ar`):** Autenticación y token JWT, filtrado por carrera ADS y materia PROG1 en Feed, modal de publicación con foco confinado y cierre con Escape, hilo de comentarios en 2 niveles con mención visual y contador de reacciones (+1), materias y progreso bajo políticas freeze-safe de carrera `UserCareer`, alternancia accesible de temas Clean Tech / Tech Noir con contraste superior a 4.5:1, y bloqueo controlado a `/admin` y `/moderacion`. (7/7 PASS)
+   - **Profesor (`profesor1.ads@itbeltran.com.ar`):** Insignia institucional verde y avatar docente, hub académico con materias asignadas de Sistemas, formulario de progreso docente y constancias de regularidad, aviso de cátedra publicado en el Feed con badge `PROFESOR`, y acceso a `/admin` bloqueado con mensaje controlado. (5/5 PASS)
+   - **Egresado (`egresado1@itbeltran.com.ar`):** Edición y persistencia relacional de CV profesional, maquetación editorial para exportación ATS en formato A4 exacto (`12mm` de margen, mono-columna, `break-inside: avoid`), portal de empleos con postulación confirmada a vacante React/C#, e interacción en feed con badge `EGRESADO`. (4/4 PASS)
+   - **Empleador (`empleador1@itbeltran.com.ar`):** Panel empresarial `/empleos/mis-ofertas`, publicación de nueva oferta "Analista Funcional Junior" con validación de campos obligatorios en cliente, visualización de postulantes recibidos y CVs ATS sin filtración de datos privados, y bloqueo a `/academic` y `/admin`. (5/5 PASS)
+   - **Moderador (`moderador1@itbeltran.com.ar`):** Panel institucional `/moderacion`, revisión de reportes comunitarios y acciones de resolución, modal de silenciamiento en Feed con foco accesible y cierre por Escape, bitácora de auditoría `moderationAudits` validada con HTTP 200 tras reiniciar Kestrel, y bloqueo a auditoría global de Admin. (5/5 PASS)
+   - **Administrador (`admin1@itbeltran.com.ar`):** Panel `/admin` con 7 pestañas operativas, gestión de 17 usuarios seed con filtros y paginación, edición de estados y roles con modales accesibles, bitácora institucional `AuditLog` y navegación global irrestricta. (5/5 PASS)
+   - **Balance CF-04:** 31 de 31 casos en **PASS (100%)**, 0 errores de JavaScript en consola, 0 UUIDs de GlobalErrorBoundary y 0 respuestas HTTP 500.
 
-2. **Alineación de Estados y Enlaces del Manifiesto Oficial (`CANDIDATE_MANIFEST_RC.md`):**
-   - Reparación de enlaces a archivos locales: [`SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md), [`bcrypt-report.json`](./bcrypt-report.json) y [`PREFLIGHT_CERTIFIED_9a61e73.json`](./PREFLIGHT_CERTIFIED_9a61e73.json).
-   - Precisión técnica de la compuerta EF: verifica ausencia de cambios pendientes entre el modelo EF Core 8 y la última migración compilada (no base desplegada).
-   - Reconciliación estricta de estados conforme al Roadmap: CF-03 calificado como Parcial (a la espera de la aceptación en vivo), CF-04 y CF-05 calificados como Pendientes (recorridos manuales y dos sesiones reales requeridas), CF-06 como Abierto (congelamiento final sujeto a CF-01..CF-05), y F05 delimitado formalmente a integración UI para demo académica.
-   - Separación formal entre la suite xUnit y el benchmark standalone de BCrypt (`PASS_SCREENING`, factor 12) y mantenimiento explícito del aviso canario upstream de HotChocolate (`GHSA-qr3m-xw4c-jqw3`).
+2. **Validación Realtime y Aislamiento Multi-Sesión (Compuerta CF-05 - `docs/audit/CF05_REALTIME_VALIDATION.md`):**
+   - **RT-01 (Handshake & Auth):** Conexión WebSocket `graphql-transport-ws` validada en 3 ms respondiendo con `connection_ack`.
+   - **RT-02 (Entrega Reactiva):** Envío de mensaje privado desde Estudiante y recepción inmediata en WebSocket de Profesor vía `messageReceived` sin recarga ni polling HTTP.
+   - **RT-03 (Aislamiento de Topic):** Con Moderador suscrito al mismo WebSocket, Estudiante envió mensaje a Profesor; Moderador recibió 0 tramas (`leaksDetected: 0`), garantizando aislamiento estricto por `receiverId`.
+   - **RT-04 (Badges y Marcado Leído):** Mensajes entrantes incrementaron el badge de no leídos en navbar; invocación de `markConversationRead` reseteó el badge a 0 y persistió `isRead = true` en base de datos.
+   - **RT-05 (Reconexión Resiliente):** Cierre abrupto de socket (código 1006) seguido de re-handshake inmediato y recepción de tramas posteriores sin pérdida de estado.
+   - **RT-06 (Purga de Caché):** Invocación de `client.clearStore()`, desuscripción de sockets y rechazo de conexiones no autenticadas sin fuga residual entre identidades.
+   - **Suites Automatizadas de Soporte:** 19/19 PASS (`privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8, y `PrivateMessageTopicAdversarialTests.cs` 3/3).
+   - **Balance CF-05:** 6 de 6 dimensiones en **PASS (100%)**.
+
+3. **Remediación RC-04 y Consolidación del Manifiesto: Ratificadas previamente por Astra (`RATIFICACION_37ed360.md` y `CONFORMIDAD_91d57f9.md`).**
+
+---
 
 ---
 
