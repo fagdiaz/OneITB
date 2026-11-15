@@ -19,24 +19,21 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
-## [2026-11-14] - Remediation of Astra Audit Findings (Spec 220 / RC Stabilization) - branch: feature/2026-11-01-debugger-cv-builder
+## [2026-11-15] - Remediation of Astra Audit Findings & RC Closure (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder
 
-### Consolidación del Manifiesto Oficial y Cierre CF-03 a CF-06 (15/11/2026)
+### Remediación RC-04 (Destinatario en Fallback de Idempotencia) y Consolidación del Manifiesto (15/11/2026)
 
-**Alcance:** Emisión formal del Manifiesto Oficial del Candidato (`docs/audit/CANDIDATE_MANIFEST_RC.md`), persistencia de la evidencia JSON del preflight certificado (`docs/audit/PREFLIGHT_CERTIFIED_9a61e73.json`) y verificación exhaustiva de compuertas CF-03 a CF-06 requeridas por Astra (`ARBITRAJE_RC_9a61e73.md`). Incorporación de nivel de aislamiento `Serializable` y resolución atómica de colisiones e idempotencia en `MessagingService.cs`, alcanzando 10/10 PASS en la suite de concurrencia SQL sobre SQL Server 2022.
+**Alcance:** Remediación del hallazgo estático RC-04 identificado por Astra (`ARBITRAJE_RC_fd403c8.md`), incorporando la validación estricta de `ReceiverId` en el bloque catch de `SendPrivateMessageAsync` (`MessagingService.cs`) y la prueba adversarial `SameClientMessageId_DifferentRecipients_ExactlyOneWinnerAndOneRejection` en `PrivateUploadSqlRaceTests.cs` (11/11 PASS en `GOB12SqlConcurrency`). Normalización honesta del Manifiesto Oficial del Candidato (`docs/audit/CANDIDATE_MANIFEST_RC.md`) reparando enlaces, separando el benchmark BCrypt, catalogando el aviso canario GHSA y alineando los estados de compuertas con `ROADMAP.md` (CF-03 parcial, CF-04/05 pendientes de ejecución en vivo, CF-06 abierto y F05 delimitado a demo).
 
-1. **Evidencias Persistidas de Preflight y Manifiesto:**
-   - Preflight JSON certificado archivado en `docs/audit/PREFLIGHT_CERTIFIED_9a61e73.json` (9/9 gates PASS, `Certified: true`, GitCommitSha registrado).
-   - Manifiesto oficial consolidado en `docs/audit/CANDIDATE_MANIFEST_RC.md` conforme a la Constitución §IX y Runbook §14.1, desglosando la línea base de 785 pruebas ordinarias en PASS y las categorías opt-in.
+1. **Blindaje de Idempotencia por Destinatario (RC-04 - `MessagingService.cs` y `PrivateUploadSqlRaceTests.cs`):**
+   - Validación añadida en `MessagingService.cs`: si la entidad recuperada tras colisión concurrente tiene un `ReceiverId` distinto al solicitado, se rechaza inmediatamente con `ArgumentException("El clientMessageId ya fue utilizado con otro destinatario.")`, previniendo la entrega indebida de mensajes cruzados entre conversaciones.
+   - Nueva prueba adversarial en `PrivateUploadSqlRaceTests.cs`: dos transacciones concurrentes con mismo `SenderId` y `ClientMessageId` compitiendo hacia destinatarios distintos; verifica exactamente una fila persistida, un ganador y un rechazo por destinatario discrepante. Suite GOB12 completa: **11/11 pruebas en PASS** sobre SQL Server 2022.
 
-2. **Resolución y Verificación de Concurrencia SQL (CF-03 - `MessagingService.cs` y `GOB12SqlConcurrency`):**
-   - Endurecimiento en `SendPrivateMessageAsync`: actualización de aislamiento transaccional a `IsolationLevel.Serializable` para prevenir lecturas sucias en concurrencia masiva.
-   - Manejo atómico en captura de excepciones: detección de colisiones de `UploadId` con emisión de `InvalidOperationException("La carga privada ya ha sido consumida")` y resolución de idempotencia devolviendo la entidad original ante `ClientMessageId` repetidos en vuelo.
-   - Ejecución de `GOB12SqlConcurrency` contra instancia Docker SQL Server 2022 real: **10/10 pruebas en PASS** (0 fallos, 0 omitidas).
-
-3. **Verificación de Calibración e Infraestructura:**
-   - Benchmark BCrypt GOB15 ejecutado con dictamen `PASS_SCREENING` para costo 12 (`bcrypt-report.json`).
-   - Verificador de contingencia oral `Test-DefenseDemoReadiness.ps1`: 10/10 pilares en PASS en 478 ms.
+2. **Alineación de Estados y Enlaces del Manifiesto Oficial (`CANDIDATE_MANIFEST_RC.md`):**
+   - Reparación de enlaces a archivos locales: [`SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md), [`bcrypt-report.json`](./bcrypt-report.json) y [`PREFLIGHT_CERTIFIED_9a61e73.json`](./PREFLIGHT_CERTIFIED_9a61e73.json).
+   - Precisión técnica de la compuerta EF: verifica ausencia de cambios pendientes entre el modelo EF Core 8 y la última migración compilada (no base desplegada).
+   - Reconciliación estricta de estados conforme al Roadmap: CF-03 calificado como Parcial (a la espera de la aceptación en vivo), CF-04 y CF-05 calificados como Pendientes (recorridos manuales y dos sesiones reales requeridas), CF-06 como Abierto (congelamiento final sujeto a CF-01..CF-05), y F05 delimitado formalmente a integración UI para demo académica.
+   - Separación formal entre la suite xUnit y el benchmark standalone de BCrypt (`PASS_SCREENING`, factor 12) y mantenimiento explícito del aviso canario upstream de HotChocolate (`GHSA-qr3m-xw4c-jqw3`).
 
 ---
 

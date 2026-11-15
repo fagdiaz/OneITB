@@ -360,6 +360,9 @@ namespace Services.Messaging
 
                     if (idempotent != null)
                     {
+                        if (idempotent.ReceiverId != receiverId)
+                            throw new ArgumentException("El clientMessageId ya fue utilizado con otro destinatario.");
+
                         return idempotent;
                     }
 
@@ -378,6 +381,10 @@ namespace Services.Messaging
                             throw new InvalidOperationException("La carga privada ya ha sido consumida");
                         }
                     }
+                }
+                catch (ArgumentException)
+                {
+                    throw;
                 }
                 catch (InvalidOperationException)
                 {

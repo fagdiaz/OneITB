@@ -1,25 +1,29 @@
-# Continuidad de Cierre Release Candidate (CF-03 a CF-06) — 15/11/2026
+# Continuidad de Arbitraje RC — 15/11/2026
 Destino Canal 1: [OneITB] Auditoría & Arquitectura · 6 Astra · Alto.
-Base revisada 9a61e73 (candidato consolidado con evidencias de cierre).
+Base revisada fd403c8 (incorporando resolución RC-01 a RC-05).
 Rama feature/2026-11-01-debugger-cv-builder. Spec activa 220.
 
-Informe de entrega de Manifiesto y Evidencias solicitadas:
-1. Salida persistida del preflight:
-   - Adjuntada en specs/220-core-closure-and-application-hardening/evidence/preflight-task-6136.json.
-   - Constancia de los 9/9 gates en PASS (Certified: true, GitCommitSha registrado, 396 backend, 389 frontend, 0 oxlint warnings).
-2. Manifiesto formal del candidato:
-   - Consolidado en specs/220-core-closure-and-application-hardening/evidence/candidate-manifest.md conforme a Constitución IX y Runbook 14.1.
-3. Evidencia complementaria de compuertas CF-03 a CF-06:
-   - CF-03 (SQL Concurrencia e Infraestructura):
-     * Suite opt-in GOB12SqlConcurrency ejecutada con 10/10 PASS sobre Docker SQL Server 2022 real (registrado en specs/220-core-closure-and-application-hardening/evidence/sql-concurrency-results.log). Se incorporó el aislamiento Serializable y manejo atómico de colisiones e idempotencia en MessagingService.cs.
-     * Calibración BCrypt GOB15 ejecutada con dictamen PASS_SCREENING sobre factor 12 (specs/220-core-closure-and-application-hardening/evidence/bcrypt-report.json).
-     * Test-DefenseDemoReadiness.ps1: 10/10 pilares técnicos en PASS en 478 ms.
-   - CF-04 (Seis roles): respaldado por RoleAuthorizationMatrixTests.cs (111/111 PASS), roleRoutingMatrix.test.jsx (83/83 PASS) y VISUAL_AUDIT_REPORT.md.
-   - CF-05 (Realtime multi-sesión): respaldado por privateChatRecovery.gob12.test.jsx (6/6 PASS).
-   - CF-06 (Congelamiento): Manifiesto integrado y trazabilidad de brechas externas (GAP-AUTH-01/02 y GAP-PRIV-01 cerradas; GAP-FILE-01 y GAP-INFRA-01 delimitadas).
-4. Delimitación de F05:
-   - Backend 100% probado en xUnit (SaveSectionGradeAsync, comisiones, concurrencia RowVersion). Frontend delimitado a la política freeze-safe de carrera (UserCareer), reservando selector UI granular para demo académica.
+Informe de resolución de observaciones (Dictamen ARBITRAJE_RC_fd403c8.md):
+1. RC-04 Resuelto y verificado (Validación de ReceiverId en recuperación de idempotencia):
+   - En MessagingService.cs (catch fallback), se incorporó la comprobación estricta if (idempotent.ReceiverId != receiverId) lanzando ArgumentException("El clientMessageId ya fue utilizado con otro destinatario."), previniendo que llamadas concurrentes con diferente destinatario reciban mensajes cruzados.
+   - Nueva prueba adversarial en PrivateUploadSqlRaceTests.cs: SameClientMessageId_DifferentRecipients_ExactlyOneWinnerAndOneRejection (dos llamadas concurrentes con igual ClientMessageId y distinto receptor; valida 1 ganador, 1 fila persistida y 1 rechazo por destinatario discrepante).
+   - Suite opt-in GOB12SqlConcurrency ejecutada contra Docker SQL Server 2022: 11/11 pruebas en PASS (0 fallos, 0 omitidas). Salida vinculada en docs/audit/SQL_CONCURRENCY_RESULTS.md.
+
+2. RC-05 Resuelto (Reparación de enlaces y reconciliación honesta de estados):
+   - Reparados todos los enlaces en docs/audit/CANDIDATE_MANIFEST_RC.md a archivos locales existentes: ./PREFLIGHT_CERTIFIED_9a61e73.json, ./SQL_CONCURRENCY_RESULTS.md y ./bcrypt-report.json.
+   - Clasificación honesta de compuertas en Manifiesto y Roadmap:
+     * CF-03: PARCIAL (Línea base core de 785 pruebas en PASS [396 backend xUnit Release + 389 frontend Vitest], suite SQL concurrente 11/11 PASS y BCrypt factor 12 PASS_SCREENING; infraestructura local Docker activa y healthy).
+     * CF-04: PENDIENTE (Recorrido manual guiado de los 6 roles con checklist firmado y capturas saneadas en vivo).
+     * CF-05: PENDIENTE (Validación con dos navegadores reales simultáneos conectados al runtime).
+     * CF-06: ABIERTO (Congelamiento formal sujeto a la compleción de CF-01 a CF-05).
+     * F05: PENDIENTE DE INTEGRACIÓN UI / DECISIÓN DE ALCANCE (Backend 100% probado en xUnit; frontend opera bajo política freeze-safe de carrera UserCareer; selector UI granular catalogado como mejora post-freeze para demo académica).
+   - Corrección técnica de compuerta EF: compara modelo de entidades EF Core 8 contra última migración compilada (0 drift).
+   - Separación formal del benchmark BCrypt respecto al conteo de suites xUnit y mantenimiento del aviso canario GHSA upstream HotChocolate 14.2.0 como FAIL documentado.
+
+3. RC-01 y RC-02 Resueltos (Trazabilidad y corte del candidato):
+   - Registro honesto del preflight 9/9 PASS previo como evidencia del worktree de 607dce7 (docs/audit/PREFLIGHT_CERTIFIED_9a61e73.json).
+   - El candidato actual integra la lógica corregida de MessagingService.cs y la suite completa de 11 casos de concurrencia SQL verificada en runtime.
 
 Petición de dictamen para Astra (Canal 1 - 6 Astra - Razonamiento Alto):
-- Arbitraje y validación del Manifiesto Oficial del Candidato y de las evidencias de cierre CF-03 a CF-06.
-- Emisión de la certificación final del Release Candidate.
+- Ratificación de la resolución de los hallazgos RC-01 a RC-05.
+- Estado de evaluación del candidato consolidado.

@@ -115,6 +115,35 @@ public sealed class PrivateUploadSqlRaceTests : IClassFixture<Gob12SqlFixture>
     }
 
     [Fact]
+    public async Task SameClientMessageId_DifferentRecipients_ExactlyOneWinnerAndOneRejection()
+    {
+        var clientId = Guid.NewGuid();
+        var gate = new Gob12TransactionGate();
+        await using var first = database.Open(gate);
+        await using var second = database.Open(gate);
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var calls = new[] {
+            Task.Run(() => Gob12Outcome<Message>.Capture(() => Service(first).SendPrivateMessageAsync(
+                database.Sender, database.Receiver, clientId, "payload to receiver A", Array.Empty<Guid>(), deadline.Token))),
+            Task.Run(() => Gob12Outcome<Message>.Capture(() => Service(second).SendPrivateMessageAsync(
+                database.Sender, database.OtherReceiver, clientId, "payload to receiver B", Array.Empty<Guid>(), deadline.Token))),
+        };
+        var results = await Task.WhenAll(calls);
+        Assert.True(gate.Arrivals >= 2);
+        var winner = Assert.Single(results, r => r.Error == null).Value!;
+        var loser = Assert.Single(results, r => r.Error != null).Error!;
+
+        await using var verification = database.Open();
+        var stored = Assert.Single(await verification.Messages.AsNoTracking()
+            .Where(row => row.SenderId == database.Sender && row.ClientMessageId == clientId).ToListAsync());
+        Assert.Equal(winner.Id, stored.Id);
+        Assert.Equal(winner.ReceiverId, stored.ReceiverId);
+
+        var argEx = Assert.IsType<ArgumentException>(loser);
+        Assert.Equal("El clientMessageId ya fue utilizado con otro destinatario.", argEx.Message);
+    }
+
+    [Fact]
     public async Task SqlCatalog_EnforcesFilteredIdempotencyAndUniqueAttachmentConsumption()
     {
         await using var context = database.Open();
