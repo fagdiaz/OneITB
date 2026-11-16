@@ -1,0 +1,27 @@
+type Query {
+  academicResources(
+    subjectId: Int!
+    searchTerm: String
+    category: AcademicResourceCategory
+  ): [AcademicResource!]!
+
+  resourcesBySubject(
+    subjectId: Int!
+    searchTerm: String
+    category: AcademicResourceCategory
+  ): [AcademicResource!]!
+}
+
+type Mutation {
+  uploadAcademicResource(
+    subjectId: Int!
+    title: String!
+    description: String
+    category: AcademicResourceCategory
+    version: Int
+    fileUrl: String
+    externalUrl: String
+  ): AcademicResource!
+
+  deleteResource(resourceId: UUID!): AcademicResource!
+}

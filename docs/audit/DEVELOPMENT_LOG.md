@@ -19,6 +19,167 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-16] - Spec 228: Feed Presentation Extraction (UserAvatar & ParticipationBadges) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Extracción de Presentación en Feed: UserAvatar e Insignias Comunitarias (Spec 228)
+
+**Alcance:** Refactorización acotada de presentación visual autorizada post-freeze sobre `FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`, aislando la lógica de renderizado de perfil de usuario, avatares, insignias de participación y estilos de roles en un componente modular autónomo (`UserAvatar.jsx`), preservando al 100% los contratos de GraphQL, caché de Apollo, modales de moderación y accesibilidad (hallazgo ORG-13):
+
+1. **Creación del Módulo Autónomo de Presentación (`UserAvatar.jsx`):**
+   - Creación de [`FrontEnd/OneItb-FE/src/Components/publication/UserAvatar.jsx`](file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/publication/UserAvatar.jsx) conteniendo:
+     * `UserAvatar`: Componente de renderizado de imagen de usuario con fallback accesible a iniciales, `aria-label`, lazy loading (`loading="lazy"`), decodificación asíncrona (`decoding="async"`) y mitigación de fallos de red en avatar mediante caché Set en memoria (`failedAvatarUrls`).
+     * `ParticipationBadges`: Componente visual de insignias comunitarias (Publicador >=10 posts, Conversador >=20 comentarios, Valorado >=25 likes) con íconos FontAwesome y tooltips descriptivos.
+     * `getRoleStyle` y `roleStyles`: Mapeo exhaustivo de paleta institucional (Tailwind 4 / Dark Mode) para los 6 roles oficiales en español (`Administrador`, `Moderador`, `Profesor`, `Estudiante`, `Egresado`, `Empleador`) y fallback para rol desconocido.
+     * `resolveAvatarUrl`, `getInitials`, `getNameInitials`, `getParticipationBadges`.
+
+2. **Suite de Pruebas Unitarias Dedicada (`UserAvatar.test.jsx`):**
+   - Creación de [`FrontEnd/OneItb-FE/src/Components/publication/UserAvatar.test.jsx`](file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/publication/UserAvatar.test.jsx) con 9 casos de prueba exhaustivos en Vitest cubriendo iniciales, resolución de URLs relativas y absolutas, mapeo de roles, cálculo de insignias comunitarias, renderizado de imágenes y tolerancia a fallos `onError`.
+
+3. **Integración en `Feed.jsx` y Reducción de Complejidad:**
+   - En [`FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx`](file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx): sustitución de 93 líneas de código de presentación embebido por importaciones modulares y limpias desde `./UserAvatar`.
+   - Cero alteración en queries, mutations, subscriptions o lógica de caché (`updateReactionCache`), conservando idéntico comportamiento funcional.
+
+---
+## [2026-11-16] - Spec 227: Master Editorial Source, Figure Chain Unification & Academic Delivery Package - branch: feature/2026-11-01-debugger-cv-builder
+
+### Fuente Editorial Maestra, Unificación de Figuras y Paquete de Entrega Académica Único (Spec 227)
+
+**Alcance:** Consolidación de la procedencia editorial y eliminación de la dispersión de entregables académicos en `docs/entrega_final/`, designando formalmente la fuente Markdown maestra, unificando el catálogo de diagramas y creando el checklist de exportación con control de hashes criptográficos para la mesa examinadora (hallazgo ORG-12):
+
+1. **Designación de la Fuente Maestra Textual y Procedencia Editorial:**
+   - Ratificación de [`docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`](file:///f:/React/OneITB23/docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md) (versión 2.3) como la única fuente canónica de texto de la memoria técnica de Práctica Profesionalizante III.
+   - Designación del par oficial de entrega: `OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` y `.pdf` (45 páginas, compilado determinísticamente vía Word COM sobre plantilla institucional). Reclasificación de versiones alternativas o borradores intermedios como antecedentes de trabajo, excluyendo archivos de bloqueo temporal (`~$*.docx`).
+
+2. **Unificación de la Cadena de Figuras (`FIGURE_MANIFEST.md`):**
+   - Validación del inventario de 10 figuras principales de memoria (`Tabla A`) y 13 diagramas técnicos complementarios de arquitectura e ingeniería (`Tabla B`), asegurando que cada diagrama cuente con su archivo fuente `.mmd` extraído, su tipo, orientación A4 y destino delimitado sin solapamientos.
+
+3. **Creación del Checklist de Exportación (`EXPORT_CHECKLIST.md`):**
+   - Formalización de [`docs/entrega_final/EXPORT_CHECKLIST.md`](file:///f:/React/OneITB23/docs/entrega_final/EXPORT_CHECKLIST.md) con el inventario consolidado de entregables, checklist preflight de imprenta (A4, márgenes 2,54 cm, sangría francesa en APA 7, tablas bordeadas, sin bloques crudos mermaid ni secretos) y registro de hashes SHA-256 de los binarios oficiales para verificación ante la cátedra.
+   - Sincronización de [`docs/entrega_final/GUIA_MAQUETACION_FINAL.md`](file:///f:/React/OneITB23/docs/entrega_final/GUIA_MAQUETACION_FINAL.md) y [`docs/audit/DOCUMENTATION_STATUS.md`](file:///f:/React/OneITB23/docs/audit/DOCUMENTATION_STATUS.md) para referenciar el nuevo instrumento de procedencia.
+
+---
+## [2026-11-16] - Spec 226: Document Taxonomy, Artifact Governance & Git Ignore Alignment - branch: feature/2026-11-01-debugger-cv-builder
+
+### Catálogo Documental, Gobierno de Artefactos y Sincronización de Política Git (Spec 226)
+
+**Alcance:** Normalización de la matriz de gobernanza documental en `DOCUMENTATION_STATUS.md`, alineación de `README.md` y depuración selectiva de `.gitignore` para clasificar rigurosamente el repositorio en 5 clases de gobernanza, resolviendo la contradicción entre documentos y herramientas versionadas y preservando la trazabilidad de actas forenses históricas (hallazgos ORG-06 y ORG-11):
+
+1. **Taxonomía Formal de 5 Clases Documentales (`DOCUMENTATION_STATUS.md`):**
+   - Incorporación de la clasificación formal del repositorio: Clase 1 (Canónica y Gobierno Activo), Clase 2 (Evidencia Histórica Inmutable), Clase 3 (Evidencias por Corrida con `runId`), Clase 4 (Material Académico y Entregables) y Clase 5 (Temporales y Secretos).
+   - Eliminación de la etiqueta errónea "Local/ignorado" para `.specify/`, `.agents/`, `AGENTS.md` y `specs/`, documentándolos formalmente como herramientas y especificaciones versionadas requeridas para la reproducibilidad en clones limpios.
+
+2. **Resolución y Sincronización de Política Git (`.gitignore` y `README.md` - ORG-06):**
+   - En `.gitignore`: adición de `/scratch/` (directorio raíz para perfiles efímeros de Chrome y scripts temporales) y `.system_generated/`. Reestructuración de la sección 7 para reflejar que las habilidades base y templates de SpecKit son versionados, manteniendo excluidos únicamente estados locales de agentes y artefactos efímeros de runtime.
+   - En `README.md`: actualización del mapa estructural para reflejar con precisión la presencia y propósito de las herramientas de gobernanza versionadas sin desindexación masiva de Git.
+
+3. **Gobernanza de Enlaces y Dictamen Forense de URIs Locales (ORG-11):**
+   - Establecimiento de la política estricta de enlaces relativos portables para toda documentación canónica y operativa.
+   - Catalogación formal de los 44 URIs locales `file:///` detectados en auditorías previas (`MASTER_AUDIT_REPORT*.md`, `CF05_REALTIME_TRACE.md`) como citas forenses legítimas e inmutables del entorno de emisión, preservando las actas sin reescrituras retroactivas destructivas.
+
+---
+## [2026-11-16] - Spec 225: Isolated Browser Runners, Lifecycle Management & Historical Evidence Governance - branch: feature/2026-11-01-debugger-cv-builder
+
+### Aislamiento de Runners de Navegador, Gestión de Ciclo de Vida y Gobierno de Evidencia (Spec 225)
+
+**Alcance:** Refactorización integral de los scripts de automatización UI (`scripts/verify-cf05-ui-live.mjs` y `scripts/run-cf05-ui-live-validation.ps1`) para eliminar la dependencia de puertos fijos, resolver binarios de Chrome de forma portable, esperar el cierre determinista de procesos antes de eliminar directorios temporales, acotar la confianza TLS exclusivamente a endpoints locales de prueba y desacoplar la generación de evidencia por `runId` sin sobreescribir actas históricas ratificadas (hallazgos ORG-08 y ORG-09):
+
+1. **Aislamiento de Puertos CDP y Prevención de Colisiones (ORG-08):**
+   - Parametrización del puerto base CDP (`BASE_CDP_PORT`, por defecto `9230`) y adición de verificación de disponibilidad de sockets TCP con `net.createServer()` previa al spawn de Chrome.
+   - Rechazo explícito con excepción descriptiva si un puerto se encuentra ocupado por un proceso ajeno, evitando interferir con aplicaciones externas.
+
+2. **Resolución Portable y Ciclo de Vida Determinista de Procesos Chrome:**
+   - Detección flexible del ejecutable de Chrome a través de `CHROME_BIN`, `CHROME_PATH`, rutas estándar en `Program Files`, `LocalAppData` o búsqueda en `PATH`.
+   - Implementación de apagado sincronizado en `ChromeInstance.stop()` con `spawnSync('taskkill', ...)` y espera activa de liberación de PID (`process.kill(pid, 0)`), seguido de eliminación de perfiles temporales con reintentos y backoff, erradicando errores `EBUSY` y perfiles huérfanos en `scratch/`.
+
+3. **Scoping Estricto de TLS sin Relajación Global:**
+   - Eliminación incondicional de `process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'`.
+   - Reemplazo de `fetch` por peticiones HTTPS con `rejectUnauthorized: !isLocal`, permitiendo certificados de desarrollo locales (`localhost` / `127.0.0.1`) mientras se rechaza estrictamente cualquier intento de elusión TLS contra endpoints remotos externos (`SECURITY_REJECTION`).
+
+4. **Gobierno de Evidencia por `runId` y Preservación de Actas Históricas (ORG-09):**
+   - En `run-cf05-ui-live-validation.ps1`: generación de evidencias aisladas bajo `docs/audit/evidence/runs/$RunId/` conteniendo `RUN_OUTPUT.md`, subcarpeta de capturas y `manifest.json` con metadatos y hashes SHA-256 individuales.
+   - Preservación inmutable de [`docs/audit/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`](file:///f:/React/OneITB23/docs/audit/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md) y [`docs/audit/screenshots/`](file:///f:/React/OneITB23/docs/audit/screenshots) originales de la ratificación CF-05.
+   - Eliminación del fallback de credenciales en texto plano (`Test1234!`), requiriendo explícitamente `DEMO_USER_PASSWORD` o UserSecrets.
+   - Incorporación de la suite de pruebas adversariales `tests/test_runner_isolation.ps1` con 5 aserciones de gobernanza en verde.
+
+---
+## [2026-11-16] - Spec 224: CI Parity, Tooling Version Pinning & Deployment Decoupling - branch: feature/2026-11-01-debugger-cv-builder
+
+### Paridad de Integración Continua, Fijación de Herramientas y Desacoplamiento de Despliegue (Spec 224)
+
+**Alcance:** Saneamiento y paridad de los flujos de GitHub Actions y herramientas de preflight, eliminando asimetrías de restauración y filtros de pruebas, fijando versiones de linting y condicionando los despliegues de Azure al éxito previo de Quality Gates sobre el mismo SHA (hallazgos ORG-04, ORG-05 y ORG-15):
+
+1. **Restauración y Filtros Canónicos en CI (`.github/workflows/quality-gates.yml` - ORG-04):**
+   - Incorporación explícita de `dotnet restore "API Graphql/Tests/Services.Tests/Services.Tests.csproj"` junto con la API, eliminando el riesgo de fallo por activos no restaurados en entornos limpios.
+   - Alineación exacta del comando de pruebas backend con el preflight local: inclusión de `--filter "Category!=GOB12SqlConcurrency&Category!=GOB15BcryptBenchmark&Category!=VendorAdvisoryGHSA"`.
+   - Aislamiento del canario upstream HotChocolate (`VendorAdvisoryGHSA`) en un paso visible e informativo independiente con `continue-on-error: true`.
+
+2. **Fijación Determinista de Herramientas de Análisis Estático (ORG-15):**
+   - En `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1`: fijación de versión a `oxlint@0.15.11` en la compuerta Gate 7 (`frontend-oxlint-check`).
+   - En `.github/workflows/quality-gates.yml`: adición del paso de validación estática de frontend con la misma versión fijada (`npx --yes oxlint@0.15.11 src`), garantizando paridad 100% entre ejecuciones locales y remotas sin alterar el `package-lock.json` de producción.
+
+3. **Desacoplamiento y Condicionamiento de Despliegues en Azure (ORG-05):**
+   - En `.github/workflows/main_oneitbapi.yml` y `.github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml`: eliminación del disparador ciego no coordinado `push: branches: [main]`.
+   - Implementación de dependencia estricta mediante `workflow_run` sobre `Quality Gates` en rama `main` (`types: [completed]`) con compuerta de ejecución condicionada a `github.event.workflow_run.conclusion == 'success'`.
+   - Checkout de código anclado al SHA verificado de la corrida (`ref: ${{ github.event.workflow_run.head_sha || github.sha }}`), garantizando que un fallo en Quality Gates sobre el commit X bloquee la promoción de artefactos hacia producción.
+
+---
+## [2026-11-16] - Spec 223: Candidate-Linked Stabilization Preflight & Dynamic Governance Verification - branch: feature/2026-11-01-debugger-cv-builder
+
+### Certificador Ligado al Corte y Validación Dinámica de Gobernanza (Spec 223)
+
+**Alcance:** Modernización de la herramienta de preflight `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1` y de la suite de gobernanza `tests/test_governance_stabilize.ps1`, eliminando mínimos históricos hardcodeados y excepciones fijas (hallazgo ORG-02):
+
+1. **Línea Base Estructurada del Candidato (Gate 5 y Gate 6):**
+   - Configuración de parámetros de baseline con valores por defecto del Release Candidate: **396 pruebas backend xUnit Release** y **389 pruebas frontend Vitest** (70 suites).
+   - Reemplazo de las aserciones laxas de mínimos (`234` y `258`) por comprobación estricta de concordancia exacta bajo `-Certify`, bloqueando tanto la pérdida de pruebas como incrementos no documentados.
+
+2. **Resolución Dinámica de Especificación Activa (Gate 9):**
+   - Eliminación de las excepciones históricas fijas (`Spec 219` y `Spec 218`).
+   - Detección e inspección dinámica de la spec activa a partir de `.specify/feature.json` (`$activePointer`), validando que el log registre la fecha del día o la spec en curso.
+
+3. **Ampliación de la Suite de Verificación de Gobernanza:**
+   - Actualización de los mocks en `tests/test_governance_stabilize.ps1` a la baseline 396/389.
+   - Incorporación de dos nuevos casos de prueba adversariales (Caso 7a y Caso 7b) que demuestran el bloqueo estricto ante discrepancias de conteo (395 backend / 388 frontend).
+
+---
+## [2026-11-16] - Spec 222: Safe Operation Runbook & Quickstart Non-Destructive Decoupling - branch: feature/2026-11-01-debugger-cv-builder
+
+### Desacoplamiento de Arranque Seguro y Aislamiento de Reset Destructivo (Spec 222)
+
+**Alcance:** Reestructuración de `docs/audit/RUNBOOK_DEV.md` para separar el arranque ordinario sobre base existente de las operaciones destructivas de reset, eliminando contraseñas en texto plano y referencias a ramas obsoletas (hallazgos ORG-03 y ORG-07):
+
+1. **Quickstart No Destructivo (Sección 0):**
+   - Rediseño del inicio rápido en 3 pasos directos (Docker SQL Server `oneitb-sql`, Backend Kestrel `dotnet run` y Frontend Vite `npm.cmd run dev`), sin invocaciones a scripts destructivos ni comandos drop/reseed.
+   - Eliminación de la instrucción obsoleta de checkout a la rama previa `codex/199-ux-b2b-academic-onboarding`.
+
+2. **Saneamiento de Credenciales de Demostración:**
+   - Eliminación de la contraseña literal en texto plano (`Test1234!`) en la sección de credenciales de demo.
+   - Sustitución por directiva segura de consulta y asignación vía `dotnet user-secrets list` (`Seed:DemoPassword`).
+
+3. **Aislamiento de la Operación Destructiva:**
+   - Reubicación y delimitación estricta de `reset-demo-database.ps1` en la sección 13.11 (Troubleshooting / Reconstrucción de Emergencia).
+   - Documentación explícita de guardas: contenedor `oneitb23-sql:1433/OneItb`, backup automático previo en `backups/local-demo/` y parámetro obligatorio `-ConfirmDatabaseReset`.
+   - Actualización de fecha de control del Runbook al 16 de noviembre de 2026.
+
+---
+## [2026-11-16] - Spec 221: Alignment of Truth Sources, Release Candidate Baseline & Tag Reconciliation - branch: feature/2026-11-01-debugger-cv-builder
+
+### Conciliación de Fuentes de Verdad y Estado del Release Candidate (Spec 221)
+
+**Alcance:** Conciliación documental exhaustiva entre el estado físico de Git y las fuentes canónicas del repositorio, resolviendo las divergencias relevadas en el Lote A sobre `README.md`, `docs/audit/CANDIDATE_MANIFEST_RC.md`, `docs/project_docs/ROADMAP.md` y `AGENTS.md`:
+
+1. **Línea Base Automatizada Certificada:**
+   - Actualización de `README.md` para reflejar la suite core de 785 pruebas (396 backend xUnit Release + 389 frontend Vitest en 70 suites) más 11 pruebas de concurrencia SQL sobre SQL Server 2022, vinculando al Manifiesto Oficial del Release Candidate y contextualizando las cifras 234/252 como hito histórico previo de la Spec 218.
+
+2. **Conciliación de Estado del Tag Local `v1.0.0-rc`:**
+   - Reconocimiento explícito en `CANDIDATE_MANIFEST_RC.md` y `ROADMAP.md` de la existencia física del tag local `v1.0.0-rc` asentado sobre el commit consolidado `d806822102eb7eec7542318c3d134eadadd390ea`.
+   - Delimitación rigurosa de que la publicación remota (`git push origin v1.0.0-rc`) y la ratificación formal de la mesa evaluadora permanecen supeditadas a la convocatoria oficial.
+
+3. **Corte Operativo y Gobernanza:**
+   - Actualización del corte operativo en `AGENTS.md` al `2026-11-16`, preservando intacta la inmutabilidad histórica de la fecha de la mesa no realizada del 2026-08-07.
+   - Cero líneas de código alteradas en `API Graphql/` y `FrontEnd/`, manteniendo el código candidato 100% inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`.
+
+---
 ## [2026-11-16] - Ratification of Multi-Session UI Gate CF-05, UI-03 Badge Hardening & CF-06 Candidate Freeze Consolidation - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Ratificación Formal de CF-05 y Consolidación de Manifiesto CF-06 (16/11/2026)

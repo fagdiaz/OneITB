@@ -1,0 +1,669 @@
+{
+  "schemaVersion": 1,
+  "status": "COMPLETED_STATIC_ORGANIZATION_AUDIT_NOT_RUNTIME_CERTIFICATION",
+  "date": "2026-11-16",
+  "head": "d806822102eb7eec7542318c3d134eadadd390ea",
+  "candidateCodeSha": "37ed3608887f3871a8ca2c555004ab63fd6d1e6a",
+  "localTag": {
+    "name": "v1.0.0-rc",
+    "target": "d806822102eb7eec7542318c3d134eadadd390ea",
+    "remoteVerified": false
+  },
+  "activeSpec": 220,
+  "counts": {
+    "trackedFiles": 822,
+    "indexedSelectedTextFiles": 721,
+    "indexedMarkdown": 97,
+    "markdownLinkScan": 48,
+    "relativeLinksInspected": 140,
+    "machineDependentUris": 44,
+    "confirmedCurrentMissingLinksInScan": 0,
+    "discardedHistoricalQuoteCandidate": 1
+  },
+  "scope": {
+    "excluded": [
+      "historical specs",
+      "dependencies",
+      "compiled output",
+      "runtime private/uploads",
+      "secret contents"
+    ],
+    "executed": [
+      "git metadata/status/diff/list/show-ref/check-ignore",
+      "filesystem inventory",
+      "selected source/document inspection",
+      "SHA256 text grouping",
+      "local Markdown link existence scan with manual triage"
+    ],
+    "notExecuted": [
+      "test suites",
+      "preflight",
+      "runtime/browser",
+      "CI/cloud deployment",
+      "database mutation",
+      "DOCX/PDF render",
+      "external URL checks"
+    ]
+  },
+  "findings": [
+    {
+      "id": "ORG-01",
+      "priority": "P1",
+      "title": "Estado del release desalineado con Git",
+      "source": "docs/audit/CANDIDATE_MANIFEST_RC.md:117-121; docs/project_docs/ROADMAP.md:653,669; git show-ref --tags -d",
+      "fact": "Existe el tag anotado v1.0.0-rc, cuyo destino es d806822; los documentos actuales todavía declaran pendiente su creación.",
+      "impact": "El siguiente operador puede repetir el cierre o etiquetar un corte equivocado.",
+      "action": "Registrar el tag observado, SHA de código y SHA documental por separado; confirmar procedencia de autorización sin inventarla. No mover ni recrear el tag.",
+      "spec": 221
+    },
+    {
+      "id": "ORG-02",
+      "priority": "P1",
+      "title": "Certificador con baseline y spec histórica hardcodeadas",
+      "source": ".agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1:167-168,236-237,320-325",
+      "fact": "La certificación acepta mínimos de 234 backend y 258 frontend; el manifiesto vigente declara 396 y 389. La comprobación del log admite menciones de Spec 218/219.",
+      "impact": "La compuerta de conteos no detectaría todas las pérdidas de descubrimiento del corte actual; la compuerta documental no deriva siempre de la spec activa.",
+      "action": "Baseline estructurada vinculada al corte y filtros; política explícita de cambios de conteo; resolver spec activa y no aceptar excepciones históricas.",
+      "spec": 223
+    },
+    {
+      "id": "ORG-03",
+      "priority": "P1",
+      "title": "Quickstart de operación incluye reset de datos y rama antigua",
+      "source": "docs/audit/RUNBOOK_DEV.md:21-40",
+      "fact": "El arranque propone checkout/pull de codex/199-ux-b2b-academic-onboarding y reset-demo-database.ps1 con -ConfirmDatabaseReset.",
+      "impact": "Un operador puede seleccionar un corte obsoleto o resetear una base existente siguiendo el camino principal.",
+      "action": "Separar arranque no destructivo, aprovisionamiento vacío y recuperación; exigir identificación de destino y respaldo antes del reset.",
+      "spec": 222
+    },
+    {
+      "id": "ORG-04",
+      "priority": "P1",
+      "title": "CI no restaura el proyecto de tests y difiere del preflight",
+      "source": ".github/workflows/quality-gates.yml:26-30,60-67; API Graphql/OneITB/GraphQL.csproj:30-31; .agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1:131",
+      "fact": "Restore apunta a la API; test apunta a Services.Tests con --no-restore. API no referencia Tests. CI no replica filtros de categorías ni oxlint.",
+      "impact": "Riesgo de error de assets en checkout limpio y resultados no comparables entre CI y la certificación local.",
+      "action": "Restore explícito de Tests o solución adecuada; contrato único de suites; canario upstream y SQL en carriles visibles separados; lint y reportes persistidos.",
+      "spec": 224
+    },
+    {
+      "id": "ORG-05",
+      "priority": "P1",
+      "title": "Despliegue sin dependencia explícita de Quality Gates",
+      "source": ".github/workflows/main_oneitbapi.yml:7,41; .github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml",
+      "fact": "Los workflows de despliegue se disparan por main independientemente de Quality Gates; el backend solo declara needs: build.",
+      "impact": "Los YAML no garantizan que el artefacto desplegado haya superado Quality Gates en el mismo SHA. Protecciones remotas no inspeccionadas.",
+      "action": "Diseñar dependencia por SHA/artefacto y comprobar protecciones existentes; demostrar con pipeline de prueba sin despliegue productivo.",
+      "spec": 224
+    },
+    {
+      "id": "ORG-06",
+      "priority": "P2",
+      "title": "Publicación real y .gitignore contradicen la guía",
+      "source": "README.md:76-77; .gitignore:165-186; git ls-files",
+      "fact": "README llama locales/ignorados a .agents y .specify, pero hay 37 archivos tracked en cada directorio. PDF/DOCX se ignoran globalmente.",
+      "impact": "Nuevas herramientas pueden faltar en un clon mientras otras instrucciones sí se publican; entrega binaria depende de un canal no explicitado.",
+      "action": "Matriz tracked/local/generado/entrega externa; versionar explícitamente gobierno y herramientas necesarias, manteniendo secretos y borradores locales. No desindexar en masa.",
+      "spec": 226
+    },
+    {
+      "id": "ORG-07",
+      "priority": "P2",
+      "title": "Credencial demo literal en runbook vigente",
+      "source": "docs/audit/RUNBOOK_DEV.md:60",
+      "fact": "El encabezado de credenciales incluye una contraseña demo literal. No se reprodujo su valor ni se comprobó su vigencia.",
+      "impact": "La guía contradice el criterio de material saneado y fomenta reutilización de credenciales.",
+      "action": "Referencia a User Secrets/entrega controlada; revisar alcance real y rotar si corresponde. Quitar texto actual no elimina exposición histórica.",
+      "spec": 222
+    },
+    {
+      "id": "ORG-08",
+      "priority": "P2",
+      "title": "Runner UI dependiente de máquina y cleanup no esperado",
+      "source": "scripts/verify-cf05-ui-live.mjs:6-9,42,166-179,227-230",
+      "fact": "Chrome usa ruta fija, puertos 9230-9233 y perfiles en scratch. taskkill se inicia sin esperar su salida antes de borrar el perfil. TLS se deshabilita globalmente en el proceso Node.",
+      "impact": "Colisiones, perfiles bloqueados y falso supuesto de teardown completo; relajación TLS se aplicaría a destinos configurables.",
+      "action": "Parámetros y validación de endpoints locales, perfiles por ejecución y procesos propios; esperar cierre y verificar liberación; confianza TLS acotada.",
+      "spec": 225
+    },
+    {
+      "id": "ORG-09",
+      "priority": "P2",
+      "title": "Evidencia mutable sin directorio exclusivo por ejecución",
+      "source": "scripts/verify-cf05-ui-live.mjs:9,159-163; docs/audit/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md; docs/audit/full_audit/audit_state.json",
+      "fact": "Las capturas se escriben en una carpeta y nombres estables; coexisten actas actuales y auditorías con corte histórico. El estado COMPLETED de full_audit corresponde a su auditoría previa.",
+      "impact": "Una nueva corrida puede sustituir capturas citadas por otra; un índice puede presentar cobertura histórica como actual.",
+      "action": "runId exclusivo y manifiesto de hashes/corte/herramientas; índice que distingue raw, derivado e histórico. Preservar evidencias ratificadas existentes.",
+      "spec": 225
+    },
+    {
+      "id": "ORG-10",
+      "priority": "P2",
+      "title": "Entradas documentales históricas presentadas como referencia principal",
+      "source": "README.md:12-20; docs/entrega_final/GUIA_MAQUETACION_FINAL.md:13-16; AGENTS.md encabezado",
+      "fact": "README y guía editorial muestran cortes de agosto y conteos 234/252; las instrucciones aún tienen encabezado operativo de agosto, mientras la evidencia actual es de noviembre.",
+      "impact": "Cada agente debe reconciliar repetidamente contexto antiguo con el estado vigente.",
+      "action": "Separar estado vigente enlazado de antecedentes fechados. Mantener la fecha histórica de defensa fallida; no reemplazarla por una fecha inventada.",
+      "spec": 221
+    },
+    {
+      "id": "ORG-11",
+      "priority": "P2",
+      "title": "Enlaces históricos dependientes del equipo",
+      "source": "docs/audit/full_audit/MODULE_09_DOCUMENTATION_ALIGNMENT.md:46; revisión de enlaces en audit-data.json",
+      "fact": "El barrido inicial examinó 140 enlaces relativos y señaló uno ausente: la revisión manual comprobó que es una cita de un error histórico, no un vínculo operativo vigente. Además detectó 44 enlaces file:/// dependientes del equipo.",
+      "impact": "Las referencias históricas no son portables a otro checkout. No se confirmó un enlace operativo roto en este muestreo.",
+      "action": "Priorizar índices portables; conservar la cita histórica sin corregir su significado. Clasificar antes de automatizar reparaciones y no llamar rotos a los 44 URI locales.",
+      "spec": 226
+    },
+    {
+      "id": "ORG-12",
+      "priority": "P2",
+      "title": "Entrega académica con varias salidas finales y procedencia incompleta",
+      "source": "docs/entrega_final/salida/; docs/entrega_final/GUIA_MAQUETACION_FINAL.md; docs/entrega_final/diagramas_fuente/FIGURE_MANIFEST.md:9,28",
+      "fact": "Conviven v2_OFICIAL_IMPRENTA y v2.3_FINAL_IMPRENTA, además de borradores. Hay fuentes de diagramas académicas y editoriales con fines distintos.",
+      "impact": "No basta el nombre FINAL ni la fecha para elegir la entrega; cambios en una fuente no garantizan regenerar sus derivados.",
+      "action": "Un manifiesto de entrega selecciona fuente, plantilla, exportación, hash, revisión visual y destino. Mapear diagramas por uso, no borrar variantes por semejanza.",
+      "spec": 227
+    },
+    {
+      "id": "ORG-13",
+      "priority": "P3",
+      "title": "Feed concentra estados, mutaciones, carga y presentación",
+      "source": "FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx:203-223,285-299,391-486",
+      "fact": "Archivo de 1256 líneas, múltiples estados UI y 12 llamadas useMutation, además de upload, navegación y render.",
+      "impact": "Cambios pequeños pueden cruzar responsabilidades; tamaño por sí solo no prueba defecto.",
+      "action": "Después del freeze, extraer una única pieza de presentación con contrato de props estable, preservando estado y Apollo. Medir claridad y superficie de cambio.",
+      "spec": 228
+    },
+    {
+      "id": "ORG-14",
+      "priority": "P3",
+      "title": "Resolución GraphQL contiene composición y envío de correo",
+      "source": "API Graphql/OneITB/GraphQL/Mutation.cs:1689-1785; API Graphql/OneITB/Startup.cs",
+      "fact": "Mutation reúne dominios y helpers de notificación, incluyendo composición de correo de postulaciones. Startup concentra registro/configuración.",
+      "impact": "Responsabilidades transversales dificultan cambios aislados; no implica que autorización o esquema estén rotos.",
+      "action": "Opcional: extraer solo notificación de cambio de postulación a servicio, conservando semántica de cancelación, errores y esquema. No dividir todo Mutation/Startup simultáneamente.",
+      "spec": 229
+    },
+    {
+      "id": "ORG-15",
+      "priority": "P2",
+      "title": "Lint no fijado en el contrato de herramientas",
+      "source": ".agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1:254-259; FrontEnd/OneItb-FE/package.json:26-36",
+      "fact": "Preflight ejecuta npx --yes oxlint sin versión explícita; package.json frontend no declara oxlint.",
+      "impact": "La resolución puede depender de caché o red y cambiar entre máquinas; CI omite ese control.",
+      "action": "Fijar versión y lockfile de tooling compartido, sin actualizar dependencias de producción por esta tarea.",
+      "spec": 224
+    }
+  ],
+  "sourceHashes": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "15c27c93c2d11335f761f564cc1c8c68b370d9773728c48efa941265cbb312b8"
+    },
+    {
+      "path": ".specify/feature.json",
+      "sha256": "3b37e0c1a616f5f9a9095e420ad95b1945ab6e754685a174f8a7e7d64974844d"
+    },
+    {
+      "path": ".specify/memory/constitution.md",
+      "sha256": "ab26191f94fb8b97137ed80d44880f8fc0710b84a6ea16a245de6be5f2851301"
+    },
+    {
+      "path": "README.md",
+      "sha256": "a2d6361bb228768be62bdc518fe0b9283df3db6dfbc8c051be27eecff11a5256"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "17af21cb341de1f4d2100fd18938676c22efef6b4c6138c328d39dc96c1354b1"
+    },
+    {
+      "path": "docs/project_docs/ROADMAP.md",
+      "sha256": "f0b1303cf55598838fb0959babade65184e429c44bcc2f955974cb30f545e631"
+    },
+    {
+      "path": "docs/audit/CANDIDATE_MANIFEST_RC.md",
+      "sha256": "59aaf4561b9780afbc32c3d8e6a142fc4724e2a4541c85e7bf736f66a52f32da"
+    },
+    {
+      "path": "docs/audit/RUNBOOK_DEV.md",
+      "sha256": "e6e2cbd96140299955fcfbf7568b01e2e3d406e86b49f804d5bca96a64d559ae"
+    },
+    {
+      "path": ".agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1",
+      "sha256": "183232023a16153b79f4b28a86a5e05fd207e515c17876c48197f2a9cd499391"
+    },
+    {
+      "path": "tests/test_governance_stabilize.ps1",
+      "sha256": "08fdee019116258e253e78703e4674d51412c75a4c395880994d2f6ee8821ac8"
+    },
+    {
+      "path": "scripts/verify-cf05-ui-live.mjs",
+      "sha256": "a63eb1b67cf3a7b137c78d1edc024a34c933bc73c4f3aa24669bfc0f57e5a50b"
+    },
+    {
+      "path": ".github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml",
+      "sha256": "21bf398a02e6332b365bc32f9bb436d443492a585632009a4674e760f4fad844"
+    },
+    {
+      "path": ".github/workflows/main_oneitbapi.yml",
+      "sha256": "4044e8473bab5e9c7207a2585c7369138823e9160a30648bb6807130877adc4d"
+    },
+    {
+      "path": ".github/workflows/quality-gates.yml",
+      "sha256": "a0b9c7b9402fbdbae4f132703e8c65bc5ce6c94bfc7f8f2850a0d59a1838f34d"
+    }
+  ],
+  "linkReview": [
+    {
+      "file": "docs/audit/CF05_REALTIME_TRACE.md",
+      "line": 8,
+      "target": "file:///f:/React/OneITB23/scripts/run-cf05-live-validation.ps1",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/CF05_REALTIME_TRACE.md",
+      "line": 9,
+      "target": "file:///f:/React/OneITB23/scripts/verify-cf05-realtime-live.mjs",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT.md",
+      "line": 47,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Services/Users/UsersService.cs#L63",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT.md",
+      "line": 47,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/OneITB/GraphQL/Mutation.cs#L49",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT.md",
+      "line": 49,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Services/Academic/AcademicService.cs#L556",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT.md",
+      "line": 51,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/OneITB/GraphQL/Query.cs#L808",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT.md",
+      "line": 55,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Data/OneItbContext.cs",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 57,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/router/Routing.jsx#L28-L31",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 57,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/router/Routing.jsx#L33-L36",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 65,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/jobs/JobBoard.jsx#L213-L226",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 66,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/jobs/JobBoard.jsx#L432-L436",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 67,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/jobs/JobBoard.jsx#L206-L211",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 71,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx#L263-L274",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 72,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx#L873-L877",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 73,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx#L258-L261",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 74,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx#L889-L896",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 84,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/chat/useChatSubscription.js#L44-L58",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 88,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/chat/useChatSubscription.js#L60-L77",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 126,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/auth/EmployerLogin.jsx#L106-L129",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 140,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/publication/Feed.jsx",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 141,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/jobs/JobBoard.jsx",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 142,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/jobs/JobBoard.jsx",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 143,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 144,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/user/FollowButton.jsx",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 145,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/publication/CommentThread.jsx",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 146,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/auth/EmployerLogin.jsx",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 163,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Services/Users/UsersService.cs#L146",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 164,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Services/Users/UsersService.cs#L150",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 165,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Services/Users/UsersService.cs#L147-L149",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 168,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx#L817-L865",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 169,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Services/Users/UsersService.cs#L481-L484",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 195,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Services/Academic/AcademicService.cs#L556",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 201,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/OneITB/GraphQL/Mutation.cs",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 202,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/OneITB/GraphQL/Query.cs#L808",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 209,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Data/EnterpriseDemoSeeder.cs",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 212,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Data/EnterpriseDemoSeeder.cs#L64-L70",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 215,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Data/EnterpriseDemoSeeder.cs#L72-L75",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 234,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/router/Routing.jsx#L51-L80",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 251,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/profile/CvEditorProfile.tsx#L817-L865",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 253,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Services/Users/UsersService.cs#L481-L484",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 257,
+      "target": "file:///f:/React/OneITB23/FrontEnd/OneItb-FE/src/Components/academic/AcademicDashboard.jsx#L889-L896",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+      "line": 263,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Data/EnterpriseDemoSeeder.cs#L1410-L1421",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MODULE_08_DATABASE_SEEDER.md",
+      "line": 57,
+      "target": "file:///f:/React/OneITB23/API%20Graphql/Data/EnterpriseDemoSeeder.cs",
+      "kind": "machine-or-other-uri"
+    },
+    {
+      "file": "docs/audit/full_audit/MODULE_09_DOCUMENTATION_ALIGNMENT.md",
+      "line": 46,
+      "target": "../entrega_final/DOCUMENTO_FINAL_TESIS_ONEITB23.md",
+      "kind": "missing",
+      "manualDisposition": "Cita literal de enlace históricamente incorrecto dentro de inline-code; falso positivo para navegación vigente."
+    },
+    {
+      "file": "docs/audit/full_audit/MODULE_09_DOCUMENTATION_ALIGNMENT.md",
+      "line": 58,
+      "target": "file:///f:/React/OneITB23/docs/audit/DEVELOPMENT_LOG.md",
+      "kind": "machine-or-other-uri"
+    }
+  ],
+  "linkScanFiles": [
+    "AGENTS.md",
+    "API Graphql/OneITB/.github/copilot-instructions.md",
+    "docs/academic/01-project-overview.md",
+    "docs/academic/02-software-requirements.md",
+    "docs/academic/03-use-cases.md",
+    "docs/academic/04-design-diagrams.md",
+    "docs/academic/diagrams/GOB-20261109-11-entrega.md",
+    "docs/audit/CANDIDATE_MANIFEST_RC.md",
+    "docs/audit/CF04_ROLE_WALKTHROUGH.md",
+    "docs/audit/CF05_LIVE_RUNNER_OUTPUT.md",
+    "docs/audit/CF05_REALTIME_TRACE.md",
+    "docs/audit/CF05_REALTIME_VALIDATION.md",
+    "docs/audit/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md",
+    "docs/audit/CF05_UI_WALKTHROUGH.md",
+    "docs/audit/CF05_UI_WALKTHROUGH_TRACE.md",
+    "docs/audit/DEMO_DATABASE_VALIDATION_RESULTS.md",
+    "docs/audit/DEVELOPMENT_LOG.md",
+    "docs/audit/DOCUMENTATION_STATUS.md",
+    "docs/audit/FINAL_AUDIT_REPORT.md",
+    "docs/audit/full_audit/MASTER_AUDIT_REPORT.md",
+    "docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md",
+    "docs/audit/full_audit/MODULE_01_AUTH_RBAC.md",
+    "docs/audit/full_audit/MODULE_02_ACADEMIC.md",
+    "docs/audit/full_audit/MODULE_03_SOCIAL_FEED.md",
+    "docs/audit/full_audit/MODULE_04_MESSAGING_REALTIME.md",
+    "docs/audit/full_audit/MODULE_05_EMPLOYMENT_CV.md",
+    "docs/audit/full_audit/MODULE_06_ADMIN_MODERATION.md",
+    "docs/audit/full_audit/MODULE_08_DATABASE_SEEDER.md",
+    "docs/audit/full_audit/MODULE_09_DOCUMENTATION_ALIGNMENT.md",
+    "docs/audit/full_audit/MODULE_10_UI_MICRO_INTERACTIONS.md",
+    "docs/audit/full_audit/README.md",
+    "docs/audit/full_audit/VISUAL_AUDIT_REPORT.md",
+    "docs/audit/INFRASTRUCTURE_ACCEPTANCE_RESULTS.md",
+    "docs/audit/PEER_REVIEW_MULTI_AGENTE_2026-11-07.md",
+    "docs/audit/RUNBOOK_DEV.md",
+    "docs/audit/SQL_CONCURRENCY_RESULTS.md",
+    "docs/entrega_final/diagramas_fuente/EXPORT_CHECKLIST.md",
+    "docs/entrega_final/diagramas_fuente/FIGURE_MANIFEST.md",
+    "docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md",
+    "docs/entrega_final/DOCUMENTO_MAQUETACION.md",
+    "docs/entrega_final/GUIA_MAQUETACION_FINAL.md",
+    "docs/project_docs/architecture-and-design.md",
+    "docs/project_docs/BRANCHING_STRUCTURE.md",
+    "docs/project_docs/MULTI_AGENT_FRAMEWORK.md",
+    "docs/project_docs/ROADMAP.md",
+    "docs/project_docs/scope-and-requirements.md",
+    "GUIA_SPECKIT.md",
+    "README.md"
+  ],
+  "selectedLargeFiles": [
+    {
+      "path": "API Graphql/Data/Migrations/20261109005522_AddAcademicSectionsAndRegularity.Designer.cs",
+      "lines": 2810,
+      "bytes": 106757
+    },
+    {
+      "path": "API Graphql/Data/Migrations/OneItbContextModelSnapshot.cs",
+      "lines": 2807,
+      "bytes": 106616
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20261109001432_AddCommentReportingAndFilteredIndexes.Designer.cs",
+      "lines": 2463,
+      "bytes": 93492
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20261108233950_AddMessageAttachmentsAndPrivateUpload.Designer.cs",
+      "lines": 2442,
+      "bytes": 92660
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20261108225954_AddJobApplicationCv.Designer.cs",
+      "lines": 2316,
+      "bytes": 87937
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260730214003_AddEmployerOnboardingWorkflow.Designer.cs",
+      "lines": 2284,
+      "bytes": 86621
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260730032643_AddMicrosoftEntraIdentity.Designer.cs",
+      "lines": 2082,
+      "bytes": 78324
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260712215518_AddDirectedRepliesAndSocialGraphIndex.Designer.cs",
+      "lines": 2056,
+      "bytes": 76789
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260712201024_AddMediaModerationState.Designer.cs",
+      "lines": 2044,
+      "bytes": 76297
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260711205348_AddSocialAttachmentsCommentReactionsAndNotificationGrouping.Designer.cs",
+      "lines": 2025,
+      "bytes": 73548
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260708161825_AddUserProfilePrivacy.Designer.cs",
+      "lines": 1868,
+      "bytes": 67601
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260708013841_AddJobApplications.Designer.cs",
+      "lines": 1863,
+      "bytes": 67397
+    },
+    {
+      "path": "API Graphql/OneITB/GraphQL/Mutation.cs",
+      "lines": 1785,
+      "bytes": 67805
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260708003640_AddJobOffers.Designer.cs",
+      "lines": 1784,
+      "bytes": 66310
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260707211602_AddAccountLockout.Designer.cs",
+      "lines": 1705,
+      "bytes": 63399
+    },
+    {
+      "path": "API Graphql/Data/Migrations/20260706180418_AddAuditLogs.Designer.cs",
+      "lines": 1694,
+      "bytes": 62992
+    }
+  ],
+  "exactDuplicateGroupsSelectedText": [
+    [
+      ".specify/extensions/git/config-template.yml",
+      ".specify/extensions/git/git-config.yml"
+    ]
+  ]
+}

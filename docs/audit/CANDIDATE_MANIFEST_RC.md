@@ -8,7 +8,7 @@
 - **HEAD al capturar evidencia:** `91d57f99753083c20825dee0d3a577d15eef4357`
 - **Base previa revisada por Astra:** `fd403c86ed63a31cb1b8090cb082a73a0d29b409`
 - **Ratificación Formal del Auditor Principal (Canal 1 - Astra):** `APROBADO CON OBSERVACIONES` para alcance académico local (16/11/2026, documento `RATIFICACION_CF05_2026-11-16.md`)
-- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; CF-01 a CF-05 Cerradas y Ratificadas, CF-06 Consolidada / Pendiente de Autorización Explícita de Congelamiento y Tag
+- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; CF-01 a CF-05 Cerradas y Ratificadas, CF-06 Consolidada documentalmente (tag local `v1.0.0-rc` registrado en `d806822`; publicación remota y ratificación de mesa pendientes)
 
 ---
 
@@ -114,11 +114,11 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
   * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `FrontEnd/OneItb-FE/src/context/sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.
 
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
-- **Estado:** `[CONSOLIDADO / PENDIENTE DE CONGELAMIENTO]` (Evidencias, suites y ratificación consolidadas; pendiente de autorización explícita del usuario para commit, push y tag).
+- **Estado:** `[CONSOLIDADO DOCUMENTALMENTE / TAG LOCAL ASENTADO]` (Evidencias, suites y ratificación consolidadas; tag local `v1.0.0-rc` registrado sobre `d806822`; publicación remota condicionada a la convocatoria formal de mesa).
 - **Dictamen:** Se formaliza este manifiesto consolidado vinculando con rigor documental las métricas, suites, salidas y salvedades del Release Candidate.
   * **Código Candidato Inmutable:** El código de producción y pruebas se mantiene estrictamente congelado e inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (`git diff 37ed360 -- "API Graphql" FrontEnd` = 0).
-  * **Corte Documental y Herramientas:** Los scripts de soporte y documentación de evidencia se identifican por separado en el historial (`741d3e4` + cambios de consolidación vigentes).
-  * **Condición de Congelamiento:** No se declara tag creado ni worktree congelado hasta que el usuario emita su autorización explícita para el commit y etiquetado final.
+  * **Corte Documental y Herramientas:** Los scripts de soporte y documentación de evidencia se identifican por separado en el historial (`741d3e4` + cambios de consolidación vigentes hasta HEAD `d806822`).
+  * **Situación del Tag y Publicación:** El tag local `v1.0.0-rc` se encuentra físicamente registrado en el repositorio local sobre el commit `d806822102eb7eec7542318c3d134eadadd390ea`. No se ha ejecutado `git push` del tag hacia el remoto `origin`, permaneciendo como corte local congelado hasta la autorización institucional.
 
 ---
 

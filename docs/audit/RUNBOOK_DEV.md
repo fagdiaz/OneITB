@@ -2,7 +2,7 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Última revisión contra repositorio** | 3 de agosto de 2026 |
+| **Última revisión contra repositorio** | 16 de noviembre de 2026 |
 | **Entorno local canónico** | Windows + PowerShell + SQL Server 2022 en Docker |
 | **Backend** | `https://localhost:44397` y `http://localhost:5000` mediante perfil `OneITB` |
 | **Frontend** | `http://localhost:5173` mediante Vite |
@@ -18,37 +18,33 @@ reconstrucción destructiva.
 
 ---
 
-## 0. Inicio Rápido en PC Limpia (Quickstart End-to-End)
+## 0. Inicio Rápido Diario sobre Base Existente (Quickstart No Destructivo)
 
-Para levantar el entorno completo desde cero en una máquina limpia con Windows:
+Para iniciar el entorno ordinario de desarrollo o evaluación en una máquina previamente
+configurada, **sin destruir ni resetear los datos locales**:
 
-### Paso 1: Actualizar el Repositorio
-```powershell
-git checkout codex/199-ux-b2b-academic-onboarding
-git pull origin codex/199-ux-b2b-academic-onboarding
-```
+> [!NOTE]
+> Si es la primera vez que se instala el proyecto en una máquina limpia, completar
+> primero la preparación inicial de las secciones 2 y 3 (variables de entorno `.env`,
+> configuración de user-secrets, restore de dependencias y migración inicial de EF Core).
 
-### Paso 2: Iniciar SQL Server en Docker
-Abrir Docker Desktop y levantar el contenedor de base de datos en segundo plano:
+### Paso 1: Iniciar SQL Server en Docker
+Abrir Docker Desktop y verificar/levantar el contenedor de base de datos en segundo plano:
 ```powershell
 docker compose up -d oneitb-sql
+docker compose ps
 ```
+Asegurarse de que el contenedor `oneitb23-sql` reporte estado `healthy` antes de levantar el backend.
 
-### Paso 3: Recrear y Poblar la Base de Datos (Seeder Oficial)
-Aplica las migraciones EF Core y siembra las 15 cuentas deterministas con publicaciones, materias y chats:
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/reset-demo-database.ps1 -ConfirmDatabaseReset
-```
-
-### Paso 4: Iniciar Backend (.NET 8)
+### Paso 2: Iniciar Backend (.NET 8)
 En una terminal dedicada:
 ```powershell
 dotnet run --project "API Graphql/OneITB/GraphQL.csproj" --launch-profile OneITB
 ```
 *Health check:* `https://localhost:44397/health` | *GraphQL Nitro:* `https://localhost:44397/graphql`
 
-### Paso 5: Iniciar Frontend (React 18 + Vite)
-En una segunda terminal:
+### Paso 3: Iniciar Frontend (React 18 + Vite)
+En una segunda terminal dedicada:
 ```powershell
 Push-Location "FrontEnd/OneItb-FE"
 npm.cmd run dev
@@ -57,13 +53,24 @@ npm.cmd run dev
 
 ---
 
-### Credenciales de Demostración (Contraseña: `Test1234!`)
+### Cuentas y Roles de Demostración
+
+La contraseña de las cuentas de demostración corresponde al secreto local asignado en
+`Seed:DemoPassword` (o entregado de forma controlada para la sesión de evaluación/defensa).
+Para consultar la contraseña configurada en el entorno local:
+```powershell
+dotnet user-secrets list --project "API Graphql/OneITB/GraphQL.csproj" | Select-String "Seed:DemoPassword"
+```
+
 * **Administrador:** `admin1@itbeltran.com.ar` / `admin2@itbeltran.com.ar`
 * **Moderador:** `moderador1@itbeltran.com.ar`
 * **Profesor:** `profesor1.ads@itbeltran.com.ar` (Sistemas) / `profesor1.cdia@itbeltran.com.ar` (Datos)
 * **Estudiante:** `estudiante1.ads@itbeltran.com.ar` (Sistemas) / `estudiante1.cdia@itbeltran.com.ar` (Datos)
 * **Egresado:** `egresado1@itbeltran.com.ar` (Sistemas) / `egresado2@itbeltran.com.ar` (Datos)
 * **Empleador:** `empleador1@itbeltran.com.ar` (Tecnología) / `empleador2@itbeltran.com.ar` (Innovación)
+
+*(Para operaciones de emergencia, corrupción o re-siembra forzada de base de datos demo,
+consultar la sección destructiva 13.11).*
 
 ---
 
@@ -916,12 +923,26 @@ Get-NetTCPConnection -LocalPort 44397 -ErrorAction SilentlyContinue |
 Cerrar únicamente el proceso identificado y propio. No matar procesos por nombre o PID sin
 confirmar su línea de comando.
 
-### 13.11 Reset o validación interrumpidos
+### 13.11 Reconstrucción y Reset de Base Demo (Operación Destructiva y Recuperación)
 
+El script `reset-demo-database.ps1` es un procedimiento **estrictamente destructivo**
+diseñado exclusivamente para emergencias, pruebas de migración limpia o re-siembra forzada.
+**Nunca debe ejecutarse en el arranque diario ordinario**.
+
+#### Guardas obligatorias antes de ejecutar:
+1. Confirmar que el contenedor destino sea exactamente `oneitb23-sql` en el puerto local 1433 y base `OneItb`.
+2. El script genera un backup previo automático en `backups/local-demo/` antes de eliminar la base de datos.
+3. Requiere confirmación explícita e inequívoca mediante el flag `-ConfirmDatabaseReset`.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/reset-demo-database.ps1 -ConfirmDatabaseReset
+```
+
+#### En caso de interrupción del reset o validación:
 1. Confirmar que no quede el proceso temporal en 5094, 5096 o 5097.
 2. Revisar la salida final/`finally` del script.
 3. No repetir el reset hasta comprobar backup e integridad de SQL.
-4. Restaurar con el `.bak` verificado si la base fue eliminada y la migración falló.
+4. Restaurar con el `.bak` verificado en `backups/local-demo/` si la base fue eliminada y la migración falló.
 
 ### 13.12 Aceptación responsive y visual offline (Specs 206-207)
 

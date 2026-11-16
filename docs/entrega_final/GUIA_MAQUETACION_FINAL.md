@@ -553,11 +553,11 @@ No intentar revisar todo simultáneamente. Ejecutar cuatro recorridos independie
 3. **APA y edición:** revisar portada, jerarquía de títulos, tipografía, interlineado, sangrías, figuras, tablas, citas y bibliografía.
 4. **PDF y defensa:** revisar página por página, probar enlaces, buscar texto, verificar índice, marcadores, calidad de imágenes, peso del archivo y legibilidad proyectada en pantalla.
 
-Usar nombres de entrega estables, por ejemplo:
+Usar nombres de entrega estables conforme a [EXPORT_CHECKLIST.md](EXPORT_CHECKLIST.md):
 
 ```text
-OneITB23_Memoria_Tecnica_PP3_2026_v2.1.docx
-OneITB23_Memoria_Tecnica_PP3_2026_v2.1.pdf
+OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx
+OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf
 ```
 
 Evitar nombres como `final_final`, `nuevo`, `corregido2` o equivalentes. Después de aprobar el PDF, generar una huella de integridad:

@@ -9,21 +9,24 @@ Superior en Análisis de Sistemas del Instituto Tecnológico Beltrán.
 
 ## Estado del proyecto
 
-| Indicador | Estado documentado al 08/08/2026 |
+| Indicador | Estado documentado (Corte Release Candidate) |
 |---|---|
 | Alcance contabilizado | **100 % (117/117)**: 46 ítems verificados `[V]` y 71 implementados `[I]` |
-| Backend automatizado | **234/234** pruebas aprobadas en el worktree de Spec 216 |
-| Frontend automatizado | **252/252** pruebas aprobadas en el preflight conjunto de Spec 218 |
-| Entrega | **Release Candidate académico**, core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente |
+| Backend automatizado | **396/396** pruebas xUnit Release aprobadas (0 omitidas); suites opt-in informadas aparte |
+| Frontend automatizado | **389/389** pruebas Vitest aprobadas (70 suites en verde) |
+| Línea base core certificada | **785/785 (100% PASS)** en [Manifiesto RC](docs/audit/CANDIDATE_MANIFEST_RC.md); +11 SQL concurrencia |
+| Entrega | **Release Candidate académico**, core Feature Complete y Code Freeze operativo local; tag local `v1.0.0-rc` |
 | Base de datos | 34 migraciones; base demo canónica con doble seed idempotente y seis roles |
 
-La Spec 218 ejecutó conjuntamente backend 234/234 y frontend 252/252 sobre el mismo
-worktree; todavía no equivale a evidencia sobre un SHA candidato congelado. La defensa
-planificada para el 7 de agosto de 2026 no ocurrió porque no se completaron a tiempo la
-documentación final, el refinamiento/cierre y la auditoría manual. No existe una nueva
-fecha documentada. Antes de cerrar un futuro corte deben repetirse ambos gates sobre ese
-SHA definitivo y completar la regresión manual definida en el
-[Roadmap](docs/project_docs/ROADMAP.md) y el
+La línea base core actual está certificada en 785 pruebas sobre el código candidato
+inmutable `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (con evidencias y manifiesto
+consolidados en el tag local `v1.0.0-rc` / HEAD `d806822`). Como hito histórico previo, la
+Spec 218 ejecutó 234/234 backend y 252/252 frontend al 08/08/2026. La defensa planificada
+para el 7 de agosto de 2026 no ocurrió porque no se completaron a tiempo la documentación
+final, el refinamiento/cierre y la auditoría manual coordinada. No existe una nueva fecha
+documentada. El detalle de compuertas y verificación se administra en el
+[Roadmap](docs/project_docs/ROADMAP.md), el
+[Manifiesto Oficial RC](docs/audit/CANDIDATE_MANIFEST_RC.md) y el
 [Runbook](docs/audit/RUNBOOK_DEV.md).
 
 El 100 % contabilizado expresa cobertura del alcance comprometido. No equivale a
@@ -73,9 +76,10 @@ docs/entrega_final/      Memoria APA 7 y guía de maquetación
 scripts/                 Gates finitos, validación y recuperación de la demo
 ```
 
-`specs/`, `.specify/`, `.agents/` y `core-web/` son espacios locales de trabajo
-ignorados por Git. La evidencia y documentación que forman parte del repositorio se
-consolidan en `docs/`.
+`specs/`, `.specify/` y `.agents/` contienen las especificaciones, templates y herramientas
+de gobernanza y preflight versionadas para asegurar la reproducibilidad en clones limpios.
+`core-web/` y los perfiles temporales son espacios locales de trabajo excluidos de Git.
+La evidencia oficial y documentación del producto se consolidan en `docs/`.
 
 ## Requisitos locales
 

@@ -1,15 +1,20 @@
-# Handoff de cierre CF06 — Manifiesto y Evidencias Consolidadas — 16/11/2026
+# Handoff del Orquestador & Integrador Maestro — Cierre Specs 221-228 — 16/11/2026
 Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6 Astra · Razonamiento: Alto
-Código candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a (100% inmutable, diff vacío).
-HEAD base de evidencias/herramientas: 741d3e4c6e07942a94bdc7c6cdc9a6d102cb75f9 + cambios documentales consolidados.
-Rama: feature/2026-11-01-debugger-cv-builder. Especificación activa: .specify/feature.json.
-Dictamen previo: CF-05 APROBADA para alcance académico local (RATIFICACION_CF05_2026-11-16.md). Candidato APROBADO CON OBSERVACIONES de alcance conocidas.
+Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
+Rama: feature/2026-11-01-debugger-cv-builder (tracking origin/feature/2026-11-01-debugger-cv-builder)
 
-Estado alcanzado en este turno:
-1. Manifiesto oficial consolidado (docs/audit/CANDIDATE_MANIFEST_RC.md): vincula suites canónicas (785/785 core PASS + 11/11 opt-in SQL concurrente PASS), preflight certificado (PREFLIGHT_CERTIFIED_91d57f9.json), recorrido de seis roles (CF04_ROLE_WALKTHROUGH.md), validación realtime y UI multi-sesión ratificada (CF05_REALTIME_VALIDATION.md, CF05_UI_WALKTHROUGH.md, CF05_UI_AUTOMATED_RUNNER_OUTPUT.md, screenshots/), y salvedades delimitadas.
-2. Hoja de ruta (docs/project_docs/ROADMAP.md) y bitácora (docs/audit/DEVELOPMENT_LOG.md) actualizadas: CF-05 cerrada y ratificada [x] [V]; CF-06 consolidada documentalmente [-] [P], a la espera de autorización explícita para commit/tag.
-3. Índice de gobierno (docs/audit/DOCUMENTATION_STATUS.md) normalizado al 16/11/2026.
-4. Higiene y staging: directorios scratch/ de perfiles Chrome efímeros eliminados; git diff 37ed360 -- "API Graphql" FrontEnd estrictamente 0; git diff --check y --cached --check en PASS.
-5. Invariante de freeze y gobernanza: F05 diferido, RR06 fuera de demo con empleador preexistente y brechas externas (GAP-FILE-01, GAP-INFRA-01, GAP-OPS-01) explícitas. Ningún commit, push ni tag ejecutado de forma automática.
+Arbitraje Arquitectónico:
+- Spec 229 (Backend): OMITIDA / RECHAZADA. Code Freeze absoluto restablecido para backend .NET 8 (396/396 xUnit PASS). Hallazgo ORG-14 catalogado como deuda menor post-defensa para no alterar Startup.cs ni el contenedor DI.
+- Specs 221-227 (Gobernanza y Tooling): 100% CERRADAS y validadas.
+- Spec 228 (Refactor Feed UI): 100% CERRADA (UserAvatar.jsx + UserAvatar.test.jsx con 12 tests PASS; reducción de 93 líneas en Feed.jsx).
 
-Acción siguiente: el paquete de Release Candidate queda plenamente preparado para decisión del usuario.
+Resultados Dual-Stack:
+- Backend: .NET 8 Release 0 errores / 0 advertencias. xUnit: 396/396 PASS (0 fail, 0 skip).
+- Frontend: Vite 8 0 errores / 0 advertencias. Vitest: 71 suites, 407/407 tests PASS (0 fail, 0 skip).
+- Oxlint: Pinned a 1.94.0 (0 warnings, 0 errors sobre 220 archivos en 96 reglas).
+- Git diff --check: PASS (0 trailing whitespace).
+
+Secuencia de Consolidación:
+- Commit 1: chore(governance): alinear fuentes de verdad, tooling y gobernanza (specs 221-227)
+- Commit 2: refactor(feed): desacoplar presentacion de avatar e insignias en UserAvatar (spec 228)
+- Push pendiente de confirmación explícita del usuario.

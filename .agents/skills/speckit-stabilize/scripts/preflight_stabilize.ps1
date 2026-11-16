@@ -7,7 +7,9 @@ param(
     [scriptblock]$MockBackendCommand = $null,
     [scriptblock]$MockFrontendCommand = $null,
     [string]$MockBackendOutput = '',
-    [string]$MockFrontendOutput = ''
+    [string]$MockFrontendOutput = '',
+    [int]$ExpectedBackendBaseline = 396,
+    [int]$ExpectedFrontendBaseline = 389
 )
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../../..')).Path
@@ -164,8 +166,8 @@ if ($shouldRunTests) {
             if ($total -ne $passed) {
                 throw "Backend suite certification rejected: Discrepancy between total ($total) and passed ($passed) tests."
             }
-            if ($passed -lt 234) {
-                throw "Backend test count ($passed) is below expected certified baseline of 234 tests."
+            if ($passed -ne $ExpectedBackendBaseline) {
+                throw "Backend suite certification rejected: Expected certified baseline of $ExpectedBackendBaseline tests, but got $passed passed tests."
             }
         }
 
@@ -233,8 +235,8 @@ if ($shouldRunTests) {
             if ($feTotal -ne $fePassed) {
                 throw "Frontend suite certification rejected: Discrepancy between total ($feTotal) and passed ($fePassed) tests."
             }
-            if ($fePassed -lt 258) {
-                throw "Frontend test count ($fePassed) is below expected certified baseline of 258 tests."
+            if ($fePassed -ne $ExpectedFrontendBaseline) {
+                throw "Frontend suite certification rejected: Expected certified baseline of $ExpectedFrontendBaseline tests, but got $fePassed passed tests."
             }
         }
 
@@ -253,7 +255,7 @@ if ($shouldRunTests) {
 
 # Gate 7: Frontend Static Analysis (oxlint)
 $gates += Invoke-StabilizationGate 'frontend-oxlint-check' {
-    $lintOutput = npx --yes oxlint FrontEnd/OneItb-FE/src 2>&1 | Out-String
+    $lintOutput = npx --yes oxlint@1.94.0 FrontEnd/OneItb-FE/src 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0 -or $lintOutput -match '([1-9]\d*\s+error|[1-9]\d*\s+warning)') {
         throw "oxlint detected lint errors/warnings: `n$lintOutput"
     }
@@ -320,8 +322,11 @@ $gates += Invoke-StabilizationGate 'speckit-dod-compliance' {
     if (Test-Path 'docs/audit/DEVELOPMENT_LOG.md') {
         $topLog = (Get-Content 'docs/audit/DEVELOPMENT_LOG.md' -TotalCount 75) -join "`n"
         $todayDate = (Get-Date).ToString('yyyy-MM-dd')
-        if ($topLog -notmatch [regex]::Escape($todayDate) -and $topLog -notmatch 'Spec 219' -and $topLog -notmatch 'Spec 218') {
-            $errors += "DEVELOPMENT_LOG.md lacks an entry referencing today ($todayDate) or the active spec"
+        $activeSpecTag = if ($activePointer -match 'specs/(\d+)') { "Spec $($matches[1])" } else { '' }
+        $hasToday = $topLog -match [regex]::Escape($todayDate)
+        $hasActiveSpec = [bool]($activeSpecTag -and ($topLog -match [regex]::Escape($activeSpecTag)))
+        if (-not $hasToday -and -not $hasActiveSpec) {
+            $errors += "DEVELOPMENT_LOG.md lacks an entry referencing today ($todayDate) or active spec ($activeSpecTag)"
         }
     } else {
         $errors += "DEVELOPMENT_LOG.md not found at expected path"

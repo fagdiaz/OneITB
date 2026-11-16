@@ -179,17 +179,15 @@ Prompt.txt
 Credenciales*.txt
 
 # ------------------------------------------
-# 7. AI Agents & Internal Workflow Tooling
+# 7. AI Agents & Internal Workflow Tooling (Ephemeral & Local Overrides)
 # ------------------------------------------
-# Hide automated dev logs, specifications, and AI instructions for a cleaner professional look
-.agents/
-.specify/
+# Exclude machine-local agent state, derived context, and ephemeral runtime logs.
+# Core governance skills in .agents/, constitution/templates in .specify/, AGENTS.md,
+# and feature specifications in specs/ are tracked in Git for clone reproducibility.
 .antigravitycli/
-AGENTS.md
-GUIA_SPECKIT.md
-specs/
-specs/[0-9][0-9][0-9]-*
-specs/[0-9][0-9][0-9]-*/
+.system_generated/
+.agents/**/local/
+.specify/**/scratch/
 specs/**/runtime-*.ps1
 specs/**/*runtime*.log
 specs/**/*.pid
@@ -198,6 +196,7 @@ test.py
 core-web/
 
 # Local scratch and AI handoff artifacts
+/scratch/
 /docs/audit/temp_audit_review.md
 /docs/entrega_final/DOCUMENTO_MAQUETACION.md
 /prompt_agy.txt

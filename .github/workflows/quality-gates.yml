@@ -23,11 +23,17 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Restore backend
-        run: dotnet restore "API Graphql/OneITB/GraphQL.csproj"
+      - name: Restore backend and tests
+        run: |
+          dotnet restore "API Graphql/OneITB/GraphQL.csproj"
+          dotnet restore "API Graphql/Tests/Services.Tests/Services.Tests.csproj"
 
-      - name: Run service tests
-        run: dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore
+      - name: Run service tests (core baseline)
+        run: dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore --filter "Category!=GOB12SqlConcurrency&Category!=GOB15BcryptBenchmark&Category!=VendorAdvisoryGHSA"
+
+      - name: Run vendor advisory canary (upstream HotChocolate GHSA - isolated)
+        continue-on-error: true
+        run: dotnet test "API Graphql/Tests/Services.Tests/Services.Tests.csproj" -c Release --no-restore --filter "Category=VendorAdvisoryGHSA"
 
       - name: Build backend
         run: dotnet build "API Graphql/OneITB/GraphQL.csproj" -c Release --no-restore
@@ -59,6 +65,9 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Run oxlint static analysis (pinned)
+        run: npx --yes oxlint@1.94.0 src
 
       - name: Run frontend component tests
         run: npm test -- --run

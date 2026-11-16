@@ -2,7 +2,7 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Última revisión de este índice** | 2026-11-16 (Consolidación de Release Candidate: ratificación formal de UI Multi-Sesión CF-05 en RATIFICACION_CF05_2026-11-16.md, actualización de CANDIDATE_MANIFEST_RC.md, ROADMAP.md y DEVELOPMENT_LOG.md; CF-06 consolidada documentalmente y habilitada para congelamiento) |
+| **Última revisión de este índice** | 2026-11-16 (Spec 226: Taxonomía de 5 clases documentales, gobierno de evidencias y política Git; resolución de ORG-06, ORG-09 y clasificación de ORG-11; sin alteración de código candidato 37ed360) |
 | **Estado funcional de referencia** | 117/117 ítems: 46 verificados `[V]` y 71 implementados `[I]`; Specs 202-218 son gates de calidad fuera del denominador |
 | **Clasificación del producto** | Release Candidate académico, core Feature Complete y Code Freeze operativo local |
 | **Situación de mesa** | La defensa planificada para el 7 de agosto de 2026 a las 09:00 no se realizó; no hay nueva fecha documentada |
@@ -32,7 +32,19 @@ cierre, T022, T023 y el gate integral. No hubo entrega, versión presentada, tag
    no fue contrastado contra las últimas specs.
 5. Facilitar la auditoría académica y la reconstrucción del contexto por otra persona.
 
-### 1.2 Estados documentales
+### 1.2 Taxonomía de Clases Documentales y Estados de Ciclo de Vida
+
+Para asegurar la reproducibilidad, portabilidad y trazabilidad del repositorio (hallazgos ORG-06, ORG-09 y ORG-11), los archivos y artefactos se clasifican formalmente en cinco clases de gobernanza:
+
+| Clase | Alcance y Contenido | Regla de Enlaces | Política Git |
+|---|---|---|---|
+| **Clase 1: Canónica y Gobierno Activo** | Normativas, contratos, arquitectura, roadmap, runbook, preflight y constitución del proyecto (`README.md`, `ROADMAP.md`, `scope-and-requirements.md`, `architecture-and-design.md`, `RUNBOOK_DEV.md`, `CANDIDATE_MANIFEST_RC.md`, `.specify/`, `.agents/`, `AGENTS.md`). | Enlaces relativos estrictos (`../docs/...`). Prohibidos URIs locales `file:///`. | **Tracked / Versionado**. Necesario para reproducir controles en un clon limpio. |
+| **Clase 2: Evidencia Histórica Inmutable** | Actas de ratificación, trazas de corte e informes de auditorías previas cerradas (`CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`, `CF05_REALTIME_TRACE.md`, `full_audit/MASTER_AUDIT_REPORT*.md`, `PREFLIGHT_CERTIFIED_*.json`). | Conserva contexto original de emisión. Los 44 URIs `file:///` locales generados en auditorías previas se preservan inmutables como evidencia forense de la estación de trabajo. | **Tracked / Inmutable**. No se reescriben ni alteran retroactivamente. |
+| **Clase 3: Evidencias por Corrida (`runId`)** | Salidas estructuradas de nuevas ejecuciones de herramientas (`docs/audit/evidence/runs/<runId>/`). | Referencias relativas dentro del paquete de la corrida y puntero en `LATEST_RUN.json`. | **Tracked por Run / Estructurada**. Contiene `RUN_OUTPUT.md`, `manifest.json` y capturas con hashes SHA-256 independientes. |
+| **Clase 4: Material Académico y Entregables** | Memoria técnica institucional, guion, diapositivas, fuentes de diagramas y especificaciones de entrega (`docs/entrega_final/`, `docs/academic/`). | Mapeo de figuras contra fuentes editables. | Fuentes en Markdown/JSON **versionadas**. Binarios compilados (`.docx`, `.pdf`) respaldados en canal de distribución externa o versionados bajo demanda de entrega. |
+| **Clase 5: Temporales y Secretos** | Perfiles CDP de Chrome, temporales de edición, logs y credenciales privadas (`/scratch/`, `.system_generated/`, `.env*`, UserSecrets, `*.tmp`, `backups/`). | No aplicable (archivos efímeros o sensibles). | **Estrictamente Ignorados** por `.gitignore`. |
+
+#### Estados del Ciclo de Vida Documental
 
 | Estado | Significado |
 |---|---|
@@ -103,6 +115,7 @@ histórica. No se modifica el código para hacerlo coincidir con una narrativa o
 |---|---|---|---|
 | `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` | Memoria integral de Práctica Profesionalizante III con APA 7, requisitos, diseño, arquitectura, gestión, pruebas, manual y anexos | **Contenido normalizado; materialización pendiente**: portada precargada, contratos canónicos, baselines 234/252 en preflight conjunto Spec 218 y Specs 211-218 alineadas; todavía no es el PDF final | Confirmar metadatos, insertar las figuras seleccionadas, generar DOCX y auditar PDF (`DF-01`, `DF-03` a `DF-06`) |
 | `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` | Procedimiento para diagramas, DOCX/PDF, APA 7, impresión, exposición y contingencia | **Reconciliada**: 10 Mermaid + 3 gráficos de gestión, gates A-D, APA y logística reutilizable; no trata el 07/08 como fecha futura | Ejecutar el procedimiento, registrar evidencia de cada gate y ajustar únicamente si la imprenta o la cátedra comunican una nueva fecha/condición |
+| `docs/entrega_final/EXPORT_CHECKLIST.md` | Inventario y control de procedencia del paquete de entrega académica, hashes y preflight APA 7 / A4 | **Normalizado (Spec 227)**: vincula fuente Markdown v2.3, plantilla institucional, catálogo de figuras y hashes SHA-256 de los binarios oficiales | Mantener sincronizado ante cualquier nueva exportación o cambio de versión de la memoria |
 | Copia de maquetación (`DOCUMENTO_MAQUETACION.md`) | Copia de trabajo transitoria generada desde el documento base para reemplazo de figuras e inyección Pandoc | **Artefacto efímero de compilación**: no compite con la fuente maestra; se genera bajo demanda a partir de `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` (`DF-05`) | Mantener excluido de Git; regenerar determinísticamente al compilar el DOCX definitivo |
 | DOCX APA 7 | Editable institucional con índice, estilos, tablas con bordes y figuras | **Generado y normalizado**: `OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` (3.72 MB) compilado determinísticamente con portada oficial 2026, 10 mockups, casos de uso desacoplados por actor, DER doble página y Diagrama de Clases | Entregable editable v2.0 disponible en `docs/entrega_final/salida/` (`DF-05`) |
 | PDF definitivo | Copia digital e insumo de impresión | **Generado mediante Word COM**: `OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf` (45 páginas, 2.76 MB, TOC y campos actualizados, tablas bordeadas, diagramas de alta resolución) | Listo para revisión final e impresión física (`DF-06`) |
@@ -154,9 +167,14 @@ vista resumida claramente identificada y de mantenimiento razonable.
 | Recurso | Función | Política |
 |---|---|---|
 | `core-web/` | Contexto compacto para Gemini u otra IA externa | **Pendiente de regeneración**: corte Spec 217 del 2026-08-05; regenerar con baselines 234/252 y la normalización documental posterior a Spec 218 | Apto para subir como contexto derivado; regenerar cuando cambien contratos, métricas, arquitectura o riesgos canónicos |
-| `.specify/`, `.agents/`, `AGENTS.md`, `GUIA_SPECKIT.md`, `specs/` | Constitución, templates, flujo Speckit, instrucciones y evidencia granular | **Local/ignorado** según la política actual; Constitución 1.5.0 y Spec 218 vigentes; `AGENTS.md` reconciliado al 08/08 con baseline 234/252 y mesa no realizada | No sustituyen documentación entregable; conservar T022/T023/CF-06 abiertos hasta evidencia real |
+| `.specify/`, `.agents/`, `AGENTS.md`, `GUIA_SPECKIT.md`, `specs/` | Constitución, templates, flujo Speckit, instrucciones de agentes y preflight certificador | **Gobernanza y herramientas versionadas**: Constitución 1.5.0, preflight 396/389 y specs activas/históricas; necesarios para reproducibilidad en clones limpios | Versionados en Git para asegurar paridad de tooling; los estados locales de agentes y perfiles efímeros se excluyen en `.gitignore` |
 | Plantilla DOCX y programa de la materia en raíz | Fuentes institucionales de entrada | Conservar como referencia local; no tratarlos como documentación técnica del sistema |
 | Scripts de secretos y archivos `.env` locales | Configuración privada | Deben permanecer ignorados, sin valores reales en documentación ni commits |
+
+### 5.3 Política de Enlaces y Resolución del Hallazgo ORG-11
+
+1. **Documentación Activa y Canónica:** Todo enlace entre documentos debe utilizar rutas relativas portables (ej. `[ROADMAP.md](../project_docs/ROADMAP.md)`). Queda prohibido el uso de URIs con esquema absoluto `file:///` en la documentación operativa.
+2. **Tratamiento de Enlaces en Evidencias Históricas:** La auditoría de organización detectó 44 enlaces con esquema `file:///f:/React/OneITB23/...` ubicados en `docs/audit/CF05_REALTIME_TRACE.md`, `docs/audit/full_audit/MASTER_AUDIT_REPORT.md` y `docs/audit/full_audit/MASTER_AUDIT_REPORT_V2.md`. Estos enlaces corresponden a inspectores automáticos forenses que capturaron la ruta absoluta de la estación de trabajo durante la auditoría. Conforme al principio de inmutabilidad de la Clase 2, estos documentos no se reescriben retroactivamente, manteniendo la integridad del acta original sin catalogarlos como enlaces rotos operativos.
 
 ---
 

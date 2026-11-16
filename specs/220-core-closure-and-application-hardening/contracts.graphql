@@ -1,0 +1,45 @@
+# Delta propuesto. Componer con el esquema actual de HotChocolate antes de implementar.
+# UUID, DateTime, Decimal y Long son escalares del contrato de destino.
+extend type Query {
+  myApplicationCvPreview: ApplicationCvPreview!
+  applicationCv(applicationId: UUID!): ApplicationCv
+  employmentApplication(applicationId: UUID!): ApplicationSummary
+  messagingPeer(id: UUID!): MessagingPeer
+  academicTarget(subjectId: Int!, resourceId: UUID, progressId: UUID): AcademicTarget
+  myCourseSections(subjectId: Int!, term: String!): [CourseSectionSummary!]!
+  sectionRoster(sectionId: UUID!, first: Int!, after: String): SectionRosterPage!
+  myRegularStudentCertificate(careerId: Int!): RegularStudentCertificate
+}
+
+extend type Mutation {
+  applyWithCv(jobOfferId: UUID!, expectedCvVersion: String!): ApplicationSummary!
+  sendPrivateMessage(input: PrivateMessageInput!): Message!
+  reportComment(commentId: UUID!, reason: String!): CommentReportReceipt!
+  saveSectionGrade(input: SectionGradeInput!): SectionGrade!
+  issueRegularStudentCertificate(careerId: Int!): RegularStudentCertificate!
+}
+
+type ApplicationSummary { id: UUID!, jobOfferId: UUID!, status: JobApplicationStatus!, appliedAt: DateTime! }
+type ApplicationCvPreview { version: String!, cv: ApplicationCv!, canSubmit: Boolean! }
+type ApplicationCv {
+  schemaVersion: Int!, name: String!, title: String!, email: String!, phone: String
+  careerNames: [String!]!, linkedIn: String, website: String, summary: String
+  experience: [ApplicationExperience!]!, education: [ApplicationEducation!]!
+  projects: [ApplicationProject!]!, skills: [ApplicationSkill!]!, languages: [ApplicationSkill!]!
+}
+type ApplicationExperience { company: String!, role: String!, startDate: String, endDate: String, location: String, description: String }
+type ApplicationEducation { institution: String!, degree: String!, startDate: String, endDate: String, location: String, description: String }
+type ApplicationProject { name: String!, role: String, startDate: String, endDate: String, url: String, description: String }
+type ApplicationSkill { name: String!, level: String }
+type MessagingPeer { id: UUID!, firstName: String!, lastName: String!, avatarUrl: String }
+input PrivateMessageInput { receiverId: UUID!, clientMessageId: UUID!, content: String, uploadIds: [UUID!]! }
+extend type Message { attachments: [PrivateMessageAttachment!]! }
+type PrivateMessageAttachment { id: UUID!, name: String!, contentType: String!, size: Long! }
+type CommentReportReceipt { id: UUID!, inquiryId: UUID!, commentId: UUID! }
+type AcademicTarget { careerId: Int!, subjectId: Int!, resourceId: UUID, progressId: UUID }
+type CourseSectionSummary { id: UUID!, subjectId: Int!, term: String!, code: String! }
+type RosterStudent { userId: UUID!, fullName: String!, grade: SectionGrade }
+type SectionRosterPage { items: [RosterStudent!]!, nextCursor: String, hasNextPage: Boolean! }
+input SectionGradeInput { sectionId: UUID!, studentId: UUID!, score: Decimal, status: AcademicProgressStatus!, expectedVersion: String }
+type SectionGrade { id: UUID!, score: Decimal, status: AcademicProgressStatus!, version: String! }
+type RegularStudentCertificate { id: UUID!, fullName: String!, careerName: String!, term: String!, issuedAt: DateTime!, validUntil: DateTime! }

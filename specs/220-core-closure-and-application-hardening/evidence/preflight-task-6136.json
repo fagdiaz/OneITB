@@ -1,0 +1,85 @@
+{
+    "Status":  "PASS",
+    "Certified":  true,
+    "IsSimulated":  false,
+    "Timestamp":  "2026-11-14 23:26:40",
+    "GitCommitSha":  "607dce7ca1e0902b9ed138ed321a4b174118e010",
+    "GitBranch":  "feature/2026-11-01-debugger-cv-builder",
+    "ActivePointer":  "specs/220-core-closure-and-application-hardening",
+    "FeatureDir":  "F:\\React\\OneITB23\\specs\\220-core-closure-and-application-hardening",
+    "WorkingTreeClean":  false,
+    "StagedFilesCount":  0,
+    "UnstagedFilesCount":  4,
+    "BackendMetrics":  {
+                           "Failed":  0,
+                           "Skipped":  0,
+                           "Total":  396,
+                           "Passed":  396
+                       },
+    "FrontendMetrics":  {
+                            "Failed":  0,
+                            "Skipped":  0,
+                            "Total":  389,
+                            "Passed":  389
+                        },
+    "TotalGates":  9,
+    "PassedCount":  9,
+    "FailedCount":  0,
+    "SkippedCount":  0,
+    "Gates":  [
+                  {
+                      "Name":  "git-diff-check",
+                      "Status":  "PASS",
+                      "Severity":  "P1",
+                      "Summary":  "+     ~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException\n    + FullyQualifiedErrorId : NativeCommandError\nwarning: in the working copy of 'prompt.txt', LF will be replaced by CRLF the next time Git touches it"
+                  },
+                  {
+                      "Name":  "secret-leak-and-untracked-configs",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "+                 ~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException\n    + FullyQualifiedErrorId : NativeCommandError\nwarning: in the working copy of 'prompt.txt', LF will be replaced by CRLF the next time Git touches it"
+                  },
+                  {
+                      "Name":  "backend-dotnet-build",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "Compilación correcta.\n    0 Advertencia(s)\n    0 Errores\nTiempo transcurrido 00:00:02.62"
+                  },
+                  {
+                      "Name":  "frontend-vite-build",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "dist/assets/pdfjs-BtrHVmlc.js                     406.44 kB │ gzip: 121.54 kB\ndist/assets/ApplicationRoot-D8b5qwhN.js           538.87 kB │ gzip: 124.70 kB\ndist/assets/vendor-BJQQqPhC.js                    608.63 kB │ gzip: 173.56 kB\n✓ built in 596ms"
+                  },
+                  {
+                      "Name":  "backend-regression-suite",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "Backend xUnit: 396 passed of 396 total tests (0 skipped)."
+                  },
+                  {
+                      "Name":  "frontend-regression-suite",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  "Frontend Vitest: 389 tests passed of 389 total tests (0 skipped)."
+                  },
+                  {
+                      "Name":  "frontend-oxlint-check",
+                      "Status":  "PASS",
+                      "Severity":  "P1",
+                      "Summary":  ""
+                  },
+                  {
+                      "Name":  "ef-pending-model-changes",
+                      "Status":  "PASS",
+                      "Severity":  "P1",
+                      "Summary":  "Build started...\nBuild succeeded.\nNo changes have been made to the model since the last migration."
+                  },
+                  {
+                      "Name":  "speckit-dod-compliance",
+                      "Status":  "PASS",
+                      "Severity":  "P0",
+                      "Summary":  ""
+                  }
+              ]
+}

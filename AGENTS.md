@@ -1,9 +1,10 @@
 <!-- SPECKIT START -->
 # OneITB23 Agent Instructions
 
-**Operational cut-off:** 2026-08-08  
-**Project state:** academic Release Candidate; functional scope 117/117, with final
-technical, documentary, visual, and external-provider acceptance gates still open.
+**Operational cut-off:** 2026-11-16
+**Project state:** academic Release Candidate; functional scope 117/117, candidate code
+immutable at `37ed360`, CF-01 to CF-05 certified, local tag `v1.0.0-rc` registered, with final
+documentary package, visual assets, and external-provider acceptance gates still open.
 
 The defense planned for 2026-08-07 at 09:00 did not occur because the final
 documentation, code refinement/closure, and coordinated manual audit were not completed

@@ -1,13 +1,56 @@
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
+import https from 'https';
+import net from 'net';
+import crypto from 'crypto';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const screenshotsDir = path.resolve('./docs/audit/screenshots');
+
+function resolveChromePath() {
+  if (process.env.CHROME_BIN && fs.existsSync(process.env.CHROME_BIN)) {
+    return process.env.CHROME_BIN;
+  }
+  if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) {
+    return process.env.CHROME_PATH;
+  }
+  const candidates = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Google\\Chrome\\Application\\chrome.exe') : null,
+    process.env.PROGRAMFILES ? path.join(process.env.PROGRAMFILES, 'Google\\Chrome\\Application\\chrome.exe') : null,
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium'
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+
+  try {
+    const whichCmd = process.platform === 'win32' ? 'where.exe' : 'which';
+    const res = spawnSync(whichCmd, [process.platform === 'win32' ? 'chrome' : 'google-chrome'], { encoding: 'utf8' });
+    if (res.status === 0 && res.stdout) {
+      const firstLine = res.stdout.split(/\r?\n/)[0].trim();
+      if (firstLine && fs.existsSync(firstLine)) return firstLine;
+    }
+  } catch (_) {}
+
+  throw new Error('Google Chrome executable not found. Specify CHROME_BIN or CHROME_PATH pointing to chrome.exe / google-chrome.');
+}
+
+const chromePath = resolveChromePath();
+const runId = process.env.RUN_ID || null;
+const runEvidenceDir = runId ? path.resolve(`./docs/audit/evidence/runs/${runId}`) : null;
+const screenshotsDir = runEvidenceDir
+  ? path.join(runEvidenceDir, 'screenshots')
+  : (process.env.RUN_SCREENSHOTS_DIR ? path.resolve(process.env.RUN_SCREENSHOTS_DIR) : path.resolve('./docs/audit/screenshots'));
+
 fs.mkdirSync(screenshotsDir, { recursive: true });
+
+const capturedScreenshots = [];
 
 const password = process.env.DEMO_USER_PASSWORD;
 if (!password) {
@@ -16,6 +59,26 @@ if (!password) {
 
 const baseUrl = process.env.BASE_URL || 'http://localhost:5173';
 const backendUrl = process.env.BACKEND_URL || 'https://127.0.0.1:44397/graphql';
+
+const parsedBackend = new URL(backendUrl);
+const isLocalBackend = ['localhost', '127.0.0.1', '::1'].includes(parsedBackend.hostname);
+
+if (!isLocalBackend && backendUrl.startsWith('https:') && process.env.ALLOW_INSECURE_REMOTE_TLS === 'true') {
+  throw new Error(`[SECURITY_REJECTION]: Insecure TLS bypass is strictly prohibited for non-local endpoints (${parsedBackend.hostname}).`);
+}
+
+function isPortAvailable(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once('error', () => {
+      resolve(false);
+    });
+    server.once('listening', () => {
+      server.close(() => resolve(true));
+    });
+    server.listen(port, '127.0.0.1');
+  });
+}
 
 function log(step, msg, details = {}) {
   const ts = new Date().toISOString();
@@ -38,15 +101,21 @@ function getJson(url) {
 class ChromeInstance {
   constructor(port, profilePrefix) {
     this.port = port;
+    this.profilePrefix = profilePrefix;
     const uniqueSuffix = `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
     this.profileDir = path.resolve(`./scratch/${profilePrefix}_${uniqueSuffix}`);
-    fs.mkdirSync(this.profileDir, { recursive: true });
     this.proc = null;
     this.ws = null;
     this.events = [];
   }
 
   async start(initialUrl = 'about:blank') {
+    const portFree = await isPortAvailable(this.port);
+    if (!portFree) {
+      throw new Error(`Port ${this.port} is already in use by another process. Refusing to spawn instance '${this.profilePrefix}' to prevent collisions.`);
+    }
+
+    fs.mkdirSync(this.profileDir, { recursive: true });
     this.proc = spawn(chromePath, [
       '--headless=new',
       `--remote-debugging-port=${this.port}`,
@@ -159,40 +228,100 @@ class ChromeInstance {
   async screenshot(filename) {
     const res = await this.send('Page.captureScreenshot', { format: 'png' });
     const fullPath = path.join(screenshotsDir, filename);
-    fs.writeFileSync(fullPath, Buffer.from(res.data, 'base64'));
+    const buffer = Buffer.from(res.data, 'base64');
+    fs.writeFileSync(fullPath, buffer);
+    const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+    capturedScreenshots.push({
+      filename,
+      path: fullPath,
+      sha256: hash,
+      bytes: buffer.length,
+      timestamp: new Date().toISOString()
+    });
     return fullPath;
   }
 
   async stop() {
     if (this.ws) {
       try { this.ws.close(); } catch (_) {}
+      this.ws = null;
     }
     if (this.proc && this.proc.pid) {
+      const pid = this.proc.pid;
       try {
-        spawn('taskkill', ['/F', '/T', '/PID', String(this.proc.pid)]);
+        if (process.platform === 'win32') {
+          spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore' });
+        } else {
+          this.proc.kill('SIGKILL');
+        }
+      } catch (_) {}
+
+      const startWait = Date.now();
+      while (Date.now() - startWait < 3000) {
+        try {
+          process.kill(pid, 0);
+          await new Promise(r => setTimeout(r, 100));
+        } catch (_) {
+          break;
+        }
+      }
+      this.proc = null;
+    }
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        if (fs.existsSync(this.profileDir)) {
+          fs.rmSync(this.profileDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+        }
+        break;
       } catch (_) {
-        this.proc.kill();
+        await new Promise(r => setTimeout(r, 200));
       }
     }
-    try {
-      fs.rmSync(this.profileDir, { recursive: true, force: true });
-    } catch (_) {}
   }
 }
 
-async function httpGraphQl(query, variables = {}, token = null) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(backendUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ query, variables })
+function httpGraphQl(query, variables = {}, token = null) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(backendUrl);
+    const postData = JSON.stringify({ query, variables });
+    const isLocal = ['localhost', '127.0.0.1', '::1'].includes(parsed.hostname);
+
+    const options = {
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      rejectUnauthorized: !isLocal
+    };
+
+    const protocol = parsed.protocol === 'https:' ? https : http;
+    const req = protocol.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (json.errors && json.errors.length) {
+            reject(new Error(`GraphQL Error: ${JSON.stringify(json.errors)}`));
+          } else {
+            resolve(json.data);
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
   });
-  const json = await res.json();
-  if (json.errors && json.errors.length) {
-    throw new Error(`GraphQL Error: ${JSON.stringify(json.errors)}`);
-  }
-  return json.data;
 }
 
 async function loginApi(email) {
@@ -220,14 +349,41 @@ async function parseChatBadge(chromeInstance) {
   })()`);
 }
 
+function writeManifest(status, exitCode, err = null) {
+  if (runEvidenceDir) {
+    try {
+      const manifest = {
+        runId,
+        timestamp: new Date().toISOString(),
+        baseUrl,
+        backendUrl,
+        nodeVersion: process.version,
+        platform: process.platform,
+        chromePath,
+        exitCode,
+        status,
+        error: err ? (err.message || String(err)) : null,
+        screenshots: capturedScreenshots
+      };
+      fs.writeFileSync(path.join(runEvidenceDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+      log('MANIFEST', `Run manifest written to ${path.join(runEvidenceDir, 'manifest.json')}`);
+    } catch (e) {
+      log('WARN', `Failed to write manifest: ${e.message}`);
+    }
+  }
+}
+
 async function main() {
   log('INIT', 'Starting Live Automated Browser UI Verification Runner for Gate CF-05');
   log('ENV', `Frontend URL: ${baseUrl} | Backend URL: ${backendUrl}`);
 
-  const chromeA = new ChromeInstance(9230, 'ui_profile_a');
-  const chromeB = new ChromeInstance(9231, 'ui_profile_b');
-  const chromeC = new ChromeInstance(9232, 'ui_profile_c');
-  const chromeProbe = new ChromeInstance(9233, 'ui_profile_probe');
+  const basePort = parseInt(process.env.BASE_CDP_PORT || '9230', 10);
+  log('ENV', `Base CDP Port: ${basePort}`);
+
+  const chromeA = new ChromeInstance(basePort, 'ui_profile_a');
+  const chromeB = new ChromeInstance(basePort + 1, 'ui_profile_b');
+  const chromeC = new ChromeInstance(basePort + 2, 'ui_profile_c');
+  const chromeProbe = new ChromeInstance(basePort + 3, 'ui_profile_probe');
 
   const cleanup = async () => {
     await chromeA.stop();
@@ -877,11 +1033,13 @@ async function main() {
     });
 
     log('COMPLETE', 'ALL UI DIMENSIONS EVALUATED AND PASSED SUCCESSFULLY WITH RIGOROUS ASSERTIONS');
+    writeManifest('PASS', 0);
     await cleanup();
     process.exit(0);
 
   } catch (err) {
     log('ERROR', `Automated runner failed: ${err.message}`);
+    writeManifest('FAIL', 1, err);
     await cleanup();
     process.exit(1);
   }

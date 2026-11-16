@@ -4,17 +4,23 @@
 name: Build and deploy ASP.Net Core app to Azure Web App - OneItbApi
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Quality Gates"]
     branches:
       - main
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up .NET 8
         uses: actions/setup-dotnet@v4

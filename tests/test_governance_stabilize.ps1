@@ -1,5 +1,5 @@
-# Suite de Verificacion de Gobernanza y Certificacion (GOB-20261108-05 / GOB-20261108-06)
-# Invoca preflight_stabilize.ps1 en 8 escenarios aislados y valida:
+﻿# Suite de Verificacion de Gobernanza y Certificacion (GOB-20261108-05 / GOB-20261108-06)
+# Invoca preflight_stabilize.ps1 en 10 escenarios aislados y valida:
 # 1. Codigo de salida exacto (0 para PASS, 1 para FAIL).
 # 2. JSON estructurado y campo Certified ($true/$false).
 # 3. Gate especifico responsable del veredicto.
@@ -145,7 +145,7 @@ try {
     Assert-PreflightCase `
         -CaseId 'Caso3_xUnitConOmitidas' `
         -Description 'xUnit con 234 pasadas y 1 omitida (Simulada)' `
-        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 234, Con error: 0, Omitido: 1, Total: 235' -MockFrontendOutput 'Tests 258 passed (258)' } `
+        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 396, Con error: 0, Omitido: 1, Total: 397' -MockFrontendOutput 'Tests 389 passed (389)' } `
         -ExpectedExitCode 1 `
         -ExpectedCertified $false `
         -ExpectedStatus 'FAIL' `
@@ -156,7 +156,7 @@ try {
     Assert-PreflightCase `
         -CaseId 'Caso4_VitestConOmitidas' `
         -Description 'Vitest con 258 pasadas y 1 omitida (Simulada)' `
-        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 234, Con error: 0, Omitido: 0, Total: 234' -MockFrontendOutput 'Tests 258 passed | 1 skipped (259)' } `
+        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 396, Con error: 0, Omitido: 0, Total: 396' -MockFrontendOutput 'Tests 389 passed | 1 skipped (390)' } `
         -ExpectedExitCode 1 `
         -ExpectedCertified $false `
         -ExpectedStatus 'FAIL' `
@@ -167,7 +167,7 @@ try {
     Assert-PreflightCase `
         -CaseId 'Caso5a_VitestTotalCero' `
         -Description 'Vitest con Tests 258 passed (0) (Simulada)' `
-        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 234, Con error: 0, Omitido: 0, Total: 234' -MockFrontendOutput 'Tests 258 passed (0)' } `
+        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 396, Con error: 0, Omitido: 0, Total: 396' -MockFrontendOutput 'Tests 389 passed (0)' } `
         -ExpectedExitCode 1 `
         -ExpectedCertified $false `
         -ExpectedStatus 'FAIL' `
@@ -177,19 +177,19 @@ try {
     # Caso 5b: Vitest con solo Test Files 258 passed (Simulada)
     Assert-PreflightCase `
         -CaseId 'Caso5b_VitestSoloTestFiles' `
-        -Description 'Vitest con solo Test Files 258 passed sin resumen de Tests (Simulada)' `
-        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 234, Con error: 0, Omitido: 0, Total: 234' -MockFrontendOutput 'Test Files 258 passed' } `
+        -Description 'Vitest con solo Test Files 70 passed sin resumen de Tests (Simulada)' `
+        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 396, Con error: 0, Omitido: 0, Total: 396' -MockFrontendOutput 'Test Files 70 passed' } `
         -ExpectedExitCode 1 `
         -ExpectedCertified $false `
         -ExpectedStatus 'FAIL' `
         -ExpectedFailingGate 'frontend-regression-suite' `
         -ExpectedSummaryMatch 'Frontend test runner did not output a valid ''Tests'' summary line'
 
-    # Caso 6a: Invariante de Simulacion: Simulación con 234 BE + 258 FE con -Certify es RECHAZADA
+    # Caso 6a: Invariante de Simulacion: Simulación con 396 BE + 389 FE con -Certify es RECHAZADA
     Assert-PreflightCase `
         -CaseId 'Caso6a_SimulacionRechazadaParaCertificacion' `
         -Description 'Simulacion rechazada para -Certify (requiere ejecucion en vivo)' `
-        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 234, Con error: 0, Omitido: 0, Total: 234' -MockFrontendOutput 'Tests 258 passed (258)' } `
+        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 396, Con error: 0, Omitido: 0, Total: 396' -MockFrontendOutput 'Tests 389 passed (389)' } `
         -ExpectedExitCode 1 `
         -ExpectedCertified $false `
         -ExpectedStatus 'FAIL' `
@@ -200,13 +200,35 @@ try {
     Assert-PreflightCase `
         -CaseId 'Caso6b_SimulacionSoloProduceResultadosDePrueba' `
         -Description 'Simulacion sin -Certify solo produce resultados de prueba (Certified=false, Status=PASS)' `
-        -Execution { powershell -File $preflightScript -MockBackendOutput 'Superado: 234, Con error: 0, Omitido: 0, Total: 234' -MockFrontendOutput 'Tests 258 passed (258)' } `
+        -Execution { powershell -File $preflightScript -MockBackendOutput 'Superado: 396, Con error: 0, Omitido: 0, Total: 396' -MockFrontendOutput 'Tests 389 passed (389)' } `
         -ExpectedExitCode 0 `
         -ExpectedCertified $false `
         -ExpectedStatus 'PASS' `
         -ExpectedFailingGate ''
 
-    Write-Host "`nTodas las 8 aserciones de gobernanza se completaron exitosamente con CERO errores." -ForegroundColor Green
+    # Caso 7a: Discrepancia de Conteo Backend (395 de 396 requeridos)
+    Assert-PreflightCase `
+        -CaseId 'Caso7a_BackendConteoDiscrepante' `
+        -Description 'Backend con 395 pasadas cuando la baseline exige 396' `
+        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 395, Con error: 0, Omitido: 0, Total: 395' -MockFrontendOutput 'Tests 389 passed (389)' } `
+        -ExpectedExitCode 1 `
+        -ExpectedCertified $false `
+        -ExpectedStatus 'FAIL' `
+        -ExpectedFailingGate 'backend-regression-suite' `
+        -ExpectedSummaryMatch 'Expected certified baseline of 396 tests, but got 395 passed tests'
+
+    # Caso 7b: Discrepancia de Conteo Frontend (388 de 389 requeridos)
+    Assert-PreflightCase `
+        -CaseId 'Caso7b_FrontendConteoDiscrepante' `
+        -Description 'Frontend con 388 pasadas cuando la baseline exige 389' `
+        -Execution { powershell -File $preflightScript -Certify -MockBackendOutput 'Superado: 396, Con error: 0, Omitido: 0, Total: 396' -MockFrontendOutput 'Tests 388 passed (388)' } `
+        -ExpectedExitCode 1 `
+        -ExpectedCertified $false `
+        -ExpectedStatus 'FAIL' `
+        -ExpectedFailingGate 'frontend-regression-suite' `
+        -ExpectedSummaryMatch 'Expected certified baseline of 389 tests, but got 388 passed tests'
+
+    Write-Host "`nTodas las 10 aserciones de gobernanza se completaron exitosamente con CERO errores." -ForegroundColor Green
     $testReport | ConvertTo-Json -Depth 4
     exit 0
 }
