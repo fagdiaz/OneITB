@@ -19,19 +19,49 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-16] - Ratification of Multi-Session UI Gate CF-05, UI-03 Badge Hardening & CF-06 Candidate Freeze Consolidation - branch: feature/2026-11-01-debugger-cv-builder
+
+### Ratificación Formal de CF-05 y Consolidación de Manifiesto CF-06 (16/11/2026)
+
+**Alcance:** Resolución del último pendiente de instrumentación en el recorrido UI multi-sesión (UI-03 Badge Hardening), verificación completa de aserciones en vivo con Chrome CDP contra backend Kestrel y Docker SQL Server 2022, ratificación técnica formal por parte del Auditor Principal (Canal 1 - Astra en `RATIFICACION_CF05_2026-11-16.md`), y consolidación integral de evidencias de Release Candidate para compuerta CF-06 (código candidato de producción y pruebas `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` 100% inmutable, HEAD `741d3e4c6e07942a94bdc7c6cdc9a6d102cb75f9` + cambios documentales):
+
+1. **Resolución de Asentamiento y Aserciones en UI-03 (100% PASS):**
+   - *Baseline de Profesor (B) en `/feed`:* Espera determinística a la hidratación completa de contactos de mensajería (16 contactos del demo seeder). Contador global asentado en `5 = 1` del par Estudiante/Profesor + `4` de otros contactos de demo (`sumExpectedInitial = 5`).
+   - *Transmisión reactiva única:* Envío de exactamente 1 mensaje reactivo desde Sesión A (`Mensaje Reactivo CF-05 UI-03: 1794791532196_17350`, ID `64a98c62-ce6e-408b-9967-9905b2761178`). Incremento exacto `+1` registrado en el badge del feed: `5 -> 6` (`exactIncrement = 1`). Captura de pantalla: `ui-03-profesor-feed-incremented.png`.
+   - *Inspección previa de hilo en `/chat`:* Botón del interlocutor Estudiante muestra `2` pendientes (`expectedThreadUnreadBefore: 2`, `actual: 2`).
+   - *Apertura de conversación y reset de badge:* Mensaje renderizado con contenido y estampa temporal. Badge del hilo reseteado determinísticamente a `0` (`threadUnreadAfter: 0`). Captura de pantalla: `ui-03-profesor-chat-rendered.png`.
+   - *Preservación de pendientes ajenos:* Contador global del header pasa a `4` (`expectedHeaderBadgeAfterRead: 4`, `otherInterlocutorsPreserved: true`), preservando intactos los 4 mensajes pendientes de otros contactos.
+
+2. **Acreditación Integral de Escenarios UI Multi-Sesión:**
+   - *UI-01 (Aislamiento de almacenamiento):* Contextos y perfiles independientes de navegador no heredan tokens ni sesión en almacenamiento compartido, ejecutando redirección automática a `/login` (aclaración técnica: las pestañas del mismo perfil comparten `localStorage`).
+   - *UI-02 (Aislamiento de Topic en Observador C):* Sesión C en escucha activa. Al enviar mensaje privado A -> B, contador de no leídos de C permanece inmutable (delta = 0) y el DOM presenta 0 fugas de texto.
+   - *UI-04 (Reconexión y Entrega Post-Corte):* Interrupción de socket (`Network.webSocketClosed` en 106 ms), recuperación reactiva de `graphql-ws` en 591 ms (`Network.webSocketCreated`) y segundo mensaje recibido e indexado en el hilo de B sin recarga (`F5`). Cero fugas en Observador C.
+   - *UI-05 (Reemplazo Limpio A -> C en SPA):* Cierre de sesión y autenticación interactiva como Moderador dentro del mismo documento SPA (`SPA_DOC_1794791538027` conservado, 0 recargas de página), enlace de Moderación visible e iniciales `MI`. DOM completamente limpio sin datos de Estudiante.
+   - *DELIM (Inspección de InMemoryCache):* `window.__APOLLO_CLIENT__` examinado en runtime (`hasExtract: true`), 111 claves normalizadas tras `clearStore`, 0 residuos de sesión previa (búsqueda de Estudiante y mensaje confidencial en `false`), certificando la purga efectiva de memoria tras `client.clearStore()`, con respaldo unitario complementario en `FrontEnd/OneItb-FE/src/context/sessionTabs.adversarial.test.jsx` (5/5 PASS). Salvedad: la inspección acredita ausencia de los residuos concretos buscados, no ausencia universal de toda PII.
+
+3. **Ratificación Formal y Cierre de CF-05:**
+   - El Auditor Principal (Canal 1 - Astra) emitió dictamen formal de **APROBADO CON OBSERVACIONES** para el alcance académico local en `RATIFICACION_CF05_2026-11-16.md`, cerrando definitivamente la cadena de auditoría de CF-05 sin necesidad de nuevas rondas de transporte o UI.
+
+4. **Consolidación de CF-06 y Estado de Release Candidate:**
+   - Conforme a la Constitución §IX y a `ROADMAP.md`, se consolida el manifiesto oficial del Release Candidate (`CANDIDATE_MANIFEST_RC.md`) vinculando las 6 compuertas (CF-01 a CF-05 cerradas y ratificadas; CF-06 consolidada documentalmente).
+   - El código candidato de producción y pruebas se mantiene estrictamente congelado e inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (0 diff contra `API Graphql` y `FrontEnd/OneItb-FE/src`).
+   - Se mantiene F05 diferido, RR06 pendiente fuera de demo con empleador preexistente y brechas externas (`GAP-FILE-01`, `GAP-INFRA-01`, `GAP-OPS-01`) explícitas.
+   - No se declara tag creado ni worktree congelado; las operaciones de `git commit`, `git push` y `git tag` permanecen supeditadas a la autorización explícita y soberana del usuario.
+
+---
 ## [2026-11-15] - Execution & Certification of Multi-Session Realtime UI Walkthrough (Gate CF-05) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Certificación del Recorrido UI Multi-Sesión en Vivo (Compuerta CF-05) (15/11/2026)
 
 **Alcance:** Ejecución asistida en navegador real (Playwright / Webview Browser) del recorrido multi-sesión UI sobre la aplicación en vivo React 18 / Apollo Client (`http://localhost:5173`) contra backend ASP.NET Core 8 Kestrel (`http://localhost:5000`) y Docker SQL Server 2022 con datos `EnterpriseDemoSeeder` (SHA de producción y tests `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` 100% inmutable, HEAD `3450ee801aa921951d69539d97b6cda5e1c7feb9`):
 
-1. **Aislamiento Estricto de Almacenamiento (UI-01 - PASS):** Pestañas y contextos independientes no heredan tokens ni sesión en memoria compartida, ejecutando redirección automática a `/login`. Almacenamiento aislado por pestaña verificado en `sessionTabs.adversarial.test.jsx` (5/5 PASS).
+1. **Aislamiento Estricto de Almacenamiento (UI-01 - PASS):** Contextos y perfiles independientes de navegador no heredan tokens ni sesión en almacenamiento compartido, ejecutando redirección automática a `/login` (aclaración técnica: las pestañas del mismo perfil comparten `localStorage`). Aislamiento respaldado por contextos independientes y complementado por la suite unitaria separada `FrontEnd/OneItb-FE/src/context/sessionTabs.adversarial.test.jsx` (5/5 PASS).
 2. **Aislamiento de Topic en Observador C (UI-02 - PASS):** Con Sesión C (`moderador1`) conectada previamente, Sesión A (`estudiante1.ads`) transmitió mensaje confidencial 1 a Sesión B (`profesor1.ads`). El contador de no leídos de C permaneció inmutable (delta = 0) y el DOM de C presentó 0 fugas de texto, burbujas o notificaciones privadas.
 3. **Ciclo Reactivo y Badges en Sesión B (UI-03 - PASS):** Mensaje 1 recibido reactivamente en tiempo real por WebSocket en Sesión B. Al acceder a la conversación, el mensaje se renderizó con estampa temporal (`05:37 p. m.`) y el badge de no leídos se reseteó determinísticamente a 0.
 4. **Caída de Red, Reconexión y Entrega Post-Corte (UI-04 - PASS):** Desconexión forzada y recuperación reactiva de WebSocket (`graphql-ws`). Mensaje 2 ("Mensaje Confidencial CF-05 UI-04: Verificacion post-reconexion") recibido e indexado en el hilo de B (`05:38 p. m.`) sin recarga manual (`F5`). Observador C verificado con delta = 0 fugas.
 5. **Cierre de Sesión y Reemplazo Limpio A -> C en Misma Ventana (UI-05 - PASS):** Cierre interactivo de sesión en la ventana de Sesión A vía `/logout`. Autenticación inmediata como Moderador: navbar muestra iniciales `"MI"` y enlace `"Moderación"`. DOM completamente limpio sin datos de Estudiante (`hasEstudianteSistemasUno: false`). En `/chat`, 0 mensajes privados de la sesión anterior en DOM.
-6. **Delimitación Explícita de InMemoryCache:** Clasificada formalmente como "NO VERIFICADA EN RUNTIME" (debido a que `window.__APOLLO_CLIENT__` no se expone en producción bajo Code Freeze), con respaldo y mitigación formal acreditada por la suite adversarial `sessionTabs.adversarial.test.jsx` (5/5 PASS).
-7. **Documentación Oficial Generada:** `docs/audit/CF05_UI_WALKTHROUGH.md` firmado y conciliado con `docs/audit/CF05_REALTIME_VALIDATION.md` y `docs/project_docs/ROADMAP.md` (promoviendo CF-05 a 100% PASS y habilitando CF-06).
+6. **Delimitación Explícita de InMemoryCache:** Clasificada formalmente como "NO VERIFICADA EN RUNTIME" (debido a que `window.__APOLLO_CLIENT__` no se expone en el ámbito global en producción bajo Code Freeze), con respaldo unitario separado en `FrontEnd/OneItb-FE/src/context/sessionTabs.adversarial.test.jsx` (5/5 PASS).
+7. **Documentación y Registro Original Generados:** `docs/audit/CF05_UI_WALKTHROUGH.md` firmado y respaldado por el registro original paso a paso `docs/audit/CF05_UI_WALKTHROUGH_TRACE.md`, conciliados con `docs/audit/CF05_REALTIME_VALIDATION.md` y `docs/project_docs/ROADMAP.md` (promoviendo CF-05 a 100% PASS y habilitando CF-06).
 
 ---
 ## [2026-11-15] - Resolution of Dictamen 19c5296: Exact Assertion Pattern Enforcement, Roadmap Reconciliation & Transport Acceptance (Spec 220) - branch: feature/2026-11-01-debugger-cv-builder

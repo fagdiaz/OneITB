@@ -1,43 +1,15 @@
-# Handoff Operativo — Canal 1: [OneITB] Auditoría & Arquitectura (Compuertas CF-05 y CF-06) — 15/11/2026
+# Handoff de cierre CF06 — Manifiesto y Evidencias Consolidadas — 16/11/2026
 Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6 Astra · Razonamiento: Alto
-SHA del Código Candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a (100% Inmutable).
-Rama: feature/2026-11-01-debugger-cv-builder; spec activa: specs/220-core-closure-and-application-hardening.
-Referencia previa: DICTAMEN_19c5296.md (Transporte Aprobado con Observaciones; CF-05 parcial; CF-06 abierta).
+Código candidato (Producción y Tests): 37ed3608887f3871a8ca2c555004ab63fd6d1e6a (100% inmutable, diff vacío).
+HEAD base de evidencias/herramientas: 741d3e4c6e07942a94bdc7c6cdc9a6d102cb75f9 + cambios documentales consolidados.
+Rama: feature/2026-11-01-debugger-cv-builder. Especificación activa: .specify/feature.json.
+Dictamen previo: CF-05 APROBADA para alcance académico local (RATIFICACION_CF05_2026-11-16.md). Candidato APROBADO CON OBSERVACIONES de alcance conocidas.
 
-Estimada Astra:
-Conforme a tus directivas en DICTAMEN_19c5296.md, se ha completado en su totalidad la ejecución del recorrido asistido en navegador real multi-sesión para la compuerta CF-05, manteniendo el código de producción y pruebas 100% inmutable respecto a 37ed360:
+Estado alcanzado en este turno:
+1. Manifiesto oficial consolidado (docs/audit/CANDIDATE_MANIFEST_RC.md): vincula suites canónicas (785/785 core PASS + 11/11 opt-in SQL concurrente PASS), preflight certificado (PREFLIGHT_CERTIFIED_91d57f9.json), recorrido de seis roles (CF04_ROLE_WALKTHROUGH.md), validación realtime y UI multi-sesión ratificada (CF05_REALTIME_VALIDATION.md, CF05_UI_WALKTHROUGH.md, CF05_UI_AUTOMATED_RUNNER_OUTPUT.md, screenshots/), y salvedades delimitadas.
+2. Hoja de ruta (docs/project_docs/ROADMAP.md) y bitácora (docs/audit/DEVELOPMENT_LOG.md) actualizadas: CF-05 cerrada y ratificada [x] [V]; CF-06 consolidada documentalmente [-] [P], a la espera de autorización explícita para commit/tag.
+3. Índice de gobierno (docs/audit/DOCUMENTATION_STATUS.md) normalizado al 16/11/2026.
+4. Higiene y staging: directorios scratch/ de perfiles Chrome efímeros eliminados; git diff 37ed360 -- "API Graphql" FrontEnd estrictamente 0; git diff --check y --cached --check en PASS.
+5. Invariante de freeze y gobernanza: F05 diferido, RR06 fuera de demo con empleador preexistente y brechas externas (GAP-FILE-01, GAP-INFRA-01, GAP-OPS-01) explícitas. Ningún commit, push ni tag ejecutado de forma automática.
 
-1. Ejecución del Recorrido UI Multi-Sesión en Vivo (CF-05):
-- Harness y aislamiento: Orquestación asistida mediante navegador Playwright con contextos independientes y almacenamiento 100% aislado (sin compartir localStorage ni sesión entre A, B y C).
-- UI-01 (Aislamiento de Almacenamiento - PASS): Apertura de nueva ventana independiente hacia /feed redirige automáticamente a /login sin heredar credenciales activas. Respaldado por sessionTabs.adversarial.test.jsx (5/5 PASS).
-- UI-02 (Aislamiento de Topic Observador C - PASS): Sesión C (moderador1) en escucha con contador inicial = 0. Al enviar Mensaje 1 desde A hacia B, el contador de C se mantuvo en delta = 0, con 0 fugas de texto, burbujas o toasters en el DOM de C.
-- UI-03 (Ciclo Reactivo y Badges en Sesión B - PASS): Sesión B (profesor1) en /feed recibió la notificación reactiva vía WebSocket sin F5. Al abrir el chat con A, el mensaje se renderizó de inmediato con estampa temporal (05:37 p. m.) y el badge se recalculó determinísticamente a 0.
-- UI-04 (Corte de Red, Reconexión y Entrega Post-Corte - PASS): Desconexión de conectividad de red por 2.5s y recuperación automática del WebSocket (graphql-ws) sin recargar página. Mensaje 2 recibido e indexado en el hilo de B (05:38 p. m.). Observador C verificado con delta = 0 fugas.
-- UI-05 (Cierre de Sesión y Reemplazo Limpio A -> C en Misma Ventana - PASS): Cierre interactivo vía /logout en la ventana de A y login inmediato como C (Moderador): navbar refleja iniciales "MI" y enlace "Moderación", DOM completamente limpio sin datos de Estudiante Sistemas Uno, y en /chat se verificaron 0 mensajes residuales de la sesión anterior.
-- Delimitación de InMemoryCache: Clasificada rigurosamente como "NO VERIFICADA EN RUNTIME" (debido a que window.__APOLLO_CLIENT__ no se expone en producción bajo Code Freeze), con respaldo y mitigación formal acreditada en la suite adversarial src/__tests__/sessionTabs.adversarial.test.jsx (5/5 PASS).
-- Consola DevTools: 0 excepciones de JavaScript, 0 respuestas HTTP 500, 0 UUIDs de GlobalErrorBoundary.
-- Evidencia formal: Registrada en docs/audit/CF05_UI_WALKTHROUGH.md y conciliada en docs/audit/CF05_REALTIME_VALIDATION.md.
-
----
-
-2. Estado y Conciliación de las Compuertas de Release Candidate:
-- CF-01 (Congelamiento de Código y Baseline): CERRADO [x] [V]
-- CF-02 (Saneamiento de Worktree y Entorno): CERRADO [x] [V]
-- CF-03 (Gates Integrales, Infraestructura Local y Base Demo): CERRADO / CERTIFICADO [x] [V] (785/785 tests PASS, 11/11 SQL Concurrencia PASS, Preflight Certificado con Certified: true)
-- CF-04 (Recorrido de Seis Roles): CERRADO / CERTIFICADO [x] [V] (CF04_ROLE_WALKTHROUGH.md)
-- CF-05 (Validación Realtime y Multi-Sesión UI): CERRADO / CERTIFICADO [x] [V] (Transporte unmocked en CF05_REALTIME_VALIDATION.md + Recorrido UI en CF05_UI_WALKTHROUGH.md)
-- CF-06 (Consolidación Final, Manifiesto y Cierre de Tag): HABILITADA PARA CIERRE / CONGELAMIENTO (CANDIDATE_MANIFEST_RC.md actualizado y armonizado con ROADMAP.md y DEVELOPMENT_LOG.md)
-
----
-
-3. Estado del Repositorio:
-- git diff 37ed360 HEAD -- "API Graphql" FrontEnd: Vacío (0 líneas modificadas en producción y tests).
-- git diff --check: PASS (0 errores de whitespace o formato).
-- Todos los daemons y puertos temporales apagados y liberados.
-
----
-
-4. Misión para Canal 1 (6 Astra):
-Solicitamos tu arbitraje final para:
-1. Ratificar formalmente el cierre de la compuerta CF-05 con la evidencia del recorrido UI y la delimitación explícita de InMemoryCache.
-2. Autorizar y emitir el dictamen de cierre para la compuerta final CF-06 (Congelamiento de Release Candidate y emisión de manifiesto definitivo).
+Acción siguiente: el paquete de Release Candidate queda plenamente preparado para decisión del usuario.

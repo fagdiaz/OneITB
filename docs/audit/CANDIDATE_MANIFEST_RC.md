@@ -7,7 +7,8 @@
 - **SHA del Código Candidato (Producción y Pruebas):** `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (inmutable en producción y pruebas)
 - **HEAD al capturar evidencia:** `91d57f99753083c20825dee0d3a577d15eef4357`
 - **Base previa revisada por Astra:** `fd403c86ed63a31cb1b8090cb082a73a0d29b409`
-- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; CF-01 a CF-04 Cerradas, CF-05 Parcialmente Acreditada (Transporte PASS / UI Multi-Sesión BLOCKED) y CF-06 Abierta / Condicionada
+- **Ratificación Formal del Auditor Principal (Canal 1 - Astra):** `APROBADO CON OBSERVACIONES` para alcance académico local (16/11/2026, documento `RATIFICACION_CF05_2026-11-16.md`)
+- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; CF-01 a CF-05 Cerradas y Ratificadas, CF-06 Consolidada / Pendiente de Autorización Explícita de Congelamiento y Tag
 
 ---
 
@@ -89,21 +90,35 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
   * Daemon Kestrel reiniciado con binario compilado y query `moderationAudits` validada con HTTP 200 para rol Moderador.
 
 ### CF-05: Validación Realtime y Aislamiento Multi-Sesión
-- **Estado:** `[CERRADO / CERTIFICADO]` (Transporte WebSocket real, entrega en vivo, relectura de persistencia en base de datos de `isRead = true`, reconexión natural en 2316 ms `>= 1300 ms`, 4 controles negativos validados en PASS; y recorrido UI multi-sesión en vivo acreditado al 100% PASS mediante navegador con contextos aislados).
+- **Estado:** `[CERRADO / CERTIFICADO / RATIFICADO]` (Transporte WebSocket real, entrega en vivo, relectura de persistencia en base de datos de `isRead = true`, reconexión natural en 2316 ms `>= 1300 ms`, 4 controles negativos validados en PASS; y recorrido UI multi-sesión en vivo acreditado al 100% PASS mediante navegador con contextos aislados, ratificado formalmente el 16/11/2026 por el Auditor Principal Astra en `RATIFICACION_CF05_2026-11-16.md`).
 - **Evidencias adjuntas:**
+  * Dictamen formal de ratificación: [`RATIFICACION_CF05_2026-11-16.md`](C:/Users/Fran/.codex/visualizations/2026/11/08/01a1b8c1-3efa-7bc2-b17a-202bd56244e3/RATIFICACION_CF05_2026-11-16.md) (Astra, Canal 1: APROBADO CON OBSERVACIONES para alcance académico local; no más auditorías de CF-05 necesarias).
   * Acta formal de validación realtime (Transporte): [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
-  * Acta formal de recorrido UI multi-sesión en vivo: [`./CF05_UI_WALKTHROUGH.md`](./CF05_UI_WALKTHROUGH.md) (UI-01 a UI-05 en 100% PASS; DOM assertions, badges reactivos, reconexión web sin F5, logout/login limpio y delimitación transparente de InMemoryCache).
+  * Acta formal de recorrido UI multi-sesión en vivo: [`./CF05_UI_WALKTHROUGH.md`](./CF05_UI_WALKTHROUGH.md) (UI-01 a UI-05 en 100% PASS; aserciones DOM estrictas, ciclo determinístico de badges 5->6->4, reconexión CDP en 591 ms sin recarga de página, cambio de cuenta en SPA limpia sin reload y delimitación de InMemoryCache).
+  * Evidencia literal de máquina UI (Chrome Headless CDP): [`./CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`](./CF05_UI_AUTOMATED_RUNNER_OUTPUT.md) (`scripts/run-cf05-ui-live-validation.ps1` y `scripts/verify-cf05-ui-live.mjs` con salida 0 / 100% PASS, selector real verificado `form.flex.flex-col` con `h1: Iniciar Sesión`, y timestamps de reloj de máquina en vivo).
+  * Capturas binarias de pantalla en disco: [`./screenshots/`](./screenshots/) (capturas PNG generadas en runtime para UI-01 a UI-05: feed incrementado, chat renderizado, reconexión y logout).
+  * Registro original y traza de recorrido UI: [`./CF05_UI_WALKTHROUGH_TRACE.md`](./CF05_UI_WALKTHROUGH_TRACE.md) (registro protocolar estructurado y trazable).
   * Traza cronológica y metodológica detallada: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md).
   * Salida literal del runner unmocked y controles negativos: [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md) (`scripts/run-cf05-live-validation.ps1` y `scripts/verify-cf05-realtime-live.mjs` con `graphql-ws` v5.16.0 sin mock, aserciones estrictas, salida 0 en la corrida principal y salida 1 en los 4 controles negativos).
+  * Métricas del último pendiente resuelto (UI-03 Badge Hardening):
+    - Baseline de Profesor (B) en `/feed` asentado esperando hidratación completa de contactos: 5 no leídos (1 del interlocutor Estudiante + 4 de otros contactos de demo).
+    - Mensaje reactivo único (ID `64a98c62-ce6e-408b-9967-9905b2761178`): sube de 5 a 6 en el badge del feed (`exactIncrement = 1`).
+    - En `/chat`, hilo de conversación previo a la apertura: 2 no leídos (1 inicial + 1 reactivo).
+    - Apertura del hilo: mensaje único renderizado en DOM, badge de conversación reseteado determinísticamente a 0.
+    - Preservación de otros contactos: contador global del navbar pasa a 4 (igual a los 4 pendientes ajenos preservados, `otherInterlocutorsPreserved: true`).
   * Aislamiento de topic verificado sin fuga observada en los casos ejecutados hacia terceros observadores (Sesión C / Moderador recibió 0 tramas; `leaksDetected: 0`, DOM de C con 0 residuos).
   * Handshake WebSocket validado en 60 ms en vivo, entrega reactiva inmediata sin recarga de página, marcado de conversación persistido y re-leído en DB (`isRead = true`), reconexión automática tras terminación forzada de socket (`client.terminate()`, código 4499) en 2316 ms (verificada `>= 1300 ms`), entrega de segundo mensaje post-reconexión y resolución de identidad de Sesión C por token.
   * Falsabilidad del checker demostrada mediante 4 controles negativos deliberados (`id-mismatch`, `leak-to-c`, `observer-error`, `short-wait`), bloqueando con código 1.
-  * Delimitación formal de InMemoryCache: Clasificada explícitamente como "NO VERIFICADA EN RUNTIME" (al no exponerse `window.__APOLLO_CLIENT__` en producción bajo Code Freeze), con respaldo integral mediante la suite `src/__tests__/sessionTabs.adversarial.test.jsx` (5/5 PASS).
-  * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.
+  * Inspección programática de InMemoryCache: `window.__APOLLO_CLIENT__` verificado en runtime como objeto (`hasExtract: true`), 111 claves extraídas en la caché normalizada tras el reemplazo de sesión, 0 residuos de sesión previa (búsqueda de datos del estudiante y mensajes confidenciales de la prueba en `false`), certificando la purga efectiva de memoria tras `client.clearStore()`, con respaldo unitario complementario en `FrontEnd/OneItb-FE/src/context/sessionTabs.adversarial.test.jsx` (5/5 PASS).
+    - *Salvedad explícita:* La inspección demuestra ausencia de los residuos concretos buscados en esa ejecución evaluada, no una garantía universal matemática de ausencia de toda PII.
+  * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `FrontEnd/OneItb-FE/src/context/sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.
 
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
-- **Estado:** `[HABILITADA PARA CIERRE / CONGELAMIENTO]` (Habilitada para cierre y ratificación definitiva tras la certificación completa de CF-01 a CF-05).
-- **Dictamen:** Se formaliza este manifiesto vinculando SHA, métricas, suites, salidas y salvedades con total transparencia documental. El código de producción y pruebas permanece inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`. El candidato queda plenamente respaldado para el cierre de tag y congelamiento oficial.
+- **Estado:** `[CONSOLIDADO / PENDIENTE DE CONGELAMIENTO]` (Evidencias, suites y ratificación consolidadas; pendiente de autorización explícita del usuario para commit, push y tag).
+- **Dictamen:** Se formaliza este manifiesto consolidado vinculando con rigor documental las métricas, suites, salidas y salvedades del Release Candidate.
+  * **Código Candidato Inmutable:** El código de producción y pruebas se mantiene estrictamente congelado e inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (`git diff 37ed360 -- "API Graphql" FrontEnd` = 0).
+  * **Corte Documental y Herramientas:** Los scripts de soporte y documentación de evidencia se identifican por separado en el historial (`741d3e4` + cambios de consolidación vigentes).
+  * **Condición de Congelamiento:** No se declara tag creado ni worktree congelado hasta que el usuario emita su autorización explícita para el commit y etiquetado final.
 
 ---
 
