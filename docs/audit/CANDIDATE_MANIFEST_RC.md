@@ -1,14 +1,18 @@
-# Manifiesto Oficial del Release Candidate (Spec 220)
+# Manifiesto Oficial del Release Candidate (Spec 220 y Revisión de Consolidación)
 
-- **Fecha de emisión:** 2026-11-15
+- **Fecha de emisión original:** 2026-11-15 | **Actualización de Consolidación:** 2026-11-17
 - **Rama:** `feature/2026-11-01-debugger-cv-builder`
 - **Tracking remoto:** `origin/feature/2026-11-01-debugger-cv-builder`
-- **Especificación activa:** `specs/220-core-closure-and-application-hardening`
-- **SHA del Código Candidato (Producción y Pruebas):** `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (inmutable en producción y pruebas)
-- **HEAD al capturar evidencia:** `91d57f99753083c20825dee0d3a577d15eef4357`
-- **Base previa revisada por Astra:** `fd403c86ed63a31cb1b8090cb082a73a0d29b409`
-- **Ratificación Formal del Auditor Principal (Canal 1 - Astra):** `APROBADO CON OBSERVACIONES` para alcance académico local (16/11/2026, documento `RATIFICACION_CF05_2026-11-16.md`)
-- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; CF-01 a CF-05 Cerradas y Ratificadas, CF-06 Consolidada documentalmente (tag local `v1.0.0-rc` registrado en `d806822`; publicación remota y ratificación de mesa pendientes)
+- **Especificación canónica activa:** `specs/220-core-closure-and-application-hardening`
+- **Corte Histórico Tag `v1.0.0-rc` (`d806822`):** Anclado al código `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`, 785 pruebas core certificadas (396 backend + 389 frontend en 70 suites).
+- **Revisión Actual de Consolidación (`6cd5295`):**
+  * **Backend:** 100% inmutable e idéntico a `37ed360` (`git diff 37ed360..HEAD -- "API Graphql"` = 0; 396 pruebas xUnit Release en PASS).
+  * **Frontend:** Delta acotado de presentación por Spec 228 (`Feed.jsx`, `UserAvatar.jsx`, `UserAvatar.test.jsx`; 407 pruebas Vitest en 71 suites en PASS).
+  * **Línea Base Informada de la Revisión:** **803 pruebas core PASS** (396 backend + 407 frontend) + 11 SQL concurrencia PASS, vinculada a la ejecución completa del corte `6cd5295`.
+- **Dictamen del Auditor Principal (Canal 1 - Astra):**
+  * 16/11/2026 (`RATIFICACION_CF05_2026-11-16.md`): `APROBADO CON OBSERVACIONES` para alcance académico local (CF-01 a CF-05 cerradas y ratificadas sobre `37ed360`).
+  * 17/11/2026 (`DICTAMEN_CONSOLIDACION_6cd5295_2026-11-17.md`): Conformidad acotada a diff y 24/24 pruebas focalizadas de UserAvatar; autorización para iniciar preparación académica (DF-01 a DF-08); resolución de observaciones CONS-01 a CONS-05 por lotes; Spec 229 formalmente diferida como deuda técnica menor post-defensa sin prohibir futuras correcciones necesarias de backend.
+- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; tag local `v1.0.0-rc` preservado en `d806822` (objeto `9faddd9` anunciado en `origin` según evidencia remota de AGY y ratificado en `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md`; consulta directa de Codex bloqueada por red); convocatoria formal de mesa pendiente.
 
 ---
 
@@ -24,36 +28,49 @@
 
 ## 2. Inventario Reconciliado de Suites Automatizadas
 
-Conforme a la Constitución §IX y a la reconciliación oficial de [ROADMAP.md](../project_docs/ROADMAP.md):
+Conforme a la Constitución §IX y a la reconciliación oficial de [ROADMAP.md](../project_docs/ROADMAP.md), se distinguen el baseline histórico certificado y el baseline informado de la revisión actual:
+
+### A. Corte Histórico Certificado (`v1.0.0-rc` / `d806822` sobre `37ed360`)
 
 | Categoría | Total | Pasadas | Falladas | Omitidas | Duración | Comando / Filtro |
 |---|:---:|:---:|:---:|:---:|:---:|---|
 | **Backend Ordinario (xUnit Release)** | **396** | **396** | 0 | 0 | 39 s | `dotnet test Services.Tests.csproj -c Release --no-restore --filter "Category!=GOB12SqlConcurrency&Category!=GOB15BcryptBenchmark&Category!=VendorAdvisoryGHSA"` |
 | **Frontend Ordinario (Vitest)** | **389** | **389** | 0 | 0 | 38 s | `npm.cmd run test -- --run` (70 suites en verde) |
-| **Subtotal Línea Base Core** | **785** | **785** | **0** | **0** | **1m 17s** | **100% PASS** |
+| **Subtotal Línea Base Core Histórica** | **785** | **785** | **0** | **0** | **1m 17s** | **100% PASS** |
 | **Opt-in: Concurrencia SQL (GOB12)** | **11** | **11** | 0 | 0 | 14 s | `dotnet test --filter "Category=GOB12SqlConcurrency"` (SQL Server 2022 real, aislamiento serializable, ganador atómico, validación de ReceiverId en RC-04 y RowVersion) |
 | **Opt-in: Canario Upstream (GHSA)** | **1** | **0** | 1 | 0 | 2 ms | `dotnet test --filter "Category=VendorAdvisoryGHSA"` (Aviso canario upstream HotChocolate 14.2.0 / GHSA-qr3m-xw4c-jqw3; conservado formalmente como FAIL documentado. Requiere actualización vendor de HotChocolate a 14.3.1+ que incorpore ParserOptions.MaxAllowedRecursionDepth; riesgo aceptado para demo académica local sin exposición pública directa) |
 | **Herramienta: Calibración BCrypt (GOB15)** | N/A | N/A | N/A | N/A | 15 s | `Invoke-BCryptWorkFactorBenchmark.ps1 -EffectiveWorkFactor 12` (Benchmark standalone: dictamen `PASS_SCREENING`, factor 12) |
+
+### B. Revisión Actual de Consolidación (`6cd5295`)
+
+| Categoría | Total | Pasadas | Falladas | Omitidas | Duración | Notas de Ejecución |
+|---|:---:|:---:|:---:|:---:|:---:|---|
+| **Backend Ordinario (xUnit Release)** | **396** | **396** | 0 | 0 | 41 s | Código `API Graphql` 100% inmutable respecto a `37ed360` (informada por AGY). |
+| **Frontend Ordinario (Vitest)** | **407** | **407** | 0 | 0 | 40 s | 71 suites en verde (+1 suite `UserAvatar.test.jsx`, 18 tests). Suite completa informada por AGY; validada focalizadamente en 24/24 PASS por Auditoría (Astra). |
+| **Subtotal Línea Base Core Certificada** | **803** | **803** | **0** | **0** | **1m 39s** | **Línea base certificada en corte 6cd5295 mediante preflight oficial (`PREFLIGHT_CERTIFIED_6cd5295.json`)** |
+| **Opt-in: Concurrencia SQL (GOB12)** | **11** | **11** | 0 | 0 | 14 s | Evidencia conservada de su ejecución original sobre `a62c4e3` (código idéntico a `37ed360`). No re-ejecutada sobre `6cd5295`. |
+
+> **Declaración de Procedencia de Métricas y Preflight:** Conforme a la corrida oficial de certificación ejecutada el 18/11/2026 (`PREFLIGHT_CERTIFIED_6cd5295.json`), la línea base de **803 pruebas** (396 backend xUnit + 407 frontend Vitest) ha quedado formalmente **CERTIFICADA** al 100% PASS sobre el corte `6cd5295d7768c34c32d37d54e0aad3d01f4749f6`, con 9/9 compuertas aprobadas, 0 pruebas fallidas y 0 omitidas (`-ExpectedBackendBaseline 396 -ExpectedFrontendBaseline 407`).
 
 ---
 
 ## 3. Compuertas de Preflight y Certificación Oficial (speckit-stabilize)
 
-Ejecución oficial mediante `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1 -RunTests $true -Certify`:
+Ejecución oficial mediante `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1 -RunTests $true -Certify -ExpectedBackendBaseline 396 -ExpectedFrontendBaseline 407`:
 
 * **Veredicto Oficial:** **PASS (CERTIFICADO)**
-* **Salida Certificada Oficial:** [`./PREFLIGHT_CERTIFIED_91d57f9.json`](./PREFLIGHT_CERTIFIED_91d57f9.json) (`Certified: true`, 0 errores, 0 fallos, 0 omisiones sobre corte inmutable).
-* **Salida Histórica de Referencia:** [`./PREFLIGHT_CERTIFIED_9a61e73.json`](./PREFLIGHT_CERTIFIED_9a61e73.json) (ejecución previa sobre worktree `607dce7`).
+* **Salida Certificada Oficial (Corte 6cd5295):** [`./PREFLIGHT_CERTIFIED_6cd5295.json`](./PREFLIGHT_CERTIFIED_6cd5295.json) (`Certified: true`, 803 pruebas PASS, 9/9 compuertas).
+* **Salida Histórica de Referencia (Corte 37ed360):** [`./PREFLIGHT_CERTIFIED_91d57f9.json`](./PREFLIGHT_CERTIFIED_91d57f9.json) (785 pruebas core).
 
 | N.º | Compuerta | Severidad | Estado | Respaldo / Detalle |
 |---|---|:---:|:---:|---|
-| 1 | `git-diff-check` | P1 | **PASS** | 0 conflictos de formato o saltos de línea. |
+| 1 | `git-diff-check` | P1 | **PASS** | 0 conflictos de formato o saltos de línea (0 errores). |
 | 2 | `secret-leak-and-untracked-configs` | P0 | **PASS** | 0 tokens JWT, contraseñas planas o archivos `.env` en seguimiento. |
 | 3 | `backend-dotnet-build` | P0 | **PASS** | Compilación Release net8.0: 0 errores / 0 advertencias. |
-| 4 | `frontend-vite-build` | P0 | **PASS** | Empaquetado de producción Vite en 2.38s (569 módulos). |
+| 4 | `frontend-vite-build` | P0 | **PASS** | Empaquetado de producción Vite en 568ms (570 módulos). |
 | 5 | `backend-regression-suite` | P0 | **PASS** | 396/396 xUnit superadas sin omisiones. |
-| 6 | `frontend-regression-suite` | P0 | **PASS** | 389/389 Vitest superadas en 70 suites sin omisiones. |
-| 7 | `frontend-oxlint-check` | P1 | **PASS** | 0 advertencias y 0 errores sobre 218 archivos analizados. |
+| 6 | `frontend-regression-suite` | P0 | **PASS** | 407/407 Vitest superadas en 71 suites sin omisiones. |
+| 7 | `frontend-oxlint-check` | P1 | **PASS** | 0 advertencias y 0 errores sobre 220 archivos analizados. |
 | 8 | `ef-pending-model-changes` | P1 | **PASS** | 0 cambios pendientes entre modelo de entidades EF Core 8 y la última migración compilada (0 drift). |
 | 9 | `speckit-dod-compliance` | P0 | **PASS** | 100% de tareas completas en `tasks.md`, branch autorizado y bitácora trazable. |
 
@@ -116,9 +133,10 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
 - **Estado:** `[CONSOLIDADO DOCUMENTALMENTE / TAG LOCAL ASENTADO]` (Evidencias, suites y ratificación consolidadas; tag local `v1.0.0-rc` registrado sobre `d806822`; publicación remota condicionada a la convocatoria formal de mesa).
 - **Dictamen:** Se formaliza este manifiesto consolidado vinculando con rigor documental las métricas, suites, salidas y salvedades del Release Candidate.
-  * **Código Candidato Inmutable:** El código de producción y pruebas se mantiene estrictamente congelado e inmutable en `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (`git diff 37ed360 -- "API Graphql" FrontEnd` = 0).
-  * **Corte Documental y Herramientas:** Los scripts de soporte y documentación de evidencia se identifican por separado en el historial (`741d3e4` + cambios de consolidación vigentes hasta HEAD `d806822`).
-  * **Situación del Tag y Publicación:** El tag local `v1.0.0-rc` se encuentra físicamente registrado en el repositorio local sobre el commit `d806822102eb7eec7542318c3d134eadadd390ea`. No se ha ejecutado `git push` del tag hacia el remoto `origin`, permaneciendo como corte local congelado hasta la autorización institucional.
+  * **Corte Histórico Tag `v1.0.0-rc`:** El objeto tag anotado (`9faddd97...`) se encuentra registrado localmente sobre `d806822102eb7eec7542318c3d134eadadd390ea` anclado a código candidato `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (785 pruebas core certificadas). La evidencia remota aportada por AGY (`git ls-remote --tags origin v1.0.0-rc`) acredita la existencia del objeto `9faddd9` en `origin` coincidente con el tag local, ratificado formalmente por Astra en `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md` con la salvedad de que la consulta remota directa de Codex quedó impedida por conectividad a GitHub.
+  * **Revisión de Consolidación (`6cd5295`):** Backend permanece 100% inmutable respecto a `37ed360`; frontend incorpora desacoplamiento de presentación Spec 228 (`Feed.jsx`, `UserAvatar.jsx`, `UserAvatar.test.jsx`) elevando las pruebas automatizadas a 407 en Vitest (803 pruebas core total informadas).
+  * **Arbitraje Spec 229 (Backend):** Conforme al dictamen del Auditor Principal del 17/11/2026, se difiere formalmente el refactor opcional de composición de correo en `Mutation.cs` como deuda técnica menor post-defensa para no alterar el contenedor DI de .NET en vísperas de la entrega, sin que ello impida futuras correcciones necesarias de backend ante defectos reales.
+  * **Corte Documental y Herramientas:** Gobernanza, tooling y paridad de CI consolidados en `88faa50` (Specs 221-227); procedencia editorial y hashes reconciliados en `EXPORT_CHECKLIST.md`.
 
 ---
 

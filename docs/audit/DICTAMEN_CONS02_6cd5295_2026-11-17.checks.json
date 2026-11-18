@@ -1,0 +1,60 @@
+{
+  "base": "6cd5295d7768c34c32d37d54e0aad3d01f4749f6",
+  "scope": "uncommitted CONS-02 worktree",
+  "sha256": {
+    ".github/workflows/main_oneitbapi.yml": "5a501361e3a9c0bcaf9453bacd41355808877918143a870f099cba3f979a436b",
+    ".github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml": "3ab1847f0e8d8b1a504c7b55e96405251ce407622d6fe012c812e172a70df0b5",
+    ".github/workflows/quality-gates.yml": "2a941ea61f2e3cf4a2c6474a73cf24e2055d57173fa9ceaaab51c4031ba668c1",
+    "tests/test_ci_gating.mjs": "d475c0058d3d29de67bc26fd206d1184514de0a1ec6d6d79a38f609bf8197dd2",
+    "tests/test_ci_gating.ps1": "d6090b7ef3dad5d58d7f5095774bd6708dd9b47804ce9d8a7ccbce6d77073c11"
+  },
+  "nodeSuite": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "file:///F:/React/OneITB23/tests/test_ci_gating.mjs:44\r\n  console.error('FAIL (checks:', { hasVerifyJob, hasApiCheck, hasConclusionCheck, hasNeedsDep, hasCheckoutTarget, hasProdEnv, '}');\r\n                                                                                                                                 ^\r\n\r\nSyntaxError: Unexpected token ')'\r\n    at compileSourceTextModule (node:internal/modules/esm/utils:338:16)\r\n    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:102:18)\r\n    at #translate (node:internal/modules/esm/loader:437:12)\r\n    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:484:27)\r\n    at async ModuleJob._link (node:internal/modules/esm/module_job:115:19)\r\n\r\nNode.js v22.13.0\r\n"
+  },
+  "diffCheck": {
+    "exitCode": 2,
+    "stdout": "specs/224-ci-parity-and-artifact-contract/spec.md:5: trailing whitespace.\n+**Hallazgos Abordados:** ORG-04, ORG-05, ORG-15, CONS-02  \nspecs/224-ci-parity-and-artifact-contract/spec.md:6: trailing whitespace.\n+**Estado:** GATING DE CI/CD RATIFICADO Y CERRADO (100% PASS)  \n",
+    "stderr": "warning: in the working copy of '.github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.github/workflows/main_oneitbapi.yml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'docs/audit/CANDIDATE_MANIFEST_RC.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'docs/entrega_final/EXPORT_CHECKLIST.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'specs/224-ci-parity-and-artifact-contract/spec.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'specs/224-ci-parity-and-artifact-contract/tasks.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'specs/228-feed-presentation-extraction/EVIDENCE.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'specs/228-feed-presentation-extraction/tasks.md', LF will be replaced by CRLF the next time Git touches it\n"
+  },
+  "inMemoryDiagnostic": [
+    [
+      "================================================================"
+    ],
+    [
+      "SUITE DE VERIFICACION DE GATING DE CI/CD (HALLAZGO CONS-02)"
+    ],
+    [
+      "================================================================"
+    ],
+    "Ejecutando [Caso 1]: Verificacion de existencia de workflows de CI/CD... ",
+    [
+      "PASS"
+    ],
+    "Ejecutando [Caso 2]: Contrato de verificacion de Quality Gates en backend (main_oneitbapi.yml)... ",
+    [
+      "FAIL (checks:",
+      {
+        "hasVerifyJob": true,
+        "hasApiCheck": true,
+        "hasConclusionCheck": false,
+        "hasNeedsDep": true,
+        "hasCheckoutTarget": true,
+        "hasProdEnv": true
+      },
+      ")"
+    ],
+    "Error: EXIT 1"
+  ],
+  "powershell": {
+    "exitCode": null,
+    "killed": true,
+    "stdout": "",
+    "stderr": ""
+  },
+  "bash": {
+    "exitCode": 3221225794,
+    "reason": "NtCreateDirectoryObject / 0xC0000022; shell did not start"
+  }
+}

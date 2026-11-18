@@ -1,6 +1,6 @@
 # Roadmap único de OneITB23
 
-**Última revisión documental**: 2026-11-14 (GOB-19 / Delta 4; se conservan los cortes históricos identificados).
+**Última revisión documental**: 2026-11-17 (Revisión de Consolidación 6cd5295 y conciliación de baseline 803 / 785 histórico).
 
 ## 1. Estado ejecutivo y criterio de medición
 
@@ -9,9 +9,10 @@
 | Avance contabilizado | **100% (117/117)** | 109 ítems funcionales/operativos más 8 remediaciones de auditoría |
 | Verificación runtime `[V]` | **46 ítems** | Flujos ejecutados contra runtime, base o infraestructura local según su alcance |
 | Implementación comprobada `[I]` | **71 ítems** | Código, tests, builds, migraciones o pruebas aisladas; pueden conservar aceptación manual/externa |
-| Backend automatizado más reciente | **396/396** | Delta 4 incorporó la cobertura de moderación en la matriz de autorización (7 casos); 396 pruebas de regresión en PASS (0 omitidas). Las categorías opt-in GOB12SqlConcurrency (10 casos), GOB15BcryptBenchmark (1 caso) y VendorAdvisoryGHSA (1 caso canario) se informan por separado en el manifiesto |
-| Frontend automatizado más reciente | **389/389** | Delta 4 y remediaciones de foco y enrutamiento verificaron la suite Vitest con 70 suites completas; 389 pruebas en PASS (0 fallos) |
-| Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; cierre documental/manual pendiente; la mesa del 07/08 no se realizó |
+| Backend automatizado | **396/396** | xUnit Release aprobadas en PASS (0 omitidas; código backend 100% inmutable respecto a `37ed360`). Las categorías opt-in GOB12SqlConcurrency (11 casos), GOB15BcryptBenchmark (1 caso) y VendorAdvisoryGHSA (1 caso canario) se informan por separado |
+| Frontend automatizado | **407/407** | Vitest aprobadas en PASS sobre 71 suites en verde (revisión `6cd5295` con Spec 228 `UserAvatar`; 389 pruebas en 70 suites en corte histórico `v1.0.0-rc`) |
+| Línea base core certificada | **803/803 (certificada)** | Sobre corte `6cd5295` (396 backend + 407 frontend) certificada formalmente mediante preflight oficial (`PREFLIGHT_CERTIFIED_6cd5295.json`); 785 pruebas core certificadas en corte histórico `v1.0.0-rc`; +11 SQL concurrencia original |
+| Estado de entrega | **Release Candidate académico** | Core Feature Complete y Code Freeze operativo local; tag `v1.0.0-rc` registrado en `d806822` (objeto `9faddd9` en `origin` acreditado por evidencia remota de AGY y ratificado en `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md`); la mesa del 07/08 no se realizó |
 
 El **100%** expresa que el alcance funcional comprometido y las ocho remediaciones de
 auditoría incluidas en el denominador están implementados. No significa despliegue cloud
@@ -667,6 +668,13 @@ no-array en el errorLink de Apollo. Logout/relogin Empleador -> Estudiante qued�
 identidad residual ni errores de consola. No se creó tag ni se reinició la base.
 
 **Estado y Conciliación de Compuertas de Release Candidate (16/11/2026 - Spec 220):** Se completaron y certificaron las compuertas `CF-01` a `CF-05` sobre el corte inmutable del Release Candidate (`37ed3608887f3871a8ca2c555004ab63fd6d1e6a`). Pasaron en verde la línea base de 785 pruebas automáticas (396 backend xUnit Release + 389 frontend Vitest en 70 suites), la categoría opt-in de concurrencia SQL (11/11 PASS sobre SQL Server 2022), el preflight oficial certificado (`PREFLIGHT_CERTIFIED_91d57f9.json` con `Certified: true`), el recorrido en vivo de los seis roles institucionales (30 PASS / 1 Obs en `CF04_ROLE_WALKTHROUGH.md`, 100% conforme) y la compuerta `CF-05` formalmente ratificada por Astra el 16/11/2026 en `RATIFICACION_CF05_2026-11-16.md` con dictamen APROBADO CON OBSERVACIONES (transporte realtime unmocked con relectura en BD en `CF05_REALTIME_VALIDATION.md`, más recorrido UI multi-sesión acreditado con aserciones rigurosas de DOM, ciclo de badges 5->6->4, reconexión en 591 ms, reemplazo de sesión SPA sin recarga y delimitación de caché en `CF05_UI_WALKTHROUGH.md`). La compuerta `CF-06` queda consolidada documentalmente y cuenta con el tag local `v1.0.0-rc` registrado sobre `d806822`, quedando pendiente la publicación remota y la convocatoria formal de la mesa evaluadora. F05 queda formalmente catalogado como alcance diferido para evolución post-defensa y no como interfaz implementada en frontend.
+
+**Revisión de Consolidación, Tooling y Presentación de UI (17/11/2026 - Specs 221 a 228):**
+Se ejecutaron trabajos de organización, tooling y presentación agrupados bajo la estabilización del Release Candidate (`AUDITORIA_ORGANIZACION.md`):
+- **Specs 221 a 227 (Gobernanza y Tooling):** Agrupadas y consolidadas en el commit `88faa50`. Se alinearon fuentes de verdad a 785 pruebas core para el corte histórico `v1.0.0-rc`, se implementó runbook seguro en 3 pasos, preflight certificador parametrizado (`-ExpectedBackendBaseline 396 -ExpectedFrontendBaseline 407`), paridad de CI (`oxlint@1.94.0` y filtros canónicos), ciclo de vida de runners UI en `scratch/`, matriz documental de 5 clases en `DOCUMENTATION_STATUS.md` y checklist maestro de exportación editorial (`EXPORT_CHECKLIST.md`).
+- **Spec 228 (Desacoplamiento de Presentación en Feed):** Consolidada en el commit `6cd5295`. Se extrajo `UserAvatar.jsx` (avatar, badges e insignias institucionales por rol) reduciendo 93 líneas de código de presentación embebido en `Feed.jsx`, preservando 100% de contratos GraphQL y caché Apollo. Se incorporó `UserAvatar.test.jsx` (18 pruebas ejecutadas: 12 simples + 1 `it.each` de 6 roles), alcanzando una línea base total certificada de 803 pruebas automatizadas (396 backend + 407 frontend en 71 suites). La auditoría independiente (Astra) ratificó 24/24 pruebas focalizadas en PASS y la suite completa fue formalmente certificada el 18/11/2026 mediante el preflight oficial (`PREFLIGHT_CERTIFIED_6cd5295.json`).
+- **Arbitraje de Spec 229 (Backend):** Conforme al dictamen de auditoría del 17/11/2026, se difiere formalmente el refactor opcional de métodos privados de correo en `Mutation.cs` como deuda técnica menor post-defensa para no modificar el contenedor DI de .NET en vísperas de la entrega, sin prohibir futuras correcciones de backend ante defectos reales.
+- **Puntero Canónico y Alcance Procedimental:** Por decisión de gobernanza, el puntero en `.specify/feature.json` se conservó en `specs/220-core-closure-and-application-hardening`. Las specs 221 a 228 fueron ejecutadas como sub-lotes técnicos de soporte al release candidate, sin constituir ciclos formales independientes con specs/planes/evidencias aisladas completas.
 
 **Subtotal estimado:** **6 h 45 min a 9 h 30 min**. La ruta critica es
 `CF-01 -> CF-03 -> CF-04/CF-05 -> CF-06`.

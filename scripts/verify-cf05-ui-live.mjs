@@ -5,15 +5,28 @@ import crypto from 'crypto';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, '..');
 
+const isMain = process.argv[1] && (
+  path.resolve(fileURLToPath(import.meta.url)).toLowerCase() === path.resolve(process.argv[1]).toLowerCase()
+);
 
 function resolveChromePath() {
-  if (process.env.CHROME_BIN && fs.existsSync(process.env.CHROME_BIN)) {
-    return process.env.CHROME_BIN;
+  if (process.env.CHROME_BIN) {
+    if (fs.existsSync(process.env.CHROME_BIN)) {
+      return process.env.CHROME_BIN;
+    }
+    throw new Error(`Google Chrome executable not found at specified CHROME_BIN: ${process.env.CHROME_BIN}`);
   }
-  if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) {
-    return process.env.CHROME_PATH;
+  if (process.env.CHROME_PATH) {
+    if (fs.existsSync(process.env.CHROME_PATH)) {
+      return process.env.CHROME_PATH;
+    }
+    throw new Error(`Google Chrome executable not found at specified CHROME_PATH: ${process.env.CHROME_PATH}`);
   }
   const candidates = [
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -41,19 +54,61 @@ function resolveChromePath() {
   throw new Error('Google Chrome executable not found. Specify CHROME_BIN or CHROME_PATH pointing to chrome.exe / google-chrome.');
 }
 
-const chromePath = resolveChromePath();
-const runId = process.env.RUN_ID || null;
-const runEvidenceDir = runId ? path.resolve(`./docs/audit/evidence/runs/${runId}`) : null;
-const screenshotsDir = runEvidenceDir
-  ? path.join(runEvidenceDir, 'screenshots')
-  : (process.env.RUN_SCREENSHOTS_DIR ? path.resolve(process.env.RUN_SCREENSHOTS_DIR) : path.resolve('./docs/audit/screenshots'));
+function validateAndReserveEvidenceDir(rawRunId, repoRootPath, isDryRun) {
+  const baseRunsDir = path.resolve(repoRootPath, 'docs/audit/evidence/runs');
+  fs.mkdirSync(baseRunsDir, { recursive: true });
 
-fs.mkdirSync(screenshotsDir, { recursive: true });
+  let effectiveId = rawRunId;
+  if (!effectiveId) {
+    effectiveId = `run_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+  }
+
+  if (typeof effectiveId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(effectiveId.trim())) {
+    throw new Error(`[INVALID_RUN_ID]: RUN_ID '${effectiveId}' contains invalid characters, path separators or traversal sequences.`);
+  }
+
+  effectiveId = effectiveId.trim();
+  const targetDir = path.resolve(baseRunsDir, effectiveId);
+
+  // Confinamiento estricto contra baseRunsDir
+  const rel = path.relative(baseRunsDir, targetDir);
+  if (rel.startsWith('..') || path.isAbsolute(rel) || rel.includes('/') || rel.includes('\\')) {
+    throw new Error(`[SECURITY_VIOLATION]: RUN_ID '${effectiveId}' attempts path traversal outside runs directory.`);
+  }
+
+  // Reserva atómica exclusiva
+  try {
+    fs.mkdirSync(targetDir); // recursive: false para fallo atómico si ya existe
+  } catch (err) {
+    if (err.code === 'EEXIST') {
+      throw new Error(`[RUN_ID_ALREADY_EXISTS]: Evidence directory for RUN_ID '${effectiveId}' already exists. Refusing to overwrite existing run.`);
+    }
+    throw err;
+  }
+
+  const screenDir = path.join(targetDir, 'screenshots');
+  fs.mkdirSync(screenDir, { recursive: true });
+
+  return {
+    runId: effectiveId,
+    runEvidenceDir: targetDir,
+    screenshotsDir: screenDir
+  };
+}
+
+let chromePath = null;
+if (isMain) {
+  chromePath = resolveChromePath();
+}
+
+let effectiveRunId = null;
+let runEvidenceDir = null;
+let screenshotsDir = null;
 
 const capturedScreenshots = [];
 
 const password = process.env.DEMO_USER_PASSWORD;
-if (!password) {
+if (!password && isMain) {
   throw new Error('DEMO_USER_PASSWORD environment variable is required.');
 }
 
@@ -63,7 +118,7 @@ const backendUrl = process.env.BACKEND_URL || 'https://127.0.0.1:44397/graphql';
 const parsedBackend = new URL(backendUrl);
 const isLocalBackend = ['localhost', '127.0.0.1', '::1'].includes(parsedBackend.hostname);
 
-if (!isLocalBackend && backendUrl.startsWith('https:') && process.env.ALLOW_INSECURE_REMOTE_TLS === 'true') {
+if (isMain && !isLocalBackend && backendUrl.startsWith('https:') && process.env.ALLOW_INSECURE_REMOTE_TLS === 'true') {
   throw new Error(`[SECURITY_REJECTION]: Insecure TLS bypass is strictly prohibited for non-local endpoints (${parsedBackend.hostname}).`);
 }
 
@@ -99,14 +154,18 @@ function getJson(url) {
 }
 
 class ChromeInstance {
-  constructor(port, profilePrefix) {
+  constructor(port, profilePrefix, options = {}) {
     this.port = port;
     this.profilePrefix = profilePrefix;
     const uniqueSuffix = `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
-    this.profileDir = path.resolve(`./scratch/${profilePrefix}_${uniqueSuffix}`);
+    this.profileDir = options.profileDir || path.resolve(`./scratch/${profilePrefix}_${uniqueSuffix}`);
     this.proc = null;
     this.ws = null;
     this.events = [];
+    this.started = false;
+    this._terminator = options.terminator || null;
+    this._livenessProbe = options.livenessProbe || null;
+    this._portChecker = options.portChecker || null;
   }
 
   async start(initialUrl = 'about:blank') {
@@ -116,7 +175,8 @@ class ChromeInstance {
     }
 
     fs.mkdirSync(this.profileDir, { recursive: true });
-    this.proc = spawn(chromePath, [
+    this.started = true;
+    this.proc = spawn(chromePath || resolveChromePath(), [
       '--headless=new',
       `--remote-debugging-port=${this.port}`,
       '--disable-gpu',
@@ -242,30 +302,62 @@ class ChromeInstance {
   }
 
   async stop() {
+    const leakErrors = [];
+
     if (this.ws) {
       try { this.ws.close(); } catch (_) {}
       this.ws = null;
     }
+
     if (this.proc && this.proc.pid) {
       const pid = this.proc.pid;
       try {
-        if (process.platform === 'win32') {
-          spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore' });
+        if (typeof this._terminator === 'function') {
+          this._terminator(pid);
+        } else if (process.platform === 'win32') {
+          spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', timeout: 5000 });
         } else {
           this.proc.kill('SIGKILL');
         }
       } catch (_) {}
 
+      const checkLiveness = (targetPid) => {
+        if (typeof this._livenessProbe === 'function') {
+          return this._livenessProbe(targetPid);
+        }
+        return process.kill(targetPid, 0);
+      };
+
       const startWait = Date.now();
       while (Date.now() - startWait < 3000) {
         try {
-          process.kill(pid, 0);
+          checkLiveness(pid);
           await new Promise(r => setTimeout(r, 100));
         } catch (_) {
           break;
         }
       }
-      this.proc = null;
+
+      let procAlive = false;
+      try {
+        checkLiveness(pid);
+        procAlive = true;
+        leakErrors.push(`Chrome process PID ${pid} is still alive after stop()`);
+      } catch (kErr) {
+        if (kErr && kErr.code === 'EPERM') {
+          procAlive = true;
+          leakErrors.push(`Chrome process PID ${pid} is still alive (permission denied) after stop()`);
+        } else if (kErr && kErr.code === 'ESRCH') {
+          procAlive = false;
+        } else {
+          procAlive = true;
+          leakErrors.push(`Chrome process PID ${pid} liveness check error: ${kErr.message}`);
+        }
+      }
+
+      if (!procAlive) {
+        this.proc = null;
+      }
     }
 
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -277,6 +369,33 @@ class ChromeInstance {
       } catch (_) {
         await new Promise(r => setTimeout(r, 200));
       }
+    }
+
+    if (fs.existsSync(this.profileDir)) {
+      leakErrors.push(`Temporary profile directory '${this.profileDir}' was not cleaned up after stop()`);
+    }
+
+    if (this.started) {
+      let portFree = false;
+      try {
+        if (typeof this._portChecker === 'function') {
+          portFree = await this._portChecker(this.port);
+        } else {
+          portFree = await isPortAvailable(this.port);
+        }
+        if (!portFree) {
+          leakErrors.push(`Port ${this.port} is still bound after stop()`);
+        }
+      } catch (pErr) {
+        leakErrors.push(`Port ${this.port} check error: ${pErr.message}`);
+      }
+      if (portFree) {
+        this.started = false;
+      }
+    }
+
+    if (leakErrors.length > 0) {
+      throw new Error(`[RESOURCE_LEAK_DETECTED]: ${leakErrors.join(' | ')}`);
     }
   }
 }
@@ -349,33 +468,189 @@ async function parseChatBadge(chromeInstance) {
   })()`);
 }
 
-function writeManifest(status, exitCode, err = null) {
-  if (runEvidenceDir) {
-    try {
-      const manifest = {
-        runId,
-        timestamp: new Date().toISOString(),
-        baseUrl,
-        backendUrl,
-        nodeVersion: process.version,
-        platform: process.platform,
-        chromePath,
-        exitCode,
-        status,
-        error: err ? (err.message || String(err)) : null,
-        screenshots: capturedScreenshots
-      };
-      fs.writeFileSync(path.join(runEvidenceDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
-      log('MANIFEST', `Run manifest written to ${path.join(runEvidenceDir, 'manifest.json')}`);
-    } catch (e) {
-      log('WARN', `Failed to write manifest: ${e.message}`);
+function buildManifestObject(status, exitCode, err = null, extraProps = {}, baseScope = {}) {
+  const isDryRun = (extraProps.mode === 'dry-run') || (process.env.RUNNER_DRY_RUN === 'true');
+  const defaultMode = isDryRun ? 'dry-run' : 'live';
+  const defaultUiExecuted = isDryRun ? false : (status === 'PASS');
+  const defaultCertified = false;
+
+  return {
+    runId: baseScope.runId || effectiveRunId || 'unknown_run',
+    timestamp: new Date().toISOString(),
+    baseUrl: baseScope.baseUrl || baseUrl,
+    backendUrl: baseScope.backendUrl || backendUrl,
+    nodeVersion: process.version,
+    platform: process.platform,
+    chromePath: baseScope.chromePath || chromePath,
+    mode: defaultMode,
+    uiExecuted: defaultUiExecuted,
+    certified: defaultCertified,
+    exitCode,
+    status,
+    error: err ? (err.message || String(err)) : null,
+    screenshots: baseScope.screenshots || capturedScreenshots,
+    ...extraProps
+  };
+}
+
+function validateManifestContract(manifest) {
+  if (!manifest || typeof manifest !== 'object') {
+    throw new Error('[INVALID_MANIFEST_CONTRACT]: Manifest must be a non-null object.');
+  }
+
+  const requiredFields = ['runId', 'status', 'exitCode', 'mode', 'uiExecuted', 'certified'];
+  for (const f of requiredFields) {
+    if (manifest[f] === undefined || manifest[f] === null) {
+      throw new Error(`[INVALID_MANIFEST_CONTRACT]: Missing required manifest field '${f}'.`);
     }
   }
+
+  if (typeof manifest.runId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(manifest.runId.trim())) {
+    throw new Error(`[INVALID_MANIFEST_CONTRACT]: runId must be a non-empty valid identifier, got '${manifest.runId}'.`);
+  }
+
+  if (typeof manifest.exitCode !== 'number' || !Number.isInteger(manifest.exitCode)) {
+    throw new Error(`[INVALID_MANIFEST_CONTRACT]: exitCode must be an integer, got '${manifest.exitCode}'.`);
+  }
+
+  if (manifest.mode !== 'live' && manifest.mode !== 'dry-run') {
+    throw new Error(`[INVALID_MANIFEST_CONTRACT]: mode must be 'live' or 'dry-run', got '${manifest.mode}'.`);
+  }
+
+  if (!['PASS', 'FAIL', 'DRY_RUN_OK'].includes(manifest.status)) {
+    throw new Error(`[INVALID_MANIFEST_CONTRACT]: status must be 'PASS', 'FAIL', or 'DRY_RUN_OK', got '${manifest.status}'.`);
+  }
+
+  if (typeof manifest.uiExecuted !== 'boolean') {
+    throw new Error(`[INVALID_MANIFEST_CONTRACT]: uiExecuted must be a boolean, got '${typeof manifest.uiExecuted}'.`);
+  }
+
+  if (typeof manifest.certified !== 'boolean' || manifest.certified !== false) {
+    throw new Error(`[INVALID_MANIFEST_CONTRACT]: certified must be boolean false, got '${manifest.certified}'.`);
+  }
+
+  // Matriz unificada de combinaciones válidas:
+  // 1. live:
+  //    - Éxito: live / PASS / 0 / uiExecuted: true / certified: false
+  //    - Fallo: live / FAIL / exitCode != 0 / uiExecuted: false / certified: false
+  // 2. dry-run:
+  //    - Éxito: dry-run / DRY_RUN_OK / 0 / uiExecuted: false / certified: false
+  //    - Fallo: dry-run / FAIL / exitCode != 0 / uiExecuted: false / certified: false
+
+  if (manifest.mode === 'live') {
+    if (manifest.status === 'DRY_RUN_OK') {
+      throw new Error("[INVALID_MANIFEST_CONTRACT]: live mode cannot have status 'DRY_RUN_OK'.");
+    }
+    if (manifest.status === 'PASS') {
+      if (manifest.exitCode !== 0) {
+        throw new Error(`[INVALID_MANIFEST_CONTRACT]: live PASS manifest requires exitCode 0, got ${manifest.exitCode}.`);
+      }
+      if (manifest.uiExecuted !== true) {
+        throw new Error('[INVALID_MANIFEST_CONTRACT]: live PASS manifest requires uiExecuted === true.');
+      }
+    }
+  }
+
+  if (manifest.mode === 'dry-run') {
+    if (manifest.status === 'PASS') {
+      throw new Error("[INVALID_MANIFEST_CONTRACT]: dry-run mode cannot have status 'PASS'; must be 'DRY_RUN_OK'.");
+    }
+    if (manifest.status === 'DRY_RUN_OK') {
+      if (manifest.exitCode !== 0) {
+        throw new Error(`[INVALID_MANIFEST_CONTRACT]: dry-run DRY_RUN_OK manifest requires exitCode 0, got ${manifest.exitCode}.`);
+      }
+      if (manifest.uiExecuted !== false) {
+        throw new Error('[INVALID_MANIFEST_CONTRACT]: dry-run DRY_RUN_OK manifest requires uiExecuted === false.');
+      }
+    }
+  }
+
+  if (manifest.status === 'FAIL') {
+    if (manifest.exitCode === 0) {
+      throw new Error('[INVALID_MANIFEST_CONTRACT]: FAIL status requires non-zero exitCode.');
+    }
+    if (manifest.uiExecuted !== false) {
+      throw new Error('[INVALID_MANIFEST_CONTRACT]: FAIL status requires uiExecuted === false.');
+    }
+  }
+
+  return true;
+}
+
+function writeManifest(status, exitCode, err = null, extraProps = {}, targetDir = null) {
+  const dir = targetDir || runEvidenceDir;
+  if (dir) {
+    const manifest = buildManifestObject(status, exitCode, err, extraProps);
+    validateManifestContract(manifest);
+    const manifestPath = path.join(dir, 'manifest.json');
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
+    log('MANIFEST', `Run manifest written to ${manifestPath}`);
+    return manifest;
+  }
+}
+
+function createRunnerCleanup(instances) {
+  let cleanupPromise = null;
+  return function cleanup() {
+    if (cleanupPromise) {
+      return cleanupPromise;
+    }
+    cleanupPromise = (async () => {
+      const results = await Promise.allSettled(instances.map(inst => inst.stop()));
+      const failures = results
+        .filter(r => r.status === 'rejected')
+        .map(r => r.reason);
+      if (failures.length > 0) {
+        const msgs = failures.map(f => f.message || String(f)).join('; ');
+        throw new Error(`[AGGREGATE_CLEANUP_FAILURE]: Cleanup failed for ${failures.length} instance(s): ${msgs}`);
+      }
+    })();
+    return cleanupPromise;
+  };
 }
 
 async function main() {
   log('INIT', 'Starting Live Automated Browser UI Verification Runner for Gate CF-05');
   log('ENV', `Frontend URL: ${baseUrl} | Backend URL: ${backendUrl}`);
+
+  const scope = validateAndReserveEvidenceDir(process.env.RUN_ID, repoRoot, process.env.RUNNER_DRY_RUN === 'true');
+  effectiveRunId = scope.runId;
+  runEvidenceDir = scope.runEvidenceDir;
+  screenshotsDir = scope.screenshotsDir;
+  log('RESERVE', `Evidence directory reserved exclusively: ${runEvidenceDir}`, { runId: effectiveRunId });
+
+  if (process.env.RUNNER_DRY_RUN === 'true') {
+    log('DRY_RUN', 'Verification runner executed in dry-run mode for isolation testing', {
+      runId: effectiveRunId,
+      runEvidenceDir,
+      screenshotsDir
+    });
+
+    writeManifest('DRY_RUN_OK', 0, null, {
+      mode: 'dry-run',
+      uiExecuted: false,
+      certified: false
+    });
+
+    const runOutputContent = [
+      `# Dry-Run Execution Evidence: Runner CF-05 (Aislamiento Multi-Run)`,
+      ``,
+      `- **Run ID:** ${effectiveRunId}`,
+      `- **Timestamp:** ${new Date().toISOString()}`,
+      `- **Status:** DRY_RUN_OK (Dry-Run Mode)`,
+      `- **Mode:** dry-run`,
+      `- **UI Executed:** false`,
+      `- **Certified:** false`,
+      `- **Exit Code:** 0`,
+      `- **Evidence Directory:** ${runEvidenceDir}`,
+      `- **Screenshots Directory:** ${screenshotsDir}`,
+      ``,
+      `Corresponde a la prueba de aislamiento multi-run del Lote CONS-03. Verificado sin colisión ni alteración de evidencia histórica.`
+    ].join('\n');
+    fs.writeFileSync(path.join(runEvidenceDir, 'RUN_OUTPUT.md'), runOutputContent, 'utf8');
+    log('DRY_RUN', `Wrote dry-run RUN_OUTPUT.md to ${path.join(runEvidenceDir, 'RUN_OUTPUT.md')}`);
+    process.exit(0);
+  }
 
   const basePort = parseInt(process.env.BASE_CDP_PORT || '9230', 10);
   log('ENV', `Base CDP Port: ${basePort}`);
@@ -385,12 +660,8 @@ async function main() {
   const chromeC = new ChromeInstance(basePort + 2, 'ui_profile_c');
   const chromeProbe = new ChromeInstance(basePort + 3, 'ui_profile_probe');
 
-  const cleanup = async () => {
-    await chromeA.stop();
-    await chromeB.stop();
-    await chromeC.stop();
-    await chromeProbe.stop();
-  };
+  const instances = [chromeA, chromeB, chromeC, chromeProbe];
+  const cleanup = createRunnerCleanup(instances);
 
   process.on('SIGINT', cleanup);
   process.on('SIGTERM', cleanup);
@@ -1033,16 +1304,42 @@ async function main() {
     });
 
     log('COMPLETE', 'ALL UI DIMENSIONS EVALUATED AND PASSED SUCCESSFULLY WITH RIGOROUS ASSERTIONS');
-    writeManifest('PASS', 0);
     await cleanup();
+    writeManifest('PASS', 0);
     process.exit(0);
 
   } catch (err) {
     log('ERROR', `Automated runner failed: ${err.message}`);
-    writeManifest('FAIL', 1, err);
-    await cleanup();
+    let cleanupError = null;
+    try {
+      if (typeof cleanup === 'function') {
+        await cleanup();
+      }
+    } catch (cErr) {
+      cleanupError = cErr;
+      log('ERROR', `Cleanup after failure encountered errors: ${cErr.message}`);
+    }
+    const finalErr = cleanupError
+      ? new Error(`${err.message} | Post-failure cleanup error: ${cleanupError.message}`)
+      : err;
+    writeManifest('FAIL', 1, finalErr);
     process.exit(1);
   }
 }
 
-main();
+if (isMain) {
+  main();
+}
+
+export {
+  ChromeInstance,
+  isPortAvailable,
+  resolveChromePath,
+  validateAndReserveEvidenceDir,
+  buildManifestObject,
+  validateManifestContract,
+  writeManifest,
+  createRunnerCleanup,
+  log,
+  main
+};

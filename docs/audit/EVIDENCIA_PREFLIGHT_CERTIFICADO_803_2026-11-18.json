@@ -1,0 +1,85 @@
+{
+  "Status": "PASS",
+  "Certified": true,
+  "IsSimulated": false,
+  "Timestamp": "2026-11-18 20:14:36",
+  "GitCommitSha": "6cd5295d7768c34c32d37d54e0aad3d01f4749f6",
+  "GitBranch": "feature/2026-11-01-debugger-cv-builder",
+  "ActivePointer": "specs/220-core-closure-and-application-hardening",
+  "FeatureDir": "F:\\React\\OneITB23\\specs\\220-core-closure-and-application-hardening",
+  "WorkingTreeClean": false,
+  "StagedFilesCount": 0,
+  "UnstagedFilesCount": 17,
+  "BackendMetrics": {
+    "Failed": 0,
+    "Skipped": 0,
+    "Total": 396,
+    "Passed": 396
+  },
+  "FrontendMetrics": {
+    "Failed": 0,
+    "Skipped": 0,
+    "Total": 407,
+    "Passed": 407
+  },
+  "TotalGates": 9,
+  "PassedCount": 9,
+  "FailedCount": 0,
+  "SkippedCount": 0,
+  "Gates": [
+    {
+      "Name": "git-diff-check",
+      "Status": "PASS",
+      "Severity": "P1",
+      "Summary": "git diff --check passed with 0 errors"
+    },
+    {
+      "Name": "secret-leak-and-untracked-configs",
+      "Status": "PASS",
+      "Severity": "P0",
+      "Summary": "Zero runtime secrets or environment configs tracked/leaked"
+    },
+    {
+      "Name": "backend-dotnet-build",
+      "Status": "PASS",
+      "Severity": "P0",
+      "Summary": "Compilación correcta. 0 Advertencia(s) 0 Errores"
+    },
+    {
+      "Name": "frontend-vite-build",
+      "Status": "PASS",
+      "Severity": "P0",
+      "Summary": "Vite build succeeded in 568ms with 0 errors"
+    },
+    {
+      "Name": "backend-regression-suite",
+      "Status": "PASS",
+      "Severity": "P0",
+      "Summary": "Backend xUnit: 396 passed of 396 total tests (0 skipped)."
+    },
+    {
+      "Name": "frontend-regression-suite",
+      "Status": "PASS",
+      "Severity": "P0",
+      "Summary": "Frontend Vitest: 407 tests passed of 407 total tests (0 skipped)."
+    },
+    {
+      "Name": "frontend-oxlint-check",
+      "Status": "PASS",
+      "Severity": "P1",
+      "Summary": "oxlint 0 errors and 0 warnings on 220 files"
+    },
+    {
+      "Name": "ef-pending-model-changes",
+      "Status": "PASS",
+      "Severity": "P1",
+      "Summary": "No changes have been made to the model since the last migration."
+    },
+    {
+      "Name": "speckit-dod-compliance",
+      "Status": "PASS",
+      "Severity": "P0",
+      "Summary": "Active pointer valid, 0 open tasks in tasks.md, DEVELOPMENT_LOG entry valid."
+    }
+  ]
+}

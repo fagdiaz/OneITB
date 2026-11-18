@@ -9,22 +9,26 @@ Superior en Análisis de Sistemas del Instituto Tecnológico Beltrán.
 
 ## Estado del proyecto
 
-| Indicador | Estado documentado (Corte Release Candidate) |
+| Indicador | Estado documentado (Corte Release Candidate y Revisión 6cd5295) |
 |---|---|
 | Alcance contabilizado | **100 % (117/117)**: 46 ítems verificados `[V]` y 71 implementados `[I]` |
-| Backend automatizado | **396/396** pruebas xUnit Release aprobadas (0 omitidas); suites opt-in informadas aparte |
-| Frontend automatizado | **389/389** pruebas Vitest aprobadas (70 suites en verde) |
-| Línea base core certificada | **785/785 (100% PASS)** en [Manifiesto RC](docs/audit/CANDIDATE_MANIFEST_RC.md); +11 SQL concurrencia |
-| Entrega | **Release Candidate académico**, core Feature Complete y Code Freeze operativo local; tag local `v1.0.0-rc` |
+| Backend automatizado | **396/396** pruebas xUnit Release aprobadas (0 omitidas; código inmutable respecto a `37ed360`) |
+| Frontend automatizado | **407/407** pruebas Vitest aprobadas en 71 suites (revisión `6cd5295` con Spec 228 `UserAvatar`) |
+| Línea base core informada | **803/803 (informada)** en revisión `6cd5295` (pendiente de acreditación formal de preflight); **785/785 PASS** certificada en corte histórico `v1.0.0-rc`; +11 SQL concurrencia |
+| Entrega | **Release Candidate académico**, core Feature Complete y Code Freeze operativo local; tag local `v1.0.0-rc` registrado en `d806822` (publicación remota informada, pendiente de verificación independiente) |
 | Base de datos | 34 migraciones; base demo canónica con doble seed idempotente y seis roles |
 
-La línea base core actual está certificada en 785 pruebas sobre el código candidato
-inmutable `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (con evidencias y manifiesto
-consolidados en el tag local `v1.0.0-rc` / HEAD `d806822`). Como hito histórico previo, la
-Spec 218 ejecutó 234/234 backend y 252/252 frontend al 08/08/2026. La defensa planificada
-para el 7 de agosto de 2026 no ocurrió porque no se completaron a tiempo la documentación
-final, el refinamiento/cierre y la auditoría manual coordinada. No existe una nueva fecha
-documentada. El detalle de compuertas y verificación se administra en el
+La línea base core histórica del Release Candidate está certificada en 785 pruebas sobre el
+corte `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (con evidencias consolidadas en el tag local
+`v1.0.0-rc` / HEAD `d806822`). La revisión posterior `6cd5295` conserva el backend inmutable
+respecto a `37ed360` e incorpora la extracción modular de presentación de `UserAvatar` (Spec 228),
+alcanzando una línea base informada de 803 pruebas automatizadas (396 backend + 407 frontend en
+71 suites; pendiente de acreditación formal mediante corrida certificada de preflight del corte) y
+24/24 pruebas focalizadas validadas independientemente por el Auditor Principal (Astra).
+Como hito histórico previo, la Spec 218 ejecutó 234/234 backend y 252/252 frontend al 08/08/2026.
+La defensa planificada para el 7 de agosto de 2026 no ocurrió porque no se completaron a tiempo
+la documentación final, el refinamiento/cierre y la auditoría manual coordinada. No existe una
+nueva fecha documentada. El detalle de compuertas y verificación se administra en el
 [Roadmap](docs/project_docs/ROADMAP.md), el
 [Manifiesto Oficial RC](docs/audit/CANDIDATE_MANIFEST_RC.md) y el
 [Runbook](docs/audit/RUNBOOK_DEV.md).

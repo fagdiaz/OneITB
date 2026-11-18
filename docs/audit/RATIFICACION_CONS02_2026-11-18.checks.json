@@ -1,0 +1,133 @@
+{
+  "date": "2026-11-18",
+  "verdict": "APROBADO CON OBSERVACIONES - alcance local",
+  "base": "6cd5295d7768c34c32d37d54e0aad3d01f4749f6",
+  "scope": "uncommitted delta",
+  "sha256": {
+    "scripts/verify-ci-gating.mjs": "9b8c785b17d9ee0fbe5ff1fc75b17c8f5d695b3b79fd0eeabe2c443f0f9d69b5",
+    ".github/workflows/main_oneitbapi.yml": "fb7c80edd5a8907210ba18e3f977328e47571487ea8ad1652a662e4d6f214618",
+    ".github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml": "1e9700a9545b8bf844c8ec5e57f6eb340cc086d7d60691583225ffc4123e5538",
+    "tests/test_ci_gating.mjs": "a7725b08c80aeee24549a974bd3773cdfef5dc3c3d3236bd2a4ae7074a1354f4",
+    ".github/workflows/quality-gates.yml": "125c073092eee57591b07fa98704bf50e3743cff56dfa18b2bb213a909a893f7"
+  },
+  "checks": [
+    {
+      "exitCode": 0,
+      "stdout": "================================================================\nSUITE DE VERIFICACION DE GATING DE CI/CD (DELTA 2 CONS-02 / 18-11-2026)\n================================================================\nEjecutando [Caso 1]: Existencia de workflows canónicos y motor de política compartido en scripts/... PASS\nEjecutando [Caso 2]: Sintaxis YAML válida en condición de frontend (CI-02: expresión envuelta ${{ !() }})... PASS\nEjecutando [Caso 3]: Manejo seguro: ejecución desacoplada via scripts/verify-ci-gating.mjs sin interpolación en run: (CI-01)... PASS\nEjecutando [Caso 4]: Procedencia del juez desde ref: main y guard explícito contra pull_request en jobs productivos (CI-01/B)... PASS\nEjecutando [Caso 5]: Función validateShaFormat: rechazo estricto de entradas no hexadecimales o malformadas... PASS\nEjecutando [Caso 6]: Política estricta de procedencia: repositorio ausente, vacío o null BLOQUEA inmediatamente... PASS\nEjecutando [Caso 7]: workflow_run: repositorio vacío o distinto a GITHUB_REPOSITORY BLOQUEA Producción... PASS\nEjecutando [Caso 8]: workflow_run: conclusión success en rama feature/PR BLOQUEA Producción... PASS\nEjecutando [Caso 9]: workflow_run con éxito retrasado: consulta API vigente detecta fallo posterior (run 102) y BLOQUEA (CI-01/A)... PASS\nEjecutando [Caso 10]: workflow_run con éxito retrasado: consulta API vigente detecta ejecución en curso (run 103) y BLOQUEA... PASS\nEjecutando [Caso 11]: workflow_run control positivo: éxito vigente en API AUTORIZA Producción registrando run_id y attempt... PASS\nEjecutando [Caso 12]: workflow_dispatch ejecutado desde rama feature es BLOQUEADO (exige GITHUB_REF refs/heads/main) (CI-01/B)... PASS\nEjecutando [Caso 13]: workflow_dispatch: fallo posterior en main (run 106) BLOQUEA éxito antiguo (run 101)... PASS\nEjecutando [Caso 14]: Capa HTTP con AbortSignal: fetch pasa signal y aborta peticiones detenidas dentro del plazo (CI-01/C)... PASS\nEjecutando [Caso 15]: Manejo de errores: fallo HTTP 500 / red en consulta de API BLOQUEA de forma segura... PASS\nEjecutando [Caso 16]: PR Preview: ciclo de vida con polling (queued -> in_progress -> success) AUTORIZA Preview en intento 3... PASS\nEjecutando [Caso 17]: PR Preview: pull request originado en fork externo es BLOQUEADO para aislamiento estricto de secretos... PASS\nEjecutando [Caso 18]: PR Preview: timeout tras agotar intentos máximos sin conclusión de QG BLOQUEA el despliegue... PASS\n================================================================\nRESULTADO DE GATING CI/CD: 18 / 18 pruebas superadas (100% PASS)\n================================================================\n",
+      "stderr": ""
+    },
+    {
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of '.github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of '.github/workflows/main_oneitbapi.yml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'docs/audit/CANDIDATE_MANIFEST_RC.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'docs/entrega_final/EXPORT_CHECKLIST.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'prompt.txt', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'specs/224-ci-parity-and-artifact-contract/spec.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'specs/224-ci-parity-and-artifact-contract/tasks.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'specs/228-feed-presentation-extraction/EVIDENCE.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'specs/228-feed-presentation-extraction/tasks.md', LF will be replaced by CRLF the next time Git touches it\n"
+    },
+    {
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exitCode": 0,
+      "stdout": "6cd5295d7768c34c32d37d54e0aad3d01f4749f6\n",
+      "stderr": ""
+    }
+  ],
+  "guardExpressionTests": [
+    {
+      "workflow": ".github/workflows/main_oneitbapi.yml",
+      "event": "pull_request",
+      "ref": "refs/pull/1/merge",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": false,
+      "expected": false,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/main_oneitbapi.yml",
+      "event": "workflow_dispatch",
+      "ref": "refs/heads/feature/example",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": false,
+      "expected": false,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/main_oneitbapi.yml",
+      "event": "workflow_dispatch",
+      "ref": "",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": false,
+      "expected": false,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/main_oneitbapi.yml",
+      "event": "workflow_dispatch",
+      "ref": "refs/heads/main",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/main_oneitbapi.yml",
+      "event": "workflow_run",
+      "ref": "refs/heads/main",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml",
+      "event": "pull_request",
+      "ref": "refs/pull/1/merge",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": false,
+      "expected": false,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml",
+      "event": "workflow_dispatch",
+      "ref": "refs/heads/feature/example",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": false,
+      "expected": false,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml",
+      "event": "workflow_dispatch",
+      "ref": "",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": false,
+      "expected": false,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml",
+      "event": "workflow_dispatch",
+      "ref": "refs/heads/main",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "workflow": ".github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml",
+      "event": "workflow_run",
+      "ref": "refs/heads/main",
+      "forgedOutput": "Production/nonemptySHA",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    }
+  ],
+  "missingRefObservation": {
+    "source": "import {evaluateGatingPolicy} from './scripts/verify-ci-gating.mjs'; const sha='1'.repeat(40);const repo='OneITB/OneITB23';const r=await evaluateGatingPolicy({env:{GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REPOSITORY:repo,INPUT_TARGET_SHA:sha},fetchRuns:async()=>[{id:1,run_attempt:1,head_sha:sha,head_branch:'main',status:'completed',conclusion:'success',head_repository:{full_name:repo}}],logger:{log(){},error(){}}}); console.log(JSON.stringify(r));",
+    "exitCode": 0,
+    "stdout": "{\"allowed\":true,\"exitCode\":0,\"targetSha\":\"1111111111111111111111111111111111111111\",\"deployEnv\":\"Production\",\"mode\":\"workflow_dispatch\",\"runId\":1,\"runAttempt\":1}\n",
+    "stderr": ""
+  }
+}

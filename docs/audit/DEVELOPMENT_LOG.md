@@ -19,6 +19,169 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-18] - Spec 225 (Lote CONS-03 / Remediación Integral, Delta 4 y Ronda 7): Matriz Unificada Productor-Consumidor y Tipado Estricto de Manifiesto - branch: feature/2026-11-01-debugger-cv-builder
+
+### Ronda 7: Corrida Dinámica Real del Consumidor en PowerShell (8/8 PASS) y Cierre de RUN-03
+
+**Estado:** RATIFICADO Y CERRADO TÉCNICAMENTE (Dictamen de ratificación: `docs/audit/RATIFICACION_CONS03_RONDA7_2026-11-18.md`)
+**Base HEAD:** `6cd5295d7768c34c32d37d54e0aad3d01f4749f6`
+
+Se ejecutó la suite de consumidor real `tests/test_wrapper_contract.mjs` en un entorno de host con Windows PowerShell 5.1 operativo, superando el 100% de las pruebas dinámicas:
+
+1. **8 / 8 Escenarios PASS (0 Bloqueados):**
+   - Éxitos: `live_success` (`exitCode: 0`, puntero actualizado a nuevo ID, SHA-256 mutado) y `dry_run_success` (`exitCode: 0`, puntero y hash preservados byte a byte).
+   - Seis rechazos (`incoherent_dry_run_pass`, `certified_true`, `string_ui_executed`, `status_unknown`, `missing_mode`, `lowercase_status_pass`): `actualExit = 1` exacto, diagnósticos emitidos conformes (`REJECTED_CONFORME`) y puntero/hash rigurosamente preservados byte a byte (`3151534e...` idéntico).
+2. **Aislamiento y Cero Residuos:** Corrida íntegramente confinada a directorio efímero en `scratch/` y purgada al 100% en `finally`. El repositorio real conservó su estado intacto.
+3. **Evidencia Saneada:** Evidencia registrada en `docs/audit/EVIDENCIA_WRAPPER_FIXTURES_CONS03.json` (`blockedCount: 0`, `powershellConformsCount: 8`).
+4. **Suite Canónica:** `tests/test_runner_isolation.mjs` en 13/13 PASS. Código de producto intacto (0 cambios).
+
+### Ronda 6: Alineación de Diagnósticos, Código de Salida Exacto y Desacoplamiento de REPO_ROOT (RUN-03)
+
+**Estado:** EN AUDITORÍA / ENVIADO A RATIFICACIÓN (Dictamen antecesor: `docs/audit/DICTAMEN_CONS03_RONDA5_2026-11-18.md`)
+**Base HEAD:** `6cd5295d7768c34c32d37d54e0aad3d01f4749f6`
+
+En respuesta al dictamen de la Ronda 5 de Astra, se ajustaron los tres elementos señalados en las suites de prueba:
+
+1. **Alineación de Diagnósticos con Comillas Simples:** En `test_wrapper_contract.mjs` y `test_wrapper_consumer_fixtures.ps1`, las cadenas buscadas para `certified` y `uiExecuted` incorporan comillas simples literales (`"'certified' debe ser..."` y `"'uiExecuted' debe ser..."`), coincidiendo de forma idéntica con los mensajes emitidos por el wrapper.
+2. **Exigencia de Código de Salida Exacto:** En `test_wrapper_contract.mjs`, se endureció la aserción de rechazo para validar explícitamente `actualExit === sc.expectedExit`, asegurando que no se acepte cualquier código no nulo sino el código exacto esperado (1).
+3. **Desacoplamiento Estricto de `REPO_ROOT`:** En `tests/fixtures/mock_runner.mjs`, se eliminó la lectura de `process.env.REPO_ROOT`, derivando la raíz física exclusivamente a partir de `__dirname`. Asimismo, se eliminó la variable `REPO_ROOT` del entorno propagado a los subprocesos de prueba.
+
+### Delta 4: Productor Canónico Fijo, Paridad de Mayúsculas y Aislamiento Físico de Fixtures (Cierre Técnico RUN-03)
+
+**Estado:** EN AUDITORÍA / DICTAMEN EMITIDO (Dictamen antecesor: `docs/audit/DICTAMEN_CONS03_DELTA4_2026-11-18.md`)
+**Base HEAD:** `6cd5295d7768c34c32d37d54e0aad3d01f4749f6`
+
+Se implementó el cierre técnico de los 3 puntos de RUN-03 fijados en el dictamen Delta 4:
+
+1. **Fijación del Productor Canónico en el Wrapper Operativo:**
+   - En `scripts/run-cf05-ui-live-validation.ps1`, se eliminó la variable de entorno `$env:NODE_RUNNER_SCRIPT`. El wrapper apunta invariablemente a `scripts\verify-cf05-ui-live.mjs` respecto a `$repositoryRoot`.
+
+2. **Paridad Estricta de Mayúsculas (Case-Sensitive):**
+   - En `scripts/run-cf05-ui-live-validation.ps1`, se sustituyeron las comparaciones insensibles a mayúsculas (`-eq`, `-ne`) por `-ceq` y `-cne` para los dominios de `mode` ('live', 'dry-run') y `status` ('PASS', 'FAIL', 'DRY_RUN_OK').
+   - Se asegura que variantes en minúsculas (ej. status `'pass'`) sean rechazadas con código de salida 1 en ambos extremos.
+
+3. **Aislamiento Físico de Fixtures y Cobertura de 8 Escenarios:**
+   - Las pruebas (`tests/test_wrapper_contract.mjs` y `tests/test_wrapper_consumer_fixtures.ps1`) se ejecutan dentro de una raíz temporal efímera en `scratch/`, copiando el wrapper intacto y colocando allí el mock runner.
+   - `LATEST_RUN.json` del repositorio real no se lee ni modifica bajo ninguna circunstancia.
+   - Se miden los hashes SHA-256 byte a byte del puntero antes y después de cada escenario, contemplando el BOM UTF-8 (`0xFEFF`) de Windows PowerShell 5.1.
+   - Sonda con timeout para el intérprete PowerShell: si agota plazo, registra formalmente `status: "BLOCKED"` con `actualExit: null` sin sintetizar valores falsos.
+   - Cobertura de 8 escenarios en una corrida única con evidencia en `docs/audit/EVIDENCIA_WRAPPER_FIXTURES_CONS03.json`.
+   - Suite canónica `tests/test_runner_isolation.mjs` verificada con 13/13 PASS (100% PASS), incluyendo la sub-aserción 13 para minúsculas.
+
+### Remediación de RUN-03, Ratificación de RUN-04 y Cierre Técnico (Lote CONS-03)
+
+**Estado:** EN AUDITORÍA / PENDIENTE DE RATIFICACIÓN FINAL (Dictámenes: REQUIERE AJUSTES `docs/audit/DICTAMEN_CONS03_DELTA3_2026-11-18.md`; RUN-04 RATIFICADO)
+**Base HEAD:** `6cd5295d7768c34c32d37d54e0aad3d01f4749f6`
+
+Se implementó la resolución rigurosa del hallazgo pendiente RUN-03 tras la ratificación formal de RUN-04 por parte del Auditor Principal Astra, sin alterar código de producto ni dependencias y sin abrir sesiones reales de navegador:
+
+1. **Ratificación de RUN-04 (Cero Residuos y Aislamiento):**
+   - Confirmada la suite en 13/13 PASS. Verificado que un fallo inducido tras el Caso 10 en copia aislada termina con código 1 y cero carpetas de corrida residuales. Hash SHA-256 del informe histórico y de las 9 capturas verificado 100% idéntico.
+
+2. **Resolución Integral de RUN-03 (Matriz Unificada Productor-Consumidor y Tipado Estricto):**
+   - **Validador Node (`validateManifestContract`):** Se restringió la matriz de combinaciones válidas:
+     * Éxito live: `mode: 'live'`, `status: 'PASS'`, `exitCode: 0`, `uiExecuted: true`, `certified: false`.
+     * Éxito dry-run: `mode: 'dry-run'`, `status: 'DRY_RUN_OK'`, `exitCode: 0`, `uiExecuted: false`, `certified: false`. (Rechazo inmediato de `dry-run` con status `PASS`).
+     * Fallo documentado: `status: 'FAIL'`, `exitCode != 0`, `uiExecuted: false`, `certified: false`.
+     * Se rechaza estrictamente `certified: true`, `status: 'UNKNOWN'`, `uiExecuted` como string (`"false"`), campos faltantes o combinaciones no autorizadas.
+   - **Consumidor PowerShell (`run-cf05-ui-live-validation.ps1`):** Se eliminó la coerción previa `[bool]` que convertía strings `"false"` en verdaderos. Se inspeccionan los tipos JSON nativos (`-is [bool]`, `-is [string]`, `-is [int]`), se exige `certified -eq $false` y se aplica la misma matriz exacta de combinaciones válidas.
+   - **Protección de Puntero `LATEST_RUN.json`:** Cualquier manifiesto incoherente, modo desconocido o fallo de tipado concluye en código de salida 1 y conserva intacto el archivo `LATEST_RUN.json`. En `dry-run`, se verifica `RUN_OUTPUT.md` y se preserva el puntero previo sin actualizar.
+   - **Verificación Dinámica:** Se implementó `tests/test_wrapper_consumer_fixtures.ps1` y `tests/test_wrapper_contract.mjs` con generador de fixtures desacoplado (`tests/fixtures/mock_runner.mjs`), registrando la evidencia estructurada en `docs/audit/EVIDENCIA_WRAPPER_FIXTURES_CONS03.json`.
+   - **Suite Canónica (Caso 13 enriquecido):** Se validan 12 aserciones negativas y positivas sobre la matriz exacta de estados y tipos en fixtures aislados sin navegador.
+
+---
+## [2026-11-17] - Spec 224 (Addendum CONS-02): CI/CD Deployment Gating & Environment Segregation - branch: feature/2026-11-01-debugger-cv-builder
+
+### Gating Estricto de Despliegue en CI/CD y Segregación de Entornos (Resolución CONS-02)
+
+**Alcance:** Remediación exhaustiva del hallazgo de auditoría CONS-02 en los flujos de GitHub Actions (`.github/workflows/main_oneitbapi.yml` y `.github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml`), eliminando vías de elusión de Quality Gates y segregando formalmente los entornos de Production y Preview:
+
+1. **Gating Estricto en Backend (`main_oneitbapi.yml`):**
+   - Incorporación del job de verificación `verify_quality_gate` previo a cualquier compilación o publicación.
+   - Validación de `workflow_run`: evalúa `conclusion == 'success'` y `head_branch == 'main'`.
+   - Gating de `workflow_dispatch`: en entradas manuales, consulta la API de GitHub Actions (`/repos/{repo}/actions/workflows/quality-gates.yml/runs?head_sha={sha}&status=completed`) exigiendo que el commit SHA destino cuente con una ejecución previa finalizada y exitosa de `Quality Gates`. De lo contrario, la ejecución se bloquea inmediatamente con código de salida 1.
+   - Checkout anclado estrictamente a `target_sha` validado (`needs.verify_quality_gate.outputs.target_sha`) y entorno acotado a `Production`.
+
+2. **Segregación de Entornos y Gating en Frontend (`azure-static-web-apps...`):**
+   - Desacoplamiento de despliegues en dos jobs independientes: `deploy_production` (restringido a rama `main` y entorno `Production`) y `deploy_preview` (restringido a `pull_request` y entorno efímero `Preview`).
+   - Gating de PR Preview y Manual Dispatch: consulta de estado de Quality Gates para el commit SHA destino mediante API de GitHub, bloqueando la creación o actualización de staging slots si Quality Gates no ha finalizado en verde para ese commit.
+   - Aislamiento de Teardown: el job `close_pull_request_job` queda restringido estrictamente a `pull_request` con acción `closed`, limpiando el entorno efímero sin ejecutar compilaciones ni tocar producción.
+
+3. **Verificación Falsable y Cero Despliegue a Producción:**
+   - Creación de la suite de verificación automatizada `tests/test_ci_gating.ps1` y `tests/test_ci_gating.mjs` con 6 casos de prueba en 100% PASS que validan: existencia de workflows, contratos de gating en backend, segregación Production vs Preview en frontend, consulta de API por SHA, falsabilidad de las 4 condiciones de Astra (fallo bloquea producción, paso de Y no autoriza X, dispatch manual sin evidencia bloquea, y preview no puede promoverse a producción) y aislamiento de teardown.
+   - Cero publicaciones o despliegues ejecutados en producción para la validación. Cero alteración de código de producto.
+
+### Sublote de Remediación CONS-02 (Dictamen CI-01 a CI-05 - 17/11/2026)
+
+Tras la revisión técnica del Auditor Principal Astra (`DICTAMEN_CONS02_6cd5295_2026-11-17.md`), se ejecutó la remediación integral de los 5 hallazgos sin alterar código de producto ni dependencias:
+
+1. **CI-01 (Manejo Seguro de SHA y Procedencia Main en Dispatch):**
+   - Eliminación de interpolación directa de `${{ github.event.inputs.target_sha }}` en scripts de Bash. Inyección exclusiva mediante variables de entorno (`env:`).
+   - Validación estricta con expresión regular `^[0-9a-fA-F]{40}$`. Rechazo inmediato con código 1 ante caracteres no hexadecimales, nombres de rama, inyecciones de comandos, saltos de línea o metacaracteres.
+   - En `workflow_dispatch` a Producción: filtro estricto sobre la API de GitHub Actions que exige que el run completado de Quality Gates tenga `head_branch == "main"`, `conclusion == "success"` y pertenezca al repositorio confiable (`head_repository.full_name == GITHUB_REPOSITORY`), registrando `run_id`, `run_attempt` y rama autorizada. QG aprobado en feature branch o PR no autoriza Producción.
+
+2. **CI-02 (Sintaxis YAML en Condicional de Frontend):**
+   - Corrección en `.github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml` (línea 30): la expresión que iniciaba con `!` fue envuelta formalmente como `${{ !(github.event_name == 'pull_request' && github.event.action == 'closed') }}`, eliminando el conflicto de tag YAML.
+
+3. **CI-03 (Alineación de Árbol Probado y Polling Acotado en PR Preview):**
+   - En `quality-gates.yml`, los pasos de checkout de backend y frontend fijaron `ref: ${{ github.event.pull_request.head.sha || github.sha }}`, garantizando que en pull requests se evalúa exactamente el mismo árbol (head commit) que el checkout de despliegue en SWA (`target_sha`).
+   - En `verify_quality_gate` para pull requests, se implementó un bucle de espera acotado (polling hasta 40 intentos cada 15s) que contempla estados `queued` e `in_progress`, resolviendo a éxito únicamente tras conclusión `success` o abortando con código 1 si concluye en fallo o expira el timeout. PRs provenientes de forks externos quedan bloqueados para aislamiento estricto de secretos.
+
+4. **CI-04 (Desacoplamiento de Destinos Azure SWA vs GitHub Environments):**
+   - En `deploy_production`: eliminación de `deployment_environment: "Production"` (que creaba un staging nombrado) y configuración de `production_branch: "main"`, dirigiendo la publicación al slot productivo raíz nativo de Azure SWA.
+   - En `deploy_preview`: eliminación de `deployment_environment: "Preview"` fijo que causaba colisión entre PRs. Se activa el modelo nativo de Azure SWA donde cada PR recibe un entorno aislado basado en su número de PR.
+   - En `close_pull_request_job`: el teardown nativo con `action: "close"` actúa simétricamente sobre el preview del PR cerrado sin alterar otros previews ni producción.
+
+5. **CI-05 (Saneamiento de Suites, Fixtures de API y Pruebas por Mutación):**
+   - Corrección de `SyntaxError: Unexpected token ')'` en `tests/test_ci_gating.mjs` (líneas 44, 61, 75).
+   - Expansión a 15 pruebas automatizadas (con paridad en `test_ci_gating.ps1`) que ejecutan las reglas reales extraídas de los workflows contra matrices de fixtures de API: rechazo de entradas malformadas, bloqueo de feature branches en dispatch, bloqueo de fallos en main, control positivo de éxito en main, ciclo de vida con polling de PR preview, aislamiento de forks y pruebas por mutación demostrando que la eliminación de filtros de rama provoca fallos en la suite.
+
+### Ajuste y Consolidación del Delta CONS-02 (Dictamen 18/11/2026)
+
+Tras la revisión del delta (`DICTAMEN_CONS02_DELTA_2026-11-18.md`), se unificó la política de compuertas en un único motor canónico ejecutable, resolviendo los pendientes señalados por el Auditor Principal:
+
+1. **Unificación Arquitectónica de Política (`scripts/verify-ci-gating.mjs`):**
+   - Se extrajo toda la lógica de validación, filtrado y gating a un único módulo y script Node (`scripts/verify-ci-gating.mjs`, fuera del código de producto) compartido entre `.github/workflows/main_oneitbapi.yml`, `.github/workflows/azure-static-web-apps-agreeable-moss-01ccbda10.yml` y la suite de pruebas.
+   - En ambos workflows, el bloque `run:` se simplificó estrictamente a `run: node scripts/verify-ci-gating.mjs` sin interpolación en Bash y con todos los parámetros inyectados por variables de entorno (`env:`).
+   - `tests/test_ci_gating.mjs` importa y ejercita directamente la función exportada `evaluateGatingPolicy` y valida los contratos de los workflows.
+   - `tests/test_ci_gating.ps1` actúa como un wrapper que ejecuta `test_ci_gating.mjs` y propaga su código de salida, eliminando la duplicación de motores paralelos.
+
+2. **Precedencia Estricta del Intento Más Reciente (Resolución de Éxitos Antiguos):**
+   - La selección de ejecuciones de Quality Gates en la API de GitHub consulta sin restringir a `status=completed`, ordenando por ID/fecha descendente para evaluar el intento más reciente.
+   - Si un commit SHA cuenta con un éxito histórico (ej. run 101) pero existe una ejecución posterior fallida (ej. run 102 failure) o en progreso (`in_progress`), la política evalúa la ejecución más reciente y **BLOQUEA** el despliegue con código 1.
+
+3. **Rechazo Estricto de Repositorio Ausente o Untrusted:**
+   - Si la variable `GITHUB_REPOSITORY` o la procedencia del repositorio (`WORKFLOW_RUN_REPO`, `PR_HEAD_REPO`) es nula, vacía (`""`) o distinta al repositorio confiable, el gating **BLOQUEA** inmediatamente con código 1.
+
+4. **Saneamiento del Caso 3 en la Suite de Pruebas:**
+   - Se eliminó la contradicción en `test_ci_gating.mjs` que exigía variables en `env:` y negaba simultáneamente su presencia en todo el archivo. Ahora se valida que las líneas `run:` no contengan interpolaciones `${{ github.event... }}`.
+
+### Ajuste y Consolidación del Delta 2 CONS-02 (Dictamen 18/11/2026)
+
+Tras la revisión del Delta 2 (`DICTAMEN_CONS02_DELTA2_2026-11-18.md`), se cerraron los tres vectores pendientes identificados por el Auditor Principal (CI-01/A, CI-01/B y CI-01/C):
+
+1. **CI-01/A (Verificación de Estado Vigente en `workflow_run`):**
+   - Se extendió `workflow_run` para que no se confíe ciegamente en el payload del evento. Tras verificar el éxito inicial del evento en `main`, consulta la API de GitHub Actions para corroborar el estado vigente del target SHA. Si un intento posterior falló (`failure`) o está en curso (`in_progress`), la consulta vigente **BLOQUEA** inmediatamente con código 1 (`LATEST_RUN_NOT_SUCCESS` o `LATEST_RUN_NOT_COMPLETED`), neutralizando eventos de éxito obsoletos o retrasados.
+
+2. **CI-01/B (Procedencia Confiable del Juez, Contexto Main y Guards Productivos):**
+   - En ambos workflows (`main_oneitbapi.yml` y `azure-static-web-apps...`), el checkout del job `verify_quality_gate` se fijó explícitamente a `with: ref: 'main'`. Esto garantiza que el motor de política (`scripts/verify-ci-gating.mjs`) se cargue siempre desde la rama canónica auditada `main`, impidiendo que un PR o rama manual altere a su propio juez.
+   - En `workflow_dispatch`, se exige explícitamente `GITHUB_REF == 'refs/heads/main'`. Un disparo manual originado desde una rama feature es bloqueado con código 1 (`DISPATCH_REF_NOT_MAIN`).
+   - En los jobs productivos (`deploy_production` en SWA y `deploy` en Web App), se incorporó un guard a nivel de motor de GitHub Actions (`github.event_name != 'pull_request'` y `github.ref == 'refs/heads/main'`), garantizando que eventos PR jamás puedan invocar producción aun ante eventuales outputs manipulados.
+
+3. **CI-01/C (Timeout HTTP Explícito con AbortSignal):**
+   - En `scripts/verify-ci-gating.mjs`, la función `fetchWorkflowRunsFromApi` incorpora un `AbortController` con plazo explícito (`requestTimeoutMs: 10000`) y pasa `signal: controller.signal` a `fetch`. Conexiones lentas o detenidas son abortadas limpiamente con mensaje auditable en lugar de colgar el runner.
+   - Se añadió `timeout-minutes: 15` en los jobs de verificación de ambos workflows.
+   - La suite de pruebas `tests/test_ci_gating.mjs` se amplió a 18 casos cubriendo estos tres vectores.
+
+### Ratificación Formal de CONS-02 (Dictamen 18/11/2026)
+
+El Auditor Principal Astra emitió dictamen de **APROBADO CON OBSERVACIONES** (`docs/audit/RATIFICACION_CONS02_2026-11-18.md`), ratificando el cierre de CONS-02 en alcance de código, configuración y pruebas locales:
+- Verificación independiente de 18/18 pruebas PASS en `tests/test_ci_gating.mjs`, 10/10 escenarios booleanos de guards en verde y `git diff --check` limpio.
+- Bloqueos CI-01/A, CI-01/B y CI-01/C resueltos en su totalidad sin alterar código de producto ni dependencias.
+- Observaciones no bloqueantes registradas: el módulo se ajustó adicionalmente para exigir `refs/heads/main` estricto en dispatch (OBS-CI-01); la ejecución remota de pipelines en GitHub y los despliegues en Azure quedan como aceptación externa previa a producción pública.
+- Queda autorizado el avance al siguiente lote técnico de gobernanza: **CONS-03** (Aislamiento y limpieza de runners).
+
+---
 ## [2026-11-16] - Spec 228: Feed Presentation Extraction (UserAvatar & ParticipationBadges) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Extracción de Presentación en Feed: UserAvatar e Insignias Comunitarias (Spec 228)

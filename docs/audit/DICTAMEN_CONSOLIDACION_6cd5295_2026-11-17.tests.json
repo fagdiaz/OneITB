@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-17",
+  "sha": "6cd5295d7768c34c32d37d54e0aad3d01f4749f6",
+  "cwd": "FrontEnd/OneItb-FE",
+  "command": "node node_modules/vitest/vitest.mjs run src/Components/publication/UserAvatar.test.jsx src/Components/publication/Feed.interactions.test.jsx",
+  "execution": "node child bootstrap sets TMP/TEMP then imports Vitest CLI with stated arguments",
+  "tempDirectory": ".tmp/ratification-6cd5295",
+  "firstAttempt": "EPERM in sandbox temporary directory; no tests executed; retried with writable workspace temporary directory",
+  "exitCode": 0,
+  "stdout": "\n\u001b[1m\u001b[30m\u001b[46m RUN \u001b[49m\u001b[39m\u001b[22m \u001b[36mv4.1.10 \u001b[39m\u001b[90mF:/React/OneITB23/FrontEnd/OneItb-FE\u001b[39m\n\n \u001b[32m✓\u001b[39m src/Components/publication/UserAvatar.test.jsx \u001b[2m(\u001b[22m\u001b[2m18 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 59\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/Components/publication/Feed.interactions.test.jsx \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 520\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m2 passed\u001b[39m\u001b[22m\u001b[90m (2)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m24 passed\u001b[39m\u001b[22m\u001b[90m (24)\u001b[39m\n\u001b[2m   Start at \u001b[22m 12:54:08\n\u001b[2m   Duration \u001b[22m 3.54s\u001b[2m (transform 439ms, setup 433ms, import 979ms, tests 579ms, environment 3.63s)\u001b[22m\n\n",
+  "stderr": "\u001b[90mstderr\u001b[2m | src/Components/publication/Feed.interactions.test.jsx\u001b[2m > \u001b[22m\u001b[2mFeed attachment & comment interaction regressions\u001b[2m > \u001b[22m\u001b[2mstrips storageMode from SocialAttachmentInput when creating an inquiry with attachments\n\u001b[22m\u001b[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.\n⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.\n\n"
+}

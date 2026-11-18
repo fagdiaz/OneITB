@@ -12,35 +12,110 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      target_sha:
+        description: 'Commit SHA to deploy to Production (must have a passing Quality Gates run)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
 
 jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'pull_request' && github.event.action != 'closed')
+  verify_quality_gate:
+    name: Verify Quality Gates and Route Environment
+    # Skip verification for closing PRs (only teardown needed)
+    if: ${{ !(github.event_name == 'pull_request' && github.event.action == 'closed') }}
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
+    timeout-minutes: 15
+    outputs:
+      target_sha: ${{ steps.verify_policy.outputs.target_sha }}
+      deploy_env: ${{ steps.verify_policy.outputs.deploy_env }}
+    steps:
+      - name: Checkout Repository for Gating Policy from Trusted Main
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Execute Shared Quality Gates Policy Engine
+        id: verify_policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+          INPUT_TARGET_SHA: ${{ github.event.inputs.target_sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          DEFAULT_SHA: ${{ github.sha }}
+          WORKFLOW_RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          WORKFLOW_RUN_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: node scripts/verify-ci-gating.mjs
+
+  deploy_production:
+    name: Deploy to Production (Azure SWA)
+    needs: [verify_quality_gate]
+    if: |
+      github.event_name != 'pull_request' &&
+      (github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) &&
+      needs.verify_quality_gate.outputs.deploy_env == 'Production'
+    runs-on: ubuntu-latest
+    environment:
+      name: 'Production'
+      url: https://agreeable-moss-01ccbda10.eastus2.azurestaticapps.net
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - name: Build And Deploy
+          ref: ${{ needs.verify_quality_gate.outputs.target_sha }}
+      - name: Build And Deploy Production
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_MOSS_01CCBDA10 }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/FrontEnd/OneItb-FE" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+          app_location: "/FrontEnd/OneItb-FE"
+          api_location: ""
+          output_location: "dist"
+          production_branch: "main"
+
+  deploy_preview:
+    name: Deploy PR Preview Staging Environment (Azure SWA)
+    needs: [verify_quality_gate]
+    if: needs.verify_quality_gate.outputs.deploy_env == 'Preview'
+    runs-on: ubuntu-latest
+    environment:
+      name: 'Preview'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          ref: ${{ needs.verify_quality_gate.outputs.target_sha }}
+      - name: Build And Deploy PR Preview
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_MOSS_01CCBDA10 }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/FrontEnd/OneItb-FE"
+          api_location: ""
+          output_location: "dist"
 
   close_pull_request_job:
+    name: Teardown PR Preview Staging Environment
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    name: Close Pull Request Job
     steps:
       - name: Close Pull Request
         id: closepullrequest
