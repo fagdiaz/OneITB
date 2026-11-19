@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const canonicalWrapperScript = path.join(repoRoot, 'scripts', 'run-cf05-ui-live-validation.ps1');
 const mockRunnerSource = path.join(repoRoot, 'tests', 'fixtures', 'mock_runner.mjs');
-const evidencePath = path.join(repoRoot, 'docs', 'audit', 'evidencias', 'EVIDENCIA_WRAPPER_FIXTURES_CONS03.json');
+const evidencePath = process.env.CONTRACT_EVIDENCE_PATH || path.join(repoRoot, 'scratch', 'EVIDENCIA_WRAPPER_FIXTURES_RUN.json');
 
 console.log('================================================================');
 console.log('TEST DE CONTRATO PRODUCTOR-CONSUMIDOR Y WRAPPER POWERSHELL');
@@ -324,6 +324,10 @@ const evidenceData = {
   }
 };
 
+const evidenceDir = path.dirname(evidencePath);
+if (!fs.existsSync(evidenceDir)) {
+  fs.mkdirSync(evidenceDir, { recursive: true });
+}
 fs.writeFileSync(evidencePath, JSON.stringify(evidenceData, null, 2) + '\n', 'utf8');
 console.log(`\nEvidencia guardada exitosamente en: ${evidencePath}`);
 

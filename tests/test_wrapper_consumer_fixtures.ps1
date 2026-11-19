@@ -153,7 +153,9 @@ if ($allPassed) {
 Write-Host "================================================================"
 
 # Guardar evidencia estructurada
-$evidencePath = Join-Path $repoRoot "docs\audit\evidencias\EVIDENCIA_WRAPPER_FIXTURES_CONS03.json"
+$evidencePath = if ($env:CONTRACT_EVIDENCE_PATH) { $env:CONTRACT_EVIDENCE_PATH } else { Join-Path $repoRoot "scratch\EVIDENCIA_WRAPPER_FIXTURES_RUN.json" }
+$evidenceDir = Split-Path $evidencePath -Parent
+if (-not (Test-Path $evidenceDir)) { New-Item -ItemType Directory -Path $evidenceDir -Force | Out-Null }
 $evidencePayload = [ordered]@{
     date = "2026-11-18"
     base = "6cd5295d7768c34c32d37d54e0aad3d01f4749f6"
