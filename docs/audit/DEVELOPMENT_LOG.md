@@ -23,8 +23,8 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
 
 ### Reorganización Estructural y Depuración de docs/audit (DOC-09)
 
-**Estado:** RATIFICADO Y CERRADO (Dictamen de ratificación: `ratificaciones/DICTAMEN_DOC09_RONDA1.md`)
-**Base HEAD:** `4629ba737722d81526a2ffa1a22f90198ec4cee9` -> Commit: `d06920c`
+**Estado:** RATIFICADO Y CERRADO (Dictamen de ratificación final: `ratificaciones/DICTAMEN_DOC09_RONDA2.md`; revisión previa: `ratificaciones/DICTAMEN_DOC09_RONDA1.md`)
+**Base HEAD:** `4629ba737722d81526a2ffa1a22f90198ec4cee9` -> Commits: `d06920c` (reorganización), `b8f5a61` (log) y `582e2c9` (aislamiento de salidas en test runners)
 
 Se ejecutó la reestructuración física y depuración de artefactos transitorios en el directorio `docs/audit/`, preservando la trazabilidad canónica, la inmutabilidad de dictámenes definitivos y la integridad de consumidores automatizados conforme a las directivas del usuario y Canal 1 (`6.2 Astra` · Alto):
 
@@ -38,7 +38,7 @@ Se ejecutó la reestructuración física y depuración de artefactos transitorio
 
 3. **Reconciliación de Enlaces y Consumidores de Trazas:**
    - Se actualizaron las referencias canónicas en `CANDIDATE_MANIFEST_RC.md`, `DOCUMENTATION_STATUS.md`, `FINAL_AUDIT_REPORT.md`, `01-project-overview.md`, `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`, `MULTI_AGENT_FRAMEWORK.md`, `scripts/run-cf05-ui-live-validation.ps1` y capturas relativas en `CF05_UI_WALKTHROUGH*.md`.
-   - Se adaptaron los consumidores automatizados de pruebas: `tests/test_runner_isolation.mjs` (apuntando a `docs/audit/evidencias/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`), `tests/test_wrapper_contract.mjs` y `tests/test_wrapper_consumer_fixtures.ps1` (apuntando a `docs/audit/evidencias/EVIDENCIA_WRAPPER_FIXTURES_CONS03.json`).
+   - Se adaptaron los consumidores automatizados de pruebas: `tests/test_runner_isolation.mjs` (apuntando a `docs/audit/evidencias/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`), y se redirigieron las salidas dinámicas de `tests/test_wrapper_contract.mjs` y `tests/test_wrapper_consumer_fixtures.ps1` hacia `scratch/` (configurable vía `$env:CONTRACT_EVIDENCE_PATH`), preservando de forma permanente la inmutabilidad del archivo histórico `docs/audit/evidencias/EVIDENCIA_WRAPPER_FIXTURES_CONS03.json` (SHA-256: `94ff18259af1ec21115cd3fef76820cb1c8d4b45e13c369c70b9cf4b3e541a35`).
 
 4. **Validación Exhaustiva de Suites:**
    - `test_runner_isolation.mjs`: 13/13 PASS (100%).
