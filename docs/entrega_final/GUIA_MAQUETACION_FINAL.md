@@ -10,21 +10,19 @@
 
 > El documento Markdown es la fuente canónica. No debe reemplazarse ni editarse destructivamente durante la maquetación. Se recomienda trabajar sobre una copia y conservar los diagramas originales en formato Mermaid.
 
-> **Estado de entrada reconciliado (8 de agosto de 2026).** La memoria fuente está alineada con el
+> **Estado de entrada reconciliado (Noviembre de 2026).** La memoria fuente está alineada con el
 > Release Candidate académico: 117/117 ítems contabilizados (46 verificados y 71
-> implementados), últimos baselines de 234 pruebas backend y 252 frontend ejecutados
-> conjuntamente en el preflight del worktree de Spec 218, builds limpios, 34 migraciones,
+> implementados), línea base técnica certificada de 803 pruebas core automáticas (396 backend xUnit y 407 frontend Vitest en 71 suites) acreditada mediante preflight oficial sobre la revisión `6cd5295` (con árbol en modificación) y consolidada en `5c0bbb6` / `94a52af` bajo la Constitución v1.8.0, distinguiéndose de la línea base histórica de 785 pruebas del tag `v1.0.0-rc` (anclado a `d806822` / candidato `37ed360`). Se cuenta con 11 pruebas de concurrencia SQL opt-in (categoría `GOB12SqlConcurrency`, evidencia en `a62c4e3`), 38 migraciones fuente disponibles con modelo EF sin drift respecto al snapshot según preflight,
 > base demo canónica, acceso Microsoft Entra real hasta onboarding/muro, Redis local y
-> SMTP Mailpit verificados. Ese preflight no equivale al gate integral sobre el SHA
-> candidato definitivo; ambas suites deben repetirse o vincularse al SHA antes de `CF-06`.
-> Los 13 Mermaid del paquete técnico fueron auditados estáticamente; el render compilado,
-> la selección, inserción y revisión visual dentro del Word continúan siendo gates editoriales
-> pendientes. Esta guía no debe utilizarse para declarar como productivos los proveedores
-> externos pendientes.
+> SMTP Mailpit verificados. Las compuertas de Release Candidate CF-01 a CF-05 se encuentran
+> formalmente certificadas, y la compuerta técnica CF-06 quedó consolidada con el tag `v1.0.0-rc` registrado localmente y publicado en `origin` (objeto `9faddd9`, ratificado el 18/11/2026).
+> Los 13 diagramas Mermaid del paquete técnico y los 10 de la memoria cuentan con fuentes normalizadas;
+> la selección, inserción y revisión visual dentro del Word continúan siendo compuertas editoriales en curso.
+> Esta guía no debe utilizarse para declarar como productivos los proveedores externos pendientes.
 >
 > La defensa planificada para el 7 de agosto de 2026 no se realizó porque la
 > documentación final, el refinamiento/cierre y la auditoría manual no se completaron a
-> tiempo. No hubo versión presentada ni tag final y no existe una nueva fecha documentada.
+> tiempo. No hubo versión presentada ni tag final en esa fecha, y no existe una nueva fecha institucional convocada.
 
 ---
 
@@ -687,9 +685,9 @@ Antes de congelar el DOCX, contrastar como mínimo estas afirmaciones:
 | Afirmación documental | Fuente de comprobación |
 |---|---|
 | 100 % global y 117/117 ítems | `docs/project_docs/ROADMAP.md` |
-| 234 pruebas backend y 252 frontend ejecutados conjuntamente en el preflight de Spec 218; repetición conjunta pendiente sobre SHA candidato definitivo | Spec 218, `DEVELOPMENT_LOG.md` y `DOCUMENTATION_STATUS.md` |
-| EF Core sin drift | salida del gate de predefensa |
-| Backup, 34 migraciones, seed doble y seis roles | evidencia de Spec 196, Runbook y auditoría final |
+| 803 pruebas automáticas core (396 backend xUnit + 407 frontend Vitest en 71 suites) certificadas en preflight oficial sobre `6cd5295` y distinguidas del tag histórico de 785 pruebas; 11 pruebas de concurrencia SQL opt-in en `Services.Tests` (`GOB12SqlConcurrency`, evidencia en `a62c4e3` / `SQL_CONCURRENCY_RESULTS.md`) | Constitución v1.8.0, `PREFLIGHT_CERTIFIED_6cd5295.json` y `ROADMAP.md` |
+| 38 migraciones fuente disponibles; modelo EF sin drift respecto al snapshot | salida del comando `dotnet ef migrations has-pending-model-changes` |
+| Backup, 34 migraciones al corte de Spec 196, seed doble y seis roles | evidencia de Spec 196, Runbook y auditoría final |
 | 47 mutaciones GraphQL en el schema vigente | arquitectura, auditoría final y schema generado |
 | Redis local y SMTP Mailpit verificados | evidencia de Spec 195 |
 | Microsoft Entra aceptado hasta onboarding/muro; cierre integral pendiente | Roadmap y auditoría final |

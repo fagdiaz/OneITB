@@ -23,29 +23,11 @@ La solución adopta una arquitectura desacoplada: una aplicación de página ún
 El núcleo funcional se encuentra implementado y el roadmap registra un 100 % global
 (117 de 117 ítems): 46 se encuentran verificados `[V]` y 71 implementados `[I]`. Esta
 medición expresa cobertura del alcance contabilizado, no aceptación productiva total.
-La Spec 218 ejecutó conjuntamente 234 pruebas backend y 252 pruebas frontend sobre el
-mismo worktree, junto con ambos builds, EF sin drift y los controles locales registrados.
-Ese preflight todavía no constituye el gate integral sobre un SHA candidato congelado.
-El candidato definitivo requiere repetir o vincular esas suites y builds al mismo SHA
-antes de congelarse. La base de demostración fue
-respaldada y reconstruida
-desde las migraciones canónicas; las migraciones posteriores incorporaron identidad
-Microsoft Entra y onboarding B2B sin alterar el grafo demo. Dos ejecuciones del seeder
-produjeron un inventario idéntico, la auditoría relacional obtuvo cero violaciones y seis
-identidades canónicas autenticaron con el rol esperado. La aceptación local también
-verificó aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y
-entrega SMTP capturada mediante Mailpit/pickup local. El acceso institucional Microsoft
-365 se implementó con MSAL Authorization Code + PKCE, redirección completa, callback
-aislado y validación backend del access token (Microsoft, s. f.). Una cuenta institucional
-real completó login, callback, onboarding y acceso al muro; restan cancelación/error,
-logout y aislamiento con una segunda cuenta. El alta empresarial se verificó
-desde la solicitud GraphQL hasta aprobación, Outbox y correo `.eml`; su recorrido visual
-público/Admin queda pendiente. También restan la regresión manual del rol Moderador, la
-prueba WebSocket con dos sesiones aisladas y la producción material de la entrega.
+La línea base técnica certificada comprende 803 pruebas automáticas core (396 pruebas backend xUnit Release y 407 pruebas frontend Vitest en 71 suites), acreditadas mediante el preflight oficial conjunto sobre la revisión `6cd5295` (con árbol de trabajo en modificación) bajo la Constitución v1.8.0 y consolidadas en `5c0bbb6` / `94a52af` con código de producto idéntico. Esta suite actualiza y distingue a la línea base histórica de 785 pruebas core asociada al tag `v1.0.0-rc` (anotado sobre el commit de integración `d806822` con código candidato inmutable `37ed360`). Se cuenta además con la categoría opt-in de concurrencia SQL (11/11 pruebas aprobadas sobre SQL Server 2022 en `API Graphql/Tests/Services.Tests` bajo categoría `GOB12SqlConcurrency`, con evidencia histórica conservada en commit `a62c4e3` / `docs/audit/SQL_CONCURRENCY_RESULTS.md`) y el benchmark BCrypt como evidencias históricas independientes. En persistencia se dispone de 38 migraciones fuente con modelo EF Core sin drift respecto al snapshot según preflight. Las compuertas de Release Candidate CF-01 a CF-05 se encuentran formalmente certificadas: se acreditó el recorrido en vivo de los seis roles institucionales (CF-04, 30 PASS / 1 Obs) y la validación en tiempo real multi-sesión unmocked con reconexión y ciclo de badges (CF-05). La base de demostración fue respaldada y reconstruida desde las migraciones canónicas (34 migraciones al corte de Spec 196); las migraciones posteriores incorporaron identidad Microsoft Entra y onboarding B2B sin alterar el grafo demo. Dos ejecuciones del seeder produjeron un inventario idéntico, la auditoría relacional obtuvo cero violaciones y seis identidades canónicas autenticaron con el rol esperado. La aceptación local también verificó aislamiento de sesión, Redis entre proveedores Hot Chocolate independientes y entrega SMTP capturada mediante Mailpit/pickup local. El acceso institucional Microsoft 365 se implementó con MSAL Authorization Code + PKCE, redirección completa, callback aislado y validación backend del access token (Microsoft, s. f.). Una cuenta institucional real completó login, callback, onboarding y acceso al muro; restan cancelación/error, logout y aislamiento con una segunda cuenta institucional. El alta empresarial se verificó desde la solicitud GraphQL hasta aprobación, Outbox y correo `.eml`; su recorrido visual público/Admin queda pendiente. La compuerta técnica de congelamiento CF-06 quedó consolidada con el tag `v1.0.0-rc` registrado localmente y publicado en el repositorio remoto `origin` (objeto `9faddd9`, ratificado en `docs/audit/RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md`). La convocatoria formal de la mesa evaluadora y la producción material de la entrega constituyen compuertas logísticas y editoriales independientes del congelamiento del software.
 
 La defensa planificada para el 7 de agosto de 2026 no se realizó porque no se completaron
 a tiempo la documentación final, el refinamiento/cierre y la auditoría manual. No hubo
-versión presentada, tag final ni cierre de `CF-06`, y no existe una nueva fecha documentada.
+versión presentada ni tag final en esa fecha, y no existe una nueva fecha institucional documentada.
 
 **Índice**
 
@@ -1088,23 +1070,28 @@ La estrategia combina análisis estático, pruebas automatizadas, compilación, 
 
 **Evidencia automatizada de cierre disponible**
 
-Los baselines siguientes corresponden a la ejecución conjunta sobre el worktree de
-Spec 218: backend 234/234 y frontend 252/252 corrieron en el mismo preflight.
-Todavía no reemplazan el gate integral sobre el SHA candidato definitivo: el árbol debe
-congelarse, quedar limpio y repetir los controles sobre ese SHA sin cambios posteriores.
+La suite automatizada de pruebas y controles de calidad del corte consolidado acredita 803 pruebas
+core aprobadas (396 backend xUnit Release y 407 frontend Vitest en 71 suites), certificadas mediante
+el preflight oficial sobre la revisión `6cd5295` (con árbol de trabajo en modificación) bajo la
+Constitución v1.8.0 y consolidadas en `5c0bbb6` / `94a52af` con código de producto idéntico. Esta
+línea base actualiza y distingue a la línea base histórica de 785 pruebas core asociada al tag
+`v1.0.0-rc` (anotado sobre `d806822` con código candidato inmutable `37ed360`). No se atribuye una nueva
+ejecución automatizada a este HEAD.
 
 | Control | Resultado documentado más reciente |
 |---|---|
-| Pruebas backend | 234/234 aprobadas; incluye bordes 0/1/15/16 del feed, provider explícito, storage, uploads, registro, academia, privacidad y carrera estudiantil única |
-| Pruebas frontend | 252/252 aprobadas; incluye regresión del errorLink Apollo, paginación observable, Strict Mode, aislamiento por carrera, hidratación/avatar, navegación adaptativa, branding institucional, tema accesible, CV semántico y transición Microsoft |
-| Build backend Release | 0 errores y 0 advertencias en Spec 218 |
-| Build frontend Vite | 565 módulos; 716 ms; 0 errores en Spec 218 |
-| Modelo EF Core | Sin cambios pendientes respecto de migraciones |
-| Sesión y roles | Reemplazo Estudiante -> Moderador sin fuga de identidad, caché ni transporte |
+| Pruebas backend | 396/396 aprobadas (xUnit Release); incluye servicios académicos, moderación, storage, registro, privacidad, autenticación y notificaciones |
+| Pruebas frontend | 407/407 aprobadas en 71 suites (Vitest); incluye desacoplamiento UserAvatar, regresión errorLink, paginación observable, Strict Mode, aislamiento por carrera, navegación adaptativa y transición Microsoft |
+| Pruebas de concurrencia SQL (opt-in) | 11/11 aprobadas sobre SQL Server 2022 en `API Graphql/Tests/Services.Tests` (categoría `GOB12SqlConcurrency`, evidencia histórica en commit `a62c4e3` / `docs/audit/SQL_CONCURRENCY_RESULTS.md`); control opt-in de aislamiento transaccional y race conditions |
+| Build backend Release | 0 errores y 0 advertencias en .NET 8 Release |
+| Build frontend Vite | Bundle de producción optimizado en React 18 / Vite; 0 errores |
+| Modelo EF Core | 38 migraciones fuente disponibles; modelo EF sin drift respecto al snapshot según preflight oficial (`has-pending-model-changes` limpio) |
+| Sesión y roles | Reemplazo de sesión sin fuga de identidad ni transporte; recorrido de seis roles certificado (CF-04, 30 PASS / 1 Obs) |
+| Realtime y WebSocket | Suscripciones unmocked con relectura en BD, ciclo de badges 5->6->4 y reconexión en 591 ms certificadas (CF-05) |
 | Redis local | Entrega exacta entre dos proveedores Hot Chocolate y aislamiento de topic |
-| SMTP local | Tres mensajes capturados e inspeccionados mediante Mailpit |
-| Base demo e integridad | Backup verificado; 34 migraciones; seed doble estable; cero violaciones |
-| Runtime GraphQL | Seis roles; feed, académico, chat, notificaciones, empleos, administración, moderación y upload aprobados |
+| SMTP local | Tres mensajes capturados e inspeccionados mediante Mailpit / pickup local |
+| Base demo e integridad | Backup verificado; 34 migraciones canónicas al corte de Spec 196; seed doble estable; cero violaciones relacionales |
+| Runtime GraphQL | Seis roles institucionales conformes; feed, académico, chat, notificaciones, empleos, administración, moderación y upload aprobados |
 | Microsoft Entra | 47 mutaciones en schema; login institucional real aceptado hasta onboarding/muro; restan cancelación/error, logout y segunda cuenta |
 
 **Comandos canónicos de verificación**

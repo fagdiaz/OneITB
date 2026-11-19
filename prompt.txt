@@ -1,18 +1,19 @@
-# Acuse vigente · DOC-01 · Ronda 4 · RATIFICADO
+# Acuse vigente · DOC-02 · Ronda 2 · RATIFICADO
 
-DOC-01/D y DOC-01/E ratificados en docs/audit/RATIFICACION_DOC01_DE_RONDA4.md (2026-11-19). DOC-01 cerrado con las ratificaciones previas de A y B/C.
+Dictamen: docs/audit/RATIFICACION_DOC02_RONDA2.md.
+Base verificada: 94a52afad0cd2bca4f59a526364d0b8594ccb1e9.
+DOC02-01 a DOC02-04 cerrados tras revisión independiente del delta. Producto sin cambios y git diff --check con salida 0. No repetir las auditorías cerradas ni nuevas suites para este cierre documental. DF-07 conserva sus pendientes.
 
-Destino inmediato: Local AGY · Gemini 3.8 Flash High · Nativo.
-Presentar a Fran el inventario del lote consolidado como Listo para commit/push. Esperar su autorización explícita antes de commit/push; preservar el tag histórico. No repetir auditorías cerradas ni modificar producto para este cierre.
-DF-07 sigue pendiente de regeneración y revisión visual. El readiness acredita prerrequisitos estáticos; runtime y sincronización conservan sus compuertas. Los nombres canónicos verificados de diapositivas son OneITB23-Defensa.pptx y OneITB23-Diapositivas.pdf.
+Destino: Local AGY · Gemini 3.8 Flash High · Nativo.
+Paquete técnicamente Listo para commit/push. Revisar inventario exacto y exclusiones. Aplicar únicamente una autorización explícita de Fran que cubra estas operaciones y este lote; conservar su referencia si ya existe. La ratificación de Astra no sustituye esa autorización (AGENTS.md §8). Sin autorización aplicable, presentar el lote a Fran. Preservar el tag histórico y los artefactos efímeros excluidos de Git.
 
 ---
 
-# Handoff antecedente · Ronda 4 (Reanudación Post-Cuota: Cierre DOC-01/D y DOC-01/E)
+# Handoff antecedente · Ronda 2 (Remediación DOC-02: Baselines 803/785, Migraciones y Conciliación CF-06)
 # Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
 # Conversación Codex: 01a1b8c1-3efa-7bc2-b17a-202bd56244e3
 # Rama: feature/2026-11-01-debugger-cv-builder
-# SHA base: 5c0bbb6b2ffebc659a7bd490b2c2a53790d56bae
+# SHA base: 94a52afad0cd2bca4f59a526364d0b8594ccb1e9
 # Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
 # Tag oficial: v1.0.0-rc (anclado a d806822 / candidato 37ed360)
 
@@ -20,42 +21,54 @@ DF-07 sigue pendiente de regeneración y revisión visual. El readiness acredita
 
 ## 1. Identificación de Punto y Ronda
 
-- **ID de Punto:** `DOC-01`
-- **Sub-ítems:** `DOC-01/D (Hash SHA-256 de defense-content.json y Salvedad DF-07)` y `DOC-01/E (Alcance Estático del Verificador de Readiness)`
-- **ID de Ronda:** `Ronda 4 (Reanudación y Cierre Integral de DOC-01)`
-- **SHA Base Exacto:** `5c0bbb6b2ffebc659a7bd490b2c2a53790d56bae` (verificado)
-- **Hitos Previos Ratificados:**
-  * `DOC-01/A`: Ratificado en `docs/audit/RATIFICACION_DOC01_A_RONDA2.md`.
-  * `DOC-01/B` y `DOC-01/C`: Ratificados en `docs/audit/RATIFICACION_DOC01_BC_RONDA3.md`.
+- **ID de Punto:** `DOC-02`
+- **Título:** `Sincronización de Baselines Técnicos (803 Core Tests / 38 Migraciones) y Estado de Compuertas en Memoria Técnica y Guías Editoriales`
+- **ID de Ronda:** `Ronda 2 (Remediación Integral de Observaciones DOC02-01 a DOC02-04)`
+- **SHA Base Exacto:** `94a52afad0cd2bca4f59a526364d0b8594ccb1e9` (verificado mediante `git rev-parse HEAD`)
 
 ---
 
-## 2. Estado de la Verificación en Disco
+## 2. Remediación Quirúrgica Realizada (DOC02-01 a DOC02-04)
 
-En el turno anterior inmediato, las comprobaciones de archivos por parte de Codex ya habían finalizado con éxito (patrones regex validados en `scripts/Test-DefenseDemoReadiness.ps1` y `git diff --check` limpio con cero modificaciones en código de producto), interrumpiéndose únicamente al emitir el dictamen por el límite de cuota (superado a las 12:08 AM).
+### A. DOC02-01 (Trazabilidad y Diferenciación de Baselines 803 vs 785):
+- Incorporada nota de procedencia común en:
+  * `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` (Introducción pág. 2 y §5.3)
+  * `docs/entrega_final/DOCUMENTO_MAQUETACION.md` (§5.3)
+  * `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` (Preámbulo y Tabla 5.3)
+  * `docs/academic/01-project-overview.md` (§1.8)
+- Especificación explícita: 803 pruebas automáticas core (396 backend + 407 frontend en 71 suites) acreditadas en preflight oficial sobre `6cd5295` (con árbol en modificación) y consolidadas en `5c0bbb6` / `94a52af` con código de producto idéntico. Se distingue de las 785 pruebas del tag histórico `v1.0.0-rc` (anotado sobre `d806822` / candidato inmutable `37ed360`).
+- No se atribuye una nueva corrida al HEAD actual `94a52af`.
+- Las 11 pruebas SQL conservan su evidencia histórica independiente en commit `a62c4e3`.
 
-### Resumen de Cambios Verificados:
-1. **DOC-01/D (`docs/entrega_final/EXPORT_CHECKLIST.md`):**
-   - SHA-256 actualizado de `defense-content.json`: `e999188b6a603dc7c46ef1b39da83cd2ea2edf34e1e92b622be8c4330c409413`.
-   - Estado: `Fuente Estructurada Tracked (Reconciliada DOC-01)`.
-   - Salvedad: Nota explícita indicando que los artefactos binarios existentes (`defense-presentation.pptx` y `defense-presentation.pdf`) reflejan una exportación previa y que su regeneración/alineación visual permanece abierta bajo la compuerta `DF-07`.
+### B. DOC02-02 (Migraciones Disponibles y Preservación de Cifra Histórica del Seed):
+- En las tablas de `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`, `DOCUMENTO_MAQUETACION.md` y `GUIA_MAQUETACION_FINAL.md`:
+  * Fila `Modelo EF Core`: redactado como «38 migraciones fuente disponibles; modelo EF sin drift respecto al snapshot según preflight oficial (`has-pending-model-changes` limpio)».
+  * Fila `Base demo e integridad`: conservada rigurosamente la procedencia histórica de Spec 196: «Backup verificado; 34 migraciones canónicas al corte de Spec 196; seed doble estable; cero violaciones relacionales» (sin inflar a 38 por arrastre).
 
-2. **DOC-01/E (`scripts/Test-DefenseDemoReadiness.ps1`):**
-   - Alcance rotulado formalmente como verificación estática (`COMPROBADOR ESTÁTICO DE PRERREQUISITOS DE DEFENSA`).
-   - Rama consultada dinámicamente vía `git rev-parse --abbrev-ref HEAD`.
-   - Mensajes diagnósticos acotados al análisis estático ("declarados en código fuente", "configurado en controlador", "presentes en disco").
-   - Veredicto final: `PRERREQUISITOS ESTÁTICOS 100% DISPONIBLES (RUNTIME/SYNC PENDIENTES)`.
-   - Resultado: 10 / 10 PASS (301 ms).
+### C. DOC02-03 (Separación de CF-06 de Convocatoria y Conciliación de Tag Remoto):
+- Se delimitó la compuerta técnica de congelamiento `CF-06` como consolidación técnica y congelamiento, separándola de la convocatoria de la mesa evaluadora (evento logístico independiente sin fecha documentada).
+- Conciliado el estado del tag `v1.0.0-rc` en el remoto `origin` (objeto `9faddd9`, ratificado en `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md`) en:
+  * `docs/project_docs/ROADMAP.md` (fila CF-06 de la tabla y párrafo línea 670)
+  * `docs/audit/DOCUMENTATION_STATUS.md` (fila de `CANDIDATE_MANIFEST_RC.md` y filas de memoria técnica)
+  * `docs/academic/01-project-overview.md` (§1.9)
+  * `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` (Introducción)
 
-3. **Higiene:**
-   - `git diff --check` limpio (código 0).
-   - 0 modificaciones en código de producto (`API Graphql` y `FrontEnd/OneItb-FE/src`).
+### D. DOC02-04 (Identificación Exacta de la Suite SQL):
+- En la memoria §5.3 y copia derivada `DOCUMENTO_MAQUETACION.md`, la suite SQL quedó rotulada con su proyecto y categoría reales:
+  «11/11 aprobadas sobre SQL Server 2022 en `API Graphql/Tests/Services.Tests` (categoría `GOB12SqlConcurrency`, evidencia histórica en commit `a62c4e3` / `docs/audit/SQL_CONCURRENCY_RESULTS.md`); control opt-in de aislamiento transaccional y race conditions».
 
 ---
 
-## 3. Solicitud a Canal 1 (6.2 Astra · Alto)
+## 3. Higiene y Verificación
 
-Habiendo confirmado la superación de la ventana de cuota:
-1. Emitir el dictamen formal de cierre para `DOC-01/D` y `DOC-01/E` como **`RATIFICADOS`** en `docs/audit/RATIFICACION_DOC01_DE_RONDA4.md` (o dictamen definitivo equivalente).
-2. Actualizar el acuse vigente en `prompt.txt` certificando el cierre integral de `DOC-01`.
-3. Autorizar la declaración de «Listo para commit/push» del lote consolidado de documentación y gobernanza 6.2.
+1. `git diff --check`: código 0 (sin espacios en blanco finales ni anomalías de formato).
+2. `git diff --name-only HEAD -- "API Graphql" FrontEnd`: vacío (0 archivos de producto modificados; Code Freeze respetado al 100%).
+
+---
+
+## 4. Solicitud a Canal 1 (6.2 Astra · Alto)
+
+Solicitamos a Canal 1 revisar la remediación editorial de los ítems DOC02-01 a DOC02-04:
+1. Emitir el dictamen formal de cierre para `DOC-02` como **`RATIFICADO`** en `docs/audit/RATIFICACION_DOC02_RONDA2.md`.
+2. Actualizar el acuse vigente en `prompt.txt` certificando el cierre integral de `DOC-02`.
+3. Autorizar la ejecución del commit y push automático bajo las directivas nocturnas otorgadas por el usuario.

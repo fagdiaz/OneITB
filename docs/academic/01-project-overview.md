@@ -193,24 +193,22 @@ La formulación recomendada para la defensa es:
 > aceptación productiva de proveedores externos, observabilidad y controles operativos
 > permanece como evolución posterior.
 
-La Spec 218 ejecutó conjuntamente 234/234 pruebas backend y 252/252 frontend sobre el
-mismo worktree. Esa ejecución todavía no equivale al gate integral sobre un SHA candidato
-congelado; ambas suites deben repetirse o vincularse al SHA definitivo antes de declarar
-`CF-06`.
+La suite automatizada de pruebas del corte de consolidación acredita 803 pruebas core automáticas (396 pruebas backend xUnit Release y 407 pruebas frontend Vitest en 71 suites), certificadas mediante preflight oficial conjunto sobre la revisión `6cd5295` (con árbol de trabajo en modificación) bajo la Constitución v1.8.0 y consolidadas en `5c0bbb6` / `94a52af` con código de producto idéntico. Esta línea base actualiza y distingue a la línea base histórica de 785 pruebas core asociada al tag `v1.0.0-rc` (anotado sobre el commit de integración `d806822` con código candidato inmutable `37ed360`). Se cuenta además con 11 pruebas de concurrencia SQL opt-in en `Services.Tests` (categoría `GOB12SqlConcurrency`, con evidencia histórica en `a62c4e3` / `docs/audit/SQL_CONCURRENCY_RESULTS.md`) y 38 migraciones fuente disponibles con modelo EF Core sin drift respecto al snapshot según preflight. No se atribuye una nueva ejecución automatizada a este HEAD.
 
 La defensa planificada para el 7 de agosto de 2026 no se realizó: la documentación final,
-el refinamiento/cierre y la auditoría manual no llegaron a completarse. La fecha permanece
-como antecedente histórico; no hay una nueva mesa documentada ni una versión presentada.
+el refinamiento/cierre y la auditoría manual no llegaron a completarse a tiempo. La fecha permanece
+como antecedente histórico; no hay una nueva mesa documentada ni una versión presentada en esa fecha.
 
 ## 1.9 Límites, brechas y evolución
 
-### Pendientes de cierre académico
+### Estado de compuertas y pendientes de cierre académico
 
-- Gate integral sobre un único SHA candidato.
-- Regresión visual por los seis roles y recorrido específico del Moderador.
-- Prueba realtime con dos sesiones aisladas.
-- Aceptación visual del onboarding empresarial y preparación de contingencia.
-- Maquetación, impresión, presentación y ensayos de la defensa.
+- Compuertas CF-01 a CF-05 completadas y certificadas (incluyendo la línea base automatizada, el recorrido en vivo de los seis roles institucionales en CF-04 y la validación en tiempo real multi-sesión unmocked en CF-05).
+- Compuerta técnica de congelamiento CF-06 consolidada: tag histórico `v1.0.0-rc` registrado localmente sobre `d806822` (candidato inmutable `37ed360`) y publicado en el repositorio remoto `origin` (objeto `9faddd9`, ratificado el 18/11/2026).
+- Convocatoria formal de la mesa evaluadora para presentación final (evento logístico independiente del software, sin fecha documentada).
+- Maquetación y producción material de la entrega (impresión física A4 bajo LG-01/DF-05/DF-06).
+- Regeneración y revisión visual de la presentación de diapositivas (`DF-07`).
+- Ensayos orales cronometrados con banco de preguntas y contingencias (`DF-08`).
 
 ### Brechas técnicas que impiden afirmar producción plena
 
