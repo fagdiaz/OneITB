@@ -112,7 +112,7 @@
       11,
       "Qué midieron las pruebas",
       "Mostrar resultados registrados y SHA. Leer denominadores por separado.",
-      "El corte de referencia es seis dos tres tres ocho ce be. En el registro del proyecto aparecen 281 pruebas frontend con Vitest y 264 backend con xUnit aprobadas. Son suites distintas: una observa comportamiento del cliente y otra verifica servicios y contratos. Además se comprobó la correspondencia entre el modelo de Entity Framework y sus migraciones. Para reproducir el resultado importa conocer el commit, el comando y el entorno. Una prueba verde de un servicio tampoco demuestra por sí sola que una consulta pública no tenga un camino alternativo."
+      "La línea base oficial comprende 803 pruebas automáticas core: 407 frontend con Vitest en 71 suites y 396 backend con xUnit en Release, certificadas en el preflight oficial bajo la Constitución v1.8.0 y distinguidas de las 785 del tag histórico. Son suites distintas: una observa comportamiento del cliente y otra verifica servicios y contratos. Además se cuenta con 11 pruebas de concurrencia SQL opt-in y 38 migraciones fuente con modelo de Entity Framework sin drift respecto al snapshot. Para reproducir el resultado importa conocer el commit, el comando y el entorno. Una prueba verde de un servicio tampoco demuestra por sí sola que una consulta pública no tenga un camino alternativo."
     ],
     [
       11,
@@ -233,11 +233,11 @@
     [
       "Evidencia del corte",
       "Las cifras pertenecen a suites y comprobaciones diferentes.",
-      "281/281 Vitest|264/264 xUnit|0 cambios de modelo pendientes",
-      "Tres cifras grandes con sus unidades y el SHA de referencia.",
-      "Mostrar el caso UpdatingExistingGradeWithoutExpectedVersionThrowsConcurrencyConflict y explicar su resultado esperado.",
-      "docs/audit/DEVELOPMENT_LOG.md · entrada 2026-11-09; AcademicSectionGradeTests.cs",
-      "281 / 281|264 / 264|0"
+      "407/407 Vitest|396/396 xUnit|38 migraciones sin drift",
+      "Tres cifras grandes con sus unidades, el preflight oficial de 803 pruebas core y la distinción del tag histórico.",
+      "Mostrar el caso UpdatingExistingGradeWithoutExpectedVersionThrowsConcurrencyConflict y explicar la suite de 803 pruebas core.",
+      "Constitution v1.8.0; PREFLIGHT_CERTIFIED_6cd5295.json; AcademicSectionGradeTests.cs",
+      "407 / 407|396 / 396|38"
     ],
     [
       "Auditoría y estabilización",
@@ -260,7 +260,7 @@
     [
       "Balance del proyecto",
       "117 de 117 ítems de alcance funcional contabilizados.",
-      "Cuatro recorridos institucionales|Evidencia asociada a 62338cb|Aceptación externa por entorno",
+      "Seis roles institucionales certificados|Evidencia preflight consolidada|Aceptación externa por entorno",
       "Cierre tipográfico con el indicador de alcance y el nombre institucional.",
       "Concluir en el minuto 23. Mantener visible esta lámina para las preguntas.",
       "docs/project_docs/ROADMAP.md §1 y §6",

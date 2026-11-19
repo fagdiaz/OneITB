@@ -1,19 +1,19 @@
-# Acuse vigente · DOC-02 · Ronda 2 · RATIFICADO
+# Acuse vigente · DOC-03 · Ronda 1 · RATIFICADO
 
-Dictamen: docs/audit/RATIFICACION_DOC02_RONDA2.md.
-Base verificada: 94a52afad0cd2bca4f59a526364d0b8594ccb1e9.
-DOC02-01 a DOC02-04 cerrados tras revisión independiente del delta. Producto sin cambios y git diff --check con salida 0. No repetir las auditorías cerradas ni nuevas suites para este cierre documental. DF-07 conserva sus pendientes.
+Dictamen: docs/audit/DICTAMEN_DOC03_RONDA1.md.
+Base comprobada: f1cae832cd8cc5f67cf2d2006472dbce24da37db.
+Sincronización de láminas 11/14, discurso 19 y preguntas 12/17 conforme. JSON válido y SHA-256 620aa8418976ca53600cafbed2246c84dda6372eb9c49843474b3fd0961a7a2e verificado independientemente contra checklist. Producto sin cambios; git diff --check aprobado.
 
 Destino: Local AGY · Gemini 3.8 Flash High · Nativo.
-Paquete técnicamente Listo para commit/push. Revisar inventario exacto y exclusiones. Aplicar únicamente una autorización explícita de Fran que cubra estas operaciones y este lote; conservar su referencia si ya existe. La ratificación de Astra no sustituye esa autorización (AGENTS.md §8). Sin autorización aplicable, presentar el lote a Fran. Preservar el tag histórico y los artefactos efímeros excluidos de Git.
+DOC-03 cerrado en alcance de fuente e integridad. DF-07 conserva regeneración y revisión visual pendientes. Incorporar en esa etapa las dos precisiones editoriales del dictamen (38 migraciones fuente y estado de aprobación del PDF anterior), sin abrir otra ronda de DOC-03. No presentar binarios anteriores como sincronizados. Respetar las autorizaciones Git vigentes del usuario; esta ratificación no ejecuta operaciones Git.
 
 ---
 
-# Handoff antecedente · Ronda 2 (Remediación DOC-02: Baselines 803/785, Migraciones y Conciliación CF-06)
+# Handoff antecedente · Ronda 1 (DOC-03: Sincronización de Diapositivas, Discurso y Hash de Integridad en defense-content.json)
 # Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
 # Conversación Codex: 01a1b8c1-3efa-7bc2-b17a-202bd56244e3
 # Rama: feature/2026-11-01-debugger-cv-builder
-# SHA base: 94a52afad0cd2bca4f59a526364d0b8594ccb1e9
+# SHA base: f1cae832cd8cc5f67cf2d2006472dbce24da37db
 # Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
 # Tag oficial: v1.0.0-rc (anclado a d806822 / candidato 37ed360)
 
@@ -21,54 +21,45 @@ Paquete técnicamente Listo para commit/push. Revisar inventario exacto y exclus
 
 ## 1. Identificación de Punto y Ronda
 
-- **ID de Punto:** `DOC-02`
-- **Título:** `Sincronización de Baselines Técnicos (803 Core Tests / 38 Migraciones) y Estado de Compuertas en Memoria Técnica y Guías Editoriales`
-- **ID de Ronda:** `Ronda 2 (Remediación Integral de Observaciones DOC02-01 a DOC02-04)`
-- **SHA Base Exacto:** `94a52afad0cd2bca4f59a526364d0b8594ccb1e9` (verificado mediante `git rev-parse HEAD`)
+- **ID de Punto:** `DOC-03`
+- **Título:** `Sincronización de Diapositivas, Discurso y Hash de Integridad en defense-content.json (DF-07)`
+- **ID de Ronda:** `Ronda 1`
+- **SHA Base Exacto:** `f1cae832cd8cc5f67cf2d2006472dbce24da37db` (verificado mediante `git rev-parse HEAD`)
 
 ---
 
-## 2. Remediación Quirúrgica Realizada (DOC02-01 a DOC02-04)
+## 2. Remediación Implementada en Disco
 
-### A. DOC02-01 (Trazabilidad y Diferenciación de Baselines 803 vs 785):
-- Incorporada nota de procedencia común en:
-  * `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` (Introducción pág. 2 y §5.3)
-  * `docs/entrega_final/DOCUMENTO_MAQUETACION.md` (§5.3)
-  * `docs/entrega_final/GUIA_MAQUETACION_FINAL.md` (Preámbulo y Tabla 5.3)
-  * `docs/academic/01-project-overview.md` (§1.8)
-- Especificación explícita: 803 pruebas automáticas core (396 backend + 407 frontend en 71 suites) acreditadas en preflight oficial sobre `6cd5295` (con árbol en modificación) y consolidadas en `5c0bbb6` / `94a52af` con código de producto idéntico. Se distingue de las 785 pruebas del tag histórico `v1.0.0-rc` (anotado sobre `d806822` / candidato inmutable `37ed360`).
-- No se atribuye una nueva corrida al HEAD actual `94a52af`.
-- Las 11 pruebas SQL conservan su evidencia histórica independiente en commit `a62c4e3`.
+1. **DOC-03/A (`defense-content.json` - Speech 19 / `speech[18]`):**
+   - Se reemplazó la antigua referencia al corte intermedio `62338cb` (281/264 pruebas) por la línea base oficial certificada: 803 pruebas core automáticas (407 frontend Vitest en 71 suites + 396 backend xUnit Release), acreditadas en preflight oficial conjunto bajo Constitución v1.8.0, distinguidas de las 785 del tag histórico, con mención a las 11 pruebas SQL opt-in y 38 migraciones fuente con modelo EF sin drift respecto al snapshot.
 
-### B. DOC02-02 (Migraciones Disponibles y Preservación de Cifra Histórica del Seed):
-- En las tablas de `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`, `DOCUMENTO_MAQUETACION.md` y `GUIA_MAQUETACION_FINAL.md`:
-  * Fila `Modelo EF Core`: redactado como «38 migraciones fuente disponibles; modelo EF sin drift respecto al snapshot según preflight oficial (`has-pending-model-changes` limpio)».
-  * Fila `Base demo e integridad`: conservada rigurosamente la procedencia histórica de Spec 196: «Backup verificado; 34 migraciones canónicas al corte de Spec 196; seed doble estable; cero violaciones relacionales» (sin inflar a 38 por arrastre).
+2. **DOC-03/B (`defense-content.json` - Slide 11 / `slides[10]`):**
+   - Se actualizaron los indicadores visuales principales de `"281/281 Vitest|264/264 xUnit|0 cambios de modelo pendientes"` a `"407/407 Vitest|396/396 xUnit|38 migraciones sin drift"`.
+   - Se actualizó el pie estadístico a `"407 / 407|396 / 396|38"`.
+   - Se precisó la descripción visual indicando el preflight oficial de 803 pruebas core y la distinción frente al tag histórico.
 
-### C. DOC02-03 (Separación de CF-06 de Convocatoria y Conciliación de Tag Remoto):
-- Se delimitó la compuerta técnica de congelamiento `CF-06` como consolidación técnica y congelamiento, separándola de la convocatoria de la mesa evaluadora (evento logístico independiente sin fecha documentada).
-- Conciliado el estado del tag `v1.0.0-rc` en el remoto `origin` (objeto `9faddd9`, ratificado en `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md`) en:
-  * `docs/project_docs/ROADMAP.md` (fila CF-06 de la tabla y párrafo línea 670)
-  * `docs/audit/DOCUMENTATION_STATUS.md` (fila de `CANDIDATE_MANIFEST_RC.md` y filas de memoria técnica)
-  * `docs/academic/01-project-overview.md` (§1.9)
-  * `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` (Introducción)
+3. **DOC-03/C (`defense-content.json` - Slide 14 / `slides[13]`):**
+   - Se actualizó `"Cuatro recorridos institucionales|Evidencia asociada a 62338cb|Aceptación externa por entorno"` a `"Seis roles institucionales certificados|Evidencia preflight consolidada|Aceptación externa por entorno"` (reconociendo el recorrido de 6 roles de CF-04).
 
-### D. DOC02-04 (Identificación Exacta de la Suite SQL):
-- En la memoria §5.3 y copia derivada `DOCUMENTO_MAQUETACION.md`, la suite SQL quedó rotulada con su proyecto y categoría reales:
-  «11/11 aprobadas sobre SQL Server 2022 en `API Graphql/Tests/Services.Tests` (categoría `GOB12SqlConcurrency`, evidencia histórica en commit `a62c4e3` / `docs/audit/SQL_CONCURRENCY_RESULTS.md`); control opt-in de aislamiento transaccional y race conditions».
+4. **DOC-03/D (`docs/entrega_final/EXPORT_CHECKLIST.md` - Integridad de Hash SHA-256):**
+   - Se recalculó el hash SHA-256 de `docs/academic/defense/defense-content.json`: `620aa8418976ca53600cafbed2246c84dda6372eb9c49843474b3fd0961a7a2e`.
+   - Se actualizó la Tabla 2 y la Nota de Procedencia de Diapositivas en `EXPORT_CHECKLIST.md` con el nuevo hash real, manteniendo la salvedad explícita de que los binarios compilados existentes (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`) reflejan una versión previa y su regeneración/alineación visual permanece abierta bajo `DF-07`.
+
+5. **DOC-03/E (`scripts/Test-DefenseDemoReadiness.ps1`):**
+   - Ejecución verificada con 10 / 10 PASS (355 ms) sin anomalías.
 
 ---
 
 ## 3. Higiene y Verificación
 
-1. `git diff --check`: código 0 (sin espacios en blanco finales ni anomalías de formato).
+1. `git diff --check`: código 0 (sin espacios en blanco finales ni inconsistencias).
 2. `git diff --name-only HEAD -- "API Graphql" FrontEnd`: vacío (0 archivos de producto modificados; Code Freeze respetado al 100%).
 
 ---
 
 ## 4. Solicitud a Canal 1 (6.2 Astra · Alto)
 
-Solicitamos a Canal 1 revisar la remediación editorial de los ítems DOC02-01 a DOC02-04:
-1. Emitir el dictamen formal de cierre para `DOC-02` como **`RATIFICADO`** en `docs/audit/RATIFICACION_DOC02_RONDA2.md`.
-2. Actualizar el acuse vigente en `prompt.txt` certificando el cierre integral de `DOC-02`.
-3. Autorizar la ejecución del commit y push automático bajo las directivas nocturnas otorgadas por el usuario.
+Solicitamos a Canal 1 auditar los cambios implementados para `DOC-03`:
+1. Verificar la consistencia interna de `defense-content.json` (láminas 11 y 14, discurso 19 y preguntas 12 y 17).
+2. Verificar el recálculo independiente del hash SHA-256 en `EXPORT_CHECKLIST.md` y la preservación de la compuerta `DF-07`.
+3. Emitir el dictamen formal correspondiente (`docs/audit/DICTAMEN_DOC03_RONDA1.md` o ratificación) y actualizar `prompt.txt`.
