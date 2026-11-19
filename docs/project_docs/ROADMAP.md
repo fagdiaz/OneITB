@@ -699,13 +699,14 @@ como fuente técnica y material de anexo, pero no reemplaza uno a uno las 10 fig
 Mermaid requeridas por la memoria. `DF-03` se cerrará cuando las figuras definitivas
 hayan sido seleccionadas, insertadas en el Word y revisadas por legibilidad en página A4.
 
-Existe además un v2.3 `CODEX_BORRADOR_TEXTO` ignorado, reconstruido de manera
-determinística desde la memoria canónica y los 26 casos de uso. Pasó integridad OOXML,
-geometría de 38 tablas, estructura CU-01..CU-26, campos TOC/PAGE y accesibilidad sin
-hallazgos; dos builds produjeron el mismo SHA-256 `b3ffe503...143f2`. Conserva reservas
-para las 13 figuras y el Diagrama de Clases todavía no resuelto. `DF-05` permanece abierto
-porque no se insertaron las figuras, no se actualizaron los campos en Word y el render
-PDF/PNG quedó bloqueado por ausencia de LibreOffice/`soffice`; no existe QA visual A4.
+Como antecedente de maquetación al 08/08/2026, se procesó el borrador `v2.3_CODEX_BORRADOR_TEXTO`
+reconstruido determinísticamente. Posteriormente, en octubre de 2026, las compuertas `DF-05`
+y `DF-06` maquetaron la memoria preliminar (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx`
+y `.pdf` de 45 páginas) con campos actualizados vía Word COM sobre la línea base histórica
+(234/252 pruebas y 34 migraciones), restando su regeneración editorial y QA visual contra la
+línea base certificada de 803 pruebas y 38 migraciones. Por su parte, la compuerta `DF-07` completó
+la regeneración y sincronización formal de las diapositivas (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`)
+y notas del orador bajo DOC-05 con la línea base certificada de 803 pruebas y 38 migraciones.
 
 **Subtotal pendiente estimado:** **16 h 50 min a 24 h 30 min**, porque `DF-02` ya
 quedó implementado documentalmente. La entrega académica completa, incluyendo el cierre

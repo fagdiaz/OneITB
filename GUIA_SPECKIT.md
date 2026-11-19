@@ -1,9 +1,9 @@
 # Guía Operativa de Spec Kit para OneITB23
 
-**Corte de revisión:** 2026-08-03  
-**Ámbito:** instrucciones locales para planificar, implementar y verificar cambios con
-agentes de desarrollo. Este archivo está ignorado por Git y no forma parte de la memoria
-académica ni sustituye las fuentes canónicas del proyecto.
+**Corte de revisión:** Noviembre 2026 (Actualización de Gobernanza Multi-Agente y Skills 6.2)
+**Ámbito:** guía metodológica operativa para planificar, implementar y verificar cambios
+mediante las skills de Spec Kit en el repositorio (`.agents/skills/`). No sustituye las
+fuentes canónicas del proyecto ni forma parte de la entrega académica institucional.
 
 ---
 

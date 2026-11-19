@@ -4,7 +4,7 @@
 |---|---|
 | **Sistema** | OneITB23 |
 | **Versión documental** | 2.0 |
-| **Fecha de revisión** | 5 de agosto de 2026 |
+| **Fecha de revisión** | Noviembre 2026 |
 | **Clasificación** | Especificación académica derivada |
 | **Fuente normativa** | [`scope-and-requirements.md`](../project_docs/scope-and-requirements.md) |
 | **Cobertura** | 48 RF, 12 BR y 12 RNF |
@@ -237,7 +237,7 @@ externo, SLA productivo ni prueba formal de carga.
 | `GAP-OPS-01` | Media | No existe observabilidad central aceptada. | Definir logs, métricas, trazas, alertas, retención y respuesta a incidentes. |
 | `GAP-EXT-01` | Externo parcial | Microsoft Entra completó login real, callback, onboarding y acceso al muro con cuenta institucional. | Ejecutar cancelación/error, logout y aislamiento con una segunda cuenta organizacional. |
 | `GAP-EXT-02` | Externo | SMTP, Redis administrado y Cloudinary requieren proveedor y secretos. | Configurar y ejecutar smoke en ambiente destino. |
-| `GAP-QA-01` | Cierre | Falta regresión final de seis roles, realtime y B2B sobre un único SHA. | Ejecutar checklist, registrar evidencia y congelar el candidato. |
+| `GAP-QA-01` | Cerrado parcial (B2B en RR-06) | Recorrido guiado de seis roles institucionales y validación realtime multi-sesión certificados sobre el corte candidato (CF-04 y CF-05). La solicitud y aprobación de onboarding B2B permanece como riesgo pendiente bajo RR-06 con cuenta de empleador preexistente. | Evidencias en `CF04_ROLE_WALKTHROUGH.md`, `CF05_REALTIME_VALIDATION.md` y `CF05_UI_WALKTHROUGH.md`; delimitación formal en `FINAL_AUDIT_REPORT.md`. |
 
 Las brechas residuales no impiden una defensa local controlada si se declaran con
 transparencia. `GAP-FILE-01`, la aceptación externa de infraestructura y `GAP-OPS-01`

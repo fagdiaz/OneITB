@@ -7,7 +7,7 @@
 | **Institución de referencia** | Instituto Tecnológico Beltrán |
 | **Espacio curricular** | Práctica Profesionalizante III |
 | **Tipo de solución** | Red social académica y Bolsa de Trabajo institucional |
-| **Estado documental** | Resumen académico derivado, revisado el 5 de agosto de 2026 |
+| **Estado documental** | Resumen académico derivado, revisado en noviembre de 2026 |
 | **Estado técnico de referencia** | Release Candidate académico; core Feature Complete y Code Freeze operativo local |
 
 Este documento ofrece una introducción ejecutiva al proyecto. No reemplaza el contrato
@@ -207,7 +207,7 @@ como antecedente histórico; no hay una nueva mesa documentada ni una versión p
 - Compuerta técnica de congelamiento CF-06 consolidada: tag histórico `v1.0.0-rc` registrado localmente sobre `d806822` (candidato inmutable `37ed360`) y publicado en el repositorio remoto `origin` (objeto `9faddd9`, ratificado el 18/11/2026).
 - Convocatoria formal de la mesa evaluadora para presentación final (evento logístico independiente del software, sin fecha documentada).
 - Maquetación y producción material de la entrega (impresión física A4 bajo LG-01/DF-05/DF-06).
-- Regeneración y revisión visual de la presentación de diapositivas (`DF-07`).
+- Diapositivas de la presentación de defensa sincronizadas bajo DF-07 (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf` con 407 Vitest / 396 xUnit / 38 migraciones reconciliadas).
 - Ensayos orales cronometrados con banco de preguntas y contingencias (`DF-08`).
 
 ### Brechas técnicas que impiden afirmar producción plena

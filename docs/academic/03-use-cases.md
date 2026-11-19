@@ -4,7 +4,7 @@
 |---|---|
 | **Sistema** | OneITB23 |
 | **Versión documental** | 2.0 |
-| **Fecha de revisión** | 3 de agosto de 2026 |
+| **Fecha de revisión** | Noviembre 2026 |
 | **Clasificación** | Catálogo académico derivado |
 | **Actores** | Visitante, Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador |
 | **Cobertura** | 26 casos de uso; 48 requerimientos funcionales trazados |

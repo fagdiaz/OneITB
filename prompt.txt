@@ -1,18 +1,19 @@
-# Acuse vigente · DOC-05 · Ronda 2 · RATIFICADO
+# Acuse vigente · DOC-06 · Ronda 2 · RATIFICADO
 
-Dictamen: docs/audit/DICTAMEN_DOC05_RONDA2.md.
-DOC05-01 y DOC05-02 cerrados. Notas de lámina 11 coincidentes literalmente con speech[18]; sin cifras/corte obsoletos buscados en las notas. Hash PPTX e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1 verificado. PDF y JSON conservan hashes de Ronda 1. Paquete maestro correctamente delimitado como antecedente no vigente.
+Dictamen: docs/audit/RATIFICACION_DOC06_RONDA2.md.
+HEAD comprobado: 5bcaffe3f9853e8828ceea4297c5bb43247f3c6e.
+DOC06-01/02/03 cerrados tras inspección independiente. Memoria binaria histórica delimitada; onboarding B2B pendiente RR-06; procedencias core/SQL separadas y estado remoto del tag conciliado. Diff-check aprobado. Producto, /specs e historial versionado sin cambios registrados.
 
 Destino: Local AGY · Gemini 3.8 Flash High · Nativo.
-Continuar con el siguiente lote editorial pendiente, sin reabrir DOC-05. Regeneración del paquete maestro pendiente; esta ratificación no cierra ensayos ni toda la entrega académica. Producto intacto, diff-check aprobado. Respetar las autorizaciones Git aplicables del usuario.
+Continuar por lotes pequeños con los pendientes editoriales, sin reabrir DOC-06. Mantener pendientes regeneración y QA de memoria, actualización del paquete maestro y ensayos. Conservar limitaciones de evidencia de depuración de Ronda 1. Respetar autorizaciones Git del usuario.
 
 ---
 
-# Handoff antecedente · Ronda 2 (DOC-05: Sincronización de Notas del Orador de Lámina 11 y Delimitación de Paquete Maestro)
+# Handoff antecedente · DOC-06 · Ronda 2 (Subsanación de Hallazgos DOC06-01, DOC06-02 y DOC06-03)
 # Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
 # Conversación Codex: 01a1b8c1-3efa-7bc2-b17a-202bd56244e3
 # Rama: feature/2026-11-01-debugger-cv-builder
-# SHA base: 53db55a1ee86d0505f97ca34711883d61c85225f
+# SHA base: 5bcaffe3f9853e8828ceea4297c5bb43247f3c6e
 # Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
 # Tag oficial: v1.0.0-rc (anclado a d806822 / candidato 37ed360)
 
@@ -20,45 +21,37 @@ Continuar con el siguiente lote editorial pendiente, sin reabrir DOC-05. Regener
 
 ## 1. Identificación de Punto y Ronda
 
-- **ID de Punto:** `DOC-05`
-- **Título:** `Sincronización de Notas del Orador de Lámina 11 en PPTX (DOC05-01) y Delimitación de Paquete Maestro en Registros (DOC05-02)`
+- **ID de Punto:** `DOC-06`
+- **Título:** `Subsanación de Hallazgos de Normalización Canónica (DOC06-01, DOC06-02 y DOC06-03)`
 - **ID de Ronda:** `Ronda 2`
-- **SHA Base Exacto:** `53db55a1ee86d0505f97ca34711883d61c85225f` (verificado mediante `git rev-parse HEAD`)
+- **SHA Base Exacto:** `5bcaffe3f9853e8828ceea4297c5bb43247f3c6e` (verificado mediante `git rev-parse HEAD`)
 
 ---
 
-## 2. Remediación Implementada en Disco (Atención a Hallazgos de Ronda 1)
+## 2. Remediación Implementada en Disco (Atención Estricta a DICTAMEN_DOC06_RONDA1.md)
 
-1. **DOC05-01 (`OneITB23-Defensa.pptx` - Notas del Orador de Lámina 11 sincronizadas):**
-   - Mediante automatización COM de PowerPoint (`scripts/scratch/update_slide11_notes.ps1`), se actualizó la forma de notas (`Notes Placeholder 2`) de la lámina 11:
-     - Se reemplazó el texto obsoleto de referencia al corte `62338cb` y cifras `281/264` por el texto oficial de `speech[18]` de `defense-content.json`:
-       `"La línea base oficial comprende 803 pruebas automáticas core: 407 frontend con Vitest en 71 suites y 396 backend con xUnit en Release, certificadas en el preflight oficial bajo la Constitución v1.8.0 y distinguidas de las 785 del tag histórico..."`.
-     - Se actualizaron el pie y la indicación de apoyo alineados con `803 pruebas core` y `PREFLIGHT_CERTIFIED_6cd5295.json`.
-     - Inspección directa del XML (`ppt/notesSlides/notesSlide11.xml`) confirmó la eliminación total de `62338cb`, `281` y `264` (0 ocurrencias).
-     - Nuevo hash recalculado de `OneITB23-Defensa.pptx`: `e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1`.
-     - El hash de `OneITB23-Diapositivas.pdf` permanece idéntico (`d259eaff11798378a8895a497dbb814f32c158cb11ac980fa0c478ecf46a1258`), ya que las superficies visuales de las diapositivas no fueron alteradas.
-
-2. **DOC05-02 (`docs/entrega_final/EXPORT_CHECKLIST.md` y `docs/audit/DOCUMENTATION_STATUS.md` - Delimitación del Paquete Maestro):**
-   - **`EXPORT_CHECKLIST.md` (Tabla 2 y Nota de Procedencia):**
-     - Se actualizó el hash de `OneITB23-Defensa.pptx` a `e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1`.
-     - Se reclasificó `OneITB23-Paquete-maestro.pdf` como `**Compilación Previa / Antecedente** *(pendiente de actualización editorial DF-07/DF-08)*`.
-     - Se incorporó la advertencia explícita en la nota de procedencia aclarando que dicho PDF compilado es un antecedente pendiente de regeneración en un lote posterior y no debe distribuirse como sincronizado.
-   - **`DOCUMENTATION_STATUS.md` (Tabla 4.1 y texto §4.1):**
-     - Se actualizó el hash de `OneITB23-Defensa.pptx` a `e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1`.
-     - Se reclasificó `OneITB23-Paquete-maestro.pdf` como `Entrega local (antecedente pendiente de actualización editorial DF-07/DF-08, no vigente)`.
-     - Se acotó el texto declarativo afirmando que únicamente el material de diapositivas (`.pptx` y `.pdf`) y la fuente versionada (`defense-content.json`) están sincronizados con la línea base 803 core y 38 migraciones.
-
-3. **Readiness y Verificación:**
-   - `scripts/Test-DefenseDemoReadiness.ps1`: 10 / 10 PASS (259 ms).
-   - `git diff --check`: salida 0 (sin espacios en blanco ni inconsistencias).
-   - `git diff --name-only HEAD -- "API Graphql" FrontEnd`: vacío (0 archivos de producto modificados; Code Freeze respetado al 100%).
-   - `git status -s`: exactamente 2 archivos versionados modificados (`DOCUMENTATION_STATUS.md` y `EXPORT_CHECKLIST.md`).
+1. **DOC06-01 (`README.md` y `ROADMAP.md` §6.3 - Deslinde entre Memoria Fuente Markdown y Binarios DOCX/PDF Previos):**
+   - **`README.md` (líneas 190-196):** Se reescribió la sección para explicitar que la memoria institucional en Markdown (`DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`) tiene su contenido normalizado con la línea base core certificada (803 pruebas y 38 migraciones), mientras que los binarios compilados DOCX/PDF previos (`v2_OFICIAL_IMPRENTA.docx` y `.pdf`) conservan la línea base histórica (234/252) y permanecen formalmente pendientes de regeneración editorial y auditoría visual en su lote específico. Se preserva como sincronizada únicamente la entrega de diapositivas de defensa (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`) acreditada bajo DF-07 / DOC-05.
+   - **`ROADMAP.md` (§6.3, líneas 702-708):** Se aclaró que las compuertas `DF-05` y `DF-06` maquetaron la memoria preliminar (`v2_OFICIAL_IMPRENTA`) sobre la línea base histórica (234/252 pruebas y 34 migraciones), restando su regeneración editorial y QA visual contra la línea base certificada de 803 pruebas y 38 migraciones.
+2. **DOC06-02 (`docs/academic/02-software-requirements.md` - Delimitación Honesta de GAP-QA-01 y B2B):**
+   - Fila `GAP-QA-01`: Se reclasificó el estado a **`Cerrado parcial (B2B en RR-06)`**. Se explicitó que el recorrido guiado de los seis roles y la validación en tiempo real multi-sesión están certificados sobre el corte candidato (CF-04 y CF-05), mientras que la solicitud y aprobación completa de onboarding B2B permanece formalmente como riesgo residual pendiente bajo `RR-06`, evaluado en la demo con cuenta de empleador preexistente conforme a `CF04_ROLE_WALKTHROUGH.md` y `FINAL_AUDIT_REPORT.md`.
+3. **DOC06-03 (`docs/audit/CANDIDATE_MANIFEST_RC.md` - Procedencia Separada de SQL vs Preflight y Estado del Tag Remoto):**
+   - **Línea 11 (Encabezado):** Se separó nítidamente la línea base core certificada de 803 pruebas (396 backend + 407 frontend en 71 suites) obtenida en la corrida oficial de preflight del corte `6cd5295` (`PREFLIGHT_CERTIFIED_6cd5295.json`), de las 11 pruebas opt-in de concurrencia SQL (`GOB12SqlConcurrency`), explicitando que estas últimas proceden de la evidencia certificada en `a62c4e3` (`SQL_CONCURRENCY_RESULTS.md`) y no fueron reejecutadas en `6cd5295`.
+   - **Línea 134 (Estado CF-06):** Se eliminó la frase contradictoria "publicación remota condicionada a la convocatoria formal de mesa" y se actualizó a:
+     `- **Estado:** [CONSOLIDADO DOCUMENTALMENTE / TAG VERIFICADO] (Evidencias, suites y ratificación consolidadas; tag local v1.0.0-rc registrado sobre d806822 y publicación en remoto origin acreditada en objeto 9faddd9 bajo ratificación formal, conservando la salvedad de conectividad directa de Codex).`
 
 ---
 
-## 3. Solicitud a Canal 1 (6.2 Astra · Alto)
+## 3. Verificaciones de Soporte Ejecutadas
 
-Solicitamos a Canal 1 verificar la subsanación de los dos hallazgos:
-1. Constatar la sincronización de las notas del orador en `OneITB23-Defensa.pptx` (lámina 11) con `speech[18]` y la ausencia de cifras o cortes obsoletos.
-2. Constatar la concordancia de los nuevos hashes SHA-256 y la delimitación del estado de `OneITB23-Paquete-maestro.pdf` como antecedente no vigente.
-3. Emitir el dictamen formal (`docs/audit/DICTAMEN_DOC05_RONDA2.md` o ratificación final) y actualizar `prompt.txt`.
+- **Code Freeze de Producto:** `git diff --name-only HEAD -- "API Graphql" FrontEnd` = **0 archivos modificados** (100% intacto).
+- **Invariante /specs:** `git diff --name-only HEAD -- specs` = **0 archivos modificados** (carpeta completamente ignorada).
+- **Higiene de Formato:** `git diff --check` = **Salida 0** (0 errores de espacios o saltos de línea).
+- **Prerrequisitos de Defensa:** `scripts/Test-DefenseDemoReadiness.ps1` = **10 / 10 PASS** (267 ms).
+- **Depuración:** No se realizaron nuevas eliminaciones de archivos.
+
+---
+
+## 4. Solicitud a Canal 1 (6.2 Astra · Alto)
+
+Solicitamos a Canal 1 constatar la subsanación integral de DOC06-01, DOC06-02 y DOC06-03 en el delta documental presentado, emitir la ratificación correspondiente (`docs/audit/RATIFICACION_DOC06_RONDA2.md` o dictamen formal) y actualizar `prompt.txt`.

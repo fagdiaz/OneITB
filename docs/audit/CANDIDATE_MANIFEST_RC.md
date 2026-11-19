@@ -1,6 +1,6 @@
 # Manifiesto Oficial del Release Candidate (Spec 220 y Revisión de Consolidación)
 
-- **Fecha de emisión original:** 2026-11-15 | **Actualización de Consolidación:** 2026-11-17
+- **Fecha de emisión original:** 2026-11-15 | **Actualización de Consolidación:** 2026-11-19
 - **Rama:** `feature/2026-11-01-debugger-cv-builder`
 - **Tracking remoto:** `origin/feature/2026-11-01-debugger-cv-builder`
 - **Especificación canónica activa:** `specs/220-core-closure-and-application-hardening`
@@ -8,7 +8,7 @@
 - **Revisión Actual de Consolidación (`6cd5295`):**
   * **Backend:** 100% inmutable e idéntico a `37ed360` (`git diff 37ed360..HEAD -- "API Graphql"` = 0; 396 pruebas xUnit Release en PASS).
   * **Frontend:** Delta acotado de presentación por Spec 228 (`Feed.jsx`, `UserAvatar.jsx`, `UserAvatar.test.jsx`; 407 pruebas Vitest en 71 suites en PASS).
-  * **Línea Base Informada de la Revisión:** **803 pruebas core PASS** (396 backend + 407 frontend) + 11 SQL concurrencia PASS, vinculada a la ejecución completa del corte `6cd5295`.
+  * **Línea Base Core Certificada de la Revisión:** **803 pruebas core PASS** (396 backend + 407 frontend en 71 suites), certificada en la corrida oficial de preflight del corte `6cd5295` (`PREFLIGHT_CERTIFIED_6cd5295.json`). Se complementa con 11 pruebas opt-in de concurrencia SQL (categoría `GOB12SqlConcurrency`, certificadas con evidencia en `a62c4e3` / `SQL_CONCURRENCY_RESULTS.md`, sin reejecución en `6cd5295`).
 - **Dictamen del Auditor Principal (Canal 1 - Astra):**
   * 16/11/2026 (`RATIFICACION_CF05_2026-11-16.md`): `APROBADO CON OBSERVACIONES` para alcance académico local (CF-01 a CF-05 cerradas y ratificadas sobre `37ed360`).
   * 17/11/2026 (`DICTAMEN_CONSOLIDACION_6cd5295_2026-11-17.md`): Conformidad acotada a diff y 24/24 pruebas focalizadas de UserAvatar; autorización para iniciar preparación académica (DF-01 a DF-08); resolución de observaciones CONS-01 a CONS-05 por lotes; Spec 229 formalmente diferida como deuda técnica menor post-defensa sin prohibir futuras correcciones necesarias de backend.
@@ -131,10 +131,10 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
   * Suites de respaldo automatizadas en PASS: 22 pruebas (19 en frontend: `privateChatRecovery.gob12.test.jsx` 6/6, `FrontEnd/OneItb-FE/src/context/sessionTabs.adversarial.test.jsx` 5/5, `chatRealtime.adversarial.test.jsx` 8/8; y 3 en backend: `PrivateMessageTopicAdversarialTests.cs` 3/3). Conforme a la Constitución §IX, estas 22 pruebas forman parte integral de la línea base canónica de 785 pruebas, no de un baseline paralelo.
 
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
-- **Estado:** `[CONSOLIDADO DOCUMENTALMENTE / TAG LOCAL ASENTADO]` (Evidencias, suites y ratificación consolidadas; tag local `v1.0.0-rc` registrado sobre `d806822`; publicación remota condicionada a la convocatoria formal de mesa).
+- **Estado:** `[CONSOLIDADO DOCUMENTALMENTE / TAG VERIFICADO]` (Evidencias, suites y ratificación consolidadas; tag local `v1.0.0-rc` registrado sobre `d806822` y publicación en remoto `origin` acreditada en objeto `9faddd9` bajo ratificación formal, conservando la salvedad de conectividad directa de Codex).
 - **Dictamen:** Se formaliza este manifiesto consolidado vinculando con rigor documental las métricas, suites, salidas y salvedades del Release Candidate.
   * **Corte Histórico Tag `v1.0.0-rc`:** El objeto tag anotado (`9faddd97...`) se encuentra registrado localmente sobre `d806822102eb7eec7542318c3d134eadadd390ea` anclado a código candidato `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (785 pruebas core certificadas). La evidencia remota aportada por AGY (`git ls-remote --tags origin v1.0.0-rc`) acredita la existencia del objeto `9faddd9` en `origin` coincidente con el tag local, ratificado formalmente por Astra en `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md` con la salvedad de que la consulta remota directa de Codex quedó impedida por conectividad a GitHub.
-  * **Revisión de Consolidación (`6cd5295`):** Backend permanece 100% inmutable respecto a `37ed360`; frontend incorpora desacoplamiento de presentación Spec 228 (`Feed.jsx`, `UserAvatar.jsx`, `UserAvatar.test.jsx`) elevando las pruebas automatizadas a 407 en Vitest (803 pruebas core total informadas).
+  * **Revisión de Consolidación (`6cd5295`):** Backend permanece 100% inmutable respecto a `37ed360`; frontend incorpora desacoplamiento de presentación Spec 228 (`Feed.jsx`, `UserAvatar.jsx`, `UserAvatar.test.jsx`) elevando las pruebas automatizadas a 407 en Vitest (803 pruebas core total certificadas mediante preflight oficial `PREFLIGHT_CERTIFIED_6cd5295.json`).
   * **Arbitraje Spec 229 (Backend):** Conforme al dictamen del Auditor Principal del 17/11/2026, se difiere formalmente el refactor opcional de composición de correo en `Mutation.cs` como deuda técnica menor post-defensa para no alterar el contenedor DI de .NET en vísperas de la entrega, sin que ello impida futuras correcciones necesarias de backend ante defectos reales.
   * **Corte Documental y Herramientas:** Gobernanza, tooling y paridad de CI consolidados en `88faa50` (Specs 221-227); procedencia editorial y hashes reconciliados en `EXPORT_CHECKLIST.md`.
 

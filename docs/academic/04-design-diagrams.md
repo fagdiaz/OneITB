@@ -4,7 +4,7 @@
 |---|---|
 | **Sistema** | OneITB23 |
 | **Versión documental** | 2.1 |
-| **Fecha de revisión** | 5 de agosto de 2026 |
+| **Fecha de revisión** | Noviembre 2026 |
 | **Clasificación** | Vistas arquitectónicas derivadas |
 | **Notación** | Mermaid; DER con cardinalidad Crow's Foot |
 | **Fuente normativa** | [`architecture-and-design.md`](../project_docs/architecture-and-design.md) y modelo EF Core |
