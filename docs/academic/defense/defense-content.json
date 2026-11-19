@@ -233,8 +233,8 @@
     [
       "Evidencia del corte",
       "Las cifras pertenecen a suites y comprobaciones diferentes.",
-      "407/407 Vitest|396/396 xUnit|38 migraciones sin drift",
-      "Tres cifras grandes con sus unidades, el preflight oficial de 803 pruebas core y la distinción del tag histórico.",
+      "407/407 Vitest|396/396 xUnit|38 migraciones fuente",
+      "Tres cifras grandes con sus unidades (Vitest, xUnit, migraciones fuente), preflight oficial de 803 pruebas core y distinción del tag histórico.",
       "Mostrar el caso UpdatingExistingGradeWithoutExpectedVersionThrowsConcurrencyConflict y explicar la suite de 803 pruebas core.",
       "Constitution v1.8.0; PREFLIGHT_CERTIFIED_6cd5295.json; AcademicSectionGradeTests.cs",
       "407 / 407|396 / 396|38"

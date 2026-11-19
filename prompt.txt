@@ -1,19 +1,19 @@
-# Acuse vigente · DOC-03 · Ronda 1 · RATIFICADO
+# Acuse vigente · DOC-04 · Ronda 1 · RATIFICADO
 
-Dictamen: docs/audit/DICTAMEN_DOC03_RONDA1.md.
-Base comprobada: f1cae832cd8cc5f67cf2d2006472dbce24da37db.
-Sincronización de láminas 11/14, discurso 19 y preguntas 12/17 conforme. JSON válido y SHA-256 620aa8418976ca53600cafbed2246c84dda6372eb9c49843474b3fd0961a7a2e verificado independientemente contra checklist. Producto sin cambios; git diff --check aprobado.
+Dictamen: docs/audit/DICTAMEN_DOC04_RONDA1.md.
+HEAD verificado: d1c3403c4aa75d1a7dd8f97cec317ab4aa136816.
+Hash JSON y rotulación conformes. Binarios previos correctamente delimitados. Copia de maquetación sin cercas Mermaid, con 27 referencias de imagen existentes, incluidas 14 de diagramas PNG y 10 mockups. Las 25 referencias PNG poseen cabecera válida.
 
 Destino: Local AGY · Gemini 3.8 Flash High · Nativo.
-DOC-03 cerrado en alcance de fuente e integridad. DF-07 conserva regeneración y revisión visual pendientes. Incorporar en esa etapa las dos precisiones editoriales del dictamen (38 migraciones fuente y estado de aprobación del PDF anterior), sin abrir otra ronda de DOC-03. No presentar binarios anteriores como sincronizados. Respetar las autorizaciones Git vigentes del usuario; esta ratificación no ejecuta operaciones Git.
+DOC-04 cerrado en alcance documental y estructural. La marca de eliminación de bloques crudos no cierra íntegramente DF-03/DF-05 ni acredita revisión visual del DOCX/PDF. Mantener DF-07 pendiente hasta regeneración y revisión de los binarios. Distinguir en inventarios futuros 10 bloques fuente de 14 imágenes de diagramas insertadas. No abrir otra ronda de DOC-04 por esta precisión. Preservar producto, tags y autorizaciones Git del usuario.
 
 ---
 
-# Handoff antecedente · Ronda 1 (DOC-03: Sincronización de Diapositivas, Discurso y Hash de Integridad en defense-content.json)
+# Handoff antecedente · Ronda 1 (DOC-04: Conciliación de Estado de Binarios de Diapositivas, Rotulación de Migraciones y Preflight de Figuras)
 # Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
 # Conversación Codex: 01a1b8c1-3efa-7bc2-b17a-202bd56244e3
 # Rama: feature/2026-11-01-debugger-cv-builder
-# SHA base: f1cae832cd8cc5f67cf2d2006472dbce24da37db
+# SHA base: d1c3403c4aa75d1a7dd8f97cec317ab4aa136816
 # Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
 # Tag oficial: v1.0.0-rc (anclado a d806822 / candidato 37ed360)
 
@@ -21,32 +21,31 @@ DOC-03 cerrado en alcance de fuente e integridad. DF-07 conserva regeneración y
 
 ## 1. Identificación de Punto y Ronda
 
-- **ID de Punto:** `DOC-03`
-- **Título:** `Sincronización de Diapositivas, Discurso y Hash de Integridad en defense-content.json (DF-07)`
+- **ID de Punto:** `DOC-04`
+- **Título:** `Conciliación de Estado de Binarios de Diapositivas, Rotulación de Migraciones en Lámina 11 y Preflight de Figuras en EXPORT_CHECKLIST.md`
 - **ID de Ronda:** `Ronda 1`
-- **SHA Base Exacto:** `f1cae832cd8cc5f67cf2d2006472dbce24da37db` (verificado mediante `git rev-parse HEAD`)
+- **SHA Base Exacto:** `d1c3403c4aa75d1a7dd8f97cec317ab4aa136816` (verificado mediante `git rev-parse HEAD`)
 
 ---
 
 ## 2. Remediación Implementada en Disco
 
-1. **DOC-03/A (`defense-content.json` - Speech 19 / `speech[18]`):**
-   - Se reemplazó la antigua referencia al corte intermedio `62338cb` (281/264 pruebas) por la línea base oficial certificada: 803 pruebas core automáticas (407 frontend Vitest en 71 suites + 396 backend xUnit Release), acreditadas en preflight oficial conjunto bajo Constitución v1.8.0, distinguidas de las 785 del tag histórico, con mención a las 11 pruebas SQL opt-in y 38 migraciones fuente con modelo EF sin drift respecto al snapshot.
+1. **DOC-04/A (`defense-content.json` - Lámina 11 / `slides[10]`):**
+   - Se incorporó la precisión editorial del dictamen previo: rotulado como `"407/407 Vitest|396/396 xUnit|38 migraciones fuente"` y texto descriptivo `"(Vitest, xUnit, migraciones fuente)"`, evitando inferir aplicación de migraciones en una base destino.
 
-2. **DOC-03/B (`defense-content.json` - Slide 11 / `slides[10]`):**
-   - Se actualizaron los indicadores visuales principales de `"281/281 Vitest|264/264 xUnit|0 cambios de modelo pendientes"` a `"407/407 Vitest|396/396 xUnit|38 migraciones sin drift"`.
-   - Se actualizó el pie estadístico a `"407 / 407|396 / 396|38"`.
-   - Se precisó la descripción visual indicando el preflight oficial de 803 pruebas core y la distinción frente al tag histórico.
+2. **DOC-04/B (`defense-content.json` - Integridad de Hash SHA-256):**
+   - Recalculado y registrado el hash SHA-256 de `docs/academic/defense/defense-content.json`: `fe80ab479475c4f19cbd41a570724e43f438f3b3f65c7305fabc1d992f75ae7e`.
 
-3. **DOC-03/C (`defense-content.json` - Slide 14 / `slides[13]`):**
-   - Se actualizó `"Cuatro recorridos institucionales|Evidencia asociada a 62338cb|Aceptación externa por entorno"` a `"Seis roles institucionales certificados|Evidencia preflight consolidada|Aceptación externa por entorno"` (reconociendo el recorrido de 6 roles de CF-04).
+3. **DOC-04/C (`docs/entrega_final/EXPORT_CHECKLIST.md` - Tabla 2 y Nota de Procedencia):**
+   - Actualizado el hash SHA-256 en Tabla 2 y en la nota.
+   - Reemplazado el estado de aceptación de los binarios compilados previos (`OneITB23-Diapositivas.pdf` y `OneITB23-Defensa.pptx`): de "Aprobado para Exposición" a `**Compilación Previa** *(pendiente de regeneración visual DF-07)*` y `**Fuente PPTX Previa** *(pendiente de regeneración visual DF-07)*`.
+   - Se añadió la advertencia explícita en la nota de procedencia de que dichos binarios previos no deben distribuirse como sincronizados con el JSON vigente.
 
-4. **DOC-03/D (`docs/entrega_final/EXPORT_CHECKLIST.md` - Integridad de Hash SHA-256):**
-   - Se recalculó el hash SHA-256 de `docs/academic/defense/defense-content.json`: `620aa8418976ca53600cafbed2246c84dda6372eb9c49843474b3fd0961a7a2e`.
-   - Se actualizó la Tabla 2 y la Nota de Procedencia de Diapositivas en `EXPORT_CHECKLIST.md` con el nuevo hash real, manteniendo la salvedad explícita de que los binarios compilados existentes (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`) reflejan una versión previa y su regeneración/alineación visual permanece abierta bajo `DF-07`.
+4. **DOC-04/D (`docs/entrega_final/EXPORT_CHECKLIST.md` - Preflight APA 7 y A4, Sección 4):**
+   - Actualizado el ítem a `[x] **[COMPLETADO DF-03/DF-05] Eliminación de Bloques Crudos:** Sustitución de bloques ```mermaid en copia de maquetación por las 10 figuras renderizadas en PNG (con splits 02a-e y 07a-c) y 10 mockups de UI`, acreditando la ausencia total de bloques Mermaid crudos en `DOCUMENTO_MAQUETACION.md`.
 
-5. **DOC-03/E (`scripts/Test-DefenseDemoReadiness.ps1`):**
-   - Ejecución verificada con 10 / 10 PASS (355 ms) sin anomalías.
+5. **DOC-04/E (`scripts/Test-DefenseDemoReadiness.ps1`):**
+   - Ejecución verificada con 10 / 10 PASS (251 ms) sin errores.
 
 ---
 
@@ -59,7 +58,7 @@ DOC-03 cerrado en alcance de fuente e integridad. DF-07 conserva regeneración y
 
 ## 4. Solicitud a Canal 1 (6.2 Astra · Alto)
 
-Solicitamos a Canal 1 auditar los cambios implementados para `DOC-03`:
-1. Verificar la consistencia interna de `defense-content.json` (láminas 11 y 14, discurso 19 y preguntas 12 y 17).
-2. Verificar el recálculo independiente del hash SHA-256 en `EXPORT_CHECKLIST.md` y la preservación de la compuerta `DF-07`.
-3. Emitir el dictamen formal correspondiente (`docs/audit/DICTAMEN_DOC03_RONDA1.md` o ratificación) y actualizar `prompt.txt`.
+Solicitamos a Canal 1 auditar los cambios implementados para `DOC-04`:
+1. Verificar la incorporación de las precisiones editoriales en `defense-content.json` y la concordancia de su hash SHA-256 en `EXPORT_CHECKLIST.md`.
+2. Verificar la adecuada delimitación del estado de los binarios previos y la acreditación de figuras renderizadas en el checklist.
+3. Emitir el dictamen formal correspondiente (`docs/audit/DICTAMEN_DOC04_RONDA1.md` o ratificación) y actualizar `prompt.txt`.
