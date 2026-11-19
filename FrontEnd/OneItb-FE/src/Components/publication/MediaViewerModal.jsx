@@ -107,7 +107,7 @@ export const MediaViewerModal = ({
   if (!isOpen) return null;
 
   const youtubeSrc = videoId
-    ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`
+    ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=0`
     : null;
 
   return (
@@ -144,7 +144,7 @@ export const MediaViewerModal = ({
               <iframe
                 src={youtubeSrc}
                 title={activeTitle}
-                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
                 className="absolute inset-0 h-full w-full border-0"

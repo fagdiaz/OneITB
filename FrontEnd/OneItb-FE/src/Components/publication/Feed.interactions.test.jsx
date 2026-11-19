@@ -511,4 +511,62 @@ describe('Feed attachment & comment interaction regressions', () => {
     expect(screen.queryByRole('dialog', { name: /Silenciar Usuario/i })).not.toBeInTheDocument();
     expect(menuButton).toHaveFocus();
   });
+
+  it('prepends a newly created publication at the top of the feed and renders author profile links', async () => {
+    createInquiryMock.mockResolvedValueOnce({
+      data: {
+        addInquiry: {
+          id: 'new-inquiry-id',
+          title: 'Publicación recién creada',
+          content: 'Contenido nuevo inmediato',
+          fileUrl: null,
+          attachments: [],
+          publishDate: new Date().toISOString(),
+          preferAttachmentCover: false,
+        },
+      },
+    });
+
+    useInquiryPageMock.mockReturnValue({
+      items: [makePost({ id: 'existing-post', title: 'Publicación previa existente' })],
+      totalCount: 1,
+      hasNextPage: false,
+      loading: false,
+      loadingMore: false,
+      error: null,
+      loadMoreError: null,
+      loadMoreStatus: 'idle',
+      lastAppendedCount: 0,
+      refetch: vi.fn().mockResolvedValue({}),
+      loadMore: vi.fn(),
+    });
+
+    renderFeed();
+
+    // Fill in post form
+    fireEvent.change(screen.getByPlaceholderText('Titulo de tu consulta'), {
+      target: { value: 'Publicación recién creada' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Que queres compartir con la comunidad?'), {
+      target: { value: 'Contenido nuevo inmediato' },
+    });
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '10' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }));
+
+    await waitFor(() => expect(createInquiryMock).toHaveBeenCalledTimes(1));
+
+    // The newly created post should appear first in the articles list
+    await waitFor(() => {
+      expect(screen.getByText('Publicación recién creada')).toBeInTheDocument();
+    });
+
+    const articles = screen.getAllByRole('article');
+    expect(articles[0]).toHaveTextContent('Publicación recién creada');
+
+    // Author avatar has profile link
+    const profileLinks = screen.getAllByRole('link', { name: /Perfil de Estu/i });
+    expect(profileLinks.length).toBeGreaterThan(0);
+    expect(profileLinks[0]).toHaveAttribute('href', '/profile/user-1');
+  });
 });

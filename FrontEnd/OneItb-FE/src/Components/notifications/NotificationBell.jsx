@@ -159,7 +159,7 @@ export const NotificationBell = () => {
         onClick={handleOpen}
         className={[
           'relative inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-150',
-          'hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/10 hover:text-white',
+          'hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/10 hover:text-white cursor-pointer',
           'hover:shadow-[0_4px_14px_rgba(59,130,246,0.35)]',
           isOpen
             ? 'border-blue-300/30 bg-white/10 text-white ring-1 ring-blue-300/20 shadow-[0_4px_14px_rgba(59,130,246,0.34)]'

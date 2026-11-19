@@ -39,7 +39,7 @@ describe('FeedPaginationControls', () => {
 
   it('renders an explicit terminal state for the normal feed', () => {
     render(<FeedPaginationControls {...baseProps} hasNextPage={false} loadMoreStatus="end" />);
-    expect(screen.getByText('No hay más publicaciones.')).toBeInTheDocument();
+    expect(screen.getByText('No hay más publicaciones para mostrar.')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

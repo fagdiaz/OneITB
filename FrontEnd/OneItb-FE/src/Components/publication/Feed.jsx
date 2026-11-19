@@ -9,6 +9,7 @@ import { AttachmentDraftPicker } from './AttachmentDraftPicker';
 import { ReactionUsersModal } from './ReactionUsersModal';
 import { copyPostShareUrl } from './sharePostLink';
 import { ExpandableText } from './ExpandableText';
+import { RichPublicationText } from './RichPublicationText';
 import { ModerationReasonModal } from './ModerationReasonModal';
 import { SilenceUserModal } from './SilenceUserModal';
 import { FollowButton } from '../social/FollowButton';
@@ -204,6 +205,18 @@ export const Feed = () => {
   const [silenceModalTarget, setSilenceModalTarget] = useState(null);
   const silenceTriggerRef = useRef(null);
   const [followOverrides, setFollowOverrides] = useState({});
+  const [createdPosts, setCreatedPosts] = useState([]);
+
+  const displayedPosts = useMemo(() => {
+    if (createdPosts.length === 0) return posts;
+    const enrichedCreated = createdPosts.map((cp) => {
+      const serverVersion = posts.find((p) => p.id === cp.id);
+      return serverVersion ? { ...cp, ...serverVersion } : cp;
+    });
+    const createdIds = new Set(createdPosts.map((p) => p.id));
+    const remainingPosts = posts.filter((p) => !createdIds.has(p.id));
+    return [...enrichedCreated, ...remainingPosts];
+  }, [createdPosts, posts]);
 
   const careers = careersData?.careers ?? [];
   const myCareers = myCareersData?.myCareers ?? [];
@@ -316,7 +329,7 @@ export const Feed = () => {
         }
         attachments = (await uploadAttachments(orderedFiles, token)).map(toAttachmentInput);
       }
-      await createInquiry({
+      const result = await createInquiry({
         variables: {
           subjectId: Number(selectedSubject),
           title: title.trim(),
@@ -326,6 +339,25 @@ export const Feed = () => {
           preferAttachmentCover: attachments.length > 0 && (!composerVideoId || coverSelection !== 'youtube'),
         },
       });
+      const createdInquiry = result?.data?.addInquiry;
+      if (createdInquiry?.id) {
+        const fullCreatedPost = {
+          ...createdInquiry,
+          user: {
+            id: auth.id,
+            firstName: auth.firstName || 'Usuario',
+            lastName: auth.lastName || '',
+            avatarUrl: auth.avatarUrl || null,
+            role: auth.role,
+          },
+          subject: publicationSubjects.find((s) => s.id === Number(selectedSubject)) || { id: Number(selectedSubject), name: '' },
+          reactions: [],
+          comments: [],
+          isActive: true,
+          isHidden: false,
+        };
+        setCreatedPosts((current) => [fullCreatedPost, ...current.filter((p) => p.id !== createdInquiry.id)]);
+      }
       await refetch();
       setTitle('');
       setContent('');
@@ -588,16 +620,16 @@ export const Feed = () => {
         <div className="flex items-center gap-3">
           <div className="h-7 w-1 rounded-full bg-blue-600" />
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">{postId ? 'Publicación' : 'Muro academico'}</h1>
-            {postId ? <Link to="/feed" className="text-sm underline">Volver al muro</Link> : (
-              <p className="text-xs text-slate-500 dark:text-slate-400">{posts.length} de {feedTotalCount} publicaciones activas</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">{postId ? 'Publicación' : 'Muro académico'}</h1>
+            {postId && (
+              <Link to="/feed" className="text-sm underline cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">Volver al muro</Link>
             )}
           </div>
         </div>
         <button
           type="button"
           onClick={() => refetch()}
-          className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15"
+          className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15 cursor-pointer shadow-2xs"
         >
           Actualizar
         </button>
@@ -846,7 +878,7 @@ export const Feed = () => {
         </div>
       )}
 
-      {posts.map((post) => {
+      {displayedPosts.map((post) => {
         const isLiked = post.reactions.some((reaction) => reaction.userId === auth.id);
         const postComments = post.comments ?? [];
         const hasUserCommented = postComments.some((comment) => comment.userId === auth.id);
@@ -864,11 +896,17 @@ export const Feed = () => {
           }`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <UserAvatar user={post.user} />
+                <Link
+                  to={`/profile/${post.user?.id}`}
+                  className="shrink-0 cursor-pointer transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 rounded-full"
+                  aria-label={`Perfil de ${post.user?.firstName || 'usuario'}`}
+                >
+                  <UserAvatar user={post.user} />
+                </Link>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <p className={`text-sm font-semibold ${roleStyle.name}`}>
-                      <Link to={`/profile/${post.user?.id}`} className="hover:underline">
+                      <Link to={`/profile/${post.user?.id}`} className="hover:underline cursor-pointer transition hover:text-blue-600 dark:hover:text-blue-400">
                         {post.user?.firstName} {post.user?.lastName}
                       </Link>
                       <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleStyle.badge}`}>
@@ -896,7 +934,7 @@ export const Feed = () => {
                   type="button"
                   id={`post-menu-trigger-${post.id}`}
                   onClick={() => setOpenMenuId((current) => (current === post.id ? null : post.id))}
-                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-100"
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-100 cursor-pointer"
                   aria-label="Abrir acciones de publicacion"
                 >
                   <i className="fa-solid fa-ellipsis-vertical text-sm" />
@@ -986,8 +1024,8 @@ export const Feed = () => {
                 <>
                   <h2 className={`font-semibold ${isAdminPost ? 'text-blue-950 dark:text-blue-100' : 'text-slate-800 dark:text-slate-100'}`}>{post.title}</h2>
                   {post.content && (
-                    <ExpandableText className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed ${isAdminPost ? 'text-blue-900 dark:text-blue-100/85' : 'text-slate-700 dark:text-slate-300'}`}>
-                      {post.content}
+                    <ExpandableText rawText={post.content} className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed ${isAdminPost ? 'text-blue-900 dark:text-blue-100/85' : 'text-slate-700 dark:text-slate-300'}`}>
+                      <RichPublicationText text={post.content} users={searchProfiles} />
                     </ExpandableText>
                   )}
                 </>
@@ -1004,13 +1042,13 @@ export const Feed = () => {
                   disabled={isReacting}
                   onClick={() => handleReaction(post)}
                   aria-pressed={isLiked}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 transition hover:bg-blue-100 disabled:opacity-50 dark:hover:bg-blue-500/15"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 transition hover:bg-blue-100 disabled:opacity-50 dark:hover:bg-blue-500/15 cursor-pointer"
                 >
                   <i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up`} />
                   Me gusta
                 </button>
                 {post.user?.id === auth.id || isModerator ? (
-                  <button type="button" onClick={() => setReactionUsersInquiryId(post.id)} className="border-l border-current/15 px-2.5 py-1.5 transition hover:bg-blue-100 dark:hover:bg-blue-500/15" aria-label={`Ver ${post.reactions.length} reacciones`}>
+                  <button type="button" onClick={() => setReactionUsersInquiryId(post.id)} className="border-l border-current/15 px-2.5 py-1.5 transition hover:bg-blue-100 dark:hover:bg-blue-500/15 cursor-pointer" aria-label={`Ver ${post.reactions.length} reacciones`}>
                     {post.reactions.length}
                   </button>
                 ) : (
@@ -1027,7 +1065,7 @@ export const Feed = () => {
                   }
                 }}
                 aria-expanded={threadOpen}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold cursor-pointer transition ${
                   hasUserCommented
                     ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-300/20 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/15'
                     : 'border-transparent text-slate-500 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-blue-300'
@@ -1112,9 +1150,9 @@ export const Feed = () => {
       })}
 
       {!postId && <FeedPaginationControls
-        hasItems={posts.length > 0}
+        hasItems={displayedPosts.length > 0}
         hasNextPage={feedHasNextPage}
-        initialLoading={inquiriesLoading && posts.length === 0}
+        initialLoading={inquiriesLoading && displayedPosts.length === 0}
         isSearchResultsView={isSearchResultsView}
         loadingMore={loadingMore}
         loadMoreError={loadMoreError}

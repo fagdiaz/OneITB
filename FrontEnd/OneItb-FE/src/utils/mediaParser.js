@@ -1,9 +1,9 @@
-const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com']);
-const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
-const URL_PATTERN = /https?:\/\/[^\s<>"']+/gi;
-const TRAILING_PUNCTUATION = /[),.!?;:]+$/;
+export const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com']);
+export const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+export const URL_PATTERN = /https?:\/\/[^\s<>"']+/gi;
+export const TRAILING_PUNCTUATION = /[),.!?;:]+$/;
 
-const getYouTubeId = (rawUrl) => {
+export const getYouTubeId = (rawUrl) => {
   try {
     const url = new URL(rawUrl);
     const host = url.hostname.toLowerCase();

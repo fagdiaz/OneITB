@@ -1,9 +1,9 @@
 import React, { useId, useState } from 'react';
 
-export const ExpandableText = ({ children, className = '', clampLines = 4 }) => {
+export const ExpandableText = ({ children, rawText, className = '', clampLines = 4 }) => {
   const [expanded, setExpanded] = useState(false);
   const contentId = useId();
-  const text = typeof children === 'string' ? children : '';
+  const text = typeof rawText === 'string' ? rawText : (typeof children === 'string' ? children : '');
   const isLikelyLong = text.length > 280 || text.split(/\r?\n/).length > clampLines;
 
   return (

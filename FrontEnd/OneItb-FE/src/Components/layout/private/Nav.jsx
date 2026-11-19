@@ -17,7 +17,7 @@ import {
 import { useProgressiveNavigation } from './useProgressiveNavigation';
 
 const NAV_BASE = [
-  'relative flex items-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3 py-1.5 text-sm font-medium',
+  'relative flex items-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3 py-1.5 text-sm font-medium cursor-pointer',
   'transition-all duration-150 ease-out will-change-transform',
   'hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/10 hover:text-white',
   'hover:shadow-[0_4px_14px_rgba(59,130,246,0.30),0_1px_4px_rgba(0,0,0,0.25)]',
@@ -26,7 +26,7 @@ const NAV_BASE = [
 
 const NAV_ACTIVE = 'border-blue-300/30 bg-white/15 text-white ring-1 ring-blue-300/20 shadow-[0_4px_14px_rgba(59,130,246,0.34),0_1px_4px_rgba(0,0,0,0.25)]';
 const NAV_INACTIVE = 'text-slate-300';
-const MENU_LINK_BASE = 'flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300';
+const MENU_LINK_BASE = 'flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300';
 const MENU_LINK_ACTIVE = 'bg-blue-500/15 text-white ring-1 ring-blue-300/25';
 const MENU_LINK_INACTIVE = 'text-slate-300 hover:bg-white/10 hover:text-white';
 
@@ -215,7 +215,7 @@ export const Nav = () => {
                   onClick={() => setOverflowOpen((current) => !current)}
                   className={[
                     'relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/10',
-                    'bg-white/5 text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10 hover:text-white',
+                    'bg-white/5 text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10 hover:text-white cursor-pointer',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
                     overflowOpen ? 'ring-1 ring-blue-300/30 shadow-[0_4px_14px_rgba(59,130,246,0.34)]' : '',
                   ].join(' ')}

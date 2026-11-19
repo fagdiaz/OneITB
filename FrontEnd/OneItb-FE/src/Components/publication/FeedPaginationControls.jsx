@@ -13,6 +13,8 @@ export const FeedPaginationControls = ({
 }) => {
   if (initialLoading || !hasItems) return null;
 
+  const canLoadMore = Boolean(hasNextPage && loadMoreStatus !== 'end');
+
   const buttonLabel = loadingMore
     ? 'Cargando...'
     : loadMoreError
@@ -29,26 +31,26 @@ export const FeedPaginationControls = ({
         </p>
       )}
 
-      {hasNextPage && (
+      {canLoadMore && (
         <button
           type="button"
           onClick={onLoadMore}
           disabled={loadingMore}
-          className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-300/20 dark:bg-slate-900/80 dark:text-blue-300 dark:hover:bg-blue-500/10"
+          className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-300/20 dark:bg-slate-900/80 dark:text-blue-300 dark:hover:bg-blue-500/10 cursor-pointer"
         >
           {buttonLabel}
         </button>
       )}
 
-      {loadMoreStatus === 'appended' && lastAppendedCount > 0 && hasNextPage && (
+      {loadMoreStatus === 'appended' && lastAppendedCount > 0 && canLoadMore && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Se agregaron {lastAppendedCount} publicaciones.
         </p>
       )}
 
-      {!hasNextPage && !loadMoreError && (
+      {!canLoadMore && !loadMoreError && (
         <p className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-400">
-          {isSearchResultsView ? 'No hay más resultados.' : 'No hay más publicaciones.'}
+          {isSearchResultsView ? 'No hay más resultados.' : 'No hay más publicaciones para mostrar.'}
         </p>
       )}
     </div>

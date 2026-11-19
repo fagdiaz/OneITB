@@ -35,13 +35,7 @@ export const Header = () => {
           && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         setIsElevated(currentScroll > 12);
-        if (!isLoggedIn || reducedMotion || currentScroll < HIDE_THRESHOLD) {
-          setIsHidden(false);
-        } else if (delta > DIRECTION_DELTA) {
-          setIsHidden(true);
-        } else if (delta < -DIRECTION_DELTA) {
-          setIsHidden(false);
-        }
+        setIsHidden(false);
 
         previousScrollRef.current = currentScroll;
         scrollFrameRef.current = null;
@@ -99,7 +93,7 @@ export const Header = () => {
         <Link
           to="/"
           aria-label="Ir al inicio de OneITB"
-          className="relative z-10 inline-flex h-11 shrink-0 items-center rounded-xl px-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          className="relative z-10 inline-flex h-11 shrink-0 items-center rounded-xl px-0.5 cursor-pointer transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
         >
           <BrandLogo
             variant="symbol"

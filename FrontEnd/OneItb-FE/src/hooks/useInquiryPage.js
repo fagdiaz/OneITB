@@ -122,7 +122,7 @@ export const useInquiryPage = ({
       }
       const appendedCount = (incomingPage.items ?? [])
         .filter((item) => item?.id && !existingIds.has(item.id)).length;
-      const status = incomingPage.hasNextPage ? 'appended' : 'end';
+      const status = incomingPage.hasNextPage && appendedCount > 0 ? 'appended' : 'end';
 
       if (mountedRef.current) {
         setLoadMoreState({ status, error: null, appendedCount });

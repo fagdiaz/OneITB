@@ -31,17 +31,15 @@ describe('Header', () => {
     expect(screen.queryByText('Buscador')).not.toBeInTheDocument();
   });
 
-  it('hides authenticated navigation on downward scroll and reveals it from the top edge', async () => {
+  it('keeps authenticated navigation visible and sticky on downward scroll', async () => {
     authState.value = { isAuthenticated: true, token: 'test-token' };
     render(<MemoryRouter initialEntries={['/feed']}><Header /></MemoryRouter>);
 
     const header = screen.getByRole('banner');
     window.scrollY = 320;
     fireEvent.scroll(window);
-    await waitFor(() => expect(header).toHaveClass('-translate-y-full'));
-
-    fireEvent.pointerEnter(screen.getByTestId('header-reveal-zone'));
-    expect(header).toHaveClass('translate-y-0');
+    await waitFor(() => expect(header).toHaveClass('translate-y-0'));
+    expect(header).not.toHaveClass('-translate-y-full');
   });
 
   it('never auto-hides the anonymous header', () => {

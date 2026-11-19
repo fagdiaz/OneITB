@@ -465,7 +465,27 @@ export const AvatarEditorModal = ({
                     }`}
                   >
                     <span>{preset.label}</span>
-                    <span className="h-5 w-5 rounded-full border border-white/70 bg-gradient-to-br from-slate-200 via-blue-200 to-slate-700 shadow-sm" />
+                    <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full border border-slate-300 shadow-xs dark:border-white/20">
+                      {imageSrc ? (
+                        <>
+                          <img
+                            src={imageSrc}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-full w-full object-cover"
+                            style={{ filter: preset.filter || 'none' }}
+                          />
+                          {preset.tint && (
+                            <span
+                              className="absolute inset-0 pointer-events-none"
+                              style={{ backgroundColor: preset.tint }}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <span className="block h-full w-full bg-slate-300 dark:bg-slate-700" />
+                      )}
+                    </span>
                   </button>
                 ))}
               </div>
