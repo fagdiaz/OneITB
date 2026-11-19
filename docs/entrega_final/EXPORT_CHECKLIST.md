@@ -23,8 +23,8 @@ Conforme a la regla de procedencia de la Spec 227, la denominación de un archiv
 
 | Entregable Oficial | Ubicación Canónica | Formato / Páginas | Hash SHA-256 de Integridad | Estado de Aceptación |
 |---|---|:---:|---|:---:|
-| **Memoria Técnica Editable** | `docs/entrega_final/salida/OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` | DOCX / 3.72 MB | `5bcf62a8cc03ee069f733c2e2dbaee328c3c5409f134747b4548ad2413a4f46e` | **Editable Oficial** |
-| **Memoria Técnica Digital e Impresión** | `docs/entrega_final/salida/OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf` | PDF / 45 págs / 2.76 MB | `bf81883523912abeb7cf6c72bc45534fd49c4f96e028196fd83bcc9a48a03437` | **PDF Oficial Imprenta** |
+| **Memoria Técnica Editable** | `docs/entrega_final/salida/OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` | DOCX / 3.29 MB | `71837741e44c01ff5a57ae397813d43be9c2111b720099ab1f580d3d3d98ccd3` | **Editable Oficial Sincronizado (803 core / 38 migraciones)** |
+| **Memoria Técnica Digital e Impresión** | `docs/entrega_final/salida/OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf` | PDF / 63 págs / 2.55 MB | `b7a339af91e5a19c7dae51388737ebf3f3810353766b4841d55020d496cf8d9c` | **PDF Oficial Imprenta Sincronizado (803 core / 38 migraciones)** |
 | **Presentación de Diapositivas** | `docs/academic/defense/OneITB23-Diapositivas.pdf` | PDF / 14 slides | `d259eaff11798378a8895a497dbb814f32c158cb11ac980fa0c478ecf46a1258` | **Aprobado para Exposición** *(sincronizado DF-07)* |
 | **Presentación Editable** | `docs/academic/defense/OneITB23-Defensa.pptx` | PPTX | `e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1` | **Fuente PPTX Oficial** *(sincronizado DF-07)* |
 | **Paquete Maestro de Mesa** | `docs/academic/defense/OneITB23-Paquete-maestro.pdf` | PDF compilado | `c1c34069d859ee7f43f22ab149ec3b70059bb01e28d162de2cedf158d9c935be` | **Compilación Previa / Antecedente** *(pendiente de actualización editorial DF-07/DF-08)* |

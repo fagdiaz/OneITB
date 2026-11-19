@@ -688,7 +688,7 @@ Se ejecutaron trabajos de organización, tooling y presentación agrupados bajo 
 | `DF-03` | Seleccionar, renderizar e insertar los 10 diagramas Mermaid de la memoria | `[x] [I]` | 2-3 h | `DF-02` | Diagramas renderizados en SVG/PNG alta resolución e insertados en el Word v2.0 |
 | `DF-04` | Recrear DER Crow's Foot y los 3 graficos de gestion en Draw.io | `[ ] [P]` | 4-6 h | Descripciones de la memoria | DER doble página A4 facing integrado; 3 gráficos de gestión anexos |
 | `DF-05` | Generar `DOCUMENTO_MAQUETACION.md`, DOCX APA 7 e indice automatico | `[x] [I]` | 3-4 h | `DF-03` y `DF-04` | DOCX editable v2.0 (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx`), estilos APA, 10 mockups, tablas bordeadas con padding |
-| `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[x] [I]` | 2-3 h | `DF-05` | PDF oficial generado vía Word COM (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf`), 45 páginas, TOC y campos actualizados |
+| `DF-06` | Exportar y auditar el PDF en cuatro pasadas | `[x] [I]` | 2-3 h | `DF-05` | PDF oficial generado vía Word COM (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf`), 63 páginas, TOC y campos actualizados |
 | `DF-07` | Diseñar presentación de defensa en PPTX/PDF con narrativa problema-solución-arquitectura-demo-evidencia | `[x] [I]` | 2 h 30 min-4 h | `DF-03`, `DF-04` y evidencia de `CF-03` | Presentación legible, visual, con demo guiada, métricas verificables y límites honestos; regenerada y sincronizada formalmente con baseline 803 core y 38 migraciones bajo DOC-05 (huellas e inventario en DOCUMENTATION_STATUS.md §4 y EXPORT_CHECKLIST.md) |
 | `DF-08` | Preparar guion, contingencias y ejecutar al menos dos ensayos cronometrados | `[ ] [P]` | 1-2 h | `CF-06`, `DF-06` y `DF-07` | Guion maestro de 23 min, banco de 20 preguntas con respuestas basadas en código y script de verificación previa (`Test-DefenseDemoReadiness.ps1`) completados en GOB-17. Resta únicamente realizar los dos ensayos orales cronometrados (objetivo 22-25 min) |
 
@@ -700,12 +700,12 @@ Mermaid requeridas por la memoria. `DF-03` se cerrará cuando las figuras defini
 hayan sido seleccionadas, insertadas en el Word y revisadas por legibilidad en página A4.
 
 Como antecedente de maquetación al 08/08/2026, se procesó el borrador `v2.3_CODEX_BORRADOR_TEXTO`
-reconstruido determinísticamente. Posteriormente, en octubre de 2026, las compuertas `DF-05`
-y `DF-06` maquetaron la memoria preliminar (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx`
-y `.pdf` de 45 páginas) con campos actualizados vía Word COM sobre la línea base histórica
-(234/252 pruebas y 34 migraciones), restando su regeneración editorial y QA visual contra la
-línea base certificada de 803 pruebas y 38 migraciones. Por su parte, la compuerta `DF-07` completó
-la regeneración y sincronización formal de las diapositivas (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`)
+reconstruido determinísticamente. En noviembre de 2026, las compuertas `DF-05` y `DF-06` consolidaron
+la memoria oficial para imprenta (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` y `.pdf`
+de 63 páginas) con campos actualizados vía Word COM, tablas APA y diagramas de alta resolución,
+completamente sincronizada con la línea base certificada de 803 pruebas y 38 migraciones (huellas
+registradas en `EXPORT_CHECKLIST.md`). Asimismo, la compuerta `DF-07` completó la regeneración y
+sincronización formal de las diapositivas (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`)
 y notas del orador bajo DOC-05 con la línea base certificada de 803 pruebas y 38 migraciones.
 
 **Subtotal pendiente estimado:** **16 h 50 min a 24 h 30 min**, porque `DF-02` ya

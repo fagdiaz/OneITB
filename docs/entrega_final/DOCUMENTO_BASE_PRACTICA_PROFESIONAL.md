@@ -1133,8 +1133,8 @@ local controlada, pero sí una afirmación de producción pública:
 - `GAP-INFRA-01`: la configuración rastreada exige una cadena segura, pero su cierre requiere certificado CA verificable y smoke TLS en el SQL real.
 - `GAP-OPS-01`: existen correlation ID, logs estructurados y `/health/live`/`ready`; todavía no existe una plataforma central de logs, métricas, trazas y alertas aceptada en un ambiente remoto.
 
-- La regresión visual final debe repetirse en el navegador y la resolución que se utilizarán durante la defensa. Estudiante, Profesor, Egresado, Administrador y Empleador fueron recorridos en la aceptación operacional; resta documentar el recorrido visual de Moderador.
-- Redis fue verificado localmente entre proveedores independientes. Falta el handshake WebSocket completo a través de la red con dos navegadores aislados.
+- La regresión visual final guiada por roles fue completada y certificada para los seis roles institucionales (Estudiante, Profesor, Egresado, Empleador, Moderador y Administrador) en la compuerta CF-04 (`CF04_ROLE_WALKTHROUGH.md`). Resta verificar el entorno y resolución proyectados para la mesa.
+- Redis fue verificado localmente entre proveedores independientes. El handshake WebSocket en tiempo real y el aislamiento multi-sesión de navegador fueron certificados al 100% PASS en la compuerta CF-05 (`CF05_REALTIME_VALIDATION.md` y `CF05_UI_WALKTHROUGH.md`).
 - SMTP local fue verificado con Mailpit. SMTP público, Redis administrado y Cloudinary deben probarse con secretos reales antes de declarar validación productiva.
 - La sincronización SIU de calificaciones es simulada y la validación de matrícula ITB/SIU permanece como puerto futuro; el modo vigente es `SelfDeclared`, no devuelve inscripciones ficticias y ninguna de las dos fronteras debe presentarse como conexión oficial.
 - Microsoft Entra completó login real, callback, onboarding y acceso al muro con una
@@ -1403,12 +1403,12 @@ La presentación debe diferenciar con precisión:
 - **Condicional:** requiere variables, secretos o proveedor externo.
 - **Pendiente de validación manual:** requiere recorrido visual final en navegador.
 
-Al corte reconciliado del 8 de agosto de 2026, SMTP con Mailpit y Redis local poseen evidencia de
-integración; no equivalen a validación de proveedor público. La aceptación Microsoft
-Entra en el tenant institucional, Cloudinary productivo, Redis administrado, SMTP
-público y el handshake WebSocket con dos navegadores
-permanecen identificados como gates. Esta distinción evita sobreafirmaciones, facilita
-preguntas técnicas y demuestra una gestión profesional de riesgos y evidencia.
+Al corte reconciliado de noviembre de 2026, SMTP con Mailpit, Redis local y el handshake
+WebSocket en tiempo real con aislamiento multi-sesión poseen evidencia de integración y
+certificación (CF-03 y CF-05). La aceptación Microsoft Entra en el tenant institucional,
+Cloudinary productivo, Redis administrado y SMTP público permanecen identificados como gates
+externos de producción. Esta distinción evita sobreafirmaciones, facilita preguntas técnicas
+y demuestra una gestión profesional de riesgos y evidencia.
 
 ### 7.9 Condiciones históricas y preparación de una nueva presentación
 

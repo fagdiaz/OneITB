@@ -187,13 +187,11 @@ persistencia, WebSockets o un recorrido de navegador funcionen.
 | [Memoria técnica](docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md) | Documento académico integral en Markdown y APA 7 |
 | [Guía de maquetación](docs/entrega_final/GUIA_MAQUETACION_FINAL.md) | Gates para figuras, DOCX, PDF, imprenta y defensa |
 
-La memoria técnica institucional en Markdown (`DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`)
-tiene su contenido normalizado con la línea base certificada de 803 pruebas core y 38 migraciones;
-sus binarios de compilación DOCX/PDF previos conservan la línea base histórica (234/252) y requieren
-regeneración editorial y auditoría visual antes de considerarse definitivos para imprenta.
-Por su parte, las diapositivas de defensa (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`)
-y notas del orador se encuentran formalmente sincronizadas bajo la compuerta DF-07 (DOC-05) con las
-métricas reconciliadas (407 Vitest / 396 xUnit / 38 migraciones).
+La memoria técnica institucional (`OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` y `.pdf`, 63 páginas)
+y las diapositivas de defensa (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`) se encuentran
+regeneradas y sincronizadas formalmente con la línea base core certificada de 803 pruebas automatizadas
+y 38 migraciones bajo las compuertas DF-05/DF-06 y DF-07, con tablas con formato APA, campos actualizados
+vía Word COM y verificación de procedencia criptográfica.
 
 ## Límites vigentes
 
