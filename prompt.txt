@@ -1,19 +1,18 @@
-# Acuse vigente · DOC-04 · Ronda 1 · RATIFICADO
+# Acuse vigente · DOC-05 · Ronda 2 · RATIFICADO
 
-Dictamen: docs/audit/DICTAMEN_DOC04_RONDA1.md.
-HEAD verificado: d1c3403c4aa75d1a7dd8f97cec317ab4aa136816.
-Hash JSON y rotulación conformes. Binarios previos correctamente delimitados. Copia de maquetación sin cercas Mermaid, con 27 referencias de imagen existentes, incluidas 14 de diagramas PNG y 10 mockups. Las 25 referencias PNG poseen cabecera válida.
+Dictamen: docs/audit/DICTAMEN_DOC05_RONDA2.md.
+DOC05-01 y DOC05-02 cerrados. Notas de lámina 11 coincidentes literalmente con speech[18]; sin cifras/corte obsoletos buscados en las notas. Hash PPTX e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1 verificado. PDF y JSON conservan hashes de Ronda 1. Paquete maestro correctamente delimitado como antecedente no vigente.
 
 Destino: Local AGY · Gemini 3.8 Flash High · Nativo.
-DOC-04 cerrado en alcance documental y estructural. La marca de eliminación de bloques crudos no cierra íntegramente DF-03/DF-05 ni acredita revisión visual del DOCX/PDF. Mantener DF-07 pendiente hasta regeneración y revisión de los binarios. Distinguir en inventarios futuros 10 bloques fuente de 14 imágenes de diagramas insertadas. No abrir otra ronda de DOC-04 por esta precisión. Preservar producto, tags y autorizaciones Git del usuario.
+Continuar con el siguiente lote editorial pendiente, sin reabrir DOC-05. Regeneración del paquete maestro pendiente; esta ratificación no cierra ensayos ni toda la entrega académica. Producto intacto, diff-check aprobado. Respetar las autorizaciones Git aplicables del usuario.
 
 ---
 
-# Handoff antecedente · Ronda 1 (DOC-04: Conciliación de Estado de Binarios de Diapositivas, Rotulación de Migraciones y Preflight de Figuras)
+# Handoff antecedente · Ronda 2 (DOC-05: Sincronización de Notas del Orador de Lámina 11 y Delimitación de Paquete Maestro)
 # Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
 # Conversación Codex: 01a1b8c1-3efa-7bc2-b17a-202bd56244e3
 # Rama: feature/2026-11-01-debugger-cv-builder
-# SHA base: d1c3403c4aa75d1a7dd8f97cec317ab4aa136816
+# SHA base: 53db55a1ee86d0505f97ca34711883d61c85225f
 # Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
 # Tag oficial: v1.0.0-rc (anclado a d806822 / candidato 37ed360)
 
@@ -21,44 +20,45 @@ DOC-04 cerrado en alcance documental y estructural. La marca de eliminación de 
 
 ## 1. Identificación de Punto y Ronda
 
-- **ID de Punto:** `DOC-04`
-- **Título:** `Conciliación de Estado de Binarios de Diapositivas, Rotulación de Migraciones en Lámina 11 y Preflight de Figuras en EXPORT_CHECKLIST.md`
-- **ID de Ronda:** `Ronda 1`
-- **SHA Base Exacto:** `d1c3403c4aa75d1a7dd8f97cec317ab4aa136816` (verificado mediante `git rev-parse HEAD`)
+- **ID de Punto:** `DOC-05`
+- **Título:** `Sincronización de Notas del Orador de Lámina 11 en PPTX (DOC05-01) y Delimitación de Paquete Maestro en Registros (DOC05-02)`
+- **ID de Ronda:** `Ronda 2`
+- **SHA Base Exacto:** `53db55a1ee86d0505f97ca34711883d61c85225f` (verificado mediante `git rev-parse HEAD`)
 
 ---
 
-## 2. Remediación Implementada en Disco
+## 2. Remediación Implementada en Disco (Atención a Hallazgos de Ronda 1)
 
-1. **DOC-04/A (`defense-content.json` - Lámina 11 / `slides[10]`):**
-   - Se incorporó la precisión editorial del dictamen previo: rotulado como `"407/407 Vitest|396/396 xUnit|38 migraciones fuente"` y texto descriptivo `"(Vitest, xUnit, migraciones fuente)"`, evitando inferir aplicación de migraciones en una base destino.
+1. **DOC05-01 (`OneITB23-Defensa.pptx` - Notas del Orador de Lámina 11 sincronizadas):**
+   - Mediante automatización COM de PowerPoint (`scripts/scratch/update_slide11_notes.ps1`), se actualizó la forma de notas (`Notes Placeholder 2`) de la lámina 11:
+     - Se reemplazó el texto obsoleto de referencia al corte `62338cb` y cifras `281/264` por el texto oficial de `speech[18]` de `defense-content.json`:
+       `"La línea base oficial comprende 803 pruebas automáticas core: 407 frontend con Vitest en 71 suites y 396 backend con xUnit en Release, certificadas en el preflight oficial bajo la Constitución v1.8.0 y distinguidas de las 785 del tag histórico..."`.
+     - Se actualizaron el pie y la indicación de apoyo alineados con `803 pruebas core` y `PREFLIGHT_CERTIFIED_6cd5295.json`.
+     - Inspección directa del XML (`ppt/notesSlides/notesSlide11.xml`) confirmó la eliminación total de `62338cb`, `281` y `264` (0 ocurrencias).
+     - Nuevo hash recalculado de `OneITB23-Defensa.pptx`: `e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1`.
+     - El hash de `OneITB23-Diapositivas.pdf` permanece idéntico (`d259eaff11798378a8895a497dbb814f32c158cb11ac980fa0c478ecf46a1258`), ya que las superficies visuales de las diapositivas no fueron alteradas.
 
-2. **DOC-04/B (`defense-content.json` - Integridad de Hash SHA-256):**
-   - Recalculado y registrado el hash SHA-256 de `docs/academic/defense/defense-content.json`: `fe80ab479475c4f19cbd41a570724e43f438f3b3f65c7305fabc1d992f75ae7e`.
+2. **DOC05-02 (`docs/entrega_final/EXPORT_CHECKLIST.md` y `docs/audit/DOCUMENTATION_STATUS.md` - Delimitación del Paquete Maestro):**
+   - **`EXPORT_CHECKLIST.md` (Tabla 2 y Nota de Procedencia):**
+     - Se actualizó el hash de `OneITB23-Defensa.pptx` a `e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1`.
+     - Se reclasificó `OneITB23-Paquete-maestro.pdf` como `**Compilación Previa / Antecedente** *(pendiente de actualización editorial DF-07/DF-08)*`.
+     - Se incorporó la advertencia explícita en la nota de procedencia aclarando que dicho PDF compilado es un antecedente pendiente de regeneración en un lote posterior y no debe distribuirse como sincronizado.
+   - **`DOCUMENTATION_STATUS.md` (Tabla 4.1 y texto §4.1):**
+     - Se actualizó el hash de `OneITB23-Defensa.pptx` a `e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1`.
+     - Se reclasificó `OneITB23-Paquete-maestro.pdf` como `Entrega local (antecedente pendiente de actualización editorial DF-07/DF-08, no vigente)`.
+     - Se acotó el texto declarativo afirmando que únicamente el material de diapositivas (`.pptx` y `.pdf`) y la fuente versionada (`defense-content.json`) están sincronizados con la línea base 803 core y 38 migraciones.
 
-3. **DOC-04/C (`docs/entrega_final/EXPORT_CHECKLIST.md` - Tabla 2 y Nota de Procedencia):**
-   - Actualizado el hash SHA-256 en Tabla 2 y en la nota.
-   - Reemplazado el estado de aceptación de los binarios compilados previos (`OneITB23-Diapositivas.pdf` y `OneITB23-Defensa.pptx`): de "Aprobado para Exposición" a `**Compilación Previa** *(pendiente de regeneración visual DF-07)*` y `**Fuente PPTX Previa** *(pendiente de regeneración visual DF-07)*`.
-   - Se añadió la advertencia explícita en la nota de procedencia de que dichos binarios previos no deben distribuirse como sincronizados con el JSON vigente.
-
-4. **DOC-04/D (`docs/entrega_final/EXPORT_CHECKLIST.md` - Preflight APA 7 y A4, Sección 4):**
-   - Actualizado el ítem a `[x] **[COMPLETADO DF-03/DF-05] Eliminación de Bloques Crudos:** Sustitución de bloques ```mermaid en copia de maquetación por las 10 figuras renderizadas en PNG (con splits 02a-e y 07a-c) y 10 mockups de UI`, acreditando la ausencia total de bloques Mermaid crudos en `DOCUMENTO_MAQUETACION.md`.
-
-5. **DOC-04/E (`scripts/Test-DefenseDemoReadiness.ps1`):**
-   - Ejecución verificada con 10 / 10 PASS (251 ms) sin errores.
+3. **Readiness y Verificación:**
+   - `scripts/Test-DefenseDemoReadiness.ps1`: 10 / 10 PASS (259 ms).
+   - `git diff --check`: salida 0 (sin espacios en blanco ni inconsistencias).
+   - `git diff --name-only HEAD -- "API Graphql" FrontEnd`: vacío (0 archivos de producto modificados; Code Freeze respetado al 100%).
+   - `git status -s`: exactamente 2 archivos versionados modificados (`DOCUMENTATION_STATUS.md` y `EXPORT_CHECKLIST.md`).
 
 ---
 
-## 3. Higiene y Verificación
+## 3. Solicitud a Canal 1 (6.2 Astra · Alto)
 
-1. `git diff --check`: código 0 (sin espacios en blanco finales ni inconsistencias).
-2. `git diff --name-only HEAD -- "API Graphql" FrontEnd`: vacío (0 archivos de producto modificados; Code Freeze respetado al 100%).
-
----
-
-## 4. Solicitud a Canal 1 (6.2 Astra · Alto)
-
-Solicitamos a Canal 1 auditar los cambios implementados para `DOC-04`:
-1. Verificar la incorporación de las precisiones editoriales en `defense-content.json` y la concordancia de su hash SHA-256 en `EXPORT_CHECKLIST.md`.
-2. Verificar la adecuada delimitación del estado de los binarios previos y la acreditación de figuras renderizadas en el checklist.
-3. Emitir el dictamen formal correspondiente (`docs/audit/DICTAMEN_DOC04_RONDA1.md` o ratificación) y actualizar `prompt.txt`.
+Solicitamos a Canal 1 verificar la subsanación de los dos hallazgos:
+1. Constatar la sincronización de las notas del orador en `OneITB23-Defensa.pptx` (lámina 11) con `speech[18]` y la ausencia de cifras o cortes obsoletos.
+2. Constatar la concordancia de los nuevos hashes SHA-256 y la delimitación del estado de `OneITB23-Paquete-maestro.pdf` como antecedente no vigente.
+3. Emitir el dictamen formal (`docs/audit/DICTAMEN_DOC05_RONDA2.md` o ratificación final) y actualizar `prompt.txt`.

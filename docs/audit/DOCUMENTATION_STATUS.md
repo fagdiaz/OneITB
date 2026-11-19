@@ -125,18 +125,23 @@ histórica. No se modifica el código para hacerlo coincidir con una narrativa o
 
 #### Inventario de defensa DF-07 y DF-08
 
-Directorio local: `docs/academic/defense/`. Identidad del material utilizado al
-preparar el guion: `62338cbd60766cf5cbe48b505cf06f57daa32a5e` (281 frontend,
-264 backend). La base de esta revisión documental es `d8e45c2`. Para actualizar
-las cifras proyectadas, revisar el contenido y exportar nuevos archivos con nuevas
-huellas. El cierre logístico y el SHA de defensa se gobiernan en el roadmap.
+Directorio local: `docs/academic/defense/`. El material de diapositivas
+(`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf`) y la fuente estructurada
+(`defense-content.json`) reflejan la línea base de 803 pruebas automáticas core
+(407 frontend Vitest y 396 backend xUnit en Release), 38 migraciones fuente y
+los seis roles institucionales certificados bajo la compuerta DF-07, sincronizados
+con `defense-content.json` (hash `fe80ab479475c4f19cbd41a570724e43f438f3b3f65c7305fabc1d992f75ae7e`).
+El dossier compilado `OneITB23-Paquete-maestro.pdf` permanece catalogado como
+antecedente previo pendiente de actualización editorial posterior; no debe distribuirse
+como sincronizado con las cifras vigentes. El cierre logístico y el SHA de defensa
+se gobiernan en el roadmap.
 
 | Archivo | Disponibilidad | SHA-256 del ejemplar local revisado |
 | --- | --- | --- |
-| `OneITB23-Defensa.pptx` | Entrega local, ignorada por Git | `70e8f5f6b4e195697e80b396ca1d29e8c6b80a0dad38c8992709775007319acf` |
-| `OneITB23-Diapositivas.pdf` | Entrega local, ignorada por Git | `cd42be9ccf71a7fd387dcd783e9e1f0e2bc7d353c764baadf84720fbb2eefbc6` |
-| `OneITB23-Paquete-maestro.pdf` | Entrega local, ignorada por Git | `c1c34069d859ee7f43f22ab149ec3b70059bb01e28d162de2cedf158d9c935be` |
-| `defense-content.json` | Fuente versionada | `26a5189b0ba3659614bd053a6e9b7efb3c36c506b5be985ddf48b1b67cf407a2` |
+| `OneITB23-Defensa.pptx` | Entrega local, ignorada por Git | `e79ea19f8082636b542c1196af46c96ab131738c56844fb0ed454ce3ac8642d1` |
+| `OneITB23-Diapositivas.pdf` | Entrega local, ignorada por Git | `d259eaff11798378a8895a497dbb814f32c158cb11ac980fa0c478ecf46a1258` |
+| `OneITB23-Paquete-maestro.pdf` | Entrega local (antecedente pendiente de actualización editorial DF-07/DF-08, no vigente) | `c1c34069d859ee7f43f22ab149ec3b70059bb01e28d162de2cedf158d9c935be` |
+| `defense-content.json` | Fuente versionada | `fe80ab479475c4f19cbd41a570724e43f438f3b3f65c7305fabc1d992f75ae7e` |
 
 En otra máquina, recuperar los tres binarios de la copia de entrega de Local AGY,
 colocarlos en ese directorio y contrastar sus huellas con `Get-FileHash -Algorithm SHA256`.
