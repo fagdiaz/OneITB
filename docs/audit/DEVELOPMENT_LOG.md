@@ -19,6 +19,36 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-19] - Consolidación Editorial, Gobernanza 6.2 y Sincronización de Defensa (Lotes DOC-01 a DOC-05) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Cierre de Sincronización Editorial y Materialización DF-07 (Lotes DOC-01 a DOC-05)
+
+**Estado:** RATIFICADO Y CERRADO (Dictámenes de ratificación: `RATIFICACION_DOC01_DE_RONDA4.md`, `RATIFICACION_DOC02_RONDA2.md`, `DICTAMEN_DOC03_RONDA1.md`, `DICTAMEN_DOC04_RONDA1.md`, `DICTAMEN_DOC05_RONDA2.md`)
+**Base HEAD:** `603542289f66085a6ad9ddb1e8e45f958742d4a5`
+
+Se ejecutó la secuencia completa de auditoría y conciliación documental entre Local AGY (`Gemini 3.8 Flash High`) y Canal 1 (`6.2 Astra` · Alto):
+
+1. **DOC-01 (Gobernanza de Modelos y Consistencia de Defensa):**
+   - Actualización del marco de gobernanza multi-agente en `AGENTS.md`, `constitution.md`, `MULTI_AGENT_FRAMEWORK.md` y `.agents/skills/*` estableciendo Canal 1 en `6.2 Astra` (Alto) y Canal 2 en `6.2 Sol` (Alto/Medio).
+   - Reconciliación de la Pregunta 12 de `defense-content.json` y del comprobador estático `scripts/Test-DefenseDemoReadiness.ps1` (10/10 PASS) a la línea base de 803 pruebas core (396 backend Release + 407 frontend en 71 suites).
+2. **DOC-02 (Conciliación de Líneas Base y Procedencia):**
+   - Reemplazo de la línea base desactualizada de Spec 218 (234/252) en `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`, `DOCUMENTO_MAQUETACION.md`, `GUIA_MAQUETACION_FINAL.md`, `01-project-overview.md`, `ROADMAP.md` y `DOCUMENTATION_STATUS.md`.
+   - Incorporación de nota de procedencia distinguiendo los 803 tests core consolidados en `6cd5295` (certificados en `PREFLIGHT_CERTIFIED_6cd5295.json`) de los 785 tests históricos asociados al tag `v1.0.0-rc`.
+   - Registro de 38 migraciones fuente disponibles sin drift respecto al snapshot de EF Core.
+   - Delimitación de CF-06 como compuerta técnica congelada con tag publicado en `origin` (objeto `9faddd9`), separada de la convocatoria de defensa institucional.
+3. **DOC-03 (Sincronización de Contenido Estructurado de Defensa DF-07):**
+   - Reconciliación de lámina 11 (`Evidencia del corte`), lámina 14 (`Balance del proyecto`), discurso 19 y hash SHA-256 en `defense-content.json`.
+4. **DOC-04 (Delimitación de Binarios y Preflight de Figuras):**
+   - Clasificación de binarios de presentación anteriores como compilaciones previas en `EXPORT_CHECKLIST.md`.
+   - Acreditación formal de ausencia total de bloques Mermaid crudos en `DOCUMENTO_MAQUETACION.md` (27 referencias de imagen existentes: 14 diagramas PNG, 10 mockups, 1 infografía y 2 logotipos con cabecera válida).
+5. **DOC-05 (Materialización DF-07 y Sincronización de Diapositivas):**
+   - Actualización programática mediante PowerPoint COM de `OneITB23-Defensa.pptx` (lámina 11 con 407/407 Vitest, 396/396 xUnit, 38 migraciones fuente; lámina 14 con 6 roles institucionales certificados; notas del orador sincronizadas literalmente con `speech[18]` eliminando toda referencia obsoleta al corte previo).
+   - Exportación regenerada a `OneITB23-Diapositivas.pdf` con paridad 1:1 y verificación visual en PNG de alta resolución.
+   - Registro criptográfico de nuevos hashes SHA-256 en `EXPORT_CHECKLIST.md` y `DOCUMENTATION_STATUS.md` (`e79ea19f...` para PPTX, `d259eaff...` para PDF, `fe80ab47...` para JSON).
+   - Reclasificación de `OneITB23-Paquete-maestro.pdf` como antecedente no vigente pendiente de actualización editorial posterior.
+   - 0 modificaciones a código productivo (`API Graphql` y `FrontEnd` 100% preservados bajo Code Freeze).
+
+---
 ## [2026-11-18] - Spec 225 (Lote CONS-03 / Remediación Integral, Delta 4 y Ronda 7): Matriz Unificada Productor-Consumidor y Tipado Estricto de Manifiesto - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Ronda 7: Corrida Dinámica Real del Consumidor en PowerShell (8/8 PASS) y Cierre de RUN-03
