@@ -2,11 +2,11 @@
 
 | Dato de control | Valor |
 |---|---|
-| **Fecha de corte documental** | 2026-08-08 |
+| **Fecha de corte documental** | Noviembre de 2026 (actualización canónica post-DOC-07) |
 | **Stack auditado** | .NET 8, EF Core 8, HotChocolate 14, React 18, Apollo Client 3, SQL Server 2022 en Docker |
 | **Estado funcional del roadmap** | 100%: 117/117 ítems, compuesto por 109 ítems funcionales/operativos y 8 remediaciones de auditoría |
 | **Distribución de evidencia** | 46 ítems verificados `[V]` y 71 implementados `[I]` |
-| **Corte técnico documentado** | Specs 186-218; Spec 218 ejecutó preflight conjunto sobre worktree, pero el gate integral debe repetirse o vincularse al futuro SHA candidato |
+| **Corte técnico documentado** | Línea base core certificada de 803 pruebas (396 backend Release xUnit + 407 frontend Vitest en 71 suites) en revisión `6cd5295` (`PREFLIGHT_CERTIFIED_6cd5295.json`), 11 pruebas opt-in de concurrencia SQL (`a62c4e3`), 38 migraciones sin drift; tag `v1.0.0-rc` registrado sobre `d806822` (candidato inmutable `37ed360`) y verificado en `origin` (`9faddd9`) |
 | **Clasificación recomendada** | **Release Candidate académico, core Feature Complete y Code Freeze operativo local** |
 | **Producción pública** | No certificada: conserva gates externos, operativos y de seguridad en profundidad |
 
@@ -38,14 +38,19 @@ adaptativa, recursos visuales locales, CV semántico, recuperación de schema ac
 composición de marca/tema e integridad reproducible de la fuente de iconos.
 
 El sistema mantiene la clasificación de **Release Candidate académico en un entorno
-controlado**, condicionada a que antes de una futura defensa se ejecute el gate integral
-sobre un SHA inmutable y se complete la regresión manual por roles. La mesa planificada
-para el 7 de agosto de 2026 no ocurrió porque no se completaron a tiempo la documentación
-final, el refinamiento/cierre y la auditoría manual. No hubo versión presentada, tag final
-ni cierre de `CF-06`, y no existe una nueva fecha documentada. No corresponde
-declararlo listo para producción pública hasta validar proveedores reales, Microsoft
-Entra con una cuenta organizacional, observabilidad de destino y controles adicionales
-de archivos.
+controlado**. La mesa planificada para el 7 de agosto de 2026 no ocurrió porque no se
+completaron a tiempo la documentación final, el refinamiento/cierre y la auditoría manual.
+En noviembre de 2026, se completaron y certificaron las compuertas CF-01 a CF-05 (incluyendo
+recorrido guiado de los seis roles institucionales en CF-04 y validación en tiempo real
+multi-sesión unmocked en CF-05), se registró el tag `v1.0.0-rc` sobre `d806822` (candidato
+inmutable `37ed360`) y se verificó su publicación remota en `origin` (objeto `9faddd9`),
+quedando consolidado el Manifiesto oficial (`CANDIDATE_MANIFEST_RC.md`) y la materialización
+de la memoria técnica de 63 páginas con sus hallazgos ratificados bajo DF-05/DF-06 (DOC-07).
+La aceptación final de imprenta permanece condicionada a los controles editoriales pendientes
+del checklist y a la muestra física LG-01. No existe una nueva fecha institucional documentada
+para la mesa evaluadora. No corresponde declararlo listo para producción pública hasta validar
+proveedores reales, Microsoft Entra con una cuenta organizacional, observabilidad de destino y
+controles adicionales de archivos.
 
 ### 1.2 Qué significa y qué no significa el 100%
 
@@ -786,17 +791,14 @@ public IQueryable<Inquiry> GetInquiries(...) // devuelve todos los registros que
 | **Spec 217** | No modifica backend | 251/251, más 17/17 focalizadas | Vite 565 módulos; Home claro 320/768/1440 sin overflow o headings truncados; enlaces externos seguros y consola limpia | `[I]`; contraste dark y reduced-motion perceptual pendientes en el SHA candidato |
 | **Spec 218 preflight** | 234/234 | 252/252 | Builds, EF, Compose, Redis/Mailpit, base demo, seis logins, ocho dominios, matriz browser representativa, aislamiento de relogin y cleanup PASS | Corte técnico previo publicado; no presentado; visual exhaustivo, dos sesiones realtime y congelamiento final pendientes |
 
-La referencia operativa para el siguiente gate es **234 tests backend y 252 frontend**.
-Spec 218 ya los ejecutó juntos, pero sobre un worktree mutable. El árbol todavía debe
-convertirse en un commit candidato y repetir o vincular ambos gates a ese mismo SHA antes
-de declarar `CF-06`.
+La referencia operativa consolidada y certificada para el Release Candidate es de **803 pruebas automáticas core** (396 tests backend Release xUnit y 407 frontend Vitest en 71 suites) en la revisión `6cd5295` (`PREFLIGHT_CERTIFIED_6cd5295.json` con `Certified: true`), complementada por las 11 pruebas opt-in de concurrencia SQL (`SQL_CONCURRENCY_RESULTS.md` en `a62c4e3`), 38 migraciones EF Core sin drift de modelo y verificación `git diff --check` en PASS.
 
-### 8.2 Evidencias que debe producir el gate final
+### 8.2 Evidencias del gate final y estado certificado
 
-| Gate | Resultado requerido | Evidencia mínima |
+| Gate | Resultado requerido | Evidencia producida |
 |---|---|---|
-| Backend tests | 234/234 o mayor, sin fallos | Comando, SHA, fecha, duración y salida completa |
-| Frontend tests | 252/252 o mayor, sin fallos | Comando, SHA, fecha y salida completa |
+| Backend tests | 396/396 Release xUnit (o mayor, sin fallos) | `dotnet test -c Release --no-restore` (396/396 PASS, 0 fallos, 0 omitidos) en `6cd5295` |
+| Frontend tests | 407/407 Vitest en 71 suites (o mayor, sin fallos) | `npm.cmd run test -- --run` (407/407 PASS en 71 suites) en `6cd5295` |
 | Backend Release | 0 warnings / 0 errores | Build sobre el mismo SHA |
 | Frontend Vite | Build limpio | Cantidad de módulos, duración y artefacto generado |
 | EF model drift | Sin cambios pendientes | Modelo, última migración y destino SQL identificados |
@@ -865,8 +867,8 @@ como sobreprometer controles que aún dependen de infraestructura externa.
 | Mesa académica del 07/08/2026 | **NO REALIZADA** | Documentación final, refinamiento/cierre y auditoría manual no se completaron; no hubo versión presentada |
 | Futura demo académica local controlada | **GO** | Compuertas CF-01 a CF-06 cerradas y evidenciadas sobre SHA `37ed360`, preflight certificado (`PREFLIGHT_CERTIFIED_91d57f9.json`), seis roles y validación realtime multi-sesión aprobados |
 | Congelamiento técnico del candidato | **GO (CERRADO)** | `REL-001`/`CF-01` a `CF-06`: worktree integrado, limpio, publicado y validado sobre el SHA inmutable `37ed360` con Manifiesto oficial consolidado (`CANDIDATE_MANIFEST_RC.md`) |
-| Paquete para imprenta | **NO-GO temporal** | Existe un v2.3 estructural determinístico con 26 CU, tablas/campos y accesibilidad auditados, pero `DF-01`, `DF-03` a `DF-06` y `DEL-001` siguen abiertos: faltan figuras, Diagrama de Clases, actualización Word, PDF y revisión visual/APA; la fecha objetivo del 4 de agosto quedó vencida |
+| Paquete para imprenta | **MATERIALIZADO / SINCRONIZADO; ACEPTACIÓN FINAL CONDICIONADA** | Memoria de 63 páginas y hallazgos DOC07-01 a DOC07-05 ratificados, con hashes en EXPORT_CHECKLIST.md. Restan los controles editoriales no acreditados del checklist y la muestra física LG-01. DOC-07 no constituye certificación APA exhaustiva |
 | Piloto institucional abierto | **NO-GO** | Cerrar `GAP-FILE-01`, aceptar Microsoft Entra y completar controles operativos/de privacidad del destino |
 | Producción pública | **NO-GO** | Además del piloto: TLS SQL real, SMTP/Redis/storage administrados, observabilidad, backup/restore, alertas, antivirus/CDR y pruebas de carga/seguridad |
 
-El preflight oficial certificado (`Certified: true`, 785/785 PASS) y la suite de concurrencia SQL (11/11 PASS) quedan formalmente vinculados al SHA candidato inmutable `37ed360` (`PREFLIGHT_CERTIFIED_91d57f9.json` y `SQL_CONCURRENCY_RESULTS.md`). La demo académica pasa a **GO definitivo** y el código queda bajo Code Freeze estricto. Las tareas documentales de imprenta (`DF-*`) y los gates de infraestructura de producción externa (`PR-*`) continúan con su tratamiento ordenado.
+La línea base core certificada en revisión `6cd5295` (`Certified: true`, 803/803 PASS: 396 backend Release xUnit + 407 frontend Vitest en 71 suites; `PREFLIGHT_CERTIFIED_6cd5295.json`) y la suite de concurrencia SQL (11/11 PASS en `a62c4e3`; `SQL_CONCURRENCY_RESULTS.md`) acreditan la estabilidad técnica del sistema junto con el tag histórico `v1.0.0-rc` registrado sobre `d806822` (candidato inmutable `37ed360`) y verificado en `origin` (objeto `9faddd9`). La demo académica local controlada permanece en **GO definitivo** bajo Code Freeze estricto. La memoria oficial para imprenta (`DF-05`/`DF-06`) quedó materializada y sincronizada con los hallazgos de DOC-07 ratificados, conservando su aceptación final condicionada a los controles editoriales del checklist y la muestra física (`LG-01`). Los gates externos (`PR-*`) mantienen condicionada, por separado, la aceptación de producción pública.

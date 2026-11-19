@@ -206,7 +206,7 @@ como antecedente histórico; no hay una nueva mesa documentada ni una versión p
 - Compuertas CF-01 a CF-05 completadas y certificadas (incluyendo la línea base automatizada, el recorrido en vivo de los seis roles institucionales en CF-04 y la validación en tiempo real multi-sesión unmocked en CF-05).
 - Compuerta técnica de congelamiento CF-06 consolidada: tag histórico `v1.0.0-rc` registrado localmente sobre `d806822` (candidato inmutable `37ed360`) y publicado en el repositorio remoto `origin` (objeto `9faddd9`, ratificado el 18/11/2026).
 - Convocatoria formal de la mesa evaluadora para presentación final (evento logístico independiente del software, sin fecha documentada).
-- Maquetación y producción material de la entrega (impresión física A4 bajo LG-01/DF-05/DF-06).
+- Producción material de la memoria para la mesa (DF-05 y DF-06 materializados con hallazgos DOC-07 ratificados; restan controles editoriales del checklist y muestra física A4 bajo LG-01).
 - Diapositivas de la presentación de defensa sincronizadas bajo DF-07 (`OneITB23-Defensa.pptx` y `OneITB23-Diapositivas.pdf` con 407 Vitest / 396 xUnit / 38 migraciones reconciliadas).
 - Ensayos orales cronometrados con banco de preguntas y contingencias (`DF-08`).
 
