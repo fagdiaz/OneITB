@@ -19,6 +19,37 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-19] - Materialización y Normalización Editorial de Memoria Técnica (Lote DOC-07, Compuertas DF-05 y DF-06) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Materialización y Sincronización Editorial de Memoria Técnica DF-05/DF-06 (DOC-07)
+
+**Estado:** RATIFICADO Y CERRADO (Dictamen de ratificación: `RATIFICACION_DOC07_RONDA3.md`; revisiones previas: `DICTAMEN_DOC07_RONDA1.md`, `DICTAMEN_DOC07_RONDA2.md`)
+**Base HEAD:** `088d1aaff0acbf2fa3f3d2a2efc0e7320c17b83e` -> Commit de ratificación: `3f75a51`
+
+Se completó la materialización, estilización editorial APA 7 y normalización criptográfica definitiva de la memoria técnica institucional (`v2_OFICIAL_IMPRENTA.docx` y `.pdf`) acordada con Canal 1 (`6.2 Astra` · Alto) bajo las compuertas `DF-05` y `DF-06`:
+
+1. **Subsanación Integral de Hallazgos Editoriales (DOC07-01 a DOC07-05):**
+   - **DOC07-01 (Tabla de Contenidos / TOC Nativo):** Se construyó la plantilla canónica `docs/entrega_final/plantillas_y_memoria/OneITB23_Pandoc_Reference.docx` con jerarquía de estilos formal (`Heading1`, `Heading2`, `Heading3`), márgenes A4 y configuración de campo TOC nativo de Word COM en `[TOC_PLACEHOLDER]`. El índice del PDF y DOCX quedó 100% poblado, listando los 8 capítulos estructurados con numeración de página real (páginas 5 a 63), sin mensajes de error.
+   - **DOC07-02 (Eliminación de Comandos Crudos e Instrucciones Visibles):** Se migró la compilación al motor nativo Markdown de Pandoc (`--from=markdown`) y se reemplazaron los saltos por bloques OOXML nativos (`<w:p><w:r><w:br w:type="page"/></w:r></w:p>`). Cero ocurrencias de `\newpage` y cero de `{width=` en los documentos generados; portada, índice y capítulos inician en páginas independientes y las figuras respetan dimensiones A4 sin desbordes.
+   - **DOC07-03 (Placeholders de Encabezados y Fecha de Portada):** Se depuraron las definiciones de encabezado en la plantilla y en Word COM, configurando encabezado institucional formal: `ISFT N° 197 — Instituto Tecnológico Beltrán | OneITB23 — Memoria Técnica`, con desvinculación estricta de la primera página (`DifferentFirstPageHeaderFooter = true`) y actualización de la fecha de portada a **Noviembre de 2026**.
+   - **DOC07-04 (Conciliación de Pendientes en la Fuente Markdown):** En `docs/entrega_final/DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md` (líneas 1136-1137 y 1406-1411), se reconciliaron las afirmaciones obsoletas para reflejar fielmente que el recorrido visual de Moderador (CF-04) y el handshake WebSocket en tiempo real con aislamiento multi-sesión (CF-05) fueron certificados al 100% PASS, manteniendo la delimitación transparente de los límites de proveedores externos de producción.
+   - **DOC07-05 (Geometría Editorial, Indivisibilidad de Filas y Cohesión de Figuras):**
+     - *Márgenes OOXML:* Ajustados a 1440 twips (2,54 cm / 1 pulgada exacta según APA 7 y `EXPORT_CHECKLIST.md`), verificados en `word/document.xml`.
+     - *Paginación de tablas:* Desactivada la división de filas entre páginas (`$row.AllowBreakAcrossPages = $false`, 101 elementos `<w:cantSplit/>`) y activada la repetición de encabezados de columna (`$table.Rows.Item(1).HeadingFormat = -1`, 11 elementos `<w:tblHeader/>`). Las tablas de RNF (páginas 15-17) y pruebas (páginas 50-51) mantienen filas completas con encabezados repetidos al inicio de página.
+     - *Cohesión de figuras:* Asignación sistemática de `KeepWithNext = $true` y `KeepTogether = $true` sobre etiquetas de figuras (`^Figura\s+\w+`), subtítulos descriptivos, párrafos con imágenes (`InlineShapes`) y notas asociadas (`Nota.`) (82 elementos `<w:keepNext/>`). Inspección visual confirma que la Figura 2 reside íntegramente en la página 19 y la Figura M1 en la página 31, eliminando cualquier orfandad de títulos al pie de página.
+2. **Regeneración de Binarios Oficiales y Hashes Criptográficos SHA-256:**
+   - **Memoria Técnica Editable (DOCX):** `docs/entrega_final/salida/OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.docx` (3.29 MB, 63 páginas). Hash SHA-256: `71837741e44c01ff5a57ae397813d43be9c2111b720099ab1f580d3d3d98ccd3`.
+   - **Memoria Técnica Digital e Impresión (PDF):** `docs/entrega_final/salida/OneITB23_Memoria_Tecnica_PP3_2026_v2_OFICIAL_IMPRENTA.pdf` (2.55 MB, 63 páginas A4, TOC 5-63 real, márgenes 1440 twips, tablas con cantSplit/tblHeader, figuras con keepWithNext). Hash SHA-256: `b7a339af91e5a19c7dae51388737ebf3f3810353766b4841d55020d496cf8d9c`.
+3. **Sincronización en Listas de Control y Documentación Canónica:**
+   - **`docs/entrega_final/EXPORT_CHECKLIST.md`:** Tabla 2 actualizada con los hashes criptográficos oficiales y paginación a 63 páginas.
+   - **`docs/audit/DOCUMENTATION_STATUS.md`:** Tabla 4 actualizada con inventario de 63 páginas, controles geométricos OOXML y estado sincronizado a la línea base core certificada de 803 pruebas y 38 migraciones.
+   - **`README.md`** y **`docs/project_docs/ROADMAP.md`:** Actualizados con la memoria oficial de 63 páginas bajo DF-05 y DF-06.
+4. **Invariantes y Salvaguardas:**
+   - 0 archivos de producto modificados (`API Graphql` y `FrontEnd` 100% inmutables bajo Code Freeze).
+   - 0 archivos modificados en la carpeta `specs/` (completamente ignorada según directiva estricta).
+   - Higiene estricta: `git diff --check` con salida 0; comprobador estático `scripts/Test-DefenseDemoReadiness.ps1` con **10 / 10 PASS** (263 ms).
+
+---
 ## [2026-11-19] - Normalización Canónica de Raíz, Manifiesto RC y Depuración de Residuos (Lote DOC-06) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Normalización Documental Canónica y Depuración de Residuos Efímeros (DOC-06)
