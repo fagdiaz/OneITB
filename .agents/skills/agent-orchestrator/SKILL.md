@@ -33,8 +33,8 @@ Este skill define la identidad, autoridad y protocolos de ejecución del **Agent
 
 Cuando una tarea excede la capacidad de análisis superficial:
 1. Identifica el canal de destino:
-   - Seguridad/Arquitectura ➔ **Canal 1 (6 Astra, Razonamiento Muy Alto)**.
-   - Hardening/Concurrencia/Tests ➔ **Canal 2 (6.1 Sol, Razonamiento Alto)**.
-   - Debugging Forense en Caliente ➔ **Agente Debugger (Claude Sonnet / 6.1 Sol)**.
+   - Seguridad/Arquitectura ➔ **Canal 1 (6.2 Astra, Razonamiento Muy Alto)**.
+   - Hardening/Concurrencia/Tests ➔ **Canal 2 (6.2 Sol, Razonamiento Alto)**.
+   - Debugging Forense en Caliente ➔ **Agente Debugger (Claude Sonnet / 6.2 Sol)**.
 2. Escribe las directivas quirúrgicas en `prompt.txt`.
 3. Informa en el bloque final de consola el Canal, Modelo y Nivel de Razonamiento exactos.

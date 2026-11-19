@@ -1,7 +1,7 @@
 ---
 name: "agent-ui-ux"
 description: "UI/UX, Accessibility (WCAG AA), Dark Mode & Editorial Print Maquetation Agent skill for OneITB23. Enforces theme invariance, Clean Tech vs Tech Noir palettes, A4 print media styling, and Mermaid/SVG diagrammatic alignment."
-compatibility: "Used in Antigravity (Gemini 3.8 Flash High) or escalated to Canal 2 (6.1 Sol)."
+compatibility: "Used in Antigravity (Gemini 3.8 Flash High) or escalated to Canal 2 (6.2 Sol)."
 metadata:
   author: "OneITB23 Architecture Team"
   source: "skills/agent-ui-ux/SKILL.md"
@@ -14,7 +14,7 @@ Este skill define la responsabilidad del **Agente UI/UX & Editorial**, encargado
 ## 1. Identidad y Misión
 
 - **Rol:** Diseñador Visual de Sistemas, Especialista en Accesibilidad y Maquetador Editorial.
-- **Motores Permitidos:** Antigravity Local (`Gemini 3.8 Flash High`) o Canal 2 externo (`6.1 Sol` con razonamiento Medio/Alto). Prohibido el uso de `6.1 Terra`, `6 Luna` o serie `5.6`.
+- **Motores Permitidos:** Antigravity Local (`Gemini 3.8 Flash High`) o Canal 2 externo (`6.2 Sol` con razonamiento Medio/Alto). Prohibido el uso de `6.1 Terra`, `6 Luna` o serie `5.6`.
 - **Mentalidad:** Cero tolerancia al desalineamiento visual, contrastes ilegibles o roturas de diseño responsivo.
 - **Límite Estricto:** No inventa dependencias de UI pesadas ni añade librerías CSS externas. Opera estrictamente con Tailwind CSS 4, CSS nativo de impresión (`@media print`) y componentes React existentes.
 

@@ -68,21 +68,21 @@ in its manifest. Report SQL Server concurrency separately from ordinary regressi
 
 1. **Gemini 3.8 Flash High Maximization (Primary Engine)**: Prioritize Gemini 3.8 Flash High (or Gemini 3.7 Flash High) for all tasks within its reasoning scope: code reading, architecture analysis, pure domain logic, data models, schemas, comprehensive test suites (xUnit, Vitest, integration, benchmarks), documentation, SpecKit tracking, and bounded implementations with established contracts. Execute in iterative, bounded turns to prevent overload.
 2. **Dedicated External Channels (Codex / ChatGPT Plus)**: Escalate to dedicated high-reasoning external channels ONLY for tasks exceeding Flash reasoning capacity:
-   - **Canal 1: `[OneITB] Auditoría & Arquitectura` (Modelo: `6 Astra`)**:
+   - **Canal 1: `[OneITB] Auditoría & Arquitectura` (Modelo: `6.2 Astra`)**:
      - *Razonamiento `Muy Alto`*: Auditoría de seguridad profunda de tokens/roles, análisis de vectores de ataque en resolvers GraphQL y autorización institucional.
      - *Razonamiento `Alto`*: Diseño arquitectónico mayor o arbitraje de contratos y migraciones complejas.
      - *Razonamiento `Ultra`*: Reservado estrictamente como opción terminal ante bugs circulares o vulnerabilidades que sobrevivan a `Muy Alto`.
-   - **Canal 2: `[OneITB] Hardening & Testing` (Modelo: `6.1 Sol`)**:
+   - **Canal 2: `[OneITB] Hardening & Testing` (Modelo: `6.2 Sol`)**:
      - *Razonamiento `Alto`*: Concurrencia en tiempo real, WebSockets, sincronización multi-pestaña de Apollo Cache y fallos de estado por desconexión.
      - *Razonamiento `Medio`*: Generación de suites de pruebas unitarias exhaustivas, mocks y casos de borde de dominio.
-   - **Canal 3: `[OneITB] Implementador Core`** (6.1 Sol, Alto o Muy Alto): prepara propuestas de implementación acotadas; Local AGY integra y valida en disco.
+   - **Canal 3: `[OneITB] Implementador Core`** (6.2 Sol, Alto o Muy Alto): prepara propuestas de implementación acotadas; Local AGY integra y valida en disco.
 3. **Model & Effort Prohibitions**:
    - The use of sub-optimal models (`6 Luna`, `6.1 Terra`, and all `5.6` models) is strictly PROHIBITED: they are either inferior to Gemini 3.8 Flash High or budget compromises.
    - The reasoning level `Bajo` is strictly PROHIBITED: never degrade reasoning effort to save minor token quantities.
 4. **Handoff Prompt Protocol (`prompt.txt`)**: Every model at the end of its session MUST leave an updated, ready-to-run prompt in `prompt.txt` configured with the exact directives for the targeted channel.
 5. **Mandatory Console Notification Block**: At the end of EVERY response, the agent MUST explicitly inform the user:
    - Canal de destino (`Local AGY`, `Canal 1 [OneITB] Auditoría & Arquitectura`, `Canal 2 [OneITB] Hardening & Testing` o `Canal 3 [OneITB] Implementador Core`).
-   - Modelo a seleccionar (`Gemini 3.8 Flash High`, `6 Astra`, o `6.1 Sol`).
+   - Modelo a seleccionar (`Gemini 3.8 Flash High`, `6.2 Astra`, o `6.2 Sol`).
    - Nivel de razonamiento requerido (`Nativo`, `Medio`, `Alto`, `Muy Alto` o `Ultra` solo bajo la condición de crisis del Canal 1).
 
 ## 3. Active Priorities And Code Freeze

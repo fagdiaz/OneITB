@@ -1,96 +1,61 @@
-# Acuse vigente · TAG-ORIGIN-RC · Ronda 1 · RATIFICADO
+# Acuse vigente · DOC-01 · Ronda 4 · RATIFICADO
 
-Local AGY · Gemini 3.8 Flash High · Nativo. Dictamen en docs/audit/RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md. La evidencia remota de AGY coincide con el objeto local y destino comprobados por Codex. La consulta remota propia de Codex quedó impedida por conexión a GitHub. CONS-03, PREFLIGHT-803 y TAG-ORIGIN-RC ratificados en sus alcances. Preparar la presentación «Listo para commit/push» con inventario exacto de archivos y evidencias, conciliando la documentación. Esperar la autorización explícita de Fran para publicar.
+DOC-01/D y DOC-01/E ratificados en docs/audit/RATIFICACION_DOC01_DE_RONDA4.md (2026-11-19). DOC-01 cerrado con las ratificaciones previas de A y B/C.
+
+Destino inmediato: Local AGY · Gemini 3.8 Flash High · Nativo.
+Presentar a Fran el inventario del lote consolidado como Listo para commit/push. Esperar su autorización explícita antes de commit/push; preservar el tag histórico. No repetir auditorías cerradas ni modificar producto para este cierre.
+DF-07 sigue pendiente de regeneración y revisión visual. El readiness acredita prerrequisitos estáticos; runtime y sincronización conservan sus compuertas. Los nombres canónicos verificados de diapositivas son OneITB23-Defensa.pptx y OneITB23-Diapositivas.pdf.
 
 ---
 
-# Handoff Oficial · Verificación de Tag Histórico v1.0.0-rc en Origin
-# Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6 Astra · Razonamiento: Alto
+# Handoff antecedente · Ronda 4 (Reanudación Post-Cuota: Cierre DOC-01/D y DOC-01/E)
+# Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
 # Conversación Codex: 01a1b8c1-3efa-7bc2-b17a-202bd56244e3
 # Rama: feature/2026-11-01-debugger-cv-builder
-# SHA base: 6cd5295d7768c34c32d37d54e0aad3d01f4749f6
+# SHA base: 5c0bbb6b2ffebc659a7bd490b2c2a53790d56bae
 # Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
-# Tag oficial: v1.0.0-rc (objeto anotado registrado en d806822)
+# Tag oficial: v1.0.0-rc (anclado a d806822 / candidato 37ed360)
 
 ---
 
 ## 1. Identificación de Punto y Ronda
 
-- **ID de Punto:** `TAG-ORIGIN-RC`
-- **ID de Ronda:** `Ronda 1 (Verificación Independiente de Objeto y Destino de Tag v1.0.0-rc en Origin)`
-- **SHA Base:** `6cd5295d7768c34c32d37d54e0aad3d01f4749f6`
-- **Dictamen Antecesor:** `docs/audit/RATIFICACION_PREFLIGHT_803_2026-11-18.md` (PREFLIGHT-803 ratificado)
-- **Estado Previo:** CONS-03 y PREFLIGHT-803 ratificados y cerrados.
+- **ID de Punto:** `DOC-01`
+- **Sub-ítems:** `DOC-01/D (Hash SHA-256 de defense-content.json y Salvedad DF-07)` y `DOC-01/E (Alcance Estático del Verificador de Readiness)`
+- **ID de Ronda:** `Ronda 4 (Reanudación y Cierre Integral de DOC-01)`
+- **SHA Base Exacto:** `5c0bbb6b2ffebc659a7bd490b2c2a53790d56bae` (verificado)
+- **Hitos Previos Ratificados:**
+  * `DOC-01/A`: Ratificado en `docs/audit/RATIFICACION_DOC01_A_RONDA2.md`.
+  * `DOC-01/B` y `DOC-01/C`: Ratificados en `docs/audit/RATIFICACION_DOC01_BC_RONDA3.md`.
 
 ---
 
-## 2. Comandos Ejecutados y Evidencia Literal
+## 2. Estado de la Verificación en Disco
 
-Se ejecutó la inspección independiente de los objetos de tag tanto en el repositorio local como en el remoto `origin`:
+En el turno anterior inmediato, las comprobaciones de archivos por parte de Codex ya habían finalizado con éxito (patrones regex validados en `scripts/Test-DefenseDemoReadiness.ps1` y `git diff --check` limpio con cero modificaciones en código de producto), interrumpiéndose únicamente al emitir el dictamen por el límite de cuota (superado a las 12:08 AM).
 
-1. **Consulta en remoto `origin`:**
-   ```powershell
-   git ls-remote --tags origin v1.0.0-rc
-   ```
-   **Salida observada:**
-   ```text
-   9faddd97ba39415fbe3d0a93306fefa17ba5b9ae	refs/tags/v1.0.0-rc
-   ```
+### Resumen de Cambios Verificados:
+1. **DOC-01/D (`docs/entrega_final/EXPORT_CHECKLIST.md`):**
+   - SHA-256 actualizado de `defense-content.json`: `e999188b6a603dc7c46ef1b39da83cd2ea2edf34e1e92b622be8c4330c409413`.
+   - Estado: `Fuente Estructurada Tracked (Reconciliada DOC-01)`.
+   - Salvedad: Nota explícita indicando que los artefactos binarios existentes (`defense-presentation.pptx` y `defense-presentation.pdf`) reflejan una exportación previa y que su regeneración/alineación visual permanece abierta bajo la compuerta `DF-07`.
 
-2. **Consulta en repositorio local:**
-   ```powershell
-   git rev-parse v1.0.0-rc
-   ```
-   **Salida observada:**
-   ```text
-   9faddd97ba39415fbe3d0a93306fefa17ba5b9ae
-   ```
+2. **DOC-01/E (`scripts/Test-DefenseDemoReadiness.ps1`):**
+   - Alcance rotulado formalmente como verificación estática (`COMPROBADOR ESTÁTICO DE PRERREQUISITOS DE DEFENSA`).
+   - Rama consultada dinámicamente vía `git rev-parse --abbrev-ref HEAD`.
+   - Mensajes diagnósticos acotados al análisis estático ("declarados en código fuente", "configurado en controlador", "presentes en disco").
+   - Veredicto final: `PRERREQUISITOS ESTÁTICOS 100% DISPONIBLES (RUNTIME/SYNC PENDIENTES)`.
+   - Resultado: 10 / 10 PASS (301 ms).
 
-3. **Resolución de commit destino (peeled commit):**
-   ```powershell
-   git rev-parse "v1.0.0-rc^{commit}"
-   ```
-   **Salida observada:**
-   ```text
-   d806822102eb7eec7542318c3d134eadadd390ea
-   ```
-
-4. **Contenido íntegro del objeto de tag anotado:**
-   ```powershell
-   git cat-file -p 9faddd97ba39415fbe3d0a93306fefa17ba5b9ae
-   ```
-   **Salida observada:**
-   ```text
-   object d806822102eb7eec7542318c3d134eadadd390ea
-   type commit
-   tag v1.0.0-rc
-   tagger Francisco <francisco.agustin.diaz@gmail.com> 1794804284 -0300
-
-   Release Candidate 1.0.0 - OneITB23 (Candidate Code 37ed360)
-   ```
+3. **Higiene:**
+   - `git diff --check` limpio (código 0).
+   - 0 modificaciones en código de producto (`API Graphql` y `FrontEnd/OneItb-FE/src`).
 
 ---
 
-## 3. Síntesis y Distinción del Estado del Repositorio
+## 3. Solicitud a Canal 1 (6.2 Astra · Alto)
 
-1. **Identidad Criptográfica del Tag:**
-   - Objeto local: `9faddd97ba39415fbe3d0a93306fefa17ba5b9ae`
-   - Objeto en `origin`: `9faddd97ba39415fbe3d0a93306fefa17ba5b9ae` (coincidencia byte a byte 100% exacta).
-2. **Destino Histórico Inmutable:**
-   - El tag apunta estrictamente al commit `d806822102eb7eec7542318c3d134eadadd390ea` (`docs(spec-220): consolidar evidencias CF-05 y manifiesto Release Candidate (CF-06)`), anclado al código candidato `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` con 785 pruebas core certificadas.
-3. **Preservación de Distinción con HEAD Actual:**
-   - La revisión actual de consolidación (`6cd5295d7768c34c32d37d54e0aad3d01f4749f6`, con Spec 228 / UserAvatar y 803 pruebas certificadas) se mantiene claramente diferenciada y no altera el tag histórico `v1.0.0-rc`.
-4. **Higiene y Code Freeze:**
-   - Código de producto: 0 modificaciones.
-   - `git diff --check`: 0 errores.
-   - Operaciones Git: cero commits, cero pushes, cero reasignaciones de tag.
-
----
-
-## 4. Petición a Codex (Canal 1 - 6 Astra)
-
-Habiendo verificado fehacientemente que el tag `v1.0.0-rc` en `origin` coincide exactamente con el objeto anotado local `9faddd97` que apunta al commit histórico `d806822`:
-Solicitamos a Codex responder en el mismo hilo (`01a1b8c1-3efa-7bc2-b17a-202bd56244e3`) con:
-- **ID de punto:** `TAG-ORIGIN-RC`
-- **Estado:** `RATIFICADO`
-- **Dictamen formal sobre la trazabilidad del tag y autorización para presentar a Fran el paquete consolidado «Listo para commit/push».**
+Habiendo confirmado la superación de la ventana de cuota:
+1. Emitir el dictamen formal de cierre para `DOC-01/D` y `DOC-01/E` como **`RATIFICADOS`** en `docs/audit/RATIFICACION_DOC01_DE_RONDA4.md` (o dictamen definitivo equivalente).
+2. Actualizar el acuse vigente en `prompt.txt` certificando el cierre integral de `DOC-01`.
+3. Autorizar la declaración de «Listo para commit/push» del lote consolidado de documentación y gobernanza 6.2.

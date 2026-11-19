@@ -22,4 +22,4 @@ Completá primero el cierre técnico pendiente (RUN-03, preflight de 803 pruebas
 
 AGY trabaja en local. Codex audita y devuelve el dictamen por el mismo hilo. Fran interviene cuando hay un lote estable para publicar o una decisión que realmente le corresponde.
 
-**Canal de destino** Local AGY · **Modelo** Gemini 3.8 Flash High · **Razonamiento** Nativo. Para la revisión, Canal 1 [OneITB] Auditoría & Arquitectura · 6 Astra · Alto.
+**Canal de destino** Local AGY · **Modelo** Gemini 3.8 Flash High · **Razonamiento** Nativo. Para la revisión, Canal 1 [OneITB] Auditoría & Arquitectura · 6.2 Astra · Alto (o Canal 2 [OneITB] Hardening & Testing · 6.2 Sol · Alto).

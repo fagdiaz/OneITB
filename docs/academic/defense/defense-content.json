@@ -325,7 +325,7 @@
     ],
     [
       "¿Los tests verdes y cero migraciones pendientes certifican producción?",
-      "Las suites respaldan 744 pruebas automatizadas ejecutadas en verde (387 backend y 357 frontend), más 10 pruebas de concurrencia SQL pura y el benchmark de BCrypt. La verificación de drift compara el modelo EF con su snapshot sin cambios pendientes. Para saber si una base específica está al día hay que consultar sus migraciones aplicadas. A esto se suman pruebas con SQL Server real, dos sesiones aisladas y la aceptación de infraestructura del destino. El SHA a16cbf9 identifica el conjunto exacto de código congelado de la presentación.",
+      "Las suites respaldan 803 pruebas automatizadas core ejecutadas en verde (396 backend xUnit Release y 407 frontend Vitest en 71 suites), acreditadas mediante el preflight oficial sobre 6cd5295 con árbol de trabajo modificado y consolidadas en el commit 5c0bbb6 con código de producto idéntico. Como evidencia histórica separada se conservan las 11 pruebas de concurrencia SQL pura sobre SQL Server 2022 y la calibración de BCrypt. La verificación de drift compara el modelo EF con su snapshot sin cambios pendientes. Para saber si una base específica está al día hay que consultar sus migraciones aplicadas. A esto se suman la aceptación de infraestructura del destino y el corte candidato histórico 37ed360 preservado en el tag v1.0.0-rc.",
       "docs/audit/DEVELOPMENT_LOG.md · 09/11; docs/project_docs/ROADMAP.md · CF-03 a CF-06 y PR-*"
     ],
     [
@@ -350,7 +350,7 @@
     ],
     [
       "¿Por qué se enmendó la Constitución del proyecto a la versión 1.8.0 (§IX) en lugar de mantener las cifras fijas de 234/252 tests?",
-      "La enmienda v1.8.0 desvinculó el principio de certificación de los números históricos del corte inicial de la Spec 218. Fijar números estáticos creaba contradicciones cuando el trabajo de hardening incorporaba legítimamente nuevas matrices de prueba. La nueva redacción establece el principio sustantivo: la totalidad de las suites oficiales existentes deben ejecutarse sobre el mismo SHA candidato, sin fallos ni omisiones no autorizadas, y las cifras exactas observadas (actualmente 387 backend y 357 frontend) deben registrarse y firmarse en el manifiesto de la Release Candidate.",
+      "La enmienda v1.8.0 desvinculó el principio de certificación de los números históricos del corte inicial de la Spec 218. Fijar números estáticos creaba contradicciones cuando el trabajo de hardening incorporaba legítimamente nuevas matrices de prueba. La nueva redacción establece el principio sustantivo: la totalidad de las suites oficiales existentes deben ejecutarse sobre el mismo SHA candidato, sin fallos ni omisiones no autorizadas, y las cifras exactas observadas (actualmente 396 backend xUnit y 407 frontend Vitest, totalizando 803 pruebas core certificadas) deben registrarse y firmarse en el manifiesto de la Release Candidate.",
       ".specify/memory/constitution.md §IX; docs/audit/RUNBOOK_DEV.md §14.1"
     ],
     [

@@ -1,7 +1,7 @@
 ---
 name: "agent-debugger"
 description: "Forensic Runtime Debugger & Reconciliation Agent skill for OneITB23. Inspects browser console logs, Kestrel logs, and GlobalErrorBoundary UUIDs. Specializes in fixing ReferenceErrors in un-typed JSX and reconciling components against canonical references like F:\\React\\cv-builder."
-compatibility: "Used in Antigravity or dedicated sessions (Claude Sonnet 4.6 Thinking / 6.1 Sol)."
+compatibility: "Used in Antigravity or dedicated sessions (Claude Sonnet 4.6 Thinking / 6.2 Sol)."
 metadata:
   author: "OneITB23 Architecture Team"
   source: "skills/agent-debugger/SKILL.md"

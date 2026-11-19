@@ -180,11 +180,11 @@ At any given moment, **AT MOST ONE SPEC MAY BE ACTIVELY IMPLEMENTED OR MODIFIED 
 Gemini 3.8 Flash High (or Gemini 3.7 Flash High) MUST be prioritized as the primary engine for all local tasks within its reasoning and context capacity: code reading, architecture analysis, pure domain logic, data contracts, schemas, comprehensive test suites (xUnit, Vitest, integration, benchmarks), documentation, SpecKit tracking, and bounded feature implementations. Tasks MUST be executed in iterative, bounded turns without asking for unbounded multi-file refactors in a single turn.
 
 Two dedicated external review channels handle the following specialties:
-1. **Canal 1: `[OneITB] Auditoría & Arquitectura` (Modelo: `6 Astra`)**:
+1. **Canal 1: `[OneITB] Auditoría & Arquitectura` (Modelo: `6.2 Astra`)**:
    - *Razonamiento `Muy Alto`*: Auditoría de seguridad profunda de tokens/roles, análisis adversarial de vectores de ataque en GraphQL y autorización institucional.
    - *Razonamiento `Alto`*: Diseño arquitectónico mayor o arbitraje de contratos y migraciones complejas.
    - *Razonamiento `Ultra`*: Reservado exclusivamente como opción terminal ante crisis irresolubles en `Muy Alto`.
-2. **Canal 2: `[OneITB] Hardening & Testing` (Modelo: `6.1 Sol`)**:
+2. **Canal 2: `[OneITB] Hardening & Testing` (Modelo: `6.2 Sol`)**:
    - *Razonamiento `Alto`*: Concurrencia en tiempo real, WebSockets, sincronización multi-pestaña de Apollo Cache y fallos de estado por desconexión.
    - *Razonamiento `Medio`*: Generación de suites de pruebas unitarias exhaustivas, mocks y casos de borde de dominio.
 

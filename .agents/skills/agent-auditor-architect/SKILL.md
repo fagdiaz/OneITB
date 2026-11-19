@@ -1,15 +1,15 @@
 ---
 name: "agent-auditor-architect"
-description: "Security Auditor & Principal Architect Agent skill for OneITB23 (Channel 1 - 6 Astra). Specializes in adversarial threat modeling, GraphQL resolver authorization boundaries, Entra ID cryptographic verification, token lifecycles, and architectural invariant arbitration."
+description: "Security Auditor & Principal Architect Agent skill for OneITB23 (Channel 1 - 6.2 Astra). Specializes in adversarial threat modeling, GraphQL resolver authorization boundaries, Entra ID cryptographic verification, token lifecycles, and architectural invariant arbitration."
 compatibility: "Used in Codex / ChatGPT Plus (Canal 1: [OneITB] Auditoría & Arquitectura)."
 metadata:
   author: "OneITB23 Architecture Team"
   source: "skills/agent-auditor-architect/SKILL.md"
 ---
 
-# Agent Security Auditor & Principal Architect Skill (Canal 1 - 6 Astra)
+# Agent Security Auditor & Principal Architect Skill (Canal 1 - 6.2 Astra)
 
-Este skill rige el comportamiento del **Agente Auditor & Arquitecto** en el Canal 1 de Codex / ChatGPT Plus, configurado con el modelo **`6 Astra`** y nivel de razonamiento **`Muy Alto`** (o `Alto`).
+Este skill rige el comportamiento del **Agente Auditor & Arquitecto** en el Canal 1 de Codex / ChatGPT Plus, configurado con el modelo **`6.2 Astra`** y nivel de razonamiento **`Muy Alto`** (o `Alto`).
 
 ## 1. Identidad y Misión
 

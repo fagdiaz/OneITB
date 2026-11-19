@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Script de verificacion previa a la defensa oral de OneITB23.
@@ -108,7 +108,7 @@ Test-Component "Pilar 3: Academico" "Concurrencia Optimista (RowVersion)" {
     if (-not $hasRowVersion -or -not $hasExpectedVersion) {
         throw "Faltan tokens de concurrencia RowVersion en SectionGrade o ExpectedVersion en AcademicService"
     }
-    "RowVersion & ExpectedVersion activos"
+    "RowVersion y ExpectedVersion declarados en código fuente"
 }
 
 Test-Component "Pilar 4: Chat" "Adjunto Privado y Rango HTTP 206" {
@@ -116,7 +116,7 @@ Test-Component "Pilar 4: Chat" "Adjunto Privado y Rango HTTP 206" {
     if (-not (Test-Path $controller)) { throw "Falta MessageAttachmentsController.cs" }
     $hasRange = Select-String -Path $controller -Pattern "enableRangeProcessing: true" -SimpleMatch
     if (-not $hasRange) { throw "El controlador debe habilitar procesamiento de rangos HTTP 206" }
-    "Descarga privada con HTTP 206 activa"
+    "Procesamiento de rangos HTTP 206 configurado en controlador"
 }
 
 # --- 4. Material de Presentacion y Contingencia ---
@@ -130,7 +130,7 @@ Test-Component "Presentacion" "Diapositivas y Guion de 20 Preguntas" {
     $qaData = Get-Content -Raw $jsonQa | ConvertFrom-Json
     $qaCount = $qaData.qa.Count
     if ($qaCount -lt 20) { throw "Se esperaban 20 preguntas (detectadas: $qaCount)" }
-    "PPTX, PDF y $qaCount preguntas listos"
+    "PPTX, PDF y $qaCount preguntas presentes en disco"
 }
 
 $stopwatch.Stop()
@@ -138,11 +138,13 @@ $allPassed = @($checks | Where-Object { -not $_.Passed }).Count -eq 0
 
 Write-Host ""
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host "         OneITB23 -- VERIFICADOR DE ENTORNO DE DEFENSA INSTITUCIONAL             " -ForegroundColor White
+Write-Host "         OneITB23 -- COMPROBADOR ESTÁTICO DE PRERREQUISITOS DE DEFENSA           " -ForegroundColor White
 Write-Host "================================================================================" -ForegroundColor Cyan
-Write-Host " SHA Candidato : a16cbf9 (Release Candidate Academico)" -ForegroundColor Gray
-Write-Host " Rama Activa   : feature/2026-11-01-debugger-cv-builder" -ForegroundColor Gray
-Write-Host " Tiempo Medido : $($stopwatch.ElapsedMilliseconds) ms" -ForegroundColor Gray
+$shaShort = (git rev-parse --short HEAD).Trim()
+$branchReal = (git rev-parse --abbrev-ref HEAD).Trim()
+Write-Host " HEAD Consultado: $shaShort (árbol de trabajo)" -ForegroundColor Gray
+Write-Host " Rama Activa    : $branchReal" -ForegroundColor Gray
+Write-Host " Tiempo Medido  : $($stopwatch.ElapsedMilliseconds) ms" -ForegroundColor Gray
 Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Cyan
 
 foreach ($check in $checks) {
@@ -155,7 +157,7 @@ foreach ($check in $checks) {
 
 Write-Host "================================================================================" -ForegroundColor Cyan
 if ($allPassed) {
-    Write-Host "  VEREDICTO: ENTORNO DE DEFENSA 100% OPERATIVO Y LISTO PARA PROYECCION         " -ForegroundColor Green
+    Write-Host "  VEREDICTO: PRERREQUISITOS ESTÁTICOS 100% DISPONIBLES (RUNTIME/SYNC PENDIENTES)" -ForegroundColor Green
     Write-Host "================================================================================" -ForegroundColor Cyan
     exit 0
 } else {

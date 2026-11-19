@@ -28,9 +28,9 @@ flowchart TD
 
     subgraph External["CANALES EXTERNOS: Codex / ChatGPT Plus (Consultoría Especializada)"]
         direction TB
-        CH1["Canal 1: '[OneITB] Auditoría & Arquitectura'\nModelo: 6 Astra | Razonamiento: Muy Alto / Alto\n(agent-auditor-architect)"]
-        CH2["Canal 2: '[OneITB] Hardening & Testing'\nModelo: 6.1 Sol | Razonamiento: Alto / Muy Alto\n(agent-hardening-tester)"]
-        CH3["Canal 3: '[OneITB] Implementador Core'\nModelo: 6.1 Sol | Razonamiento: Alto / Muy Alto\n(rol de implementación)"]
+        CH1["Canal 1: '[OneITB] Auditoría & Arquitectura'\nModelo: 6.2 Astra | Razonamiento: Muy Alto / Alto\n(agent-auditor-architect)"]
+        CH2["Canal 2: '[OneITB] Hardening & Testing'\nModelo: 6.2 Sol | Razonamiento: Alto / Medio\n(agent-hardening-tester)"]
+        CH3["Canal 3: '[OneITB] Implementador Core'\nModelo: 6.2 Sol | Razonamiento: Alto / Muy Alto\n(rol de implementación)"]
     end
 
     ORCH ==>|"Handoff Quirúrgico (ID + SHA + Contexto Saneado)"| External
@@ -48,11 +48,11 @@ de implementación de la spec activa; no tiene una skill registrada con el nombr
 | Skill registrada o rol | Nombre del Agente | Entorno / Motor | Nivel de Razonamiento | Responsabilidad Principal |
 | :--- | :--- | :--- | :--- | :--- |
 | **`agent-orchestrator`** | **Orquestador & Integrador** | Antigravity Local<br>`Gemini 3.8 Flash High` | Nativo | Único escritor en disco, Docker, Kestrel, Vite, suites completas del manifiesto del SHA, speckit-stabilize y gobernanza Git. |
-| **`agent-auditor-architect`** | **Auditor de Seguridad & Arquitectura** | Canal 1 Codex<br>`6 Astra` | **`Muy Alto`** *(o `Alto`)* | Threat modeling, autorización GraphQL (`GAP-AUTH`, `GAP-PRIV`, `GAP-FILE`), Entra ID (PKCE) y decisiones mayores. |
-| **`agent-hardening-tester`** | **Hardening & Testing** | Canal 2 Codex<br>`6.1 Sol` | **`Alto`** *(o `Muy Alto`)* | Baterías de pruebas extremas en Vitest/xUnit, concurrencia de WebSockets y sincronización de Apollo Cache. |
-| **Implementación (sin skill propia)** | **Implementador Core** | Canal 3 Codex<br>`6.1 Sol` | **`Alto`** *(o `Muy Alto`)* | Implementación de contratos de dominio, resolvers, componentes React y parches falsables. |
-| **`agent-debugger`** | **Debugger Forense & Reconciliación** | Antigravity / Codex<br>`Claude Sonnet 4.6` / `6.1 Sol` | **`Alto`** | Diagnóstico en consola DevTools de UUIDs en runtime, solución de ReferenceErrors y reconciliación contra `cv-builder`. |
-| **`agent-ui-ux`** | **UI/UX & Maquetación Editorial** | Antigravity / Canal 2<br>`Gemini 3.8 Flash` / `6.1 Sol` | Nativo / Medio | Reglas `@media print` A4, maquetación CSS, contraste WCAG AA, soporte Dark Mode y diagramas SVG/Mermaid. |
+| **`agent-auditor-architect`** | **Auditor de Seguridad & Arquitectura** | Canal 1 Codex<br>`6.2 Astra` | **`Muy Alto`** *(o `Alto`)* | Threat modeling, autorización GraphQL (`GAP-AUTH`, `GAP-PRIV`, `GAP-FILE`), Entra ID (PKCE) y decisiones mayores. |
+| **`agent-hardening-tester`** | **Hardening & Testing** | Canal 2 Codex<br>`6.2 Sol` | **`Alto`** *(concurrencia)* / **`Medio`** *(tests)* | Baterías de pruebas extremas en Vitest/xUnit, concurrencia de WebSockets y sincronización de Apollo Cache. |
+| **Implementación (sin skill propia)** | **Implementador Core** | Canal 3 Codex<br>`6.2 Sol` | **`Alto`** *(o `Muy Alto`)* | Implementación de contratos de dominio, resolvers, componentes React y parches falsables. |
+| **`agent-debugger`** | **Debugger Forense & Reconciliación** | Antigravity / Codex<br>`Claude Sonnet 4.6` / `6.2 Sol` | **`Alto`** | Diagnóstico en consola DevTools de UUIDs en runtime, solución de ReferenceErrors y reconciliación contra `cv-builder`. |
+| **`agent-ui-ux`** | **UI/UX & Maquetación Editorial** | Antigravity / Canal 2<br>`Gemini 3.8 Flash` / `6.2 Sol` | Nativo / Medio | Reglas `@media print` A4, maquetación CSS, contraste WCAG AA, soporte Dark Mode y diagramas SVG/Mermaid. |
 | **`agent-notebook-sync`** | **Desarrollo & Sync Notebook** | Terminal Laptop<br>`Gemini` / `Codex` | Nativo / Alto | Configuración de memoria (.wslconfig a 6GB), inspección de estado Git sin pushes automáticos y validaciones pre-flight. |
 
 ---
@@ -66,7 +66,7 @@ de implementación de la spec activa; no tiene una skill registrada con el nombr
 3. **`Alto` ➔ ESTÁNDAR RECOMENDADO:**
    Para análisis de concurrencia, WebSockets, condiciones de carrera en bases de datos y arquitectura de componentes.
 4. **`Muy Alto` ➔ MÁXIMA PROFUNDIDAD:**
-   Obligatorio para auditorías de seguridad, penetración lógica de GraphQL, verificación de tokens y control de roles en `6 Astra`.
+   Obligatorio para auditorías de seguridad, penetración lógica de GraphQL, verificación de tokens y control de roles en `6.2 Astra`.
 5. **`Ultra` ➔ RESERVADO PARA CRISIS:**
    Solo ante bloqueos circulares o defectos que hayan resistido un intento documentado previo en `Muy Alto`.
 
@@ -78,12 +78,12 @@ de implementación de la spec activa; no tiene una skill registrada con el nombr
 
 Tras el dictamen del peer review, se desglosan tres dimensiones independientes:
 
-1. **Tarifa API Directa (Umbral de 272k tokens):**
-   En invocaciones directas a las APIs de GPT-6 Astra y 6.1 Sol, cuando la entrada acumulada de una solicitud supera los 272,000 tokens, OpenAI aplica un recargo del 2× en costos de entrada y caché, y de 1.5× en salida.
+1. **Tarifas y Políticas de API Directa del Proveedor:**
+   Las condiciones tarifarias, umbrales y multiplicadores por ventana de contexto en invocaciones directas a las APIs del proveedor (OpenAI) quedan catalogadas como **pendientes de verificación de fuentes oficiales vigentes para la serie 6.2**. Como antecedente histórico documentado en el peer review (07/11/2026), se registró un umbral de 272k tokens con recargo 2× en entrada/caché y 1.5× en salida para modelos previos.
 2. **Suscripción ChatGPT Plus / Codex Work:**
    En entornos de suscripción web/chat, las ventanas de contexto pueden ser de hasta 500k tokens sin recargos tarifarios directos por token. Sin embargo, los canales comparten la asignación semanal de mensajes. Reiniciar un chat no devuelve la cuota semanal ya consumida.
-3. **Fidelidad y Continuidad Operativa (Alerta en 200k tokens):**
-   El indicador para abrir una nueva sesión no es un número rígido de tokens, sino la **fidelidad de razonamiento**: se debe relevar el chat si el modelo empieza a perder los invariantes del proyecto, olvida el corte de pruebas o contradice la base técnica documentada.
+3. **Fidelidad y Continuidad Operativa (Decisión Interna del Proyecto):**
+   Como decisión de gobernanza interna del proyecto, se establece una política de relevo o compactación preventiva al alcanzar una acumulación significativa de contexto (o ~200k tokens en sesión activa) y siempre que el modelo muestre degradación en la fidelidad de razonamiento, pérdida de invariantes del proyecto o contradicción con la base técnica documentada.
 
 ---
 
@@ -119,7 +119,7 @@ Al final de **CADA** respuesta que emita cualquier agente del sistema, debe inco
 ---
 ### 📌 Protocolo de Continuidad Operativa
 * **Canal:** `[Local AGY | Canal 1 [OneITB] Auditoría & Arquitectura | Canal 2 [OneITB] Hardening & Testing | Canal 3 [OneITB] Implementador Core]`
-* **Modelo Sugerido:** `[Gemini 3.8 Flash High | 6 Astra | 6.1 Sol]`
+* **Modelo Sugerido:** `[Gemini 3.8 Flash High | 6.2 Astra | 6.2 Sol]`
 * **Nivel de Razonamiento:** `[Nativo | Medio | Alto | Muy Alto | Ultra (crisis, §3)]`
 * **Objetivo Inmediato:** `<Descripción concisa de la acción>`
 ---
