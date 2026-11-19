@@ -1,73 +1,20 @@
-# Acuse vigente · DOC-08 · Ronda 2
+# Acuse vigente · DOC-08 · RATIFICADO Y PUBLICADO
 
-Estado: RATIFICADO CON OBSERVACIÓN EDITORIAL MENOR.
-DOC08-01 y DOC08-02 cerrados. Dictamen: docs/audit/RATIFICACION_DOC08_RONDA2.md.
-HEAD verificado: 5d5611a18889510db032e1df9b0c860ede81cbd0.
+Dictamen: docs/audit/RATIFICACION_DOC08_RONDA2.md.
+Commit de ratificación: ffe9b02 (ratificación documental DOC-08) y 3b5940e (registro histórico en DEVELOPMENT_LOG.md).
+Pushed a origin: origin/feature/2026-11-01-debugger-cv-builder.
+HEAD verificado: 3b5940e948c2794eb0938b812f6fbf0e6fdfa2a3.
 
-Local AGY: aplicar únicamente la oración propuesta en el dictamen para separar PR-* (aceptación de producción pública) de las condiciones editoriales y LG-01 de imprenta. Ejecutar git diff --check. No hace falta otra ronda técnica ni reabrir DOC-07. Con esa precisión, presentar el lote como listo para commit/push, respetando la autorización expresa de Fran aplicable; este acuse no ejecuta operaciones Git ni sustituye dicha autorización.
+Estado: DOC-08 CERRADO. La reconciliación canónica de FINAL_AUDIT_REPORT.md, DOCUMENTATION_STATUS.md y 01-project-overview.md ha sido completada con éxito, delimitando rigurosamente que la memoria técnica v2.0 (63 páginas, ratificada en DOC-07) se encuentra materializada y sincronizada con la línea base certificada de 803 pruebas core y 38 migraciones, con aceptación final de imprenta condicionada a los controles del checklist y a la muestra física LG-01.
 
-Destino: Local AGY · Modelo: Gemini 3.8 Flash High · Razonamiento: Nativo.
+Destino: Local AGY · Gemini 3.8 Flash High · Nativo.
 
 ---
 
-# Handoff de Auditoría · DOC-08 · Ronda 2 (Subsanación de Hallazgos DOC08-01 y DOC08-02 y Ratificación Canónica)
-# Destino: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
+# Historial de Handoff · DOC-08 (Reconciliación Canónica de Reporte Final de Auditoría y Gobierno Documental)
+# Canal: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
 # Conversación Codex: 01a1b8c1-3efa-7bc2-b17a-202bd56244e3
 # Rama: feature/2026-11-01-debugger-cv-builder
-# SHA base: 5d5611a18889510db032e1df9b0c860ede81cbd0
+# SHA base: 5d5611a18889510db032e1df9b0c860ede81cbd0 -> HEAD final: 3b5940e948c2794eb0938b812f6fbf0e6fdfa2a3
 # Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
 # Tag oficial: v1.0.0-rc (anclado a d806822 / candidato 37ed360)
-
----
-
-## 1. Identificación de Punto y Ronda
-
-- **ID de Punto:** `DOC-08`
-- **Título:** `Reconciliación Canónica de Reporte Final de Auditoría, Matriz de Estados e Integración Documental`
-- **ID de Ronda:** `Ronda 2`
-- **SHA Base Exacto:** `5d5611a18889510db032e1df9b0c860ede81cbd0` (verificado mediante `git rev-parse HEAD`)
-
----
-
-## 2. Remediación Integral Implementada en Disco (Atención Estricta a DICTAMEN_DOC08_RONDA1.md)
-
-En atención exacta a los dos hallazgos señalados en `docs/audit/DICTAMEN_DOC08_RONDA1.md`:
-
-### A. Subsanación de DOC08-01 (Corrección de SHA Base)
-
-- Se corrigió el SHA completo en el encabezado del handoff y registros a **`5d5611a18889510db032e1df9b0c860ede81cbd0`**, coincidente al 100% con la salida de `git rev-parse HEAD`.
-
-### B. Subsanación de DOC08-02 (Delimitación Rigurosa de la Aceptación de Imprenta)
-
-Se sustituyó cualquier afirmación categórica («solo resta imprimir» / «GO definitivo de imprenta») adoptando textualmente el alcance y redacción propuestos por Canal 1:
-
-1. **`docs/audit/FINAL_AUDIT_REPORT.md` (§8.6 - Fila de Imprenta):**
-   - Redacción aplicada:
-     > **`MATERIALIZADO / SINCRONIZADO; ACEPTACIÓN FINAL CONDICIONADA.`** Memoria de 63 páginas y hallazgos DOC07-01 a DOC07-05 ratificados, con hashes en EXPORT_CHECKLIST.md. Restan los controles editoriales no acreditados del checklist y la muestra física LG-01. DOC-07 no constituye certificación APA exhaustiva.
-2. **`docs/audit/FINAL_AUDIT_REPORT.md` (§8.6 - Párrafo Final):**
-   - Se explicitó: «La memoria oficial para imprenta (`DF-05`/`DF-06`) quedó materializada y sincronizada con los hallazgos de DOC-07 ratificados, conservando su aceptación final condicionada a los controles editoriales del checklist, la muestra física (`LG-01`) y los gates externos de producción pública (`PR-*`).»
-3. **`docs/audit/FINAL_AUDIT_REPORT.md` (§1.1 - Cierre Ejecutivo):**
-   - Se explicitó: «quedando consolidado el Manifiesto oficial (`CANDIDATE_MANIFEST_RC.md`) y la materialización de la memoria técnica de 63 páginas con sus hallazgos ratificados bajo DF-05/DF-06 (DOC-07). La aceptación final de imprenta permanece condicionada a los controles editoriales pendientes del checklist y a la muestra física LG-01.»
-4. **`docs/audit/DOCUMENTATION_STATUS.md` (Tabla 1):**
-   - Fila `FINAL_AUDIT_REPORT.md`: reconciliada a Noviembre 2026, 803 core y memoria materializada con aceptación final de imprenta condicionada.
-   - Fila `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`: estado formal actualizado a **`Materializada y sincronizada; aceptación final condicionada (DF-05/DF-06, DOC-07)`**, delimitando que restan los controles editoriales pendientes del checklist y la muestra física de mesa (`LG-01`).
-5. **`docs/academic/01-project-overview.md` (Línea 209):**
-   - Reconciliada a: `- Producción material de la memoria para la mesa (DF-05 y DF-06 materializados con hallazgos DOC-07 ratificados; restan controles editoriales del checklist y muestra física A4 bajo LG-01).`
-
----
-
-## 3. Verificaciones de Soporte Ejecutadas
-
-- **Code Freeze de Producto:** `git diff --name-only HEAD -- "API Graphql" FrontEnd` = **0 archivos modificados** (100% intacto).
-- **Invariante /specs:** `git diff --name-only HEAD -- specs` = **0 archivos modificados** (carpeta completamente ignorada).
-- **Higiene de Formato:** `git diff --check` = **Salida 0** (0 errores de espacios o saltos de línea).
-- **Prerrequisitos de Defensa:** `scripts/Test-DefenseDemoReadiness.ps1` = **10 / 10 PASS** (267 ms).
-- **Control de Cambios:** Exactamente 3 archivos modificados bajo tracking de Git (`docs/audit/FINAL_AUDIT_REPORT.md`, `docs/audit/DOCUMENTATION_STATUS.md`, `docs/academic/01-project-overview.md`).
-
----
-
-## 4. Solicitud a Canal 1 (6.2 Astra · Alto)
-
-Habiéndose integrado con exactitud las correcciones de DOC08-01 y DOC08-02, solicitamos a Canal 1:
-1. Constatar la armonización del texto en `FINAL_AUDIT_REPORT.md`, `DOCUMENTATION_STATUS.md` y `01-project-overview.md`.
-2. Emitir la **ratificación formal de DOC-08** (`docs/audit/RATIFICACION_DOC08_RONDA2.md`) y actualizar el bloque de acuse en `prompt.txt` autorizando el commit y push.
