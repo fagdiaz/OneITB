@@ -1,20 +1,18 @@
-# Acuse vigente · DOC-08 · RATIFICADO Y PUBLICADO
+# Acuse vigente · DOC-09 · RATIFICADO Y PUBLICADO
 
-Dictamen: docs/audit/RATIFICACION_DOC08_RONDA2.md.
-Commit de ratificación: ffe9b02 (ratificación documental DOC-08) y 3b5940e (registro histórico en DEVELOPMENT_LOG.md).
+Dictamen de ratificación: docs/audit/ratificaciones/DICTAMEN_DOC09_RONDA1.md.
+Commits de ratificación y registro:
+- d06920c (docs(audit-reorg): reorganizar docs/audit en ratificaciones y evidencias depurando rondas intermedias)
+- b8f5a61 (docs(audit-log): registrar reorganizacion estructural y depuracion de docs/audit)
 Pushed a origin: origin/feature/2026-11-01-debugger-cv-builder.
-HEAD verificado: 3b5940e948c2794eb0938b812f6fbf0e6fdfa2a3.
+HEAD verificado: b8f5a610816911c42f0da6e22f7a01d51a6296b1.
 
-Estado: DOC-08 CERRADO. La reconciliación canónica de FINAL_AUDIT_REPORT.md, DOCUMENTATION_STATUS.md y 01-project-overview.md ha sido completada con éxito, delimitando rigurosamente que la memoria técnica v2.0 (63 páginas, ratificada en DOC-07) se encuentra materializada y sincronizada con la línea base certificada de 803 pruebas core y 38 migraciones, con aceptación final de imprenta condicionada a los controles del checklist y a la muestra física LG-01.
+Estado: DOC-09 CERRADO. La reestructuración y depuración física de docs/audit ha sido completada con éxito conforme a la Opción 1:
+- 24 archivos de rondas intermedias obsoletas y volcados transitorios eliminados.
+- 16 actas y dictámenes oficiales definitivos organizados en docs/audit/ratificaciones/.
+- 19 archivos de evidencia (trazas, salidas literales, preflights y JSONs citados) organizados en docs/audit/evidencias/.
+- Raíz de docs/audit estrictamente preservada con los 5 documentos canónicos de gobernanza (FINAL_AUDIT_REPORT.md, RUNBOOK_DEV.md, DOCUMENTATION_STATUS.md, CANDIDATE_MANIFEST_RC.md, DEVELOPMENT_LOG.md).
+- Todas las referencias canónicas y suites de pruebas adaptadas y superadas al 100% (test_runner_isolation 13/13, test_wrapper_contract 8/8, test_wrapper_consumer_fixtures 8/8, test_ci_gating 18/18, Test-DefenseDemoReadiness 10/10).
+- Invariantes preservados: Código de producto (API Graphql/, FrontEnd/) y /specs 100% intactos.
 
 Destino: Local AGY · Gemini 3.8 Flash High · Nativo.
-
----
-
-# Historial de Handoff · DOC-08 (Reconciliación Canónica de Reporte Final de Auditoría y Gobierno Documental)
-# Canal: Canal 1: [OneITB] Auditoría & Arquitectura · Modelo: 6.2 Astra · Razonamiento: Alto
-# Conversación Codex: 01a1b8c1-3efa-7bc2-b17a-202bd56244e3
-# Rama: feature/2026-11-01-debugger-cv-builder
-# SHA base: 5d5611a18889510db032e1df9b0c860ede81cbd0 -> HEAD final: 3b5940e948c2794eb0938b812f6fbf0e6fdfa2a3
-# Puntero canónico: specs/220-core-closure-and-application-hardening (.specify/feature.json)
-# Tag oficial: v1.0.0-rc (anclado a d806822 / candidato 37ed360)
