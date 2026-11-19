@@ -19,6 +19,35 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-19] - Reorganización Estructural y Depuración de docs/audit (Lote DOC-09) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Reorganización Estructural y Depuración de docs/audit (DOC-09)
+
+**Estado:** RATIFICADO Y CERRADO (Dictamen de ratificación: `ratificaciones/DICTAMEN_DOC09_RONDA1.md`)
+**Base HEAD:** `4629ba737722d81526a2ffa1a22f90198ec4cee9` -> Commit: `d06920c`
+
+Se ejecutó la reestructuración física y depuración de artefactos transitorios en el directorio `docs/audit/`, preservando la trazabilidad canónica, la inmutabilidad de dictámenes definitivos y la integridad de consumidores automatizados conforme a las directivas del usuario y Canal 1 (`6.2 Astra` · Alto):
+
+1. **Depuración de Rondas Intermedias:**
+   - Se eliminaron 24 archivos de revisión intermedia obsoletos (`DICTAMEN_*_RONDA*.md`, deltas preliminares `DICTAMEN_CONS02_*`, `DICTAMEN_CONS03_*`, etc.) y volcados transitorios `.checks.json` cuyas decisiones y resoluciones quedaron plenamente consolidadas en este registro (`DEVELOPMENT_LOG.md`) y en las actas de ratificación definitivas.
+
+2. **Reorganización en Subdirectorios Especializados:**
+   - **`docs/audit/ratificaciones/` (16 actas preservadas):** Agrupa todas las ratificaciones oficiales y dictámenes fundacionales definitivos (`DICTAMEN_CONSOLIDACION_6cd5295_2026-11-17.md`, `DICTAMEN_DOC03_RONDA1.md`, `DICTAMEN_DOC04_RONDA1.md`, `DICTAMEN_DOC05_RONDA2.md`, `DICTAMEN_DOC09_RONDA1.md`, `RATIFICACION_CONS02_2026-11-18.md`, `RATIFICACION_CONS03_RONDA7_2026-11-18.md`, `RATIFICACION_DOC01_A_RONDA2.md`, `RATIFICACION_DOC01_BC_RONDA3.md`, `RATIFICACION_DOC01_DE_RONDA4.md`, `RATIFICACION_DOC02_RONDA2.md`, `RATIFICACION_DOC06_RONDA2.md`, `RATIFICACION_DOC07_RONDA3.md`, `RATIFICACION_DOC08_RONDA2.md`, `RATIFICACION_PREFLIGHT_803_2026-11-18.md`, `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md`).
+   - **`docs/audit/evidencias/` (19 archivos de evidencia preservados):** Agrupa todos los informes de corte, volcados primarios de pruebas con hash verificado y trazas de ejecución (`CF04_ROLE_WALKTHROUGH.md`, `CF05_LIVE_RUNNER_OUTPUT.md`, `CF05_REALTIME_TRACE.md`, `CF05_REALTIME_VALIDATION.md`, `CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`, `CF05_UI_WALKTHROUGH.md`, `CF05_UI_WALKTHROUGH_TRACE.md`, `DEMO_DATABASE_VALIDATION_RESULTS.md`, `INFRASTRUCTURE_ACCEPTANCE_RESULTS.md`, `PEER_REVIEW_MULTI_AGENTE_2026-11-07.md`, `PREFLIGHT_CERTIFIED_6cd5295.json`, `PREFLIGHT_CERTIFIED_91d57f9.json`, `SQL_CONCURRENCY_RESULTS.md`, `bcrypt-report.json`, `handoff_ledger.json`, `DICTAMEN_CONSOLIDACION_6cd5295_2026-11-17.tests.json`, `EVIDENCIA_PREFLIGHT_CERTIFICADO_803_2026-11-18.json`, `EVIDENCIA_WRAPPER_FIXTURES_CONS03.json`, `RATIFICACION_CONS02_2026-11-18.checks.json`).
+   - **Raíz de `docs/audit/` Limpia:** Contiene estrictamente los 5 documentos canónicos de gobernanza (`FINAL_AUDIT_REPORT.md`, `RUNBOOK_DEV.md`, `DOCUMENTATION_STATUS.md`, `CANDIDATE_MANIFEST_RC.md`, `DEVELOPMENT_LOG.md`).
+
+3. **Reconciliación de Enlaces y Consumidores de Trazas:**
+   - Se actualizaron las referencias canónicas en `CANDIDATE_MANIFEST_RC.md`, `DOCUMENTATION_STATUS.md`, `FINAL_AUDIT_REPORT.md`, `01-project-overview.md`, `DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`, `MULTI_AGENT_FRAMEWORK.md`, `scripts/run-cf05-ui-live-validation.ps1` y capturas relativas en `CF05_UI_WALKTHROUGH*.md`.
+   - Se adaptaron los consumidores automatizados de pruebas: `tests/test_runner_isolation.mjs` (apuntando a `docs/audit/evidencias/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`), `tests/test_wrapper_contract.mjs` y `tests/test_wrapper_consumer_fixtures.ps1` (apuntando a `docs/audit/evidencias/EVIDENCIA_WRAPPER_FIXTURES_CONS03.json`).
+
+4. **Validación Exhaustiva de Suites:**
+   - `test_runner_isolation.mjs`: 13/13 PASS (100%).
+   - `test_wrapper_contract.mjs`: 8/8 PASS (100%).
+   - `test_wrapper_consumer_fixtures.ps1`: 8/8 PASS (100%).
+   - `test_ci_gating.mjs`: 18/18 PASS (100%).
+   - `Test-DefenseDemoReadiness.ps1`: 10/10 PASS (100%).
+
+---
 ## [2026-11-19] - Reconciliación Canónica de Reporte Final de Auditoría y Gobierno Documental (Lote DOC-08) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Reconciliación Canónica de Reporte Final de Auditoría y Gobierno Documental (DOC-08)
