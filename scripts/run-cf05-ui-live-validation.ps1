@@ -207,7 +207,7 @@ Ver manifiesto estructurado de la corrida en `manifest.json` en este mismo direc
 
 ## 3. Dictamen Técnico de Procedencia
 
-Esta salida constituye la evidencia de máquina **sin alteraciones manuales ni reconstrucción sintetizada**, originada directamente por el runner automatizado de Chrome DevTools Protocol ejecutado en su directorio aislado `docs/audit/evidence/runs/`. Se preserva intacta el acta histórica de ratificación CF-05 (`docs/audit/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`).
+Esta salida constituye la evidencia de máquina **sin alteraciones manuales ni reconstrucción sintetizada**, originada directamente por el runner automatizado de Chrome DevTools Protocol ejecutado en su directorio aislado `docs/audit/evidence/runs/`. Se preserva intacta el acta histórica de ratificación CF-05 (`docs/audit/evidencias/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`).
 '@
     $fullContent = $header + "`n" + ($runnerOutput -join "`n") + "`n" + $footer
     Set-Content -Path $outputEvidence -Value $fullContent -Encoding utf8

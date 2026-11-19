@@ -16,7 +16,7 @@
   * **Sesión C (Observador de Aislamiento):** `moderador1@itbeltran.com.ar` (Moderador)
 - **Harness de Ejecución UI:** Runner automatizado en vivo `scripts/verify-cf05-ui-live.mjs` y `scripts/run-cf05-ui-live-validation.ps1` sobre Google Chrome Headless via Chrome DevTools Protocol (CDP nativo sin capas intermedias ni emulación sintética).
 - **Evidencia Literal de Máquina:** [`./CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`](./CF05_UI_AUTOMATED_RUNNER_OUTPUT.md) (ejecución instrumental inalterada, exit code 0, timestamps de reloj de máquina en vivo).
-- **Capturas Binarias de Pantalla:** Directorio [`./screenshots/`](./screenshots/) con capturas de pantalla PNG generadas en runtime por CDP para cada caso evaluado.
+- **Capturas Binarias de Pantalla:** Directorio [`../screenshots/`](../screenshots/) con capturas de pantalla PNG generadas en runtime por CDP para cada caso evaluado.
 - **Registro Protocolar Estructurado:** [`./CF05_UI_WALKTHROUGH_TRACE.md`](./CF05_UI_WALKTHROUGH_TRACE.md) (reconstrucción analítica y contextualizada paso a paso).
 
 ---
@@ -39,10 +39,10 @@
 ### Caso UI-01: Aislamiento Estricto de Almacenamiento
 - **Emisor (Sesión A):** `estudiante1.ads@itbeltran.com.ar` autenticado en `http://localhost:5173/login` dentro de Contexto A.
 - **Aserción de Selector Real de DOM:** Se comprobó que el formulario en `Login.jsx` corresponde a `form.flex.flex-col` con encabezado `h1: Iniciar Sesión` (`hasAriaLabel: false`), aclarando definitivamente la discrepancia de selectores sintéticos.
-- **Captura generada:** [`docs/audit/screenshots/ui-01-context-a-authenticated.png`](./screenshots/ui-01-context-a-authenticated.png) (Contexto A autenticado en `/feed`).
+- **Captura generada:** [`docs/audit/screenshots/ui-01-context-a-authenticated.png`](../screenshots/ui-01-context-a-authenticated.png) (Contexto A autenticado en `/feed`).
 - **Apertura de segundo contexto independiente:** Perfil/contexto de almacenamiento aislado abierto hacia `http://localhost:5173/feed` (aclaración técnica: las pestañas del mismo perfil comparten `localStorage`, por lo que el aislamiento real requiere contextos/perfiles de navegación separados).
 - **Comportamiento verificado:** El enrutador privado detectó ausencia de token en el almacenamiento del contexto aislado (`tokenInProbeStorage: null`) y ejecutó redirección inmediata a `/login`.
-- **Captura generada:** [`docs/audit/screenshots/ui-01-context-probe-isolated.png`](./screenshots/ui-01-context-probe-isolated.png) (Contexto Probe aislado en `/login`).
+- **Captura generada:** [`docs/audit/screenshots/ui-01-context-probe-isolated.png`](../screenshots/ui-01-context-probe-isolated.png) (Contexto Probe aislado en `/login`).
 - **Respaldo complementario:** La suite unitaria `FrontEnd/OneItb-FE/src/context/sessionTabs.adversarial.test.jsx` (5/5 PASS) ensaya la sincronización de almacenamiento compartido y el cambio de sesión, constituyendo un respaldo unitario diferenciado (sin considerarse garantía absoluta de runtime por sí sola).
 
 ### Caso UI-02: Comprobación de Observador C (Aislamiento de Topic)
@@ -55,18 +55,18 @@
   * Contador de no leídos posterior: `3` (Delta = `0`)
   * Búsqueda en DOM de texto de Mensaje 1: `0` coincidencias (`domLeakFound: false`).
   * Notificaciones flotantes / toasters: `0` emitidas a C.
-- **Captura generada:** [`docs/audit/screenshots/ui-02-moderador-topic-isolation.png`](./screenshots/ui-02-moderador-topic-isolation.png).
+- **Captura generada:** [`docs/audit/screenshots/ui-02-moderador-topic-isolation.png`](../screenshots/ui-02-moderador-topic-isolation.png).
 
 ### Caso UI-03: Ciclo Reactivo y Badges en Sesión B (Profesor)
 - **Destinatario (Sesión B):** `profesor1.ads@itbeltran.com.ar` autenticado inicialmente con **feed abierto** (`/feed`), sin navegar al chat.
 - **Medición de Baseline Asentado en Feed:** Se esperó la hidratación completa de la query de contactos en Apollo Client (`messagingContacts`) y el renderizado de DOM: `baselineBadgeB = 5` (compuesto exactamente por 1 no leído del contacto Estudiante Sistemas Uno + 4 no leídos de otros interlocutores del seed demo; `sumExpectedInitial = 5`).
 - **Transmisión y Recepción Reactiva:** Al enviar mensaje reactivo único (`Mensaje Reactivo CF-05 UI-03: 1794791532196_17350`), el indicador en `/feed` se incrementó en vivo de forma determinística y exacta a `6` (`delta = 1`, `expected = 6`, `actual = 6`).
-- **Captura generada (Feed incrementado):** [`docs/audit/screenshots/ui-03-profesor-feed-incremented.png`](./screenshots/ui-03-profesor-feed-incremented.png).
+- **Captura generada (Feed incrementado):** [`docs/audit/screenshots/ui-03-profesor-feed-incremented.png`](../screenshots/ui-03-profesor-feed-incremented.png).
 - **Inspección Previa en Barra Lateral:** B hizo clic en el enlace `a[href="/chat"]` vía UI. Antes de abrir el hilo, se inspeccionó el botón de `Estudiante Sistemas Uno` en la barra lateral (`aside button`), verificando que contenía exactamente `2` mensajes sin leer (`expectedThreadUnreadBefore: 2`, `actualThreadUnreadBefore: 2`).
 - **Apertura y Verificación en UI:** B seleccionó interactivamente el botón del contacto `Estudiante Sistemas Uno`. El mensaje reactivo único se verificó presente y renderizado en el DOM de la conversación.
 - **Reseteo de Lectura del Hilo:** Tras la apertura, se ejecutó la mutación `markConversationRead` y el contador de la barra lateral para Estudiante se reseteó a `0` (`threadUnreadAfter: 0`).
 - **Preservación de Badges de Otros Interlocutores:** El badge del header se recalculó determinísticamente a `4` (`previousHeaderBadge: 6`, `threadUnreadCleared: 2`, `actualHeaderBadgeAfterRead: 4`, `otherInterlocutorsPreserved: true`), preservando exactamente los 4 mensajes pendientes de otros interlocutores sin forzar un 0 global espurio.
-- **Captura generada (Chat renderizado y leído):** [`docs/audit/screenshots/ui-03-profesor-chat-rendered.png`](./screenshots/ui-03-profesor-chat-rendered.png).
+- **Captura generada (Chat renderizado y leído):** [`docs/audit/screenshots/ui-03-profesor-chat-rendered.png`](../screenshots/ui-03-profesor-chat-rendered.png).
 
 ### Caso UI-04: Simulación de Caída de Red y Reconexión WebSocket
 - **Interrupción forzada:** Simulación de corte de conexión física en cliente B mediante emulación CDP (`offline: true`) y corte activo de socket (código 4499 a las 01:12:14.440Z).
@@ -76,7 +76,7 @@
   * Contenido: `"Mensaje Post-Reconexion CF-05 UI-04: 1794791537749_9215"`
   * Recepción en B: Entregado y renderizado en el hilo abierto de B **sin recargar la página** (`F5`).
   * Re-inspección en C: Delta = `0` fugas hacia el observador (`domLeakFound: false`).
-- **Captura generada:** [`docs/audit/screenshots/ui-04-reconnection-post-message.png`](./screenshots/ui-04-reconnection-post-message.png).
+- **Captura generada:** [`docs/audit/screenshots/ui-04-reconnection-post-message.png`](../screenshots/ui-04-reconnection-post-message.png).
 
 ### Caso UI-05: Cierre de Sesión y Reemplazo Limpio A -> C en Misma Ventana (SPA)
 - **Marcador en Memoria:** Se fijó la variable en memoria `window.__SPA_DOCUMENT_ID__ = 'SPA_DOC_1794791538027'`.
@@ -87,7 +87,7 @@
 - **Inspección de DOM e Identidad:**
   * Navbar: Identidad actualizada con avatar `"MI"` y presencia del enlace `Moderación` (`hasModeracionLink: true`).
   * Ausencia de residuos: `hasStudentNameResidual: false` y `hasConfidentialStudentMessage: false` en todo el DOM de `/chat`.
-- **Captura generada:** [`docs/audit/screenshots/ui-05-logout-relogin-clean.png`](./screenshots/ui-05-logout-relogin-clean.png).
+- **Captura generada:** [`docs/audit/screenshots/ui-05-logout-relogin-clean.png`](../screenshots/ui-05-logout-relogin-clean.png).
 
 ---
 

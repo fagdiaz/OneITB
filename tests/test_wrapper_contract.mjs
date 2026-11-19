@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const canonicalWrapperScript = path.join(repoRoot, 'scripts', 'run-cf05-ui-live-validation.ps1');
 const mockRunnerSource = path.join(repoRoot, 'tests', 'fixtures', 'mock_runner.mjs');
-const evidencePath = path.join(repoRoot, 'docs', 'audit', 'EVIDENCIA_WRAPPER_FIXTURES_CONS03.json');
+const evidencePath = path.join(repoRoot, 'docs', 'audit', 'evidencias', 'EVIDENCIA_WRAPPER_FIXTURES_CONS03.json');
 
 console.log('================================================================');
 console.log('TEST DE CONTRATO PRODUCTOR-CONSUMIDOR Y WRAPPER POWERSHELL');

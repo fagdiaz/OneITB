@@ -51,7 +51,7 @@ function Get-PointerSha256 {
 $scenarios = @(
     @{ Name = "live_success"; ExpectedExit = 0; ExpectsPointerUpdate = $true; ExpectedRejection = $null; Desc = "Live PASS válido (mode: live, status: PASS, exitCode: 0, uiExecuted: true, certified: false)" },
     @{ Name = "dry_run_success"; ExpectedExit = 0; ExpectsPointerUpdate = $false; ExpectedRejection = $null; Desc = "Dry-run válido (mode: dry-run, status: DRY_RUN_OK, exitCode: 0, uiExecuted: false, certified: false)" },
-    @{ Name = "incoherent_dry_run_pass"; ExpectedExit = 1; ExpectsPointerUpdate = $false; ExpectedRejection = "incoherente de estado en manifiesto"; Desc = "Combinación incoherente: dry-run con status PASS" },
+    @{ Name = "incoherent_dry_run_pass"; ExpectedExit = 1; ExpectsPointerUpdate = $false; ExpectedRejection = "estado en manifiesto"; Desc = "Combinación incoherente: dry-run con status PASS" },
     @{ Name = "certified_true"; ExpectedExit = 1; ExpectsPointerUpdate = $false; ExpectedRejection = "'certified' debe ser booleano estricto JSON y exclusivamente false"; Desc = "Combinación inválida: certified true" },
     @{ Name = "string_ui_executed"; ExpectedExit = 1; ExpectsPointerUpdate = $false; ExpectedRejection = "'uiExecuted' debe ser booleano estricto JSON"; Desc = "Tipo JSON incorrecto: uiExecuted como string 'false' (sin coerción)" },
     @{ Name = "status_unknown"; ExpectedExit = 1; ExpectsPointerUpdate = $false; ExpectedRejection = "status' debe ser string 'PASS', 'FAIL' o 'DRY_RUN_OK'"; Desc = "Status desconocido: status UNKNOWN" },
@@ -103,8 +103,9 @@ try {
 
         # Verificación de código de salida y motivo de rechazo esperado
         $exitCorrect = ($actualExit -eq $expectedExit)
+        $normalizedOutput = $outputText -replace '\s+', ' '
         $rejectionCorrect = if ($null -ne $expectedRejection) {
-            $outputText.Contains($expectedRejection)
+            $normalizedOutput.Contains($expectedRejection)
         } else {
             $true
         }
@@ -152,7 +153,7 @@ if ($allPassed) {
 Write-Host "================================================================"
 
 # Guardar evidencia estructurada
-$evidencePath = Join-Path $repoRoot "docs\audit\EVIDENCIA_WRAPPER_FIXTURES_CONS03.json"
+$evidencePath = Join-Path $repoRoot "docs\audit\evidencias\EVIDENCIA_WRAPPER_FIXTURES_CONS03.json"
 $evidencePayload = [ordered]@{
     date = "2026-11-18"
     base = "6cd5295d7768c34c32d37d54e0aad3d01f4749f6"

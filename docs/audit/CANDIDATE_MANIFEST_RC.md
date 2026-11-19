@@ -8,11 +8,11 @@
 - **Revisión Actual de Consolidación (`6cd5295`):**
   * **Backend:** 100% inmutable e idéntico a `37ed360` (`git diff 37ed360..HEAD -- "API Graphql"` = 0; 396 pruebas xUnit Release en PASS).
   * **Frontend:** Delta acotado de presentación por Spec 228 (`Feed.jsx`, `UserAvatar.jsx`, `UserAvatar.test.jsx`; 407 pruebas Vitest en 71 suites en PASS).
-  * **Línea Base Core Certificada de la Revisión:** **803 pruebas core PASS** (396 backend + 407 frontend en 71 suites), certificada en la corrida oficial de preflight del corte `6cd5295` (`PREFLIGHT_CERTIFIED_6cd5295.json`). Se complementa con 11 pruebas opt-in de concurrencia SQL (categoría `GOB12SqlConcurrency`, certificadas con evidencia en `a62c4e3` / `SQL_CONCURRENCY_RESULTS.md`, sin reejecución en `6cd5295`).
+  * **Línea Base Core Certificada de la Revisión:** **803 pruebas core PASS** (396 backend + 407 frontend en 71 suites), certificada en la corrida oficial de preflight del corte `6cd5295` (`evidencias/PREFLIGHT_CERTIFIED_6cd5295.json`). Se complementa con 11 pruebas opt-in de concurrencia SQL (categoría `GOB12SqlConcurrency`, certificadas con evidencia en `a62c4e3` / `evidencias/SQL_CONCURRENCY_RESULTS.md`, sin reejecución en `6cd5295`).
 - **Dictamen del Auditor Principal (Canal 1 - Astra):**
   * 16/11/2026 (`RATIFICACION_CF05_2026-11-16.md`): `APROBADO CON OBSERVACIONES` para alcance académico local (CF-01 a CF-05 cerradas y ratificadas sobre `37ed360`).
-  * 17/11/2026 (`DICTAMEN_CONSOLIDACION_6cd5295_2026-11-17.md`): Conformidad acotada a diff y 24/24 pruebas focalizadas de UserAvatar; autorización para iniciar preparación académica (DF-01 a DF-08); resolución de observaciones CONS-01 a CONS-05 por lotes; Spec 229 formalmente diferida como deuda técnica menor post-defensa sin prohibir futuras correcciones necesarias de backend.
-- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; tag local `v1.0.0-rc` preservado en `d806822` (objeto `9faddd9` anunciado en `origin` según evidencia remota de AGY y ratificado en `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md`; consulta directa de Codex bloqueada por red); convocatoria formal de mesa pendiente.
+  * 17/11/2026 (`ratificaciones/DICTAMEN_CONSOLIDACION_6cd5295_2026-11-17.md`): Conformidad acotada a diff y 24/24 pruebas focalizadas de UserAvatar; autorización para iniciar preparación académica (DF-01 a DF-08); resolución de observaciones CONS-01 a CONS-05 por lotes; Spec 229 formalmente diferida como deuda técnica menor post-defensa sin prohibir futuras correcciones necesarias de backend.
+- **Estado:** Release Candidate Académico — Core Feature Complete (117/117), Code Freeze Operativo; tag local `v1.0.0-rc` preservado en `d806822` (objeto `9faddd9` anunciado en `origin` según evidencia remota de AGY y ratificado en `ratificaciones/RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md`; consulta directa de Codex bloqueada por red); convocatoria formal de mesa pendiente.
 
 ---
 
@@ -47,10 +47,10 @@ Conforme a la Constitución §IX y a la reconciliación oficial de [ROADMAP.md](
 |---|:---:|:---:|:---:|:---:|:---:|---|
 | **Backend Ordinario (xUnit Release)** | **396** | **396** | 0 | 0 | 41 s | Código `API Graphql` 100% inmutable respecto a `37ed360` (informada por AGY). |
 | **Frontend Ordinario (Vitest)** | **407** | **407** | 0 | 0 | 40 s | 71 suites en verde (+1 suite `UserAvatar.test.jsx`, 18 tests). Suite completa informada por AGY; validada focalizadamente en 24/24 PASS por Auditoría (Astra). |
-| **Subtotal Línea Base Core Certificada** | **803** | **803** | **0** | **0** | **1m 39s** | **Línea base certificada en corte 6cd5295 mediante preflight oficial (`PREFLIGHT_CERTIFIED_6cd5295.json`)** |
+| **Subtotal Línea Base Core Certificada** | **803** | **803** | **0** | **0** | **1m 39s** | **Línea base certificada en corte 6cd5295 mediante preflight oficial (`evidencias/PREFLIGHT_CERTIFIED_6cd5295.json`)** |
 | **Opt-in: Concurrencia SQL (GOB12)** | **11** | **11** | 0 | 0 | 14 s | Evidencia conservada de su ejecución original sobre `a62c4e3` (código idéntico a `37ed360`). No re-ejecutada sobre `6cd5295`. |
 
-> **Declaración de Procedencia de Métricas y Preflight:** Conforme a la corrida oficial de certificación ejecutada el 18/11/2026 (`PREFLIGHT_CERTIFIED_6cd5295.json`), la línea base de **803 pruebas** (396 backend xUnit + 407 frontend Vitest) ha quedado formalmente **CERTIFICADA** al 100% PASS sobre el corte `6cd5295d7768c34c32d37d54e0aad3d01f4749f6`, con 9/9 compuertas aprobadas, 0 pruebas fallidas y 0 omitidas (`-ExpectedBackendBaseline 396 -ExpectedFrontendBaseline 407`).
+> **Declaración de Procedencia de Métricas y Preflight:** Conforme a la corrida oficial de certificación ejecutada el 18/11/2026 (`evidencias/PREFLIGHT_CERTIFIED_6cd5295.json`), la línea base de **803 pruebas** (396 backend xUnit + 407 frontend Vitest) ha quedado formalmente **CERTIFICADA** al 100% PASS sobre el corte `6cd5295d7768c34c32d37d54e0aad3d01f4749f6`, con 9/9 compuertas aprobadas, 0 pruebas fallidas y 0 omitidas (`-ExpectedBackendBaseline 396 -ExpectedFrontendBaseline 407`).
 
 ---
 
@@ -59,8 +59,8 @@ Conforme a la Constitución §IX y a la reconciliación oficial de [ROADMAP.md](
 Ejecución oficial mediante `.agents/skills/speckit-stabilize/scripts/preflight_stabilize.ps1 -RunTests $true -Certify -ExpectedBackendBaseline 396 -ExpectedFrontendBaseline 407`:
 
 * **Veredicto Oficial:** **PASS (CERTIFICADO)**
-* **Salida Certificada Oficial (Corte 6cd5295):** [`./PREFLIGHT_CERTIFIED_6cd5295.json`](./PREFLIGHT_CERTIFIED_6cd5295.json) (`Certified: true`, 803 pruebas PASS, 9/9 compuertas).
-* **Salida Histórica de Referencia (Corte 37ed360):** [`./PREFLIGHT_CERTIFIED_91d57f9.json`](./PREFLIGHT_CERTIFIED_91d57f9.json) (785 pruebas core).
+* **Salida Certificada Oficial (Corte 6cd5295):** [`./evidencias/PREFLIGHT_CERTIFIED_6cd5295.json`](./evidencias/PREFLIGHT_CERTIFIED_6cd5295.json) (`Certified: true`, 803 pruebas PASS, 9/9 compuertas).
+* **Salida Histórica de Referencia (Corte 37ed360):** [`./evidencias/PREFLIGHT_CERTIFIED_91d57f9.json`](./evidencias/PREFLIGHT_CERTIFIED_91d57f9.json) (785 pruebas core).
 
 | N.º | Compuerta | Severidad | Estado | Respaldo / Detalle |
 |---|---|:---:|:---:|---|
@@ -90,18 +90,18 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 - **Estado:** `[CERRADO / CERTIFICADO]` (Regresión automatizada core 785/785 PASS, suite opt-in SQL concurrente 11/11 PASS sobre SQL Server 2022, aceptación integral de infraestructura local y base demo certificadas, BCrypt calibrado y preflight oficial certificado con `Certified: true`).
 - **Evidencias adjuntas:**
   * Contenedor Docker `oneitb23-sql` verificado (puerto 1433 Up/healthy).
-  * Validación integral de infraestructura local y aceptación de servicios: [`./INFRASTRUCTURE_ACCEPTANCE_RESULTS.md`](./INFRASTRUCTURE_ACCEPTANCE_RESULTS.md) (`scripts/validate-local-infrastructure.ps1` PASS con exit code 0; Redis 7, Mailpit, integración real de infra, regresión de aislamiento de sesión, suites completas y cleanup sin residuos).
+  * Validación integral de infraestructura local y aceptación de servicios: [`./evidencias/INFRASTRUCTURE_ACCEPTANCE_RESULTS.md`](./evidencias/INFRASTRUCTURE_ACCEPTANCE_RESULTS.md) (`scripts/validate-local-infrastructure.ps1` PASS con exit code 0; Redis 7, Mailpit, integración real de infra, regresión de aislamiento de sesión, suites completas y cleanup sin residuos).
     - *Declaración de procedencia del script:* El script ejecutado `scripts/validate-local-infrastructure.ps1` posee hash SHA256 `7FCC83CE6D637D520C90ACB29759DFA91E9C1F4829E25F43B54C6DA55B066511` (modificado en commit `31e59a2` para filtro de exclusión de categorías opt-in y bucle acotado de liberación de puertos). Se declara formalmente como herramienta de soporte diferenciada del árbol inmutable del código candidato de producción `37ed3608887f3871a8ca2c555004ab63fd6d1e6a`.
-  * Validación de integridad relacional y base demo: [`./DEMO_DATABASE_VALIDATION_RESULTS.md`](./DEMO_DATABASE_VALIDATION_RESULTS.md) (`scripts/validate-demo-database.ps1` PASS con exit code 0; 0 violaciones relacionales en 10 dimensiones, 6 logins de rol, smokes de 8 dominios GraphQL, upload y cleanup).
-  * Suite opt-in de concurrencia SQL (`GOB12SqlConcurrency`) ejecutada con **11/11 PASS** sobre SQL Server 2022 ([`./SQL_CONCURRENCY_RESULTS.md`](./SQL_CONCURRENCY_RESULTS.md); ejecutada sobre árbol limpio en HEAD `a62c4e3`, código idéntico a `37ed360`).
-  * Calibración BCrypt (`GOB15BcryptBenchmark`) con dictamen `PASS_SCREENING` ([`./bcrypt-report.json`](./bcrypt-report.json)).
+  * Validación de integridad relacional y base demo: [`./evidencias/DEMO_DATABASE_VALIDATION_RESULTS.md`](./evidencias/DEMO_DATABASE_VALIDATION_RESULTS.md) (`scripts/validate-demo-database.ps1` PASS con exit code 0; 0 violaciones relacionales en 10 dimensiones, 6 logins de rol, smokes de 8 dominios GraphQL, upload y cleanup).
+  * Suite opt-in de concurrencia SQL (`GOB12SqlConcurrency`) ejecutada con **11/11 PASS** sobre SQL Server 2022 ([`./evidencias/SQL_CONCURRENCY_RESULTS.md`](./evidencias/SQL_CONCURRENCY_RESULTS.md); ejecutada sobre árbol limpio en HEAD `a62c4e3`, código idéntico a `37ed360`).
+  * Calibración BCrypt (`GOB15BcryptBenchmark`) con dictamen `PASS_SCREENING` ([`./evidencias/bcrypt-report.json`](./evidencias/bcrypt-report.json)).
   * Verificador `Test-DefenseDemoReadiness.ps1` ejecutado en 478 ms con 10/10 pilares en PASS.
-  * Preflight oficial certificado: [`./PREFLIGHT_CERTIFIED_91d57f9.json`](./PREFLIGHT_CERTIFIED_91d57f9.json).
+  * Preflight oficial certificado: [`./evidencias/PREFLIGHT_CERTIFIED_91d57f9.json`](./evidencias/PREFLIGHT_CERTIFIED_91d57f9.json).
 
 ### CF-04: Recorrido Guiado por Roles (Seis Roles Institucionales)
 - **Estado:** `[CERRADO / CERTIFICADO]` (Recorrido manual y visual en vivo de los seis roles institucionales completado con **30/31 casos en PASS** y 1 observación de runtime solventada tras reinicio del daemon Kestrel con binario fresco).
 - **Evidencias adjuntas:**
-  * Acta formal de auditoría de roles: [`./CF04_ROLE_WALKTHROUGH.md`](./CF04_ROLE_WALKTHROUGH.md).
+  * Acta formal de auditoría de roles: [`./evidencias/CF04_ROLE_WALKTHROUGH.md`](./evidencias/CF04_ROLE_WALKTHROUGH.md).
   * 0 errores no controlados de JavaScript en DevTools / 0 UUIDs de GlobalErrorBoundary / 0 respuestas HTTP 500.
   * Accesibilidad WCAG 2.1 AA verificada: foco confinado en modales y atajo `Escape` determinístico en modales de publicación, silenciamiento (`SilenceUserModal`), razón de moderación (`ModerationReasonModal`), ofertas laborales y visor de CV ATS con retorno al disparador.
   * Daemon Kestrel reiniciado con binario compilado y query `moderationAudits` validada con HTTP 200 para rol Moderador.
@@ -110,13 +110,13 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 - **Estado:** `[CERRADO / CERTIFICADO / RATIFICADO]` (Transporte WebSocket real, entrega en vivo, relectura de persistencia en base de datos de `isRead = true`, reconexión natural en 2316 ms `>= 1300 ms`, 4 controles negativos validados en PASS; y recorrido UI multi-sesión en vivo acreditado al 100% PASS mediante navegador con contextos aislados, ratificado formalmente el 16/11/2026 por el Auditor Principal Astra en `RATIFICACION_CF05_2026-11-16.md`).
 - **Evidencias adjuntas:**
   * Dictamen formal de ratificación: [`RATIFICACION_CF05_2026-11-16.md`](C:/Users/Fran/.codex/visualizations/2026/11/08/01a1b8c1-3efa-7bc2-b17a-202bd56244e3/RATIFICACION_CF05_2026-11-16.md) (Astra, Canal 1: APROBADO CON OBSERVACIONES para alcance académico local; no más auditorías de CF-05 necesarias).
-  * Acta formal de validación realtime (Transporte): [`./CF05_REALTIME_VALIDATION.md`](./CF05_REALTIME_VALIDATION.md).
-  * Acta formal de recorrido UI multi-sesión en vivo: [`./CF05_UI_WALKTHROUGH.md`](./CF05_UI_WALKTHROUGH.md) (UI-01 a UI-05 en 100% PASS; aserciones DOM estrictas, ciclo determinístico de badges 5->6->4, reconexión CDP en 591 ms sin recarga de página, cambio de cuenta en SPA limpia sin reload y delimitación de InMemoryCache).
-  * Evidencia literal de máquina UI (Chrome Headless CDP): [`./CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`](./CF05_UI_AUTOMATED_RUNNER_OUTPUT.md) (`scripts/run-cf05-ui-live-validation.ps1` y `scripts/verify-cf05-ui-live.mjs` con salida 0 / 100% PASS, selector real verificado `form.flex.flex-col` con `h1: Iniciar Sesión`, y timestamps de reloj de máquina en vivo).
+  * Acta formal de validación realtime (Transporte): [`./evidencias/CF05_REALTIME_VALIDATION.md`](./evidencias/CF05_REALTIME_VALIDATION.md).
+  * Acta formal de recorrido UI multi-sesión en vivo: [`./evidencias/CF05_UI_WALKTHROUGH.md`](./evidencias/CF05_UI_WALKTHROUGH.md) (UI-01 a UI-05 en 100% PASS; aserciones DOM estrictas, ciclo determinístico de badges 5->6->4, reconexión CDP en 591 ms sin recarga de página, cambio de cuenta en SPA limpia sin reload y delimitación de InMemoryCache).
+  * Evidencia literal de máquina UI (Chrome Headless CDP): [`./evidencias/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`](./evidencias/CF05_UI_AUTOMATED_RUNNER_OUTPUT.md) (`scripts/run-cf05-ui-live-validation.ps1` y `scripts/verify-cf05-ui-live.mjs` con salida 0 / 100% PASS, selector real verificado `form.flex.flex-col` con `h1: Iniciar Sesión`, y timestamps de reloj de máquina en vivo).
   * Capturas binarias de pantalla en disco: [`./screenshots/`](./screenshots/) (capturas PNG generadas en runtime para UI-01 a UI-05: feed incrementado, chat renderizado, reconexión y logout).
-  * Registro original y traza de recorrido UI: [`./CF05_UI_WALKTHROUGH_TRACE.md`](./CF05_UI_WALKTHROUGH_TRACE.md) (registro protocolar estructurado y trazable).
-  * Traza cronológica y metodológica detallada: [`./CF05_REALTIME_TRACE.md`](./CF05_REALTIME_TRACE.md).
-  * Salida literal del runner unmocked y controles negativos: [`./CF05_LIVE_RUNNER_OUTPUT.md`](./CF05_LIVE_RUNNER_OUTPUT.md) (`scripts/run-cf05-live-validation.ps1` y `scripts/verify-cf05-realtime-live.mjs` con `graphql-ws` v5.16.0 sin mock, aserciones estrictas, salida 0 en la corrida principal y salida 1 en los 4 controles negativos).
+  * Registro original y traza de recorrido UI: [`./evidencias/CF05_UI_WALKTHROUGH_TRACE.md`](./evidencias/CF05_UI_WALKTHROUGH_TRACE.md) (registro protocolar estructurado y trazable).
+  * Traza cronológica y metodológica detallada: [`./evidencias/CF05_REALTIME_TRACE.md`](./evidencias/CF05_REALTIME_TRACE.md).
+  * Salida literal del runner unmocked y controles negativos: [`./evidencias/CF05_LIVE_RUNNER_OUTPUT.md`](./evidencias/CF05_LIVE_RUNNER_OUTPUT.md) (`scripts/run-cf05-live-validation.ps1` y `scripts/verify-cf05-realtime-live.mjs` con `graphql-ws` v5.16.0 sin mock, aserciones estrictas, salida 0 en la corrida principal y salida 1 en los 4 controles negativos).
   * Métricas del último pendiente resuelto (UI-03 Badge Hardening):
     - Baseline de Profesor (B) en `/feed` asentado esperando hidratación completa de contactos: 5 no leídos (1 del interlocutor Estudiante + 4 de otros contactos de demo).
     - Mensaje reactivo único (ID `64a98c62-ce6e-408b-9967-9905b2761178`): sube de 5 a 6 en el badge del feed (`exactIncrement = 1`).
@@ -133,8 +133,8 @@ Conforme a la gobernanza de [ROADMAP.md](../project_docs/ROADMAP.md):
 ### CF-06: Manifiesto Consolidado y Congelamiento del Candidato
 - **Estado:** `[CONSOLIDADO DOCUMENTALMENTE / TAG VERIFICADO]` (Evidencias, suites y ratificación consolidadas; tag local `v1.0.0-rc` registrado sobre `d806822` y publicación en remoto `origin` acreditada en objeto `9faddd9` bajo ratificación formal, conservando la salvedad de conectividad directa de Codex).
 - **Dictamen:** Se formaliza este manifiesto consolidado vinculando con rigor documental las métricas, suites, salidas y salvedades del Release Candidate.
-  * **Corte Histórico Tag `v1.0.0-rc`:** El objeto tag anotado (`9faddd97...`) se encuentra registrado localmente sobre `d806822102eb7eec7542318c3d134eadadd390ea` anclado a código candidato `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (785 pruebas core certificadas). La evidencia remota aportada por AGY (`git ls-remote --tags origin v1.0.0-rc`) acredita la existencia del objeto `9faddd9` en `origin` coincidente con el tag local, ratificado formalmente por Astra en `RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md` con la salvedad de que la consulta remota directa de Codex quedó impedida por conectividad a GitHub.
-  * **Revisión de Consolidación (`6cd5295`):** Backend permanece 100% inmutable respecto a `37ed360`; frontend incorpora desacoplamiento de presentación Spec 228 (`Feed.jsx`, `UserAvatar.jsx`, `UserAvatar.test.jsx`) elevando las pruebas automatizadas a 407 en Vitest (803 pruebas core total certificadas mediante preflight oficial `PREFLIGHT_CERTIFIED_6cd5295.json`).
+  * **Corte Histórico Tag `v1.0.0-rc`:** El objeto tag anotado (`9faddd97...`) se encuentra registrado localmente sobre `d806822102eb7eec7542318c3d134eadadd390ea` anclado a código candidato `37ed3608887f3871a8ca2c555004ab63fd6d1e6a` (785 pruebas core certificadas). La evidencia remota aportada por AGY (`git ls-remote --tags origin v1.0.0-rc`) acredita la existencia del objeto `9faddd9` en `origin` coincidente con el tag local, ratificado formalmente por Astra en `ratificaciones/RATIFICACION_TAG_ORIGIN_RC_2026-11-18.md` con la salvedad de que la consulta remota directa de Codex quedó impedida por conectividad a GitHub.
+  * **Revisión de Consolidación (`6cd5295`):** Backend permanece 100% inmutable respecto a `37ed360`; frontend incorpora desacoplamiento de presentación Spec 228 (`Feed.jsx`, `UserAvatar.jsx`, `UserAvatar.test.jsx`) elevando las pruebas automatizadas a 407 en Vitest (803 pruebas core total certificadas mediante preflight oficial `evidencias/PREFLIGHT_CERTIFIED_6cd5295.json`).
   * **Arbitraje Spec 229 (Backend):** Conforme al dictamen del Auditor Principal del 17/11/2026, se difiere formalmente el refactor opcional de composición de correo en `Mutation.cs` como deuda técnica menor post-defensa para no alterar el contenedor DI de .NET en vísperas de la entrega, sin que ello impida futuras correcciones necesarias de backend ante defectos reales.
   * **Corte Documental y Herramientas:** Gobernanza, tooling y paridad de CI consolidados en `88faa50` (Specs 221-227); procedencia editorial y hashes reconciliados en `EXPORT_CHECKLIST.md`.
 

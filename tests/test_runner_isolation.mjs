@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const nodeScript = path.join(repoRoot, 'scripts', 'verify-cf05-ui-live.mjs');
-const historicalOutput = path.join(repoRoot, 'docs', 'audit', 'CF05_UI_AUTOMATED_RUNNER_OUTPUT.md');
+const historicalOutput = path.join(repoRoot, 'docs', 'audit', 'evidencias', 'CF05_UI_AUTOMATED_RUNNER_OUTPUT.md');
 const screenshotsDir = path.join(repoRoot, 'docs', 'audit', 'screenshots');
 const runsBaseDir = path.join(repoRoot, 'docs', 'audit', 'evidence', 'runs');
 

@@ -118,7 +118,7 @@ No se abrieron servidores ni navegadores. Los archivos temporales se usan solo p
 - Cierre integral “221–228 100% certificadas” y aprobación final de entrega: **no ratificados hasta resolver CONS-01 a CONS-05**.
 - No repetir auditoría general ni CF05. La siguiente revisión se limita a estos cinco puntos, sus deltas y su evidencia.
 
-Salida literal de la ejecución focalizada: [artefacto JSON](DICTAMEN_CONSOLIDACION_6cd5295_2026-11-17.tests.json).
+Salida literal de la ejecución focalizada: [artefacto JSON](../evidencias/DICTAMEN_CONSOLIDACION_6cd5295_2026-11-17.tests.json).
 
 ## Revisión de Lote 1 — 17/11/2026
 

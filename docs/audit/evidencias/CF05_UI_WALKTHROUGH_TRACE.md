@@ -6,7 +6,7 @@
 > Ante las observaciones de arbitraje sobre la discrepancia de selectores (`form[aria-label="Iniciar Sesión"]` vs el selector real de código `form.flex.flex-col` con encabezado `h1: Iniciar Sesión`) y la sincronización horaria, se ejecutó una **validación 100% automatizada e instrumental en máquina real** mediante Chrome DevTools Protocol nativo (`scripts/verify-cf05-ui-live.mjs` y `scripts/run-cf05-ui-live-validation.ps1`).
 > La evidencia de máquina no intervenida, literal e inalterada, junto con sus capturas de pantalla binarias asociadas, se encuentra archivada en:
 > - **Log Literal de Máquina:** [`./CF05_UI_AUTOMATED_RUNNER_OUTPUT.md`](./CF05_UI_AUTOMATED_RUNNER_OUTPUT.md)
-> - **Directorio de Capturas Binarias:** [`./screenshots/`](./screenshots/)
+> - **Directorio de Capturas Binarias:** [`../screenshots/`](../screenshots/)
 
 - **Fecha y Ventana de Ejecución Original:** 15 de Noviembre de 2026, 17:35:12-03:00 a 17:41:48-03:00
 - **Fecha de Ejecución Automatizada CDP:** 15 de Noviembre de 2026, 20:25:06-03:00 a 20:26:03-03:00
