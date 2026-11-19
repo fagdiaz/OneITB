@@ -19,6 +19,34 @@ antigua; cada nuevo cierre debe incorporarse inmediatamente debajo de este bloqu
   como registro histórico de ramas y pueden mencionar nombres o rutas ya reemplazados.
 
 ---
+## [2026-11-19] - Normalización Canónica de Raíz, Manifiesto RC y Depuración de Residuos (Lote DOC-06) - branch: feature/2026-11-01-debugger-cv-builder
+
+### Normalización Documental Canónica y Depuración de Residuos Efímeros (DOC-06)
+
+**Estado:** RATIFICADO Y CERRADO (Dictamen de ratificación: `RATIFICACION_DOC06_RONDA2.md`, revisión intermedia: `DICTAMEN_DOC06_RONDA1.md`)
+**Base HEAD:** `5bcaffe3f9853e8828ceea4297c5bb43247f3c6e` -> Commit de ratificación: `975aaf9`
+
+Se completó el ciclo de normalización, deslinde metodológico y depuración de auxiliares acordado con Canal 1 (`6.2 Astra` · Alto) bajo la directiva de profesionalización documental:
+
+1. **Normalización de Raíz y Documentos Canónicos:**
+   - **`README.md`:** Línea base core certificada en 803/803 PASS en corte `6cd5295` (vía `PREFLIGHT_CERTIFIED_6cd5295.json`) frente a 785 del tag histórico; tag `v1.0.0-rc` registrado en `d806822` y verificado en `origin` (objeto `9faddd9`); 38 migraciones fuente sin drift de modelo; deslinde explícito en §Documentación canónica entre la memoria Markdown (`DOCUMENTO_BASE_PRACTICA_PROFESIONAL.md`), con contenido normalizado a 803 core y 38 migraciones, y los binarios compilados DOCX/PDF previos (`v2_OFICIAL_IMPRENTA`), que conservan la línea base anterior (234/252) y quedan formalmente pendientes de regeneración editorial y QA visual en su lote específico, preservando la sincronización de diapositivas (`OneITB23-Defensa.pptx` / `OneITB23-Diapositivas.pdf`) bajo DF-07 (DOC-05).
+   - **`GUIA_SPECKIT.md`:** Corregida la afirmación inexacta sobre el estado ignorado del archivo; clasificado como guía metodológica operativa interna para las skills (`.agents/skills/`) con corte de revisión actualizado a Noviembre 2026, sin formar parte de la entrega académica institucional.
+   - **`docs/audit/CANDIDATE_MANIFEST_RC.md`:** Actualizado a 2026-11-19; separada la procedencia de la línea base core certificada de 803 pruebas (preflight oficial en `6cd5295`) de las 11 pruebas opt-in de concurrencia SQL (certificadas con evidencia en `a62c4e3`, sin reejecución en `6cd5295`); compuerta CF-06 reconciliada a `[CONSOLIDADO DOCUMENTALMENTE / TAG VERIFICADO]` reflejando la publicación remota en `origin` bajo objeto `9faddd9` y eliminando la condición desfasada respecto a la mesa.
+   - **`docs/audit/DOCUMENTATION_STATUS.md`:** Control actualizado al 19/11/2026; normalización de 803 core certificados y 38 migraciones en filas canónicas de `README.md`, `ROADMAP.md` y `CANDIDATE_MANIFEST_RC.md`.
+   - **`docs/academic/01-project-overview.md`**, **`02-software-requirements.md`**, **`03-use-cases.md`** y **`04-design-diagrams.md`:** Fechas de control actualizadas a Noviembre 2026; `GAP-QA-01` clasificado honestamente como `Cerrado parcial (B2B en RR-06)` registrando la certificación de seis roles y realtime (CF-04 y CF-05) y delimitando la solicitud/aprobación completa de onboarding B2B como riesgo residual pendiente bajo `RR-06` con cuenta preexistente de demo; diapositivas de defensa sincronizadas bajo DF-07.
+   - **`docs/project_docs/ROADMAP.md`:** §6.3 actualizado para contextualizar que `v2.3_CODEX_BORRADOR_TEXTO` fue un antecedente de agosto, y reflejar la maquetación previa de `v2_OFICIAL_IMPRENTA` frente a la sincronización vigente de `DF-07` bajo DOC-05.
+2. **Depuración de Residuos Efímeros:**
+   - Purgados 16 volcados de consola en `docs/audit/RESPUESTA_CODEX_*.md` (~353 KB), respaldados en los dictámenes y ratificaciones formales y en la bitácora.
+   - Purgado `docs/audit/sql-concurrency-results.log` (redundante con `SQL_CONCURRENCY_RESULTS.md`).
+   - Depurados 17 scripts y archivos de inspección/temporales en `scripts/scratch/`.
+   - Depurados borradores intermedios desfasados en `docs/entrega_final/salida/` (`v2.3_CODEX_BORRADOR_TEXTO.docx`, `v2.3_FINAL_IMPRENTA.docx/.pdf`), conservando estrictamente los oficiales `v2_OFICIAL_IMPRENTA.docx` y `.pdf`.
+   - Eliminado `prompt_agy.txt` arcaico de la raíz.
+3. **Invariantes y Salvaguardas:**
+   - 0 archivos de producto modificados (`API Graphql` y `FrontEnd` 100% inmutables bajo Code Freeze).
+   - 0 archivos modificados en la carpeta `specs/` (completamente ignorada según directiva estricta de Fran).
+   - Higiene estricta: `git diff --check` con salida 0; comprobador estático `scripts/Test-DefenseDemoReadiness.ps1` con **10 / 10 PASS** (267 ms).
+
+---
 ## [2026-11-19] - Consolidación Editorial, Gobernanza 6.2 y Sincronización de Defensa (Lotes DOC-01 a DOC-05) - branch: feature/2026-11-01-debugger-cv-builder
 
 ### Cierre de Sincronización Editorial y Materialización DF-07 (Lotes DOC-01 a DOC-05)
